@@ -345,8 +345,8 @@ class Song:
         '''
         tmp_notes = [n.start_time for t in self.tracks for n in t.notes]
         self.qticks_notes = find_quantization(self.ppq, tmp_notes)
-        tmp_notes = [n.duration for t in self.tracks for n in t.notes]
-        self.qticks_durations = find_quantization(self.ppq, tmp_notes)
+        tmp_durations = [n.duration for t in self.tracks for n in t.notes]
+        self.qticks_durations = find_duration_quantization(self.ppq, tmp_durations, self.qticks_notes)
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)
@@ -566,6 +566,23 @@ def find_quantization(ppq, time_series):
         # Try the next power of two
         note_value *= 2
     return 1  # Return a 1 for failed quantization means 1 tick resolution
+
+def find_duration_quantization(ppq, durations, qticks_note):
+    '''
+    The duration quantization is determined from the shortest note length.
+    The algorithm starts from the estimated quantization for note starts.
+    '''
+    min_length = min(durations)
+    current_q = qticks_note
+    ratio = min_length / current_q
+    while ratio < 0.9:
+        # Try a triplet
+        tmp_q = current_q
+        current_q = current_q * 3 // 2
+        if ratio > 0.9:
+            break
+        current_q = tmp_2 // 2
+    return current_q
 
 
 def quantize_fn(t, qticks):
