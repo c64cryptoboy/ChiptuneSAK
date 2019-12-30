@@ -160,18 +160,23 @@ class SongTrack:
         active at a time. If a chord is struck all at the same time, it will retain the highest
         note.
         '''
+        deleted = 0
+        truncated = 0
         ret_notes = []
         last = self.notes[0]
         for n in self.notes[1:]:
             if n.start_time == last.start_time:
+                deleted += 1
                 continue
             elif n.start_time < last.start_time + last.duration:
                 last.duration = n.start_time - last.start_time
+                truncated += 1
             ret_notes.append(last)
             last = n
         ret_notes.append(last)
         self.notes = ret_notes
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+        return (deleted, truncated)
 
     def remove_control_notes(self, control_max=8):
         '''
@@ -357,31 +362,35 @@ class Song:
         want either to remain unquantized, simply specify a qticks parameter to be 1 (quantization
         of 1 tick).
         '''
-        self.stats['Note Start Changes'] = collections.Counter()
-        self.stats['Duration Changes'] = collections.Counter()
+        self.stats['Note Start Deltas'] = collections.Counter()
+        self.stats['Duration Deltas'] = collections.Counter()
         if qticks_notes:
             self.qticks_notes = qticks_notes
         if qticks_durations:
             self.qticks_durations = qticks_durations
         for t in self.tracks:
             note_start_changes, duration_changes = t.quantize(self.qticks_notes, self.qticks_durations)
-            self.stats['Note Start Changes'].update(note_start_changes)
-            self.stats['Duration Changes'].update(duration_changes)
+            self.stats['Note Start Deltas'].update(note_start_changes)
+            self.stats['Duration Deltas'].update(duration_changes)
 
     def eliminate_polyphony(self):
         '''
         Eliminate polyphony from all tracks.
         '''
+        self.stats['Truncated'] = 0
+        self.stats['Deleted'] = 0
         for t in self.tracks:
-            t.eliminate_polyphony()
+            deleted, truncated = t.eliminate_polyphony()
+            self.stats['Truncated'] += truncated
+            self.stats['Deleted'] += deleted
 
-    def remove_control_notes(self, controlMax=8):
+    def remove_control_notes(self, control_max=8):
         ''' 
         Some MIDI programs use extremely low notes as a signaling mechanism.
         This method removes notes with pitch <= control_max from all tracks.
         '''
         for t in self.tracks:
-            t.remove_control_notes(controlMax)
+            t.remove_control_notes(control_max)
 
     def modulate(self, num, denom):
         '''
