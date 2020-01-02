@@ -12,6 +12,7 @@ TOOLVERSION = "0.1"
 import sys
 import bisect
 import collections
+from ctsErrors import *
 import mido
 
 # Named tuple types for several lists throughout
@@ -19,6 +20,8 @@ TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'd
 Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
 OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
+
+
 
 class Note:
     '''
