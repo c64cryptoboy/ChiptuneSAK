@@ -86,8 +86,12 @@ class SongTrack:
         current_notes_on = {}
         self.notes = [] # list of notes
         self.other = [] # list of other things int the track, such as patch changes or pitchwheel
+        channels = set()
         for msg in track:
             current_time += msg.time
+            if not msg.is_meta:
+                # Keep track of unique channels for non-meta messages
+                channels.add(msg.channel)
             # Some MIDI devices use a note_on with velocity of 0 to turn notes off.
             if msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
                 # If this note is not in our dictionary of notes that are on, ignore the note_off
@@ -114,6 +118,11 @@ class SongTrack:
             if delta > 0:
                 current_notes_on[n].duration = delta
                 self.notes.append(current_notes_on[n])
+
+        # Check that there was only one channel used in the track
+        if len(channels) > 1:
+            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s' % len(channels), self.name)
+
         # Now sort the notes by the time they turn on. They were inserted into the list in
         # the order they were turned off.  To do the sort, take advatage of automatic sorting of tuples.
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))

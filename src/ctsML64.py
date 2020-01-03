@@ -1,5 +1,6 @@
-import MidiSimple
+
 import collections
+import ctsSong
 
 '''
 This file contains functions required to export  MidiSimple songs to ML64 format.
@@ -133,7 +134,8 @@ def export_ML64(in_song, octave_offset=0, mode='standard'):
                 track_ML64.append((m, MEASURE_PRI, tmp_str))
         track_ML64.sort(key=lambda e: (e[:2]))
         output.append(''.join(n[-1] for n in track_ML64).strip())
-    return '\n'.join(output) + '\n\n' + '\n'.join("%8ss: %4d" % (s, overall_stats[s]) for s in overall_stats)
+    in_song.stats['ML64'] = overall_stats
+    return '\n'.join(output)
 
 def export_ML64_measures(in_song, octave_offset):
     overall_stats = collections.Counter()
@@ -215,12 +217,13 @@ def export_ML64_measures(in_song, octave_offset):
             track_ML64.append(''.join(n[-1] for n in measure_ML64))
         output.append('\n'.join(track_ML64))
 
-    return '\n'.join(output) + '\n\n' + '\n'.join("%8ss: %4d" % (s, overall_stats[s]) for s in overall_stats)
+    in_song.stats['ML64'] = overall_stats
+    return '\n'.join(output)
 
 
 if __name__ == '__main__':
     import sys
-    in_song = MidiSimple.Song(sys.argv[1])
+    in_song = ctsSong.Song(sys.argv[1])
     in_song.remove_control_notes()
     in_song.quantize(in_song.ppq // 4, in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
@@ -230,3 +233,5 @@ if __name__ == '__main__':
     print(sum(len(t.notes) for t in in_song.tracks))
 
     print(export_ML64(in_song, 0, mode='standard'))
+    print('------------------')
+    print('\n'.join('%9ss: %d' % (k, in_song.stats['ML64'][k]) for k in in_song.stats['ML64']))
