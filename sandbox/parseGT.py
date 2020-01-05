@@ -17,6 +17,10 @@ Style notes to self (delete later):
     Variable, method, and function names should always be snake_case.
 """
 
+debug = False
+
+# Define structures to parse data into
+
 GtSongHeader = recordtype('GtSongHeader', [('id',''),('song_name',''),('author_name',''),('copyright',''),
     ('num_subtunes',0)])
 
@@ -27,6 +31,9 @@ GtInstrument = recordtype('GtInstrument', [('inst_num',0),('attack_decay',0),('s
     ('hard_restart_1st_frame_wave',0),('inst_name','')])
 
 GtTable = recordtype('GtTable', [('row_cnt', 0), ('left_col',b''), ('right_col',b'')])
+
+GtPatternRow = recordtype('GtPatternRow', [('note_data',0), ('inst_num',0), ('command',0), ('command_data',0)])
+
 
 def get_chars(in_bytes, trim_nulls = True):
     result = in_bytes.decode('Latin-1')
@@ -75,7 +82,7 @@ def import_sng(gtFilename):
     
     file_index = 101
 
-    print("\nDebug: %s" % header)
+    if debug: print("\nDebug: %s" % header)
 
     """ From goattracker documentation:
     
@@ -111,7 +118,7 @@ def import_sng(gtFilename):
         
         orderlists.append(order_list)
 
-    print("\nDebug: %s" % orderlists)
+    if debug: print("\nDebug: %s" % orderlists)
 
 
     """ From goattracker documentation:
@@ -157,7 +164,7 @@ def import_sng(gtFilename):
         
         instruments.append(an_instrument)        
     
-    print("\nDebug: %s" % instruments)
+    if debug: print("\nDebug: %s" % instruments)
 
 
     """ From goattracker documentation:
@@ -183,15 +190,11 @@ def import_sng(gtFilename):
         tables.append(a_table)
         file_index += a_table.row_cnt * 2 + 1
     
-    print("\nDebug: %s" % tables)
+    if debug: print("\nDebug: %s" % tables)
     (wave_table, pulse_table, filter_table, speed_table) = tables
     
     
-
-    # TODO:  Finish translating specs below into parsing code:
-    
-
-    """
+    """ From goattracker documentation:
     6.1.5 Patterns header
     ---------------------
 
@@ -215,58 +218,25 @@ def import_sng(gtFilename):
                     2nd byte: Instrument number ($00-$3F)
                     3rd byte: Command ($00-$0F)
                     4th byte: Command databyte
-
-    @endnode
-    @node 6.2GoatTrackerv2instrument(.INS)format "6.2 GoatTracker v2 instrument (.INS) format"
-    6.2 GoatTracker v2 instrument (.INS) format
-    -------------------------------------------
-
-    Offset  Size    Description
-    +0      4       Identification string GTI5
-    +4      byte    Attack/Decay
-    +5      byte    Sustain/Release
-    +6      byte    Wavepointer
-    +7      byte    Pulsepointer
-    +8      byte    Filterpointer
-    +9      byte    Vibrato param. (speedtable pointer)
-    +10     byte    Vibrato delay
-    +11     byte    Gateoff timer
-    +12     byte    Hard restart/1st frame waveform
-    +13     16      Instrument name
-
-    After the instrument data, this structure repeats for each of the 4 tables
-    (wavetable, pulsetable, filtertable, speedtable).
-
-    Offset  Size    Description
-    +0      byte    Amount n of rows in the table
-    +1      n       Left side of the table
-    +1+n    n       Right side of the table
-
-    Note that the tables are a partial snapshot of the current song the instrument
-    was saved from, so upon loading they have to be relocated to the current free
-    table locations.
-
-    @endnode
-    @node 6.3Soundeffectdataformat "6.3 Sound effect data format"
-    6.3 Sound effect data format
-    ----------------------------
-
-    Offset  Size    Description
-    +0      byte    Attack/Decay
-    +1      byte    Sustain/Release
-    +2      byte    Pulse width. This value has nybbles reversed from what it looks
-                    like in the editor so a middle pulse $800 will be stored as $08,
-                    and the sound effect routine will put this value to both $D402
-                    and $D403 registers.
-    +3      ?       Wavetable. Contains note/waveform pairs (different order than
-                    in instrument wavetable), from which the waveform can be
-                    omitted if unchanged, as the value ranges do not overlap:
-                            Value $00 ends the sound effect
-                            Values $01-$81 are waveforms
-                            Values $82-$DF are absolute notes D-0 - B-7
-                    Note that a note cannot be omitted to store only waveform
-                    changes!
     """
+
+    num_patterns = sng_bytes[file_index]
+    file_index += 1
+    patterns = []
+    
+    for pattern_num in range(num_patterns):
+        a_pattern = []
+        num_rows = sng_bytes[file_index]
+        file_index += 1
+        for row_num in range(num_rows):
+            a_row = GtPatternRow(note_data = sng_bytes[file_index], inst_num = sng_bytes[file_index+1],
+                command = sng_bytes[file_index+2], command_data = sng_bytes[file_index+3])
+            file_index += 4
+            a_pattern.append(a_row)
+        patterns.append(a_pattern)
+        if debug: print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
+
+    assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
 
 
 def main():
