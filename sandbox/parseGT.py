@@ -26,9 +26,13 @@ GtInstrument = recordtype('GtInstrument', [('inst_num',0),('attack_decay',0),('s
     ('pulse_ptr',0),('filter_ptr',0),('vib_speetable_ptr',0),('vib_delay',0),('gateoff_timer',0),
     ('hard_restart_1st_frame_wave',0),('inst_name','')])
 
+GtTable = recordtype('GtTable', [('row_cnt', 0), ('left_col',b''), ('right_col',b'')])
 
 def get_chars(in_bytes, trim_nulls = True):
-    return in_bytes.decode('Latin-1').strip('\0')  # no interpretation, preserve encoding
+    result = in_bytes.decode('Latin-1')
+    if trim_nulls:
+        result = result.strip('\0')  # no interpretation, preserve encoding
+    return result
 
 
 def get_order_list(an_index, file_bytes):
@@ -43,6 +47,18 @@ def get_order_list(an_index, file_bytes):
     return orderlist
 
 
+def get_table(an_index, file_bytes):
+    rows = file_bytes[an_index]
+    an_index += 1
+    
+    left_entries = file_bytes[an_index:an_index+rows]
+    an_index += rows
+    
+    right_entries = file_bytes[an_index:an_index+rows]
+
+    return GtTable(row_cnt = rows, left_col = left_entries, right_col = right_entries)
+
+
 def import_sng(gtFilename):
     with open(gtFilename, 'rb') as f:
         sng_bytes = f.read()
@@ -52,7 +68,7 @@ def import_sng(gtFilename):
     header.id = sng_bytes[0:4]
     assert header.id == b'GTS5', "Error: Did not find magic header used by goattracker sng files" 
 
-    header.song_name = get_chars(sng_bytes[4:36]) # makes sensed to call function since you are also trimming nulls.
+    header.song_name = get_chars(sng_bytes[4:36])
     header.author_name = get_chars(sng_bytes[36:68])
     header.copyright = get_chars(sng_bytes[68:100])
     header.num_subtunes = sng_bytes[100]
@@ -144,9 +160,7 @@ def import_sng(gtFilename):
     print("\nDebug: %s" % instruments)
 
 
-    # TODO:  Finish translating specs below into parsing code:
-    
-    """
+    """ From goattracker documentation:
     6.1.4 Tables
     ------------
 
@@ -160,14 +174,30 @@ def import_sng(gtFilename):
 
     @endnode
     @node 6.1.5Patternsheader "6.1.5 Patterns header"
+
+    """  
+
+    tables = []
+    for i in range(4):
+        a_table = get_table(file_index, sng_bytes)
+        tables.append(a_table)
+        file_index += a_table.row_cnt * 2 + 1
+    
+    print("\nDebug: %s" % tables)
+    (wave_table, pulse_table, filter_table, speed_table) = tables
+    
+    
+
+    # TODO:  Finish translating specs below into parsing code:
+    
+
+    """
     6.1.5 Patterns header
     ---------------------
 
     Offset  Size    Description
     +0      byte    Number of patterns n
-
-    @endnode
-    @node 6.1.6Patterns "6.1.6 Patterns"
+    
     6.1.6 Patterns
     --------------
 
