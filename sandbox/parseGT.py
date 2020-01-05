@@ -28,10 +28,7 @@ GtInstrument = recordtype('GtInstrument', [('inst_num',0),('attack_decay',0),('s
 
 
 def get_chars(in_bytes, trim_nulls = True):
-    result = in_bytes.decode('Latin-1') # no interpretation, preserve encoding
-    if trim_nulls:
-        result = result[0:result.find('\x00')]
-    return result
+    return in_bytes.decode('Latin-1').strip('\0')  # no interpretation, preserve encoding
 
 
 def get_order_list(an_index, file_bytes):
@@ -55,7 +52,7 @@ def import_sng(gtFilename):
     header.id = sng_bytes[0:4]
     assert header.id == b'GTS5', "Error: Did not find magic header used by goattracker sng files" 
 
-    header.song_name = get_chars(sng_bytes[4:36])
+    header.song_name = get_chars(sng_bytes[4:36]) # makes sensed to call function since you are also trimming nulls.
     header.author_name = get_chars(sng_bytes[36:68])
     header.copyright = get_chars(sng_bytes[68:100])
     header.num_subtunes = sng_bytes[100]
