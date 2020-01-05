@@ -8,7 +8,6 @@
 import sys
 from recordtype import recordtype
 
-
 """
 Style notes to self (delete later):
 
@@ -21,21 +20,24 @@ debug = False
 
 # Define structures to parse data into
 
-GtSongHeader = recordtype('GtSongHeader', [('id',''),('song_name',''),('author_name',''),('copyright',''),
-    ('num_subtunes',0)])
+GtSongHeader = recordtype('GtSongHeader', [('id', ''), ('song_name', ''), ('author_name', ''), ('copyright', ''),
+                                           ('num_subtunes', 0)])
 
-GtSubtuneOrderList = recordtype('GtSubtuneOrderList', [('ch1OrderList',b''),('ch2OrderList',b''),('ch3OrderList',b'')])
+GtSubtuneOrderList = recordtype('GtSubtuneOrderList',
+                                [('ch1OrderList', b''), ('ch2OrderList', b''), ('ch3OrderList', b'')])
 
-GtInstrument = recordtype('GtInstrument', [('inst_num',0),('attack_decay',0),('sustain_release',0),('wave_ptr',0),
-    ('pulse_ptr',0),('filter_ptr',0),('vib_speetable_ptr',0),('vib_delay',0),('gateoff_timer',0),
-    ('hard_restart_1st_frame_wave',0),('inst_name','')])
+GtInstrument = recordtype('GtInstrument',
+                          [('inst_num', 0), ('attack_decay', 0), ('sustain_release', 0), ('wave_ptr', 0),
+                           ('pulse_ptr', 0), ('filter_ptr', 0), ('vib_speetable_ptr', 0), ('vib_delay', 0),
+                           ('gateoff_timer', 0),
+                           ('hard_restart_1st_frame_wave', 0), ('inst_name', '')])
 
-GtTable = recordtype('GtTable', [('row_cnt', 0), ('left_col',b''), ('right_col',b'')])
+GtTable = recordtype('GtTable', [('row_cnt', 0), ('left_col', b''), ('right_col', b'')])
 
-GtPatternRow = recordtype('GtPatternRow', [('note_data',0), ('inst_num',0), ('command',0), ('command_data',0)])
+GtPatternRow = recordtype('GtPatternRow', [('note_data', 0), ('inst_num', 0), ('command', 0), ('command_data', 0)])
 
 
-def get_chars(in_bytes, trim_nulls = True):
+def get_chars(in_bytes, trim_nulls=True):
     result = in_bytes.decode('Latin-1')
     if trim_nulls:
         result = result.strip('\0')  # no interpretation, preserve encoding
@@ -43,43 +45,43 @@ def get_chars(in_bytes, trim_nulls = True):
 
 
 def get_order_list(an_index, file_bytes):
-    length = file_bytes[an_index]+1 # add one, since restart position not counted for some reason
+    length = file_bytes[an_index] + 1  # add one, since restart position not counted for some reason
     an_index += 1
-    
-    orderlist = file_bytes[an_index:an_index+length]
+
+    orderlist = file_bytes[an_index:an_index + length]
     an_index += length
     # check that next-to-last byte is $FF
-    assert file_bytes[an_index-2] == 255, "Error: Did not find expected $FF RST endmark in channel's orderlist"
-    
+    assert file_bytes[an_index - 2] == 255, "Error: Did not find expected $FF RST endmark in channel's orderlist"
+
     return orderlist
 
 
 def get_table(an_index, file_bytes):
     rows = file_bytes[an_index]
     an_index += 1
-    
-    left_entries = file_bytes[an_index:an_index+rows]
+
+    left_entries = file_bytes[an_index:an_index + rows]
     an_index += rows
-    
-    right_entries = file_bytes[an_index:an_index+rows]
 
-    return GtTable(row_cnt = rows, left_col = left_entries, right_col = right_entries)
+    right_entries = file_bytes[an_index:an_index + rows]
+
+    return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
 
 
-def import_sng(gtFilename):
-    with open(gtFilename, 'rb') as f:
+def import_sng(gt_filename):
+    with open(gt_filename, 'rb') as f:
         sng_bytes = f.read()
 
     header = GtSongHeader()
 
     header.id = sng_bytes[0:4]
-    assert header.id == b'GTS5', "Error: Did not find magic header used by goattracker sng files" 
+    assert header.id == b'GTS5', "Error: Did not find magic header used by goattracker sng files"
 
     header.song_name = get_chars(sng_bytes[4:36])
     header.author_name = get_chars(sng_bytes[36:68])
     header.copyright = get_chars(sng_bytes[68:100])
     header.num_subtunes = sng_bytes[100]
-    
+
     file_index = 101
 
     if debug: print("\nDebug: %s" % header)
@@ -102,24 +104,23 @@ def import_sng(gtFilename):
                     Value $FF is the RST endmark, followed by a byte that indicates
                     the restart position
     """
-    
+
     orderlists = []
     for subtune_index in range(header.num_subtunes):
         order_list = GtSubtuneOrderList()
-        
-        order_list.ch1OrderList = get_order_list(file_index, sng_bytes) 
+
+        order_list.ch1OrderList = get_order_list(file_index, sng_bytes)
         file_index += len(order_list.ch1OrderList) + 1
 
-        order_list.ch2OrderList = get_order_list(file_index, sng_bytes) 
+        order_list.ch2OrderList = get_order_list(file_index, sng_bytes)
         file_index += len(order_list.ch2OrderList) + 1
 
-        order_list.ch3OrderList = get_order_list(file_index, sng_bytes) 
+        order_list.ch3OrderList = get_order_list(file_index, sng_bytes)
         file_index += len(order_list.ch3OrderList) + 1
-        
+
         orderlists.append(order_list)
 
     if debug: print("\nDebug: %s" % orderlists)
-
 
     """ From goattracker documentation:
 
@@ -144,28 +145,29 @@ def import_sng(gtFilename):
     +8      byte    Hard restart/1st frame waveform
     +9      16      Instrument name
     """
-    
-    instruments = []
-    instruments.append(GtInstrument()) # start with empty instrument number 0
-  
-    nonzero_inst_count = sng_bytes[file_index]
-    file_index += 1    
-    
-    for i in range(nonzero_inst_count):
-        an_instrument = GtInstrument(attack_decay = sng_bytes[file_index], sustain_release = sng_bytes[file_index+1],
-            wave_ptr = sng_bytes[file_index+2], pulse_ptr = sng_bytes[file_index+3], filter_ptr = sng_bytes[file_index+4],
-            vib_speetable_ptr = sng_bytes[file_index+5], vib_delay = sng_bytes[file_index+6],
-            gateoff_timer = sng_bytes[file_index+7], hard_restart_1st_frame_wave = sng_bytes[file_index+8])
-        file_index += 9
-        
-        an_instrument.inst_num = i+1
-        an_instrument.inst_name = get_chars(sng_bytes[file_index:file_index+16])
-        file_index += 16
-        
-        instruments.append(an_instrument)        
-    
-    if debug: print("\nDebug: %s" % instruments)
 
+    instruments = []
+    instruments.append(GtInstrument())  # start with empty instrument number 0
+
+    nonzero_inst_count = sng_bytes[file_index]
+    file_index += 1
+
+    for i in range(nonzero_inst_count):
+        an_instrument = GtInstrument(attack_decay=sng_bytes[file_index], sustain_release=sng_bytes[file_index + 1],
+                                     wave_ptr=sng_bytes[file_index + 2], pulse_ptr=sng_bytes[file_index + 3],
+                                     filter_ptr=sng_bytes[file_index + 4],
+                                     vib_speetable_ptr=sng_bytes[file_index + 5], vib_delay=sng_bytes[file_index + 6],
+                                     gateoff_timer=sng_bytes[file_index + 7],
+                                     hard_restart_1st_frame_wave=sng_bytes[file_index + 8])
+        file_index += 9
+
+        an_instrument.inst_num = i + 1
+        an_instrument.inst_name = get_chars(sng_bytes[file_index:file_index + 16])
+        file_index += 16
+
+        instruments.append(an_instrument)
+
+    if debug: print("\nDebug: %s" % instruments)
 
     """ From goattracker documentation:
     6.1.4 Tables
@@ -182,18 +184,17 @@ def import_sng(gtFilename):
     @endnode
     @node 6.1.5Patternsheader "6.1.5 Patterns header"
 
-    """  
+    """
 
     tables = []
     for i in range(4):
         a_table = get_table(file_index, sng_bytes)
         tables.append(a_table)
         file_index += a_table.row_cnt * 2 + 1
-    
+
     if debug: print("\nDebug: %s" % tables)
     (wave_table, pulse_table, filter_table, speed_table) = tables
-    
-    
+
     """ From goattracker documentation:
     6.1.5 Patterns header
     ---------------------
@@ -223,18 +224,19 @@ def import_sng(gtFilename):
     num_patterns = sng_bytes[file_index]
     file_index += 1
     patterns = []
-    
+
     for pattern_num in range(num_patterns):
         a_pattern = []
         num_rows = sng_bytes[file_index]
         file_index += 1
         for row_num in range(num_rows):
-            a_row = GtPatternRow(note_data = sng_bytes[file_index], inst_num = sng_bytes[file_index+1],
-                command = sng_bytes[file_index+2], command_data = sng_bytes[file_index+3])
+            a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
+                                 command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
             file_index += 4
             a_pattern.append(a_row)
         patterns.append(a_pattern)
-        if debug: print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
+        if debug: print(
+            "\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
 
     assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
 
@@ -242,8 +244,7 @@ def import_sng(gtFilename):
 def main():
     import_sng("consultant.sng")
     exit("Done")
-  
-  
-if __name__== "__main__":
+
+
+if __name__ == "__main__":
     main()
-    
