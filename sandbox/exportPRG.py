@@ -44,9 +44,9 @@ c128_additional_tokens = {
 
 c128_tokens = {**c64_tokens, **c128_additional_tokens}
 
-
-test_prg = """10 print"test":rem blah
-20 goto10"""
+# Note that you can use triple single quotes to make it more clear that double quotes inside string are intended.
+test_prg = '''10 print"test":rem blah
+20 goto10'''
 
 # Start of BASIC: C64 $0801 (2049), C128 $1C01 (7169)
 
@@ -79,7 +79,12 @@ test_prg = """10 print"test":rem blah
 # TODO: implement ascii->petscii and create designations for control characters
 #    Reference: https://www.c64-wiki.com/wiki/control_character
 
+# See this library:  https://pypi.org/project/cbmcodecs/
+# It includes a PETSCII encoder/decoder.
+# Or you can do it with maketrans() if you only want the ASCII-compatible characters.
+
 prg = bytearray()
+
 
 def main():
     pass
@@ -87,5 +92,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-	
