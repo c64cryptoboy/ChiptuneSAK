@@ -1,5 +1,8 @@
 import sys
 
+# token values based on this:
+#    https://portcommodore.com/dokuwiki/lib/exe/fetch.php?media=larry:comp:commodore:cbmmultichart.pdf
+
 c64_tokens = {
     '{endOfLine}': b'\x00', 'end': b'\x80', 'for': b'\x81', 'next': b'\x82', 'data': b'\x83',
     'input#': b'\x84', 'input': b'\x85', 'dim': b'\x86', 'read': b'\x87', 'let': b'\x88',
@@ -42,10 +45,46 @@ c128_additional_tokens = {
 c128_tokens = {**c64_tokens, **c128_additional_tokens}
 
 
+test_prg = """10 print"test":rem blah
+20 goto10"""
+
+# Start of BASIC: C64 $0801 (2049), C128 $1C01 (7169)
+
+# Example
+# 10 print"test":rem blah
+# 20 goto10
+
+# c64 same as c128 except for starting memory location
+# c64:  01 08 14 08 0A 00 99 22 54 45 53 54 22 3A 8F 20 42 4C 41 48 00 1C 08 14 00 89 31 30 00 00 00
+# c128: 01 1C 14 1C 0A 00 99 22 54 45 53 54 22 3A 8F 20 42 4C 41 48 00 1C 1C 14 00 89 31 30 00 00 00
+
+# c128 example
+# Note: 1st two bytes (load addr) get stripped off
+# $1C01: 14 1C                 ptr to next line prt
+# $1C03: 0A 00                 line 10
+# $1C05: 99                    PRINT
+# $1C06: 22 54 45 53 54 22 3A  "TEST":
+# $1C0D: 8F                    REM
+# $1C0E: 20                    space
+# $1C0F: 42 4C 41 48           BLAH
+# $1C13: 00                    end of line
+# $1C14: 1C 1C                 ptr to next line prt
+# $1C16: 14 00                 line 20
+# $1C18: 89                    GOTO
+# $1C19: 31 30                 10
+# $1C1B: 00                    end of line
+# $1C1C: 00 00                 ptr to next line prt == 0 == prg end
+
+
+# TODO: implement ascii->petscii and create designations for control characters
+#    Reference: https://www.c64-wiki.com/wiki/control_character
+
+prg = bytearray()
+
 def main():
-	pass
-	
-	
+    pass
+
+
 if __name__ == "__main__":
     main()
     
