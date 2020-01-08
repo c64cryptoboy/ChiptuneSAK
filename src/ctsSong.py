@@ -152,18 +152,27 @@ class SongTrack:
         '''
         note_start_changes = []
         duration_changes = []
+        # Update the members to reflect the quantization applied
         if qticks_notes:
             self.qticks_notes = qticks_notes
         if qticks_durations:
             self.qticks_durations = qticks_durations
+
         for i, n in enumerate(self.notes):
+            # Store the "before" values for statistics
             start_before = n.start_time
             duration_before = n.duration
+            # Quantize the start times and durations
             n.start_time = quantize_fn(n.start_time, self.qticks_notes)
             n.duration = quantize_fn(n.duration, self.qticks_durations)
+            # Never quantize a note duration to less than the minimum
+            if n.duration < self.qticks_durations:
+                n.duration = self.qticks_durations
             self.notes[i] = n
+            # Update the statistics
             note_start_changes.append(n.start_time - start_before)
             duration_changes.append(n.duration - duration_before)
+        # Return the statistics about changes
         return (note_start_changes, duration_changes)
 
     def eliminate_polyphony(self):
