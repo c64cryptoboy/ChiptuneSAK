@@ -17,10 +17,11 @@ print('PPQ = %d' % (inMidi.ppq))
 
 qTicksN, qTicksD = inMidi.estimate_quantization()
 print("Estimated quantization = ", (qTicksN, qTicksD), "ticks")
+print("(%s, %s)" % (ctsSong.duration_to_note_name(qTicksN, inMidi.ppq), ctsSong.duration_to_note_name(qTicksN, inMidi.ppq)))
 inMidi.quantize()
 inMidi.eliminate_polyphony()
-#inMidi.modulate(3, 2)
+# inMidi.modulate(3, 2)
 
 print(inMidi.stats)
 
-inMidi.exportMidi(outFileName)
+inMidi.export_midi(outFileName)

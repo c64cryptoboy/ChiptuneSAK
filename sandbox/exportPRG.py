@@ -2,12 +2,12 @@
 #
 # Does not implement a grammar for BASIC, but will generate a valid PRG for a valid ascii BASIC program
 #
-# TODO:  Next step is to do the ASCII -> PETSCII translation
+# TODO:  Next step is to code up the ASCII -> PETSCII translation
 #    https://pypi.org/project/cbmcodecs/
 #
-# TODO?: not sure if I want to implement a syntax for control characters (e.g. {CYN})?
+# TODO?: probably don't want to implement a syntax for control characters (e.g. {CYN})
 #    https://www.c64-wiki.com/wiki/control_character
-#    Currently, one must use a byte with the correct value instead
+#    Currently, one must simply use the petscii byte with the correct control code value
 
 """
 Some notes on Commodore BASIC:

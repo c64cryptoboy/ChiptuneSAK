@@ -12,15 +12,15 @@ TOOLVERSION = "0.1"
 import sys
 import bisect
 import collections
-from ctsErrors import *
 import mido
+from ctsErrors import *
+import ctsConstants
 
 # Named tuple types for several lists throughout
 TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
 Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
 OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
-
 
 
 class Note:
@@ -30,10 +30,10 @@ class Note:
     '''
 
     def __init__(self, note, start, duration, velocity=100):
-        self.note_num = note     # MIDI note number
+        self.note_num = note  # MIDI note number
         self.start_time = start  # In ticks since tick 0
-        self.duration = duration # In ticks
-        self.velocity = velocity # MIDI velocity 0-127
+        self.duration = duration  # In ticks
+        self.velocity = velocity  # MIDI velocity 0-127
 
     def __eq__(self, other):
         ''' Two notes are equal when their note numbers and durations are the same '''
@@ -56,15 +56,15 @@ class SongTrack:
     otherMessages = ['program_change', 'pitchwheel']
 
     def __init__(self, song, track=None):
-        self.song = song   # Parent song
-        self.name = 'none' # Track name
-        self.channel = 0   # This track's midi channel.  Each track should have notes from only one channel.
-        self.notes = []    # The notes in the track
-        self.other = []    # Other events in the track (includes voice changes and pitchwheel)
-        self.qticks_notes = song.qticks_notes          # Inherit quantization from song
+        self.song = song  # Parent song
+        self.name = 'none'  # Track name
+        self.channel = 0  # This track's midi channel.  Each track should have notes from only one channel.
+        self.notes = []  # The notes in the track
+        self.other = []  # Other events in the track (includes voice changes and pitchwheel)
+        self.qticks_notes = song.qticks_notes  # Inherit quantization from song
         self.qticks_durations = song.qticks_durations  # inherit quantization from song
         # If a track is given to the constructor, it must be a midi track from mido.
-        if track != None:
+        if track is not None:
             self.import_midi_track(track)
 
     def import_midi_track(self, track):
@@ -84,8 +84,8 @@ class SongTrack:
         # Convert Midi events in the track into notes and durations
         current_time = 0
         current_notes_on = {}
-        self.notes = [] # list of notes
-        self.other = [] # list of other things int the track, such as patch changes or pitchwheel
+        self.notes = []  # list of notes
+        self.other = []  # list of other things int the track, such as patch changes or pitchwheel
         channels = set()
         for msg in track:
             current_time += msg.time
@@ -121,7 +121,8 @@ class SongTrack:
 
         # Check that there was only one channel used in the track
         if len(channels) > 1:
-            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s' % len(channels), self.name)
+            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s' % (len(channels),
+                                       self.name))
 
         # Now sort the notes by the time they turn on. They were inserted into the list in
         # the order they were turned off.  To do the sort, take advatage of automatic sorting of tuples.
@@ -152,18 +153,27 @@ class SongTrack:
         '''
         note_start_changes = []
         duration_changes = []
+        # Update the members to reflect the quantization applied
         if qticks_notes:
             self.qticks_notes = qticks_notes
         if qticks_durations:
             self.qticks_durations = qticks_durations
+
         for i, n in enumerate(self.notes):
+            # Store the "before" values for statistics
             start_before = n.start_time
             duration_before = n.duration
+            # Quantize the start times and durations
             n.start_time = quantize_fn(n.start_time, self.qticks_notes)
             n.duration = quantize_fn(n.duration, self.qticks_durations)
+            # Never quantize a note duration to less than the minimum
+            if n.duration < self.qticks_durations:
+                n.duration = self.qticks_durations
             self.notes[i] = n
+            # Update the statistics
             note_start_changes.append(n.start_time - start_before)
             duration_changes.append(n.duration - duration_before)
+        # Return the statistics about changes
         return (note_start_changes, duration_changes)
 
     def eliminate_polyphony(self):
@@ -265,18 +275,18 @@ class Song:
         ''' 
         Clear all tracks and reinitialize to default values
         '''
-        self.ppq = 480                       # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
-        self.qticks_notes = self.ppq         # Quantization for note starts, in ticks
-        self.qticks_durations = self.ppq     # Quantization for note durations, in ticks
-        self.bpm = mido.tempo2bpm(500000)    # Default tempo (it's the midi default)
-        self.tracks = []                     # List of Songtrack tracks
-        self.meta_track = []                 # List of all meta events that apply to the song as a whole
-        self.meta_midi_tracks = []           # list of all the midi trakcs that only contain metadata
-        self.midi_note_tracks = []           # list of all the tracks that contain notes
-        self.time_signature_changes = []     # List of time signature changes
-        self.tempo_changes = []              # List of tempo changes
-        self.end_time = 0                    # last MIDI event in the entire song
-        self.stats = {}                      # Statistics about the song
+        self.ppq = 480  # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
+        self.qticks_notes = self.ppq  # Quantization for note starts, in ticks
+        self.qticks_durations = self.ppq  # Quantization for note durations, in ticks
+        self.bpm = mido.tempo2bpm(500000)  # Default tempo (it's the midi default)
+        self.tracks = []  # List of Songtrack tracks
+        self.meta_track = []  # List of all meta events that apply to the song as a whole
+        self.meta_midi_tracks = []  # list of all the midi trakcs that only contain metadata
+        self.midi_note_tracks = []  # list of all the tracks that contain notes
+        self.time_signature_changes = []  # List of time signature changes
+        self.tempo_changes = []  # List of tempo changes
+        self.end_time = 0  # last MIDI event in the entire song
+        self.stats = {}  # Statistics about the song
 
     def import_midi(self, filename):
         ''' 
@@ -502,7 +512,7 @@ class Song:
             last_time = tmp_time
         return midi_track
 
-    def exportMidi(self, midi_filename):
+    def export_midi(self, midi_filename):
         '''
         Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
         is tied to many midi concepts and uses midid messages explicitly for some content.
@@ -588,6 +598,7 @@ def find_quantization(ppq, time_series):
         note_value *= 2
     return 1  # Return a 1 for failed quantization means 1 tick resolution
 
+
 def find_duration_quantization(ppq, durations, qticks_note):
     '''
     The duration quantization is determined from the shortest note length.
@@ -602,7 +613,7 @@ def find_duration_quantization(ppq, durations, qticks_note):
         current_q = current_q * 3 // 2
         if ratio > 0.9:
             break
-        current_q = tmp_2 // 2
+        current_q = tmp_q // 2
     return current_q
 
 
@@ -650,3 +661,11 @@ def make_measures(ppq, time_signature_changes, max_time):
             b = 1
     measures.append(Beat(t, m, b))
     return measures
+
+
+def duration_to_note_name(duration, ppq):
+    for n, d in ctsConstants.DURATIONS:
+        if (ppq * n) // d == duration:
+            return ctsConstants.DURATIONS[(n, d)]
+    return 'unknown'
+

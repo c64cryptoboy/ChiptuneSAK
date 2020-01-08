@@ -1,12 +1,12 @@
 
 import collections
 import ctsSong
+from ctsConstants import PITCHES
 
 '''
 This file contains functions required to export  MidiSimple songs to ML64 format.
 '''
 
-PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 DURATION_NAMES = {
     # 2: '64', 3: '64d', 4: '32', 6: '32d',
     8: '16', 12: '16d', 16: '8', 24: '8d',
@@ -227,10 +227,13 @@ if __name__ == '__main__':
     in_song.remove_control_notes()
     in_song.quantize(in_song.ppq // 4, in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
+    print("(%s, %s)" % (
+    ctsSong.duration_to_note_name(in_song.qticks_notes, in_song.ppq),
+        ctsSong.duration_to_note_name(in_song.qticks_durations, in_song.ppq)))
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.eliminate_polyphony()
 
-    print(sum(len(t.notes) for t in in_song.tracks))
+    # print(sum(len(t.notes) for t in in_song.tracks))
 
     print(export_ML64(in_song, 0, mode='standard'))
     print('------------------')
