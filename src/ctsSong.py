@@ -13,6 +13,7 @@ import sys
 import bisect
 import collections
 import mido
+from fractions import Fraction
 from ctsErrors import *
 import ctsConstants
 
@@ -664,8 +665,5 @@ def make_measures(ppq, time_signature_changes, max_time):
 
 
 def duration_to_note_name(duration, ppq):
-    for n, d in ctsConstants.DURATIONS:
-        if (ppq * n) // d == duration:
-            return ctsConstants.DURATIONS[(n, d)]
-    return 'unknown'
-
+    f = Fraction(duration/ppq).limit_denominator(64)
+    return ctsConstants.DURATIONS.get(f, 'unknown')
