@@ -1,25 +1,28 @@
 import sys
 import collections
-import MidiSimple
+import ctsSong
+
 
 def find_xform(note1, note2):
     transpose = note2.note_num - note1.note_num
     stretch = note2.duration / note1.duration
     return (transpose, stretch)
 
+
 def xform(note, xform_params):
     transpose, stretch = xform_params
-    return MidiSimple.Note(note.note_num + transpose, 0, int(note.duration * stretch))
+    return ctsSong.Note(note.note_num + transpose, 0, int(note.duration * stretch))
+
 
 repeat = collections.namedtuple('repeat', ['Track', 'Start', 'smb', 'Repeat', 'rmb', 'Length', 'XForm'])
 
 if __name__ == '__main__':
-    in_song = MidiSimple.Song(sys.argv[1])
+    in_song = ctsSong.Song(sys.argv[1])
 
     in_song.remove_control_notes()
     q = in_song.estimate_quantization()
     print(q)
-    in_song.quantize() # Automatically quantize
+    in_song.quantize()  # Automatically quantize
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.eliminate_polyphony()
@@ -27,7 +30,7 @@ if __name__ == '__main__':
     results = []
     for it, t in enumerate(in_song.tracks):
         notes = t.notes
-        min_length = 4
+        min_length = 3
         n_notes = len(notes)
         print(t.name, n_notes)
 
@@ -36,7 +39,9 @@ if __name__ == '__main__':
                 params = find_xform(notes[first_position], notes[start_position])
                 for i in range(1, n_notes - start_position):
                     start_diff = (notes[start_position + i].start_time - notes[start_position + i - 1].start_time)
-                    first_diff = int((notes[first_position + i].start_time - notes[first_position + i - 1].start_time) * params[1] + 0.1)
+                    first_diff = int(
+                        (notes[first_position + i].start_time - notes[first_position + i - 1].start_time) * params[
+                            1] + 0.1)
                     first_note = notes[first_position + i]
                     tmpxf = xform(first_note, params)
                     start_note = notes[start_position + i]
@@ -60,7 +65,7 @@ if __name__ == '__main__':
     # for r in results:
     #     print("%4d %5d %8s %6d %8s %6d  %s" % (r))
     #
-    #quit()
+    # quit()
 
     for it, t in enumerate(in_song.tracks):
         last = []
@@ -72,8 +77,9 @@ if __name__ == '__main__':
             tmp = [r for r in results if r.Track == it and r.Start == i]
             for p in tmp:
                 for l in last:
-                    if l.Track == p.Track and l.Start == p.Start - 1 and l.Repeat == p.Repeat - 1 and l.Length == p.Length + 1:
-                        #print(l, p)
+                    if l.Track == p.Track and l.Start == p.Start - 1 \
+                            and l.Repeat == p.Repeat - 1 and l.Length == p.Length + 1:
+                        # print(l, p)
                         success = True
                         break
                 if success:
@@ -99,7 +105,3 @@ if __name__ == '__main__':
                         if tmp > loop_end:
                             loop_end = tmp
                     print("%d loops of %d or more (%d notes saved)" % (n + 1, j, j * n))
-
-
-
-
