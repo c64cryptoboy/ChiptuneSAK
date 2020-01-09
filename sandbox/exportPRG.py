@@ -1,18 +1,16 @@
 # Convert an ascii basic program into a Commodore PRG file
 #
-# Does not implement a grammar for BASIC, but will generate a valid PRG for a valid ascii BASIC program
+# Does not implement a grammar for BASIC, so no grammar checking, but will generate a valid PRG
+# for a valid ascii BASIC program
 #
-# TODO:  Next step is to code up the ASCII -> PETSCII translation
-#    https://pypi.org/project/cbmcodecs/
-#
-# TODO?: probably don't want to implement a syntax for control characters (e.g. {CYN})
+# TODO?: Probably don't want to implement a syntax for control characters (e.g. {CYN})
 #    https://www.c64-wiki.com/wiki/control_character
 #    Currently, one must simply use the petscii byte with the correct control code value
 
 """
 Some notes on Commodore BASIC:
-- Spaces are not required (and usually avoided), but will be inserted between line numbers and code
-  when LISTed
+- Spaces are not required (and usually avoided to save memory).  Spaces are not stored between line numbers
+  and code, but a space will be shown there when LISTed on a Commodore.
 - If not using command abbreviations, basic lines on c64 can be up to 80 characters, 88 on vic-20,
   and 160 on C128
 - Variable names can be long, but only first two characters are significant
@@ -20,10 +18,12 @@ Some notes on Commodore BASIC:
 """
 
 import sys
-from bytesUtil import littleEndianBytes, hexdump
+from bytesUtil import little_endian_bytes, hexdump
 
 basic_start_c64  = 2049 # $0801
 basic_start_c128 = 7169 # $1C01
+
+rem_len = len('rem')
 
 """
 I created these token dictionaries based on this:
@@ -85,70 +85,92 @@ c128_additional_tokens = {
 c128_tokens = {**c64_tokens, **c128_additional_tokens}
 
 
+def ascii_to_petscii(ascii_bytes):
+    result = []
+    for a_byte in ascii_bytes:
+        result.append(ab2pb(a_byte))
+    return bytes(result)
+
+
+# Convert an ascii char to a petscii char
+#
+# This treates lowercase letters as "unshifted", which means that, by default, lowercase
+# letters display as uppercase on the c64.  So this method simply swaps the cases around.
+#
+# No BASIC tokens are harmed in this conversion (tokens live at 0 and between 128 and 255)
+def ab2pb(ascii_byte):
+    if ascii_byte >= ord('a') and ascii_byte <= ord('z'):
+        return ascii_byte - 32
+
+    if ascii_byte >= ord('A') and ascii_byte <= ord('Z'):
+        return ascii_byte + 32    
+
+    # The rest are either correct (such as printable symbols <= ordinal 64, and a few above that, like
+    # '[', ']', and '^' (which turns into an up arrow)).  In many cases, there's no equivalent value to
+    # translate to (without using unicode, as https://pypi.org/project/cbmcodecs/ does), so the chars
+    # are just passed through unchanged.
+    return ascii_byte
+
+
 # Find first REM not inside quotes (anything after that is comment, and not tokenized)
 # (Note: REM neuters quotes, and quotes neuters REM)
-def findFirstREMOutsideQuotes(line):
-    inQuotes = False
-    remLen = len('rem')
-    for i in range(len(line)-remLen):
+def find_1st_rem_outside_quotes(line):
+    in_quotes = False
+    for i in range(len(line)-rem_len):
         if line[i] == '"':
-            inQuotes = not inQuotes
-        if inQuotes:
+            in_quotes = not in_quotes
+        if in_quotes:
             continue
-        if line[i:i+remLen] == 'rem':
+        if line[i:i+rem_len] == 'rem':
             return i
     return -1 # no rem outside of quotes
 
 
 def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
-    memPointer = start_of_basic
+    mem_pointer = start_of_basic
 
     # prg file load addr, gets stripped off during load
-    tokenizedLines = bytearray(littleEndianBytes(memPointer)) 
+    tokenized_lines = bytearray(little_endian_bytes(mem_pointer)) 
     
     lines = ascii_prg.strip().split("\n")
     for line in lines:
-        tokenizedLine = bytearray()
+        tokenized_line = bytearray()
 
         # strip off the line number
-        (lineNum, line) = line.split(" ", 1)
-        lineNum = int(lineNum)
-        line = " " + line # add the split char back in
+        (line_num, line) = line.split(" ", 1) # lazy coding assumes a space delimiter in the ascii BASIC
+        line_num = int(line_num)
+        line = line.lstrip()
 
         # Anything to the right of a REM doesn't get tokenized
-        remSplitLoc = findFirstREMOutsideQuotes(line)
-        if remSplitLoc != -1:
-            remBytes = bytearray(line[remSplitLoc+3:], 'latin-1')
-            line = line[:remSplitLoc+3]
+        rem_split_loc = find_1st_rem_outside_quotes(line)
+        if rem_split_loc != -1:
+            remBytes = ascii_to_petscii(bytearray(line[rem_split_loc+rem_len:], 'latin-1'))
+            line = line[:rem_split_loc+rem_len]
         else:
             remBytes = b''
 
         # divide up line into parts that do and don't get tokenized
         for i, part in enumerate(line.split('"')):
-            part = bytearray(part, 'latin-1')
+            part = bytearray(part + '"', 'latin-1') # add the split char back in
             if i%2 == 0: # if outside quotes, then tokenize
                 # do substitutions on longer tokens first (e.g., PRINT# before PRINT)
                 for aToken in sorted(basic_tokens, key=len, reverse=True):    
                     part = part.replace(aToken, basic_tokens[aToken])
-            tokenizedLine += part + b'"' # add the split char back in
-        tokenizedLine = tokenizedLine[:-1] + remBytes + b'\x00'
-        memPointer += len(tokenizedLine)+4 # start of next basic line
-        tokenizedLines += littleEndianBytes(memPointer) + littleEndianBytes(lineNum) + tokenizedLine
-    tokenizedLines += b'\x00\x00'
-    return tokenizedLines
+            tokenized_line += ascii_to_petscii(part)
+        tokenized_line = tokenized_line[:-1] + remBytes + b'\x00'
+        mem_pointer += len(tokenized_line)+4 # start of next basic line
+        tokenized_lines += little_endian_bytes(mem_pointer) + little_endian_bytes(line_num) + tokenized_line
+    tokenized_lines += b'\x00\x00'
+    return tokenized_lines
 
 
-def main():
-    ascii_prg = '''10 print "rem":rem "print": end
-30 printantorbug
-40 print"print"+chr$(67)+"chr$(67)"'''
+def ascii_to_c128prg(ascii_prg):
+    return ascii_to_prg(ascii_prg, basic_start_c128, c128_tokens)
 
-    a_prg = ascii_to_prg(ascii_prg, basic_start_c128, c128_tokens)
-    print(a_prg)
-    print(hexdump(a_prg))
 
-    
-if __name__ == "__main__":
-    main()
+def ascii_to_c64prg(ascii_prg):
+    return ascii_to_prg(ascii_prg, basic_start_c64, c64_tokens)
+
+
     
 	

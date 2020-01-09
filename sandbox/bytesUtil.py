@@ -1,15 +1,16 @@
+# Common byte functions
 
-def intToHex(anInt):
+def int_to_hex(anInt):
     return hex(anInt).split('x')[-1]
 
 
-def hexToInt(aHex):
+def hex_to_int(aHex):
     if aHex.startswith('$'):
         aHex = aHex[1:]
     return int(aHex,16)
 
 
-def littleEndianBytes(a16BitNum):
+def little_endian_bytes(a16BitNum):
     hi = a16BitNum//256
     lo = a16BitNum - hi*256
     return bytes([lo, hi])
