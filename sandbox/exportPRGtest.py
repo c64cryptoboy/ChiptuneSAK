@@ -6,6 +6,8 @@ class TestExportPRG(unittest.TestCase):
         # a two-line program which tests quotes and rem handling:
         ascii_prg = '10 print "rem":rem "print": end\n'
         ascii_prg += '1337 print"print"+chr$(67)+"chr$(67)"'
+
+        print(' '.join('%02X' % b for b in exportPRG.ascii_to_c128prg(ascii_prg)))
         
         # ground truth from VICE:
         bin_from_vice = b'\x01\x1C\x1C\x1C\x0A\x00\x99\x20\x22\x52\x45\x4D\x22\x3A\x8F\x20\x22\x50\x52'
