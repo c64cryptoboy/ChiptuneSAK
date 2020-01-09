@@ -666,4 +666,4 @@ def make_measures(ppq, time_signature_changes, max_time):
 
 def duration_to_note_name(duration, ppq):
     f = Fraction(duration/ppq).limit_denominator(64)
-    return ctsConstants.DURATIONS.get(f, 'unknown')
+    return ctsConstants.DURATIONS.get(f, '<unknown>')

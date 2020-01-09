@@ -88,6 +88,15 @@ def import_sng(gt_filename):
 
     """ From goattracker documentation:
     
+    3.1 Orderlist data
+    ------------------
+    
+    A song can consist of up to 32 subtunes. For each subtune's each channel, there
+    is an orderlist which determines in what order patterns are to be played. In
+    addition to pattern numbers, there can be TRANSPOSE & REPEAT commands and
+    finally there is a RST (RESTART) endmark followed by restart position. The
+    maximum length of an orderlist is 254 pattern numbers/commands + the endmark.
+   
     6.1.2 Song orderlists
     ---------------------
 
@@ -196,6 +205,14 @@ def import_sng(gt_filename):
     (wave_table, pulse_table, filter_table, speed_table) = tables
 
     """ From goattracker documentation:
+    
+    3.2 Pattern data
+    ----------------
+    
+    Patterns are single-channel only for flexibility & low memory use. They contain
+    the actual notes, instrument changes & sound commands. A pattern can have
+    variable length, up to 128 rows. There can be 208 different patterns in a song.
+
     6.1.5 Patterns header
     ---------------------
 
@@ -219,6 +236,22 @@ def import_sng(gt_filename):
                     2nd byte: Instrument number ($00-$3F)
                     3rd byte: Command ($00-$0F)
                     4th byte: Command databyte
+                    
+    Notes on tempo:  tracker processes one pattern row per tempo 'beat'
+    Tempo is a divisor; lower means faster; 3 seems to be the fastest available
+    - Probably a screen refresh divisor (60 Hz or 50 Hz)
+    Different tracks can have different tempos
+    
+    3.6 Miscellaneous tips
+    ----------------------
+    
+    - Patterns will take less memory the less there are command changes. When the
+      song is packed/relocated, for example a long vibrato or portamento command
+      needs to be stored only once as long as the parameter stays the same on
+      subsequent pattern rows.
+
+
+                    
     """
 
     num_patterns = sng_bytes[file_index]
