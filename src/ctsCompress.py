@@ -26,6 +26,13 @@ def apply_xform(note, xform):
 
 
 def find_all_repeats(song, min_repeat_length):
+    """
+    Finds all repeats in the song.  A repeat is a sequence of notes that have the same pitches and times
+    as a prior set of notes.  This algorithm finds transposed and stretched repeats as well.
+
+    The resulting set of repeats contains overlapping repeats, so it must be further processed to remove those and
+    choose an optimal set for compression.
+    """
     results = []
     for it, t in enumerate(song.tracks):
         notes = t.notes
@@ -57,6 +64,10 @@ def find_all_repeats(song, min_repeat_length):
 
 
 def find_best_compression(song, repeats, pattern_definition_overhead, pattern_definition_cost_note, pattern_play_cost):
+    """
+    Takes the set of repeats and finds the ones that give the most compression.  Currently this algorithm uses a
+    small number of parameters but it will be changed to an overall cost function.
+    """
     tmp = []
     pattern_starts = []
     current_track, current_start = 0, 0
@@ -118,48 +129,3 @@ if __name__ == '__main__':
 
     # print('\n'.join(str(r) for r in repeats))
 
-    # print("Track Start   m/b    Repeat   m/b    Length  XForm")
-    # print('----- ----- -------- ------ -------- ------  -----')
-    # for r in results:
-    #     print("%4d %5d %8s %6d %8s %6d  %s" % (r))
-    #
-    # quit()
-
-    # for it, t in enumerate(in_song.tracks):
-    #     last = []
-    #     notes = t.notes
-    #     n_notes = len(notes)
-    #     for i in range(0, n_notes + 1):
-    #         poss = []
-    #         success = False
-    #         tmp = [r for r in results if r.Track == it and r.Start == i]
-    #         for p in tmp:
-    #             for l in last:
-    #                 if l.Track == p.Track and l.Start == p.Start - 1 \
-    #                         and l.Repeat == p.Repeat - 1 and l.Length == p.Length + 1:
-    #                     # print(l, p)
-    #                     success = True
-    #                     break
-    #             if success:
-    #                 break
-    #             poss.append(p)
-    #         last = tmp
-    #         if len(poss) > 0:
-    #             print("Track Start   smb    Repeat   rmb    Length  XForm")
-    #             print('----- ----- -------- ------ -------- ------  -----')
-    #             for r in poss:
-    #                 print("%4d %5d %8s %6d %8s %6d  %s" % (r))
-    #             Lengths = sorted(set(p.Length for p in poss))
-    #             n = 0
-    #             last_loop = 0
-    #             for j in Lengths:
-    #                 tmp_loops = [r for r in poss if r.Length >= j]
-    #                 n = 1
-    #                 loop_end = tmp_loops[0].Start + tmp_loops[0].Length
-    #                 for r in tmp_loops[1:]:
-    #                     if r.Repeat >= loop_end:
-    #                         n += 1
-    #                     tmp = r.Start + r.Length
-    #                     if tmp > loop_end:
-    #                         loop_end = tmp
-    #                 print("%d loops of %d or more (%d notes saved)" % (n + 1, j, j * n))
