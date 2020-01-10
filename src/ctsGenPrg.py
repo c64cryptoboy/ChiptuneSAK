@@ -1,3 +1,4 @@
+# ctsGenPrg.pypi
 # Convert an ascii basic program into a Commodore PRG file
 #
 # Does not implement a grammar for BASIC, so no grammar checking, but will generate a valid PRG
@@ -18,7 +19,7 @@ Some notes on Commodore BASIC:
 """
 
 import sys
-from bytesUtil import little_endian_bytes, hexdump
+from ctsBytesUtil import little_endian_bytes, hexdump
 
 basic_start_c64  = 2049 # $0801
 basic_start_c128 = 7169 # $1C01
