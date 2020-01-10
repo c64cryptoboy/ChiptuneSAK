@@ -73,7 +73,6 @@ class SongTrack:
         except the track name message, which is uses to name itself.'''
 
         # Find the first note_on event and use its channel to set the channel for this track.
-        # TODO: put in a guard to split a track with more than one channel into multiple
         ch_msg = next((msg for msg in track if msg.type == 'note_on'), None)
         if ch_msg:
             self.channel = ch_msg.channel

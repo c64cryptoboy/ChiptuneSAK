@@ -16,13 +16,22 @@ class Repeat:
 
 
 def find_xform(note1, note2):
+    """
+    Finds the transform for transposition and time stretching to match two notes.
+    """
     transpose = note2.note_num - note1.note_num
+    # We are only interested in rational number stretches so we use the Fractions class here.
     stretch = fractions.Fraction(note2.duration / note1.duration).limit_denominator(64)
     return Transform(transpose, stretch)
 
 
 def apply_xform(note, xform):
+    """
+    Applies a transposition and stretching transform to a note, returning a new note
+    """
     return ctsSong.Note(note.note_num + xform.transpose, 0, int(note.duration * xform.stretch))
+
+# TODO:  Probably best to turn compression into a class so that it can preserve state about the song.
 
 
 def find_all_repeats(song, min_repeat_length):
@@ -38,6 +47,8 @@ def find_all_repeats(song, min_repeat_length):
         notes = t.notes
         n_notes = len(notes)
 
+        # For every potential loop start, find everywhere else in the track that matches the notes and durations
+        # for as long as possible.
         for first_position in range(0, n_notes - min_repeat_length):
             for start_position in range(first_position + min_repeat_length, n_notes - min_repeat_length + 1):
                 if first_position == 0 and start_position == 86:
@@ -72,13 +83,13 @@ def find_best_compression(song, repeats, pattern_definition_overhead, pattern_de
     pattern_starts = []
     current_track, current_start = 0, 0
     for r in sorted(repeats):
-
+        # The repeats are sorted so when the current track or starting note position changes we make a new group.
         if r.track != current_track or r.start != current_start:
             pattern_starts.append(tmp)
             tmp = []
             current_track, current_start = r.track, r.start
         tmp.append(r)
-    pattern_starts.append(tmp)
+    pattern_starts.append(tmp) # We now have a list of lists of patterns starting at each note position.
     for p in pattern_starts:
         current_track = p[0].track
         current_start = p[0].start
