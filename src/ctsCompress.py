@@ -6,7 +6,6 @@ import ctsSong
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
-
 @dataclass(init=True, repr=True, eq=True, order=True)
 class Repeat:
     track: int
@@ -33,7 +32,9 @@ def find_all_repeats(song, min_repeat_length):
         n_notes = len(notes)
 
         for first_position in range(0, n_notes - min_repeat_length):
-            for start_position in range(first_position + min_repeat_length, n_notes - min_repeat_length):
+            for start_position in range(first_position + min_repeat_length, n_notes - min_repeat_length + 1):
+                if first_position == 0 and start_position == 86:
+                    print(first_position, start_position)
                 xform = find_xform(notes[first_position], notes[start_position])
                 for i in range(1, n_notes - start_position):
                     start_diff = (notes[start_position + i].start_time - notes[start_position + i - 1].start_time)
@@ -50,11 +51,12 @@ def find_all_repeats(song, min_repeat_length):
                             i = 0
                         break
                 i += 1
-            if i >= min_repeat_length:
-                results.append(Repeat(it, first_position, start_position, i, xform))
+                if i >= min_repeat_length:
+                    results.append(Repeat(it, first_position, start_position, i, xform))
     return results
 
-def find_best_compression(repeats, pattern_definition_overhead, pattern_definition_cost_note, pattern_play_cost):
+
+def find_best_compression(song, repeats, pattern_definition_overhead, pattern_definition_cost_note, pattern_play_cost):
     tmp = []
     pattern_starts = []
     current_track, current_start = 0, 0
@@ -64,35 +66,39 @@ def find_best_compression(repeats, pattern_definition_overhead, pattern_definiti
             pattern_starts.append(tmp)
             tmp = []
             current_track, current_start = r.track, r.start
-
         tmp.append(r)
     pattern_starts.append(tmp)
     for p in pattern_starts:
+        current_track = p[0].track
+        current_start = p[0].start
         print("start = %d:" % p[0].start)
         lengths = sorted(set(r.length for r in p))
-        n = 0
-        last_loop = 0
+        print(lengths)
         for pattern_length in lengths:
+            print("length = %d" % pattern_length)
             tmp_loops = [r for r in p if r.length >= pattern_length]
             poss = []
             nloops = 1
-            loop_end = tmp_loops[0].start + tmp_loops[0].length
+            loop_end = tmp_loops[0].start + pattern_length
             for r in tmp_loops:
                 if r.repeat_start >= loop_end:
                     nloops += 1
                     poss.append(r)
-                tmp = r.start + r.length
-                if tmp > loop_end:
-                    loop_end = tmp
+                    loop_end = r.repeat_start + pattern_length
             cost = pattern_definition_overhead + pattern_definition_cost_note * pattern_length + nloops * pattern_play_cost
             total = pattern_definition_overhead + pattern_definition_cost_note * (pattern_length * nloops)
             net = total - cost
+            coverage = pattern_length * nloops
+            coverage_pct = coverage / len(song.tracks[p[0].track].notes) * 100.
             if net > 0:
                 print("%d loops of %d cost = %d for %d base (net %d)" % (nloops, pattern_length, cost, total, net))
-                print('   ' + '\n   '.join(str(rp) for rp in poss))
-
-
-
+                print("Coverage = %d notes (%.1lf%% of track)" % (coverage, coverage_pct))
+                print("Track Start   m/b    Repeat   m/b    Length  XForm")
+                print('----- ----- -------- ------ -------- ------  -----')
+                for rp in poss:
+                    smb = str(song.get_measure_beat(song.tracks[current_track].notes[rp.start].start_time))
+                    rmb = str(song.get_measure_beat(song.tracks[current_track].notes[rp.repeat_start].start_time))
+                    print("%4d %5d %8s %6d %8s %6d  %s" % (rp.track, rp.start, smb, rp.repeat_start, rmb, pattern_length, str(rp.xform)))
 
 
 if __name__ == '__main__':
@@ -108,11 +114,11 @@ if __name__ == '__main__':
 
     repeats = find_all_repeats(in_song, 2)
 
-    find_best_compression(repeats, 1, 4, 1)
+    find_best_compression(in_song, repeats, 1, 4, 1)
 
-    # print('\n'.join(str(r) for r in repeats if r.xform.stretch == 1))
+    # print('\n'.join(str(r) for r in repeats))
 
-    # print("Track Start   smb    Repeat   rmb    Length  XForm")
+    # print("Track Start   m/b    Repeat   m/b    Length  XForm")
     # print('----- ----- -------- ------ -------- ------  -----')
     # for r in results:
     #     print("%4d %5d %8s %6d %8s %6d  %s" % (r))
