@@ -13,6 +13,7 @@ import sys
 import bisect
 import collections
 import mido
+import more_itertools as moreit
 from fractions import Fraction
 from ctsErrors import *
 import ctsConstants
@@ -30,11 +31,18 @@ class Note:
     a velocity. 
     '''
 
-    def __init__(self, note, start, duration, velocity=100):
+    def __init__(self, note, start, duration, velocity=100, rest=False):
         self.note_num = note  # MIDI note number
         self.start_time = start  # In ticks since tick 0
         self.duration = duration  # In ticks
         self.velocity = velocity  # MIDI velocity 0-127
+        self.is_rest = rest
+
+    def is_rest(self):
+        return self.rest
+
+    def is_note(self):
+        return not self.rest
 
     def __eq__(self, other):
         ''' Two notes are equal when their note numbers and durations are the same '''
@@ -199,6 +207,9 @@ class SongTrack:
         self.notes = ret_notes
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         return (deleted, truncated)
+
+    def is_polyphonic(self):
+        return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
 
     def remove_control_notes(self, control_max=8):
         '''
@@ -405,6 +416,9 @@ class Song:
             deleted, truncated = t.eliminate_polyphony()
             self.stats['Truncated'] += truncated
             self.stats['Deleted'] += deleted
+
+    def is_polyphonic(self):
+        return any(t.is_polyphonic() for t in self.tracks)
 
     def remove_control_notes(self, control_max=8):
         ''' 

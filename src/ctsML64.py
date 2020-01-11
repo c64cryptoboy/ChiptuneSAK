@@ -224,14 +224,18 @@ def export_ML64_measures(in_song, octave_offset):
 if __name__ == '__main__':
     import sys
     in_song = ctsSong.Song(sys.argv[1])
+    print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
+
     in_song.remove_control_notes()
     in_song.quantize(in_song.ppq // 4, in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
+
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     print("(%s, %s)" % (
     ctsSong.duration_to_note_name(in_song.qticks_notes, in_song.ppq),
         ctsSong.duration_to_note_name(in_song.qticks_durations, in_song.ppq)))
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.eliminate_polyphony()
+    print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
 
     # print(sum(len(t.notes) for t in in_song.tracks))
 
