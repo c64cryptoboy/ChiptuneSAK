@@ -339,8 +339,6 @@ class Song:
         self.tempo_changes = sorted(self.tempo_changes)
         self.stats['Tempo Changes'] = len(self.tempo_changes)
 
-        self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
-        self.stats['Measures'] = max(m.measure for m in self.measure_beats)
         # Set the tempo to that specified by the first tempo event
         if len(self.tempo_changes) > 0:
             self.bpm = self.tempo_changes[0].bpm
@@ -352,12 +350,16 @@ class Song:
         for track in self.midi_note_tracks:
             self.tracks.append(SongTrack(self, track))
 
+        # Finally, generate measures and beats
+        self.end_time = max(n.start_time + n.duration for t in self.tracks for n in t.notes)
+        self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
+        self.stats['Measures'] = max(m.measure for m in self.measure_beats)
+
     def get_meta(self, track, is_metatrack=False):
         ''' 
         Process meta messages in track.
         '''
         current_time = 0
-        self.end_time = 0
         for msg in track:
             current_time += msg.time
             if msg.type == 'time_signature':
@@ -371,8 +373,6 @@ class Song:
             elif msg.is_meta and is_metatrack:
                 self.meta_track.append(OtherMidi(current_time, msg))
             # Find the very last meta message (which should be an end_track) and use it as the end time.
-            if current_time > self.end_time:
-                self.end_time = current_time
 
     def estimate_quantization(self):
         ''' 
@@ -455,7 +455,7 @@ class Song:
         self.qticks_notes = (self.qticks_notes * n) // d
         self.qticks_durations = (self.qticks_durations * n) // d
         # Finally finally fix the last event time
-        self.end_time = (self.end_time * num) // d
+        self.end_time = max(n.start_time + n.duration for t in self.tracks for n in t.notes)
         # Things have changed to re-do the measures calculation
         self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
 
@@ -673,7 +673,9 @@ def make_measures(ppq, time_signature_changes, max_time):
         if b > last.num:
             m += 1
             b = 1
-    measures.append(Beat(t, m, b))
+    while b <= last.num:
+        measures.append(Beat(t, m, b))
+        b += 1
     return measures
 
 

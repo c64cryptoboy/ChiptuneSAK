@@ -96,17 +96,24 @@ class ML64Note:
         else:
             return '??'
 
+
 def export_ML64(in_song, octave_offset=0, mode='standard'):
     ''' Exports a MidiSimple song to ML64 format.
+        Only the first letter of the mode is important.  Can be:
+          standard - minimum number of notes with approximate measure markings
+          compact -  minimum size
+          measures - exact measure markings and all notes fit into measures
         VERY IMPORTANT:  The song MUST be quantized to 16th time_series (ppq / 4) and have polyphony and control time_series removed
                          before calling this function.
     '''
-    if mode.lower() == 'measures':
+    mode = mode.lower()[0]
+    if mode == 'm':
         return export_ML64_measures(in_song, octave_offset)
 
     overall_stats = collections.Counter()
     ppq = in_song.ppq
-    output = ['song(1)']
+    output = ['ML64(1.3)']
+    output.append('song(1)')
     output.append('tempo(%d)' % in_song.bpm)
     for it, t in enumerate(in_song.tracks):
         output.append('track(%d)' % (it + 1))
@@ -127,23 +134,36 @@ def export_ML64(in_song, octave_offset=0, mode='standard'):
             tmp_str = 'i(%d)' % p[1].program
             track_ML64.append((p[0], PATCH_PRI, tmp_str))
             overall_stats['program'] += 1
-        if mode == 'standard':
+        if mode == 's':
+            last_note_end = max(n.start_time + n.duration for t in in_song.tracks for n in t.notes)
             measures = [m[0] for m in in_song.measure_beats if m[2] == 1]
             for im, m in enumerate(measures):
-                tmp_str = '\n[m%d]' % (im + 1)
-                track_ML64.append((m, MEASURE_PRI, tmp_str))
+                if m < last_note_end:
+                    tmp_str = '\n[m%d]' % (im + 1)
+                    track_ML64.append((m, MEASURE_PRI, tmp_str))
         track_ML64.sort(key=lambda e: (e[:2]))
         output.append(''.join(n[-1] for n in track_ML64).strip())
+        output.append('track(-)')
     in_song.stats['ML64'] = overall_stats
+    output.append('song(-)')
+    output.append('ML64(-)')
     return '\n'.join(output)
 
+
 def export_ML64_measures(in_song, octave_offset):
+    """
+    Exports ML64 delimited by measures.  Every measure be EXACTLY filled with ML64 notes; any notes that
+    cross measure boundaries will be split into more than one and continues used.
+    """
     overall_stats = collections.Counter()
     ppq = in_song.ppq
-    output = ['song(1)']
+    output = ['ML64(1.3)']
+    output.append('song(1)')
     output.append('tempo(%d)' % in_song.bpm)
-    measures = [m[0] for m in in_song.measure_beats if m[2] == 1]
-    measures.append(2 * measures[-1] - measures[-2])
+    measures = [m.start_time for m in in_song.measure_beats if m.beat == 1]
+    last_note_end = max(n.start_time + n.duration for t in in_song.tracks for n in t.notes)
+    while measures[-1] < last_note_end:
+        measures.append(2 * measures[-1] - measures[-2])
     print(len(measures), ' measures')
     for it, t in enumerate(in_song.tracks):
         output.append('track(%d)' % (it + 1))
@@ -161,18 +181,18 @@ def export_ML64_measures(in_song, octave_offset):
                 leftover_flag = True
             # If the measure is empty insert a note with pitch 0 (rest)
             elif len(measure_notes) == 0:
-                measure_notes.insert(0, MidiSimple.Note(0, last_measure, m - last_measure, 0))
+                measure_notes.insert(0, ctsSong.Note(0, last_measure, m - last_measure, 0))
             # If the measure starts with a rest, insert a rest.  THe logic below will deal with it if it's longer than
             #  the measure.
             elif measure_notes[0].start_time > last_measure:
-                measure_notes.insert(0, MidiSimple.Note(0, last_measure, measure_notes[0].start_time - last_measure, 0))
+                measure_notes.insert(0, ctsSong.Note(0, last_measure, measure_notes[0].start_time - last_measure, 0))
             n_notes = len(measure_notes)
             for i_n, n in enumerate(measure_notes):
                 note_end = n.start_time + n.duration
                 # Checking for note past end of measure has to come first in case the leftover note from the
                 # last measure is long than this entire measure, in which case it gets truncated and carried yet again.
                 if note_end > m:
-                    leftover = MidiSimple.Note(n.note_num, m, note_end - m, n.velocity)
+                    leftover = ctsSong.Note(n.note_num, m, note_end - m, n.velocity)
                     note_end = m
                 # Now we can emit any leftover note because it's guaranteed to fit into the measure.
                 if leftover_flag:
@@ -216,8 +236,11 @@ def export_ML64_measures(in_song, octave_offset):
             measure_ML64.sort(key=lambda e: (e[:2]))
             track_ML64.append(''.join(n[-1] for n in measure_ML64))
         output.append('\n'.join(track_ML64))
+        output.append('track(-)')
 
     in_song.stats['ML64'] = overall_stats
+    output.append('song(-)')
+    output.append('ML64(-)')
     return '\n'.join(output)
 
 
@@ -239,6 +262,6 @@ if __name__ == '__main__':
 
     # print(sum(len(t.notes) for t in in_song.tracks))
 
-    print(export_ML64(in_song, 0, mode='standard'))
+    print(export_ML64(in_song, 0, mode='m'))
     print('------------------')
     print('\n'.join('%9ss: %d' % (k, in_song.stats['ML64'][k]) for k in in_song.stats['ML64']))
