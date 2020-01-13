@@ -6,6 +6,8 @@
 #
 
 import sys
+sys.path.append('../src')
+from ctsErrors import *
 from recordtype import recordtype
 
 """
@@ -358,16 +360,16 @@ def unroll_orderlist(an_orderlist):
         a_byte = an_orderlist[i]
 
         # process pattern number
-        if repeat > 0 and a_byte > 207:
-            sys.exit("error: repeat in orderlist should be immediatly followed by a pattern number")
-        if a_byte <= 207:
+        if repeat > 0 and a_byte >= 0xD0:
+            raise ChiptuneSAKException("error: repeat in orderlist should be immediately followed by a pattern number")
+        if a_byte < 0xD0:
             for i in range(repeat+1):  # loops anywhere from 1 to 17 times
                 unroll_pattern(a_byte, transpose)
             repeat = 0
             continue
 
         # process RST + restart position
-        if a_byte == 255:  # RST
+        if a_byte == 0xFF:  # RST
             # TODO: understand if looping can be enabled or disabled with choice of restart position
             restart_position = an_orderlist[i+1]
             break
@@ -378,18 +380,18 @@ def unroll_orderlist(an_orderlist):
         #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
         #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
         #     So I assume byte 224 is never used in orderlists
-        assert a_byte != 224, "I don't believe byte 224 should occur in the orderlist"
+        assert a_byte != 0xE0, "I don't believe byte E0 should occur in the orderlist"
         # This would be more clear (IMO) as: if a_byte >> 4 == 0xD:
-        if 225 <= a_byte <= 254:  # 240 = no transposition
-            transpose = a_byte - 239  # transpose range is -15 to +14
+        if 0xE1 <= a_byte < 0xFF:  # E0 = no transposition
+            transpose = a_byte - 0xEF  # transpose range is -15 to +14
             continue
 
         # process repeat
         # Repeat values 1 to 16.  Instead of R0..RF, it's R1..RF,R0
         #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
         # This would be more clear (IMO) as: if a_byte >> 4 == 0xE:
-        if 208 <= a_byte <= 223:
-            repeat = a_byte - 207  # repeat range is 1 to 16
+        if 0xD0 <= a_byte < 0xE0:
+            repeat = a_byte - 0xCF  # repeat range is 1 to 16
             continue
             
 
