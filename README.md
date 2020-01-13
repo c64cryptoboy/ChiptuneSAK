@@ -51,4 +51,10 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * SID-Wizard 1.8 (dual / triple SID)
 * RobTracker v1.11 (publicly released Dec 25th. 2019)
 
-
+## Requirements/Building
+* Python 3.7+
+* pip install
+   * recordtype
+   * matplotlib
+   * numpy
+   * more_itertools

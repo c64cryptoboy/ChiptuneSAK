@@ -18,23 +18,41 @@ Style notes to self (delete later):
 
 debug = False
 
-# Define structures to parse data into
+# Goat tracker uses the term "song" to mean a collection of indendently-playable subtunes
+MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
+MAX_ELM_PER_ORDERLIST = 255 # at minimum, must contain the endmark
+MAX_INSTR_PER_SONG = 63
+MAX_PATTERNS_PER_SONG = 208
+MAX_ROWS_PER_PATTERN = 128
 
-GtSongHeader = recordtype('GtSongHeader', [('id', ''), ('song_name', ''), ('author_name', ''), ('copyright', ''),
-                                           ('num_subtunes', 0)])
+
+class GTSong:
+    def __init__(self):
+        self.headers = GtHeader()
+        self.subtuneOrderLists = [] # list of GtSubtuneOrderList instances
+        self.instruments = [] # list of GtInstrument instances
+        self.wave_table = GtTable()
+        self.pulse_table = GtTable()
+        self.filter_table = GtTable()
+        self.speed_table = GtTable()
+        self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances
+
+GtHeader = recordtype('GtHeader',
+    [('id', ''), ('song_name', ''), ('author_name', ''), ('copyright', ''), ('num_subtunes', 0)])
 
 GtSubtuneOrderList = recordtype('GtSubtuneOrderList',
-                                [('ch1OrderList', b''), ('ch2OrderList', b''), ('ch3OrderList', b'')])
+    [('ch1OrderList', b''), ('ch2OrderList', b''), ('ch3OrderList', b'')])
 
 GtInstrument = recordtype('GtInstrument',
-                          [('inst_num', 0), ('attack_decay', 0), ('sustain_release', 0), ('wave_ptr', 0),
-                           ('pulse_ptr', 0), ('filter_ptr', 0), ('vib_speetable_ptr', 0), ('vib_delay', 0),
-                           ('gateoff_timer', 0),
-                           ('hard_restart_1st_frame_wave', 0), ('inst_name', '')])
+    [('inst_num', 0), ('attack_decay', 0), ('sustain_release', 0), ('wave_ptr', 0), ('pulse_ptr', 0),
+    ('filter_ptr', 0), ('vib_speetable_ptr', 0), ('vib_delay', 0), ('gateoff_timer', 0),
+    ('hard_restart_1st_frame_wave', 0), ('inst_name', '')])
 
-GtTable = recordtype('GtTable', [('row_cnt', 0), ('left_col', b''), ('right_col', b'')])
+GtTable = recordtype('GtTable',
+    [('row_cnt', 0), ('left_col', b''), ('right_col', b'')])
 
-GtPatternRow = recordtype('GtPatternRow', [('note_data', 0), ('inst_num', 0), ('command', 0), ('command_data', 0)])
+GtPatternRow = recordtype('GtPatternRow',
+    [('note_data', 0), ('inst_num', 0), ('command', 0), ('command_data', 0)])
 
 
 def get_chars(in_bytes, trim_nulls=True):
@@ -72,7 +90,9 @@ def import_sng(gt_filename):
     with open(gt_filename, 'rb') as f:
         sng_bytes = f.read()
 
-    header = GtSongHeader()
+    a_song = GTSong()
+
+    header = GtHeader()
 
     header.id = sng_bytes[0:4]
     assert header.id == b'GTS5', "Error: Did not find magic header used by goattracker sng files"
@@ -83,7 +103,8 @@ def import_sng(gt_filename):
     header.num_subtunes = sng_bytes[100]
 
     file_index = 101
-
+    a_song.headers = header
+    
     if debug: print("\nDebug: %s" % header)
 
     """ From goattracker documentation:
@@ -96,7 +117,7 @@ def import_sng(gt_filename):
     addition to pattern numbers, there can be TRANSPOSE & REPEAT commands and
     finally there is a RST (RESTART) endmark followed by restart position. The
     maximum length of an orderlist is 254 pattern numbers/commands + the endmark.
-   
+
     6.1.2 Song orderlists
     ---------------------
 
@@ -128,7 +149,8 @@ def import_sng(gt_filename):
         file_index += len(order_list.ch3OrderList) + 1
 
         orderlists.append(order_list)
-
+    a_song.subtuneOrderLists = orderlists
+    
     if debug: print("\nDebug: %s" % orderlists)
 
     """ From goattracker documentation:
@@ -175,6 +197,7 @@ def import_sng(gt_filename):
         file_index += 16
 
         instruments.append(an_instrument)
+    a_song.instruments = instruments
 
     if debug: print("\nDebug: %s" % instruments)
 
@@ -202,7 +225,8 @@ def import_sng(gt_filename):
         file_index += a_table.row_cnt * 2 + 1
 
     if debug: print("\nDebug: %s" % tables)
-    (wave_table, pulse_table, filter_table, speed_table) = tables
+    (a_song.wave_table, a_song.pulse_table, a_song.filter_table, a_song.speed_table) = tables
+
 
     """ From goattracker documentation:
     
@@ -250,8 +274,6 @@ def import_sng(gt_filename):
       needs to be stored only once as long as the parameter stays the same on
       subsequent pattern rows.
 
-
-                    
     """
 
     num_patterns = sng_bytes[file_index]
@@ -270,12 +292,119 @@ def import_sng(gt_filename):
         patterns.append(a_pattern)
         if debug: print(
             "\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
+    a_song.patterns = patterns
 
     assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
 
+    return a_song
+
+
+def unroll_pattern(pattern_num, transpose):
+    pass
+
+    # range checking: up to transpose + 3 is allowed on a G#7 (creating B-7)
+
+    # TODO: Turn documentation below into code:
+
+    """
+    In place of a normal note, there can also be one of these special "notes":
+    ... Rest
+    --- Key off (clear gatebit mask)
+    +++ Key on (set gatebit mask)
+    The actual state of the gatebit will be the gatebit mask ANDed with data from
+    the wavetable. A key on cannot set the gatebit if it was explicitly cleared
+    at the wavetable.
+
+    Command 0XY: Do nothing. Databyte will always be $00.
+    Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the
+    speedtable.
+    Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the
+    speedtable.
+    Command 3XY: Toneportamento. Raise or lower pitch until target note has been
+    reached. XY is an index to a 16-bit speed value in the
+    speedtable, or $00 for "tie-note" effect (move pitch instantly to
+    target note)
+    Command 4XY: Vibrato. XY is an index to the speed table, where left side
+    determines how long until the direction changes (speed)
+    and right side determines the amount of pitch change on each tick
+    (depth).
+    Command 5XY: Set attack/decay register to value XY.
+    Command 6XY: Set sustain/release register to value XY.
+    Command 7XY: Set waveform register to value XY. If a wavetable is actively
+    changing the channel's waveform at the same time, will be
+    ineffective.
+    Command 8XY: Set wavetable pointer. $00 stops wavetable execution.
+    Command 9XY: Set pulsetable pointer. $00 stops pulsetable execution.
+    Command AXY: Set filtertable pointer. $00 stops filtertable execution.
+    Command BXY: Set filter control. X is resonance and Y is channel bitmask.
+    $00 turns filter off and also stops filtertable execution.
+    Command CXY: Set filter cutoff to XY. Can be ineffective if the filtertable is
+    active and also changing the cutoff.
+    Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
+    copied to the timing mark location, which is playeraddress+$3F.
+    Command EXY: Funktempo. XY is an index to the speedtable, tempo will alternate
+    between left side value and right side value on subsequent pattern
+    steps. Sets the funktempo active on all channels, but you can use
+    the next command to override this per-channel.
+    Command FXY: Set tempo. Values $03-$7F set tempo on all channels, values $83-
+    $FF only on current channel (subtract $80 to get actual tempo).
+    Tempos $00-$01 recall the funktempo values set by EXY command.
+    """
+    
+
+def unroll_orderlist(an_orderlist):
+    transpose = 0
+    repeat = 0
+    for i in range(len(an_orderlist)):
+        a_byte = an_orderlist[i]
+
+        # process pattern number
+        if repeat > 0 and a_byte > 207:
+            sys.exit("error: repeat in orderlist should be immediatly followed by a pattern number")
+        if a_byte <= 207:
+            for i in range(repeat+1): # loops anywhere from 1 to 17 times
+                unroll_pattern(a_byte, transpose)
+            repeat = 0
+            continue
+
+        # process RST + restart position
+        if a_byte == 255: # RST
+            # TODO: understand if looping can be enabled or disabled with choice of restart position
+            restart_position = an_orderlist[i+1]
+            break
+
+        # process transpose
+        # Transpose is in half steps.  Transposes changes are absolute, not additive.
+        #   If transpose combined with repeat, transpose must come before a repeat
+        #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
+        #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
+        #     So I assume byte 224 is never used in orderlists
+        assert a_byte != 224, "I don't believe byte 224 should occur in the orderlist"
+        if a_byte >= 225 and a_byte <= 254: # 240 = no transposition
+            transpose = a_byte - 239 # transpose range is -15 to +14
+            continue
+
+        # process repeat
+        # Repeat values 1 to 16.  Instead of R0..RF, it's R1..RF,R0
+        #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
+        if a_byte >= 208 and a_byte <= 223: 
+            repeat = a_byte - 207 # repeat range is 1 to 16
+            continue
+            
+
+def unroll(a_song):   
+    tune = a_song.subtuneOrderLists[0] # TODO: Only processing the first subtune for now...
+
+    unroll_orderlist(tune.ch1OrderList)
+    #unroll_orderlist(tune.ch2OrderList)
+    #unroll_orderlist(tune.ch3OrderList)
+    
 
 def main():
-    import_sng("consultant.sng")
+    #a_song = import_sng("consultant.sng")
+    a_song = import_sng("test.sng")
+    unroll(a_song)
+    
     exit("Done")
 
 
