@@ -26,10 +26,10 @@ Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
 
 
 class Note:
-    '''
+    """
     This class represents a note in human-friendly form:  as a note with a start time, a duration, and
     a velocity. 
-    '''
+    """
 
     def __init__(self, note, start, duration, velocity=100, rest=False):
         self.note_num = note  # MIDI note number
@@ -45,7 +45,7 @@ class Note:
         return not self.rest
 
     def __eq__(self, other):
-        ''' Two notes are equal when their note numbers and durations are the same '''
+        """ Two notes are equal when their note numbers and durations are the same """
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
@@ -53,13 +53,13 @@ class Note:
 
 
 class SongTrack:
-    '''
+    """
     This class represents a track (or a voice) from a song.  It is basically a list of Notes with some
     other context information.
 
     ASSUMPTION: The track contains notes for only ONE instrument (midi channel).  Tracks with notes
     from more than one instrument will produce undefined results.
-    '''
+    """
 
     # Define the message types to preserve as a static variable
     otherMessages = ['program_change', 'pitchwheel']
@@ -77,8 +77,10 @@ class SongTrack:
             self.import_midi_track(track)
 
     def import_midi_track(self, track):
-        ''' Parse a MIDI track into notes.  This process loses any meta messages in the track
-        except the track name message, which is uses to name itself.'''
+        """
+        Parse a MIDI track into notes.  This process loses any meta messages in the track
+        except the track name message, which is uses to name itself.
+        """
 
         # Find the first note_on event and use its channel to set the channel for this track.
         ch_msg = next((msg for msg in track if msg.type == 'note_on'), None)
@@ -137,14 +139,14 @@ class SongTrack:
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
 
     def estimate_quantization(self):
-        ''' 
+        """ 
         This method estimates the optimal quantization for note starts and durations from the note
         data itself. This version only uses the current track for the optimization.  If the track
         is a part with long notes or not much movement, I recommend using the get_quantization()
         on the entire song instead. Many pieces have fairly well-defined note start spacing, but 
         no discernable duration quantization, so in that case the default is half the note start 
         quantization.  These values are easily overridden.
-        '''
+        """
         tmpNotes = [n.start_time for n in self.notes]
         self.qticks_notes = find_quantization(self.song.ppq, tmpNotes)
         tmpNotes = [n.duration for n in self.notes]
@@ -154,11 +156,11 @@ class SongTrack:
         return (self.qticks_notes, self.qticks_durations)
 
     def quantize(self, qticks_notes=None, qticks_durations=None):
-        '''
+        """
         This method applies quantization to both note start times and note durations.  If you 
         want either to remain unquantized, simply specify either qticks parameter to be 1, so
         that it will quantize to the nearest tick (i.e. leave everything unchanged)
-        '''
+        """
         note_start_changes = []
         duration_changes = []
         # Update the members to reflect the quantization applied
@@ -185,11 +187,11 @@ class SongTrack:
         return (note_start_changes, duration_changes)
 
     def eliminate_polyphony(self):
-        '''
+        """
         This function eliminates polyphony, so that in each channel there is only one note
         active at a time. If a chord is struck all at the same time, it will retain the highest
         note.
-        '''
+        """
         deleted = 0
         truncated = 0
         ret_notes = []
@@ -212,18 +214,18 @@ class SongTrack:
         return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
 
     def remove_control_notes(self, control_max=8):
-        '''
+        """
         Removes all MIDI notes with values less than or equal to control_max.
         Some MIDI devices and applications use these extremely low notes to
         convey patch change or other information, so removing them (especially 
         you don't want polyphony) is a good idea.
-        '''
+        """
         self.notes = [n for n in self.notes if n.note_num > control_max]
 
     def modulate(self, num, denom):
-        '''
+        """
         Modulates this track metrically by a factor of num / denom
-        '''
+        """
         # Change the start times of all the "other" events
         for i, (t, m) in enumerate(self.other):
             t = (t * num) // denom
@@ -236,9 +238,9 @@ class SongTrack:
             self.notes[i] = n
 
     def to_midi(self):
-        '''
+        """
         Convert the SongTrack to a midi track.
-        '''
+        """
         midiTrack = mido.MidiTrack()
         events = []
         for n in self.notes:
@@ -271,11 +273,11 @@ class SongTrack:
 
 
 class Song:
-    '''
+    """
     This class represents a song. It stores notes in an intermediate representation that
     approximates traditional music notationh (as pitch-duration).  It also stores other 
     information, such as time signatures and tempi, in a similar way.
-    '''
+    """
 
     def __init__(self, filename=None):
         self.reset_all()
@@ -283,9 +285,9 @@ class Song:
             self.import_midi(filename)
 
     def reset_all(self):
-        ''' 
+        """ 
         Clear all tracks and reinitialize to default values
-        '''
+        """
         self.ppq = 480  # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
         self.qticks_notes = self.ppq  # Quantization for note starts, in ticks
         self.qticks_durations = self.ppq  # Quantization for note durations, in ticks
@@ -300,9 +302,9 @@ class Song:
         self.stats = {}  # Statistics about the song
 
     def import_midi(self, filename):
-        ''' 
+        """ 
         Open and initialize from a MIDI Type 0 or 1 file.
-        '''
+        """
         # Clear everything
         self.reset_all()
 
@@ -356,9 +358,9 @@ class Song:
         self.stats['Measures'] = max(m.measure for m in self.measure_beats)
 
     def get_meta(self, track, is_metatrack=False):
-        ''' 
+        """ 
         Process meta messages in track.
-        '''
+        """
         current_time = 0
         for msg in track:
             current_time += msg.time
@@ -375,12 +377,12 @@ class Song:
             # Find the very last meta message (which should be an end_track) and use it as the end time.
 
     def estimate_quantization(self):
-        ''' 
+        """ 
         This method estimates the optimal quantization for note starts and durations from the note
         data itself. This version all note data in the tracks. Many pieces have no discernable 
         duration quantization, so in that case the default is half the note start quantization.  
         These values are easily overridden.
-        '''
+        """
         tmp_notes = [n.start_time for t in self.tracks for n in t.notes]
         self.qticks_notes = find_quantization(self.ppq, tmp_notes)
         tmp_durations = [n.duration for t in self.tracks for n in t.notes]
@@ -390,11 +392,11 @@ class Song:
         return (self.qticks_notes, self.qticks_durations)
 
     def quantize(self, qticks_notes=None, qticks_durations=None):
-        '''
+        """
         This method applies quantization to both note start times and note durations.  If you
         want either to remain unquantized, simply specify a qticks parameter to be 1 (quantization
         of 1 tick).
-        '''
+        """
         self.stats['Note Start Deltas'] = collections.Counter()
         self.stats['Duration Deltas'] = collections.Counter()
         if qticks_notes:
@@ -407,9 +409,9 @@ class Song:
             self.stats['Duration Deltas'].update(duration_changes)
 
     def eliminate_polyphony(self):
-        '''
+        """
         Eliminate polyphony from all tracks.
-        '''
+        """
         self.stats['Truncated'] = 0
         self.stats['Deleted'] = 0
         for t in self.tracks:
@@ -421,19 +423,19 @@ class Song:
         return any(t.is_polyphonic() for t in self.tracks)
 
     def remove_control_notes(self, control_max=8):
-        ''' 
+        """ 
         Some MIDI programs use extremely low notes as a signaling mechanism.
         This method removes notes with pitch <= control_max from all tracks.
-        '''
+        """
         for t in self.tracks:
             t.remove_control_notes(control_max)
 
     def modulate(self, num, denom):
-        '''
+        """
         This method performs metric modulation.  It does so by multiplying the length of all notes by num/denom,
         and also automatically adjusts the time signatures and tempos such that the resulting music will sound
         identical to the original.
-        '''
+        """
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
@@ -460,11 +462,11 @@ class Song:
         self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
 
     def get_measure_beat(self, start_time):
-        '''
+        """
         This method returns a (measure, beat) tuple for a given time; the time is greater than or
         equal to the returned measure and beat but less than the next.  The result should be
         interpreted as the time being during the measure and beat returned.
-        '''
+        """
         # Make a list of start times from the list of measure-beat times.
         tmp = [m.start_time for m in self.measure_beats]
         # Find the index of the desired time in the list.
@@ -473,10 +475,10 @@ class Song:
         return (self.measure_beats[pos - 1].measure, self.measure_beats[pos - 1].beat)
 
     def split_midi_zero_into_tracks(self):
-        '''
+        """
         For MIDI Type 0 files, split the notes into tracks.  To accomplish this, we
         move the metadata into Track 0 and then assign tracks 1-16 to the note data.
-        '''
+        """
         last_times = [0 for i in range(17)]
         tracks = [[] for i in range(17)]
         current_time = 0
@@ -499,9 +501,9 @@ class Song:
         self.in_midi.tracks = [t for t in tracks if len(t) > 0]
 
     def meta_to_midi_track(self):
-        '''
+        """
         Exports metadata to a MIDI track.
-        '''
+        """
         midi_track = mido.MidiTrack()
         events = []
         #  Put all the time signature changes into the track.
@@ -527,10 +529,10 @@ class Song:
         return midi_track
 
     def export_midi(self, midi_filename):
-        '''
+        """
         Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
         is tied to many midi concepts and uses midid messages explicitly for some content.
-        '''
+        """
         out_midi_file = mido.MidiFile(ticks_per_beat=self.ppq)
         out_midi_file.tracks.append(self.meta_to_midi_track())
         for t in self.tracks:
@@ -545,24 +547,24 @@ class Song:
 # --------------------------------------------------------------------------------------
 
 def quantization_error(t_ticks, q_ticks):
-    '''
+    """
     Calculated the error, in ticks, for the given time for a quantization of q ticks.
-    '''
+    """
     j = t_ticks // q_ticks
     return int(min(abs(t_ticks - q_ticks * j), abs(t_ticks - q_ticks * (j + 1))))
 
 
 def objective_error(notes, test_quantization):
-    '''
+    """
     This is the objective function for getting the error for the entire set of notes for a
     given quantization in ticks.  The function used here could be a sum, RMS, or other
     statistic, but empirical tests indicate that the max used here works well and is robust.
-    '''
+    """
     return max(quantization_error(n, test_quantization) for n in notes)
 
 
 def find_quantization(ppq, time_series):
-    '''
+    """
     Find the optimal quantization in ticks to use for a given set of times.  The algorithm given
     here is by no means universal or guaranteed, but it usually gives a sensible answer.
 
@@ -579,7 +581,7 @@ def find_quantization(ppq, time_series):
 
     The algorithm does not seem to work as well for note durations as it does for note starts, probably
     because performed music rarely has clean note cutoffs.
-    '''
+    """
     last_err = len(time_series) * ppq
     n_notes = len(time_series)
     last_q = ppq
@@ -614,10 +616,10 @@ def find_quantization(ppq, time_series):
 
 
 def find_duration_quantization(ppq, durations, qticks_note):
-    '''
+    """
     The duration quantization is determined from the shortest note length.
     The algorithm starts from the estimated quantization for note starts.
-    '''
+    """
     min_length = min(durations)
     current_q = qticks_note
     ratio = min_length / current_q
@@ -632,9 +634,9 @@ def find_duration_quantization(ppq, durations, qticks_note):
 
 
 def quantize_fn(t, qticks):
-    ''' 
+    """ 
     This function quantizes a time to a certain number of ticks.
-    '''
+    """
     current = t // qticks
     next = current + 1
     current *= qticks
@@ -646,10 +648,10 @@ def quantize_fn(t, qticks):
 
 
 def make_measures(ppq, time_signature_changes, max_time):
-    '''
+    """
     Given a list of times and time signatures (num / denom), generates alist of the positions of measures and
     beats within that measure.
-    '''
+    """
     measures = []
     time_signature_changes = sorted(time_signature_changes)
     if time_signature_changes[0].start_time == 0:
@@ -680,5 +682,9 @@ def make_measures(ppq, time_signature_changes, max_time):
 
 
 def duration_to_note_name(duration, ppq):
+    """
+    Given a ppq (pulses per quaver) convert a duration to a human readable note length, e.g., 'eighth'
+    Works for notes, dotted notes, and triplets down to sixty-fourth notes.
+    """
     f = Fraction(duration/ppq).limit_denominator(64)
     return ctsConstants.DURATIONS.get(f, '<unknown>')

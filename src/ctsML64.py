@@ -110,6 +110,9 @@ def export_ML64(in_song, octave_offset=0, mode='standard'):
         VERY IMPORTANT:  The song MUST be quantized to 16th time_series (ppq / 4) and have polyphony and control time_series removed
                          before calling this function.
     '''
+    if in_song.is_polyphonic():
+        raise ChiptuneSAKException('Polyphonic song: cannot convert to ML64')
+
     mode = mode.lower()[0]
     if mode == 'm':
         return export_ML64_measures(in_song, octave_offset)

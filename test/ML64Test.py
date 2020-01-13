@@ -8,6 +8,9 @@ import ctsML64
 
 class TestExportML64(unittest.TestCase):
     def test_ML64_output_measures(self):
+        """
+        Test ML64 export using "measures" mode against a known good file.
+        """
         midi_file = 'jingleBellsSDG.mid'
         known_good_ml64_file = 'jingleBellsSDG.ml64'
         with open(known_good_ml64_file, 'r', encoding='ascii') as f:
@@ -30,6 +33,9 @@ class TestExportML64(unittest.TestCase):
         self.assertEqual(known_good_md5, test_md5)
 
     def test_ML64_compact_modulation(self):
+        """
+        Test ML64 export using "compact" mode against a known good file.
+        """
         midi_file = 'tripletTest.mid'
         known_good_ml64_file = 'tripletTest.ml64'
         with open(known_good_ml64_file, 'r', encoding='ascii') as f:
