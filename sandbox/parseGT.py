@@ -379,6 +379,7 @@ def unroll_orderlist(an_orderlist):
         #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
         #     So I assume byte 224 is never used in orderlists
         assert a_byte != 224, "I don't believe byte 224 should occur in the orderlist"
+        # This would be more clear (IMO) as: if a_byte >> 4 == 0xD:
         if 225 <= a_byte <= 254:  # 240 = no transposition
             transpose = a_byte - 239  # transpose range is -15 to +14
             continue
@@ -386,6 +387,7 @@ def unroll_orderlist(an_orderlist):
         # process repeat
         # Repeat values 1 to 16.  Instead of R0..RF, it's R1..RF,R0
         #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
+        # This would be more clear (IMO) as: if a_byte >> 4 == 0xE:
         if 208 <= a_byte <= 223:
             repeat = a_byte - 207  # repeat range is 1 to 16
             continue
