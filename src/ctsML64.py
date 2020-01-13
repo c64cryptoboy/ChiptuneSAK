@@ -1,6 +1,7 @@
 
 import collections
 import ctsSong
+from ctsErrors import *
 from ctsConstants import PITCHES
 
 '''
@@ -43,7 +44,10 @@ def get_duration_names(duration, ppq):
         ret_val.append(DURATION_NAMES[max_note_length])
         tmp -= max_note_length
     # While the time is not an even divisor, add together note times
+    min_duration = min(DURATION_NAMES)
     while tmp not in DURATION_NAMES:
+        if tmp < min_duration:
+            raise ChiptuneSAKException('Illegal ML64 duration: %d; minimum allowed = %d' % (tmp, min_duration))
         for d in sorted(DURATION_NAMES):
             if d > tmp:
                 ret_val.append(tmp_n)
@@ -164,7 +168,6 @@ def export_ML64_measures(in_song, octave_offset):
     last_note_end = max(n.start_time + n.duration for t in in_song.tracks for n in t.notes)
     while measures[-1] < last_note_end:
         measures.append(2 * measures[-1] - measures[-2])
-    print(len(measures), ' measures')
     for it, t in enumerate(in_song.tracks):
         output.append('track(%d)' % (it + 1))
         track_ML64 = []
@@ -250,6 +253,7 @@ if __name__ == '__main__':
     print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
 
     in_song.remove_control_notes()
+    in_song.modulate(3, 2)
     in_song.quantize(in_song.ppq // 4, in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
 
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
@@ -262,6 +266,6 @@ if __name__ == '__main__':
 
     # print(sum(len(t.notes) for t in in_song.tracks))
 
-    print(export_ML64(in_song, 0, mode='m'))
+    print(export_ML64(in_song, 0, mode='c'))
     print('------------------')
     print('\n'.join('%9ss: %d' % (k, in_song.stats['ML64'][k]) for k in in_song.stats['ML64']))
