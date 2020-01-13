@@ -227,7 +227,6 @@ def import_sng(gt_filename):
     if debug: print("\nDebug: %s" % tables)
     (a_song.wave_table, a_song.pulse_table, a_song.filter_table, a_song.speed_table) = tables
 
-
     """ From goattracker documentation:
     
     3.2 Pattern data
@@ -290,8 +289,8 @@ def import_sng(gt_filename):
             file_index += 4
             a_pattern.append(a_row)
         patterns.append(a_pattern)
-        if debug: print(
-            "\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
+        if debug:
+            print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
     a_song.patterns = patterns
 
     assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
@@ -362,13 +361,13 @@ def unroll_orderlist(an_orderlist):
         if repeat > 0 and a_byte > 207:
             sys.exit("error: repeat in orderlist should be immediatly followed by a pattern number")
         if a_byte <= 207:
-            for i in range(repeat+1): # loops anywhere from 1 to 17 times
+            for i in range(repeat+1):  # loops anywhere from 1 to 17 times
                 unroll_pattern(a_byte, transpose)
             repeat = 0
             continue
 
         # process RST + restart position
-        if a_byte == 255: # RST
+        if a_byte == 255:  # RST
             # TODO: understand if looping can be enabled or disabled with choice of restart position
             restart_position = an_orderlist[i+1]
             break
@@ -380,20 +379,20 @@ def unroll_orderlist(an_orderlist):
         #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
         #     So I assume byte 224 is never used in orderlists
         assert a_byte != 224, "I don't believe byte 224 should occur in the orderlist"
-        if a_byte >= 225 and a_byte <= 254: # 240 = no transposition
-            transpose = a_byte - 239 # transpose range is -15 to +14
+        if 225 <= a_byte <= 254:  # 240 = no transposition
+            transpose = a_byte - 239  # transpose range is -15 to +14
             continue
 
         # process repeat
         # Repeat values 1 to 16.  Instead of R0..RF, it's R1..RF,R0
         #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
-        if a_byte >= 208 and a_byte <= 223: 
-            repeat = a_byte - 207 # repeat range is 1 to 16
+        if 208 <= a_byte <= 223:
+            repeat = a_byte - 207  # repeat range is 1 to 16
             continue
             
 
 def unroll(a_song):   
-    tune = a_song.subtuneOrderLists[0] # TODO: Only processing the first subtune for now...
+    tune = a_song.subtuneOrderLists[0]  # TODO: Only processing the first subtune for now...
 
     unroll_orderlist(tune.ch1OrderList)
     #unroll_orderlist(tune.ch2OrderList)
