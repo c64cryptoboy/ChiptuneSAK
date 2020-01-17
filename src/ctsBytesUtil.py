@@ -13,13 +13,13 @@ def hex_to_int(a_hex):
     return int(a_hex, 16)
 
 
-def le_short_to_bytes(a_16_bit_num):
+def little_endian_bytes(a_16_bit_num):
     hi = a_16_bit_num >> 8
-    lo = a_16_bit_num & 256
+    lo = a_16_bit_num & 0xFF
     return bytearray([lo, hi])
 
 
-def be_short_to_bytes(a_16_bit_num):
+def big_endian_bytes(a_16_bit_num):
     hi = a_16_bit_num >> 8
     lo = a_16_bit_num & 256
     return bytearray([hi, lo])

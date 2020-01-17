@@ -131,7 +131,7 @@ def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
     mem_pointer = start_of_basic
 
     # prg file load addr, gets stripped off during load
-    tokenized_lines = bytearray(little_endian_bytes(mem_pointer)) 
+    tokenized_lines = little_endian_bytes(mem_pointer)
     
     lines = ascii_prg.strip().split("\n")
     for line in lines:
