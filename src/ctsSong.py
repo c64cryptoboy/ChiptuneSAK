@@ -131,8 +131,8 @@ class SongTrack:
 
         # Check that there was only one channel used in the track
         if len(channels) > 1:
-            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s' % (len(channels),
-                                       self.name))
+            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s'
+                                       % (len(channels), self.name))
 
         # Now sort the notes by the time they turn on. They were inserted into the list in
         # the order they were turned off.  To do the sort, take advatage of automatic sorting of tuples.
@@ -212,6 +212,11 @@ class SongTrack:
 
     def is_polyphonic(self):
         return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
+
+    def is_quantized(self):
+        return all(n.start_time % self.qticks_notes == 0
+                   and n.duration % self.qticks_durations == 0
+                   for n in self.notes)
 
     def remove_control_notes(self, control_max=8):
         """
@@ -294,7 +299,7 @@ class Song:
         self.bpm = mido.tempo2bpm(500000)  # Default tempo (it's the midi default)
         self.tracks = []  # List of Songtrack tracks
         self.meta_track = []  # List of all meta events that apply to the song as a whole
-        self.meta_midi_tracks = []  # list of all the midi trakcs that only contain metadata
+        self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  # list of all the tracks that contain notes
         self.time_signature_changes = []  # List of time signature changes
         self.tempo_changes = []  # List of tempo changes
@@ -322,15 +327,12 @@ class Song:
         if self.in_midi.type == 0:
             self.split_midi_zero_into_tracks()  # Splits into tracks: track 0 (metadata), and tracks 1-16 are note data.
 
-        # Count notes in all tracks; tracks without notes are metadata
-        n_notes = [sum(1 for m in t if m.type == 'note_on') for t in self.in_midi.tracks]
-        self.stats['Notes'] = sum(n for n in n_notes)
-
         # Process meta commands in ALL tracks
         self.time_signature_changes = []
         for i, track in enumerate(self.in_midi.tracks):
-            if n_notes[i] == 0:
-                self.meta_midi_tracks.append(track)
+            n_notes = sum(1 for m in track if m.type == 'note_on')
+            if n_notes == 0:
+                self.midi_meta_tracks.append(track)
                 self.get_meta(track, True)
             else:
                 self.get_meta(track, False)
@@ -346,16 +348,23 @@ class Song:
             self.bpm = self.tempo_changes[0].bpm
 
         # Find all tracks that contain notes
-        self.midi_note_tracks = [t for n, t in zip(n_notes, self.in_midi.tracks) if n > 0]
+        self.midi_note_tracks = [t for t in self.in_midi.tracks if sum(1 for m in t if m.type == 'note_on') > 0]
+
+        self.stats["MIDI notes"] = sum(1 for t in self.midi_note_tracks
+                                       for m in t if m.type == 'note_on' and m.velocity != 0)
 
         # Now generate the note tracks
         for track in self.midi_note_tracks:
             self.tracks.append(SongTrack(self, track))
 
+        self.stats["Notes"] = sum(len(t.notes) for t in self.tracks)
+        self.stats["Track names"] = [t.name for t in self.tracks]
+
         # Finally, generate measures and beats
         self.end_time = max(n.start_time + n.duration for t in self.tracks for n in t.notes)
         self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
         self.stats['Measures'] = max(m.measure for m in self.measure_beats)
+
 
     def get_meta(self, track, is_metatrack=False):
         """ 
@@ -420,7 +429,17 @@ class Song:
             self.stats['Deleted'] += deleted
 
     def is_polyphonic(self):
+        """
+        Is the song polyphonic?  Returns true if ANY of the tracks contains polyphony of any kind.
+        """
         return any(t.is_polyphonic() for t in self.tracks)
+
+    def is_quantized(self):
+        """
+        Has the song been quantized?  This requires that all the tracks have been quantized with their
+        current qticks_notes and qticks_durations values.
+        """
+        return all(t.is_quantized() for t in self.tracks)
 
     def remove_control_notes(self, control_max=8):
         """ 

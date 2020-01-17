@@ -24,7 +24,6 @@ NOTE_PRI = 4
 PATCH_PRI = 3
 MEASURE_PRI = 0
 
-
 def get_note_name(note_num, octave_offset):
     ''' Gets the ML64 note name for a given MIDI pitch '''
     global ML64_OCTAVE_BASE, PITCHES
@@ -56,6 +55,7 @@ def get_duration_names(duration, ppq):
             tmp_d, tmp_n = (d, DURATION_NAMES[d])
     ret_val.append(DURATION_NAMES[tmp])
     return ret_val
+
 
 class ML64Note:
     ''' Implements a ML64 note, rest, or continue command '''
@@ -107,8 +107,8 @@ def export_ML64(in_song, octave_offset=0, mode='standard'):
           standard - minimum number of notes with approximate measure markings
           compact -  minimum size
           measures - exact measure markings and all notes fit into measures
-        VERY IMPORTANT:  The song MUST be quantized to 16th time_series (ppq / 4) and have polyphony and control time_series removed
-                         before calling this function.
+        VERY IMPORTANT:  The song MUST be quantized to 16th time_series (ppq / 4) and have polyphony and
+                         control notes removed before calling this function.
     '''
     if in_song.is_polyphonic():
         raise ChiptuneSAKException('Polyphonic song: cannot convert to ML64')
@@ -249,11 +249,11 @@ def export_ML64_measures(in_song, octave_offset):
     output.append('ML64(-)')
     return '\n'.join(output)
 
-
 if __name__ == '__main__':
     import sys
     in_song = ctsSong.Song(sys.argv[1])
     print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
+    print("Original:", "quantized" if in_song.is_quantized() else 'non quantized')
 
     in_song.remove_control_notes()
     in_song.modulate(3, 2)
@@ -266,6 +266,7 @@ if __name__ == '__main__':
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.eliminate_polyphony()
     print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
+    print("After quantization:", "quantized" if in_song.is_quantized() else 'non quantized')
 
     # print(sum(len(t.notes) for t in in_song.tracks))
 
