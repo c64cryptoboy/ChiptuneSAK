@@ -62,7 +62,7 @@ class SongTrack:
     """
 
     # Define the message types to preserve as a static variable
-    otherMessages = ['program_change', 'pitchwheel']
+    otherMessages = ['program_change', 'pitchwheel', 'control_change']
 
     def __init__(self, song, track=None):
         self.song = song  # Parent song
@@ -183,10 +183,12 @@ class SongTrack:
             # Update the statistics
             note_start_changes.append(n.start_time - start_before)
             duration_changes.append(n.duration - duration_before)
+            if abs(n.duration - duration_before) > 100:
+                print(self.name, n)
         # Return the statistics about changes
         return (note_start_changes, duration_changes)
 
-    def eliminate_polyphony(self):
+    def remove_polyphony(self):
         """
         This function eliminates polyphony, so that in each channel there is only one note
         active at a time. If a chord is struck all at the same time, it will retain the highest
@@ -417,14 +419,14 @@ class Song:
             self.stats['Note Start Deltas'].update(note_start_changes)
             self.stats['Duration Deltas'].update(duration_changes)
 
-    def eliminate_polyphony(self):
+    def remove_polyphony(self):
         """
         Eliminate polyphony from all tracks.
         """
         self.stats['Truncated'] = 0
         self.stats['Deleted'] = 0
         for t in self.tracks:
-            deleted, truncated = t.eliminate_polyphony()
+            deleted, truncated = t.remove_polyphony()
             self.stats['Truncated'] += truncated
             self.stats['Deleted'] += deleted
 

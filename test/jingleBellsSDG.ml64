@@ -1,12 +1,10 @@
-// midiToML64.py (version 0.35) Args: .\jingleBells3VoiceV0.3.mid --newLineMode=ma --octaveOffset=0
-// TOTAL: 718 Events; 702 Notes; 13 Rests; 0 Continuations; 3 Instruments
 ML64(1.3)
 
 song(1)
 tempo(112)
 
 track(1)
-[m  1 ]i(Acoustic Grand Piano)D4(8)B4(8)A4(8)G4(8)
+[m  1 ]i(0)D4(8)B4(8)A4(8)G4(8)
 [m  2 ]D4(4d)B3(16)C4(16)
 [m  3 ]D4(8)B4(8)A4(8)G4(8)
 [m  4 ]E4(2)
@@ -73,7 +71,7 @@ track(1)
 track(-)
 
 track(2)
-[m  1 ]i(Acoustic Grand Piano)G3(8)D4(8)C4(8)B3(8)
+[m  1 ]i(0)G3(8)D4(8)C4(8)B3(8)
 [m  2 ]G3(2)
 [m  3 ]B3(8)D4(8)C4(8)B3(8)
 [m  4 ]C4(2)
@@ -140,7 +138,7 @@ track(2)
 track(-)
 
 track(3)
-[m  1 ]i(Acoustic Grand Piano)G2(8)D3(16)D3(16)D2(8)D3(8)
+[m  1 ]i(0)G2(8)D3(16)D3(16)D2(8)D3(8)
 [m  2 ]G2(8)D3(16)D3(16)D2(8)D3(8)
 [m  3 ]G2(8)D3(16)D3(16)D2(8)D3(8)
 [m  4 ]C2(8)G2(16)G2(16)G1(8)G2(8)

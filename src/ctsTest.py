@@ -11,6 +11,7 @@ inMidi.import_midi(inFileName)
 print("Removing control notes")
 inMidi.remove_control_notes()
 
+print("Song is %s" % ("polyphonic" if inMidi.is_polyphonic() else "non-polyphonic"))
 # Print stats
 print('%d notes' % (sum(len(t.notes) for t in inMidi.tracks)))
 print('PPQ = %d' % (inMidi.ppq))

@@ -1,32 +1,40 @@
 # Common byte functions
 
 
-def int_to_hex(anInt):
-    return "%X" % anInt
+def int_to_hex(an_int):
+    return "%X" % an_int
 
 
-def hex_to_int(aHex):
-    if aHex.startswith('$'):
-        aHex = aHex[1:]
-    return int(aHex, 16)
+def hex_to_int(a_hex):
+    if a_hex.startswith('$'):
+        a_hex = a_hex[1:]
+    elif a_hex.startswith('\\x') or a_hex.startswith('0x'):
+        a_hex = a_hex[2:]
+    return int(a_hex, 16)
 
 
-def little_endian_bytes(a16BitNum):
-    hi = a16BitNum//256
-    lo = a16BitNum - hi*256
-    return bytes([lo, hi])
+def le_short_to_bytes(a_16_bit_num):
+    hi = a_16_bit_num >> 8
+    lo = a_16_bit_num & 256
+    return bytearray([lo, hi])
 
 
-def little_endian_int(aBytearray):
+def be_short_to_bytes(a_16_bit_num):
+    hi = a_16_bit_num >> 8
+    lo = a_16_bit_num & 256
+    return bytearray([hi, lo])
+
+
+def little_endian_int(a_bytearray):
     val = 0
-    for i, byte in enumerate(aBytearray):
+    for i, byte in enumerate(a_bytearray):
         val |= (byte << (8*i))
     return val
 
 
-def big_endian_int(aBytearray):
+def big_endian_int(a_bytearray):
     val = 0
-    for byte in aBytearray:
+    for byte in a_bytearray:
         val = (val << 8) | (byte << 8)
     return val
 
