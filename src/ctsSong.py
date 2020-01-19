@@ -709,3 +709,14 @@ def duration_to_note_name(duration, ppq):
     """
     f = Fraction(duration/ppq).limit_denominator(64)
     return ctsConstants.DURATIONS.get(f, '<unknown>')
+
+
+def pitch_to_note_name(note_num, octave_offset=0):
+    """
+    Gets note name for a given MIDI pitch
+    """
+    if not 0 <= note_num <= 127:
+        raise ValueError("Illegal note number %d" % note_num)
+    octave = (note_num // 12) + ML64_OCTAVE_BASE + octave_offset
+    pitch = note_num % 12
+    return "%s%d" % (ctsConstants.PITCHES[pitch], octave)
