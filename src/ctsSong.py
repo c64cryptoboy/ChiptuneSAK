@@ -112,6 +112,8 @@ class SongTrack:
                     if delta > 0:
                         current_note.duration = delta
                         self.notes.append(current_note)
+                    elif delta < 0:
+                        raise ChiptuneSAKValueError("Error in MIDI import: Illegal note length %d" % delta)
                     # Remove the note from the dictionary of notes that are on.
                     del current_notes_on[msg.note]
             elif msg.type == 'note_on':
@@ -716,7 +718,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
     Gets note name for a given MIDI pitch
     """
     if not 0 <= note_num <= 127:
-        raise ValueError("Illegal note number %d" % note_num)
-    octave = (note_num // 12) + ML64_OCTAVE_BASE + octave_offset
+        raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
+    octave = (note_num // 12) + octave_offset
     pitch = note_num % 12
     return "%s%d" % (ctsConstants.PITCHES[pitch], octave)

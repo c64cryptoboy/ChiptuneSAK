@@ -35,3 +35,14 @@ class SongTestCase(unittest.TestCase):
                   and ts.is_quantized() and not ts.is_polyphonic()
                   and ts.qticks_notes == 480 and ts.qticks_durations == 480)
         self.assertTrue(result)
+
+    def test_duration_to_note_name(self):
+        """
+        Test conversion of durations (in ticks) to note names
+        """
+        ppq = self.test_song.ppq
+        known_good = 'quarter eighth eighth triplet sixteenth thirty-second thirty-second triplet sixty-fourth'
+        test_durations = [1, 2, 3, 4, 8, 12, 16]
+        test_output = ' '.join(ctsSong.duration_to_note_name(ppq//n, ppq) for n in test_durations)
+
+        self.assertEqual(test_output, known_good)
