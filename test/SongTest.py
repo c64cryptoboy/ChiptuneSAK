@@ -11,13 +11,21 @@ class SongTestCase(unittest.TestCase):
         self.test_song = ctsSong.Song('twinkle.mid')
 
     def test_total_notes(self):
+        """
+        Tests that the total number of notes imported is correct.
+        """
         self.assertEqual(self.test_song.stats['Notes'], 143)
 
     def test_tracks(self):
-        # Note that this tests both the number of tracks and the names of each track
+        """
+        Tests both the number and the names of extracted tracks
+        """
         self.assertTupleEqual(tuple(t.name for t in  self.test_song.tracks), ('Lead', 'Counter', 'Bass'))
 
     def test_quantization_and_polyphony(self):
+        """
+        Tests the quantization and polyphony functions of the Song class.
+        """
         ts = copy.deepcopy(self.test_song)
         q_n, q_d = ts.estimate_quantization()
         ts.quantize(q_n, q_d)

@@ -13,16 +13,26 @@ def hex_to_int(a_hex):
     return int(a_hex, 16)
 
 
-def little_endian_bytes(a_16_bit_num):
-    hi = a_16_bit_num >> 8
-    lo = a_16_bit_num & 0xFF
-    return bytearray([lo, hi])
+def little_endian_bytes(a_num, min_bytes=2):
+    retval = bytearray()
+    remaining = a_num
+    while remaining != 0:
+        retval.append(remaining & 0xFF)
+        remaining >>= 8
+    while len(retval) < min_bytes:
+        retval.append(0)
+    return retval
 
 
-def big_endian_bytes(a_16_bit_num):
-    hi = a_16_bit_num >> 8
-    lo = a_16_bit_num & 256
-    return bytearray([hi, lo])
+def big_endian_bytes(a_num, min_bytes=2):
+    retval = bytearray()
+    remaining = a_num
+    while remaining != 0:
+        retval.append(remaining & 0xFF)
+        remaining >>= 8
+    while len(retval) < min_bytes:
+        retval.append(0)
+    return retval[::-1]
 
 
 def little_endian_int(a_bytearray):

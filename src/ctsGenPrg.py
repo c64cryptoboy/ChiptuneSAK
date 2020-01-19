@@ -100,10 +100,10 @@ def ascii_to_petscii(ascii_bytes):
 #
 # No BASIC tokens are harmed in this conversion (tokens live at 0 and between 128 and 255)
 def ab2pb(ascii_byte):
-    if ascii_byte >= ord('a') and ascii_byte <= ord('z'):
+    if ord('a') <= ascii_byte <= ord('z'):
         return ascii_byte - 32
 
-    if ascii_byte >= ord('A') and ascii_byte <= ord('Z'):
+    if ord('A') <= ascii_byte <= ord('Z'):
         return ascii_byte + 32    
 
     # The rest are either correct (such as printable symbols <= ordinal 64, and a few above that, like
