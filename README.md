@@ -20,6 +20,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * GoatTracker 2
   
 #### Proposed
+* [SID](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt) (making chiptune-sak a SID2MIDI replacement)
 * MusicXML (a subset)
 * Jellyfish Music Box Composer format
   
