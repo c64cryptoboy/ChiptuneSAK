@@ -20,6 +20,7 @@ import ctsConstants
 
 # Named tuple types for several lists throughout
 TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
+KeySignature = collections.namedtuple('KeySignature', ['start_time', 'key'])
 Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
 OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
@@ -306,6 +307,7 @@ class Song:
         self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  # list of all the tracks that contain notes
         self.time_signature_changes = []  # List of time signature changes
+        self.key_signature_changes = []  # List of key signature changes
         self.tempo_changes = []  # List of tempo changes
         self.end_time = 0  # last MIDI event in the entire song
         self.stats = {}  # Statistics about the song
@@ -333,6 +335,7 @@ class Song:
 
         # Process meta commands in ALL tracks
         self.time_signature_changes = []
+        self.key_signature_changes = []
         for i, track in enumerate(self.in_midi.tracks):
             n_notes = sum(1 for m in track if m.type == 'note_on')
             if n_notes == 0:
@@ -340,6 +343,8 @@ class Song:
                 self.get_meta(track, True)
             else:
                 self.get_meta(track, False)
+
+
 
         # Sort all time changes from meta tracks into a single time signature change list
         self.time_signature_changes = sorted(self.time_signature_changes)
@@ -381,7 +386,8 @@ class Song:
                 self.time_signature_changes.append(TimeSignature(current_time, msg.numerator, msg.denominator))
             elif msg.type == 'set_tempo':
                 self.tempo_changes.append(Tempo(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
-            # Set the tempo from the first tempo message in the midi
+            elif msg.type == 'key_signature':
+                self.key_signature_changes.append(KeySignature(current_time, msg.key))
 
             # Keep meta events from tracks without notes
             # Note that these events are stored as midi messages with the global time attached.

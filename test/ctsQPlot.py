@@ -1,8 +1,6 @@
 import sys
 sys.path.append('../src')
-import numpy as np
 import matplotlib.pyplot as plt
-import collections
 import ctsSong
 
 def plot_quantization(stats, elements):
@@ -12,7 +10,6 @@ def plot_quantization(stats, elements):
     ax.patch.set_alpha(1.0)
     ax.grid(True, which='both', axis='both', zorder=0)
     ax.tick_params(axis='both', direction = 'in')
-    ymax = 0
     colors = ['r', 'b', 'g', 'p']
     for i, e in enumerate(elements):
         s = stats[e]
