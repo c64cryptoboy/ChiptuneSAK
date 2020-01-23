@@ -24,6 +24,7 @@ KeySignature = collections.namedtuple('KeySignature', ['start_time', 'key'])
 Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
 OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
+Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
 
 
 class Note:
@@ -32,18 +33,12 @@ class Note:
     a velocity. 
     """
 
-    def __init__(self, note, start, duration, velocity=100, rest=False):
+    def __init__(self, note, start, duration, velocity=100, held=False):
         self.note_num = note  # MIDI note number
         self.start_time = start  # In ticks since tick 0
         self.duration = duration  # In ticks
         self.velocity = velocity  # MIDI velocity 0-127
-        self.is_rest = rest
-
-    def is_rest(self):
-        return self.rest
-
-    def is_note(self):
-        return not self.rest
+        self.held = held
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
