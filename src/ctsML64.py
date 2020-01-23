@@ -264,7 +264,7 @@ if __name__ == '__main__':
     ctsSong.duration_to_note_name(in_song.qticks_notes, in_song.ppq),
         ctsSong.duration_to_note_name(in_song.qticks_durations, in_song.ppq)))
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
-    in_song.eliminate_polyphony()
+    in_song.remove_polyphony()
     print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
     print("After quantization:", "quantized" if in_song.is_quantized() else 'non quantized')
 

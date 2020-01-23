@@ -13,3 +13,15 @@ class ChiptuneSAKValueError(ChiptuneSAKException, ValueError):
     Value error
     """
     pass
+
+class ChiptuneSAKQuantizationError(ChiptuneSAKException):
+    """
+    Quantization error
+    """
+    pass
+
+class ChiptuneSAKPolyphonyError(ChiptuneSAKException):
+    """
+    Polyphony error
+    """
+    pass
