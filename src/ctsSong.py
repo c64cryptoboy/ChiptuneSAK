@@ -33,12 +33,12 @@ class Note:
     a velocity. 
     """
 
-    def __init__(self, note, start, duration, velocity=100, held=False):
+    def __init__(self, note, start, duration, velocity=100, tied=False):
         self.note_num = note  # MIDI note number
         self.start_time = start  # In ticks since tick 0
         self.duration = duration  # In ticks
         self.velocity = velocity  # MIDI velocity 0-127
-        self.held = held
+        self.tied = tied
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
@@ -58,7 +58,7 @@ class SongTrack:
     """
 
     # Define the message types to preserve as a static variable
-    other_messages = ['program_change', 'pitchwheel', 'control_change']
+    other_message_types = ['program_change', 'pitchwheel', 'control_change']
 
     def __init__(self, song, track=None):
         self.song = song  # Parent song
@@ -86,7 +86,8 @@ class SongTrack:
         # Find the name meta message to get the track's name. Default is the channel.
         name_msg = next((msg for msg in track if msg.type == 'track_name'), None)
         if name_msg:
-            self.name = name_msg.name.strip()
+            if len(name_msg.name.strip()) > 0:
+                self.name = name_msg.name.strip()
         # Convert Midi events in the track into notes and durations
         current_time = 0
         current_notes_on = {}
@@ -117,7 +118,7 @@ class SongTrack:
                 if msg.note not in current_notes_on:
                     current_notes_on[msg.note] = Note(msg.note, current_time, 0, msg.velocity)
             # Other messages of interest in the track are stored in a separate list as native MIDI messages        
-            elif msg.is_meta or (msg.type in SongTrack.other_messages):
+            elif msg.is_meta or (msg.type in SongTrack.other_message_types):
                 self.other.append(OtherMidi(current_time, msg))
         #  Turn off any notes left on
         for n in current_notes_on:
@@ -304,7 +305,7 @@ class Song:
         self.bpm = mido.tempo2bpm(500000)  # Default tempo (it's the midi default)
         self.tracks = []  # List of Songtrack tracks
         self.name = ''
-        self.meta_track = []  # List of all meta events that apply to the song as a whole
+        self.other = []  # List of all meta events that apply to the song as a whole
         self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  # list of all the tracks that contain notes
         self.time_signature_changes = []  # List of time signature changes
@@ -350,6 +351,8 @@ class Song:
         # Sort all time changes from meta tracks into a single time signature change list
         self.time_signature_changes = sorted(self.time_signature_changes)
         self.stats['Time Signature Changes'] = len(self.time_signature_changes)
+        self.key_signature_changes = sorted(self.key_signature_changes)
+        self.stats['Key Signature Changes'] = len(self.key_signature_changes)
         self.tempo_changes = sorted(self.tempo_changes)
         self.stats['Tempo Changes'] = len(self.tempo_changes)
 
@@ -394,7 +397,7 @@ class Song:
             # Keep meta events from tracks without notes
             # Note that these events are stored as midi messages with the global time attached.
             elif msg.is_meta and is_metatrack:
-                self.meta_track.append(OtherMidi(current_time, msg))
+                self.other.append(OtherMidi(current_time, msg))
             # Find the very last meta message (which should be an end_track) and use it as the end time.
 
     def estimate_quantization(self):
@@ -435,8 +438,8 @@ class Song:
             self.time_signature_changes[i] = TimeSignature(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
         for i, m in enumerate(self.key_signature_changes):
             self.key_signature_changes[i] = KeySignature(quantize_fn(m.start_time, self.qticks_notes), m.key)
-        for i, m in enumerate(self.meta_track):
-            self.meta_track[i] = OtherMidi(quantize_fn(m.start_time, self.qticks_notes), m.msg)
+        for i, m in enumerate(self.other):
+            self.other[i] = OtherMidi(quantize_fn(m.start_time, self.qticks_notes), m.msg)
 
     def remove_polyphony(self):
         """
@@ -487,9 +490,9 @@ class Song:
             t, bpm = tm
             self.tempo_changes[i] = Tempo((t * num) // denom, (bpm * num) // denom)
         # Now all the rest of the meta messages
-        for i, ms in enumerate(self.meta_track):
+        for i, ms in enumerate(self.other):
             t, m = ms
-            self.meta_track[i] = OtherMidi((t * num) // denom, m)
+            self.other[i] = OtherMidi((t * num) // denom, m)
         # Finally, modulate each track
         for i, _ in enumerate(self.tracks):
             self.tracks[i].modulate(num, denom)
@@ -553,7 +556,7 @@ class Song:
         for t, tempo in self.tempo_changes:
             events.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(tempo), time=t))
         # Put any other meta-messages that were assign to the song as a whole into the track.
-        for t, msg in self.meta_track:
+        for t, msg in self.other:
             msg.time = t
             events.append(msg)
         # Sort the track by time so it's ready for the MIDI delta-time format.
