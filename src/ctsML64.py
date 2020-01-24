@@ -6,13 +6,13 @@ import ctsExportUtil
 from ctsConstants import PITCHES
 
 '''
-This file contains functions required to export  MidiSimple songs to ML64 format.
+This file contains functions required to export MidiSimple songs to ML64 format.
 '''
 
 ml64_durations = {
     Fraction(6, 1): '1d', Fraction(4, 1): '1', Fraction(3, 1): '2d', Fraction(2, 1): '2',
     Fraction(3, 2): '4d', Fraction(1, 1): '4', Fraction(3, 4): '8d', Fraction(1, 2): '8',
-    Fraction(3, 8): '16d', Fraction(1, 4): '16'
+    Fraction(1, 4): '16'
 }
 
 ML64MeasureMarker = collections.namedtuple('ML64MeasureMarker', ['start_time', 'measure_number'])
@@ -45,7 +45,7 @@ def make_ml64_notes(note_name, duration, ppq):
     else:
         retval = "%s(%s)" % (note_name, ml64_durations[durs[0]])
         if len(durs) > 1:
-            retval += ''.join("c%s" % (ml64_durations[f]) for f in durs[1:])
+            retval += ''.join("c(%s)" % (ml64_durations[f]) for f in durs[1:])
     return retval
 
 
@@ -72,6 +72,12 @@ def ml64_sort_order(c):
 
 
 def export_ml64(song, format='standard'):
+    """
+    Export song to ML64 format, with a minimum number of notes, either with or without measure comments.
+    With measure comments, the comments appear within the measure but are not guaranteed to be exactly at the
+    beginning of the measure, as tied notes will take precedence.  In compact mode, the ML64 emitted is almost
+    as small as possible.
+    """
     output = []
     if not song.is_quantized():
         raise ChiptuneSAKQuantizationError("Song must be quantized for export to ML64")
@@ -120,6 +126,10 @@ def export_ml64(song, format='standard'):
 
 
 def export_ml64_measures(song):
+    """
+    Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to
+    appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.
+    """
     output = []
     if not song.is_quantized():
         raise ChiptuneSAKQuantizationError("Song must be quantized for export to ML64")

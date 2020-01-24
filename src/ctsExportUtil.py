@@ -86,7 +86,6 @@ def populate_measures(song, track):
                 carry.duration -= duration  # Det the length of the carried note to the remaining time
             inote += 1  # Move to the next note
 
-
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?
             if not last_measure:
