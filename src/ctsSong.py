@@ -46,7 +46,7 @@ class Note:
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
-        return "p=%3d  s=%4d  d=%4d  v=%4d" % (self.note_num, self.start_time, self.duration, self.velocity)
+        return "p=%3d  s=%4d  d=%4d  v=%4d, t=%d" % (self.note_num, self.start_time, self.duration, self.velocity, self.tied)
 
 
 class SongTrack:
@@ -440,6 +440,10 @@ class Song:
         for i, m in enumerate(self.other):
             self.other[i] = OtherMidi(quantize_fn(m.start_time, self.qticks_notes), m.msg)
 
+        # Things have changed to re-do the measures calculation
+        self.end_time = max(t.notes[-1].start_time + t.notes[-1].duration for t in self.tracks)
+        self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
+
     def remove_polyphony(self):
         """
         Eliminate polyphony from all tracks.
@@ -717,9 +721,6 @@ def make_measures(ppq, time_signature_changes, max_time):
         if b > last.num:
             m += 1
             b = 1
-    while b <= last.num:
-        measures.append(Beat(t, m, b))
-        b += 1
     return measures
 
 

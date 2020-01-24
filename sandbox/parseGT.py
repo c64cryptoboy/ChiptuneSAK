@@ -18,7 +18,7 @@ import sys
 sys.path.append('../src')
 import copy
 from ctsErrors import *
-from ctsML64 import get_note_name
+from ctsML64 import pitch_to_ml64_note_name
 from recordtype import recordtype
 from sortedcontainers import SortedDict
 
@@ -435,7 +435,7 @@ def convert_to_note_events(sng_data, subtune_num):
                 if channel_state.curr_note != None:
                     channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
                     channel_time_events[global_tick].note_on = False
-                    if debug: print("%s off" % get_note_name(channel_state.curr_note, 0))
+                    if debug: print("%s off" % pitch_to_ml64_note_name(channel_state.curr_note, 0))
 
             # KeyOn ($BF/191, display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
             # If no prior note has been started, then nothing will happen.  If a note is playing,
@@ -445,14 +445,14 @@ def convert_to_note_events(sng_data, subtune_num):
                 if channel_state.curr_note != None:
                     channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
                     channel_time_events[global_tick].note_on = True
-                    if debug: print("%s on" % get_note_name(channel_state.curr_note, 0))
+                    if debug: print("%s on" % pitch_to_ml64_note_name(channel_state.curr_note, 0))
 
             # if note_data is an actual note
             elif 0x60 <= row.note_data <= 0xBC: # range $60 (C0) to $BC (G#7)
                 channel_state.curr_note = patternNoteToMidiNote(row.note_data)
                 channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
                 channel_time_events[global_tick].note_on = True
-                if debug: print("%s on" % get_note_name(channel_state.curr_note, 0))
+                if debug: print("%s on" % pitch_to_ml64_note_name(channel_state.curr_note, 0))
 
             # pattern end
             elif row.note_data == 0xFF: 

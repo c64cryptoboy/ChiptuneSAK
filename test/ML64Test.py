@@ -8,7 +8,7 @@ import ctsML64
 
 
 def md5_hash_no_spaces(ml64_input):
-    ml64 = re.sub('\s', '', ml64_input)
+    ml64 = re.sub('\\s', '', ml64_input)
     md5 = hashlib.md5(ml64.encode('ascii', 'ignore'))
     return md5.hexdigest()
 
@@ -25,9 +25,11 @@ class TestExportML64(unittest.TestCase):
         known_good_ml64_hash = md5_hash_no_spaces(''.join(lines))
 
         song = ctsSong.Song(midi_file)
-        song.quantize(song.ppq // 4, song.ppq // 4) # Quantize to sixteenth notes
+        song.quantize(song.ppq // 4, song.ppq // 4)  # Quantize to sixteenth notes
         song.remove_polyphony()
         test_ml64 = ctsML64.export_ml64(song, format='m')
+        with open('jingle_m.ml64', 'w') as f:
+            f.write(test_ml64)
         test_ml64_hash = md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
@@ -44,12 +46,13 @@ class TestExportML64(unittest.TestCase):
 
         song = ctsSong.Song(midi_file)
         song.modulate(3, 2)
-        song.quantize(song.ppq // 4, song.ppq // 4) # Quantize to sixteenth notes
+        song.quantize(song.ppq // 4, song.ppq // 4)  # Quantize to sixteenth notes
         song.remove_polyphony()
         test_ml64 = ctsML64.export_ml64(song, format='c')
         test_ml64_hash = md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
+
 
 if __name__ == '__main__':
     unittest.main()

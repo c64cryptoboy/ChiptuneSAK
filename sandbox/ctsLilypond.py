@@ -1,4 +1,5 @@
 import sys
+import os
 import sandboxPath
 
 from ctsErrors import *
@@ -115,14 +116,16 @@ def song_to_lilypond(song, format='full'):
 
 if __name__ == '__main__':
     import subprocess
-    in_filename = '../test/Yofa.mid'
+    in_filename = '../test/bach_invention_4.mid'
     song = ctsSong.Song(in_filename)
     song.remove_control_notes()
     song.estimate_quantization()
     song.quantize()
     song.remove_polyphony()
+    song.export_midi('../test/bach_invention_4a.mid')
     out = song_to_lilypond(song, 'full')
-    out_filename = 'Yofa.ly'
+    os.chdir('../Test/temp')
+    out_filename = 'bach_invention_4.ly'
     with open(out_filename, 'w') as f:
         f.write(out)
     # TODO:  Put this functionality into a function and move all the files to a temp directory

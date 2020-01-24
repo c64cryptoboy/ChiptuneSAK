@@ -36,6 +36,8 @@ def populate_measures(song, track):
 
     # Find all the measure positions in time
     measure_starts = [m.start_time for m in song.measure_beats if m.beat == 1]
+    # Artificially add an extra measure on the end to finish processing the notes in the last measure.
+    measure_starts.append(2 * measure_starts[-1] - measure_starts[-2])
     n_notes = len(track.notes)
     retval = []
     inote = 0  # Index of current note
@@ -44,6 +46,10 @@ def populate_measures(song, track):
     # First add in the notes to the measure
     itmp = 0
     for start, end in moreit.pairwise(measure_starts):
+        if end == measure_starts[-1]:
+            last_measure = True
+        else:
+            last_measure = False
         itmp += 1
         current_measure = []  # Make a list of the contents of the current measure
         last_note_end = start
@@ -59,7 +65,7 @@ def populate_measures(song, track):
                 last_note_end = start + carry.duration
                 carry = None
 
-        # Now iterate over the notes tat begin during this measure
+        # Now iterate over the notes that begin during this measure
         while inote < n_notes and track.notes[inote].start_time < end:
             n = track.notes[inote]
             gap = n.start_time - last_note_end
@@ -80,10 +86,16 @@ def populate_measures(song, track):
                 carry.duration -= duration  # Det the length of the carried note to the remaining time
             inote += 1  # Move to the next note
 
+
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?
-            current_measure.append(ctsSong.Rest(last_note_end, gap))
-            last_note_end = end
+            if not last_measure:
+                current_measure.append(ctsSong.Rest(last_note_end, gap))
+                last_note_end = end
+            else:
+                if gap < (end - start):
+                    current_measure.append(ctsSong.Rest(last_note_end, gap))
+                    last_note_end = end
 
         # Add any additional track-specific messages to the measure:
         for m in track.other:
@@ -116,5 +128,8 @@ def populate_measures(song, track):
                 current_measure.append(m)
 
         current_measure = sorted(current_measure, key=sort_order)
-        retval.append(current_measure)
+        notes_in_measure = sum(1 for e in current_measure if isinstance(e, ctsSong.Note))
+        if (not last_measure) or notes_in_measure > 0:
+            retval.append(current_measure)
+
     return retval
