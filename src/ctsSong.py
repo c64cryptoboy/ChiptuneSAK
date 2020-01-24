@@ -25,6 +25,7 @@ Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
 OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
 Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
+Program = collections.namedtuple('Program', ['start_time', 'program'])
 
 
 class Note:
@@ -182,8 +183,6 @@ class SongTrack:
             # Update the statistics
             note_start_changes.append(n.start_time - start_before)
             duration_changes.append(n.duration - duration_before)
-            if abs(n.duration - duration_before) > 100:
-                print(self.name, n)
 
         # Quantize the other MIDI messages in the track
         for i, m in enumerate(self.other):
@@ -515,7 +514,7 @@ class Song:
         # Find the index of the desired time in the list.
         pos = bisect.bisect_right(tmp, start_time)
         # Return the corresponding measure/beat
-        return (self.measure_beats[pos - 1].measure, self.measure_beats[pos - 1].beat)
+        return self.measure_beats[pos - 1]
 
     def split_midi_zero_into_tracks(self):
         """

@@ -125,5 +125,6 @@ if __name__ == '__main__':
     out_filename = 'Yofa.ly'
     with open(out_filename, 'w') as f:
         f.write(out)
+    # TODO:  Put this functionality into a function and move all the files to a temp directory
     #subprocess.call('lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 --png %s' % out_filename, shell=True)
     subprocess.call('lilypond %s' % out_filename, shell=True)

@@ -27,7 +27,7 @@ class TestExportML64(unittest.TestCase):
         song = ctsSong.Song(midi_file)
         song.quantize(song.ppq // 4, song.ppq // 4) # Quantize to sixteenth notes
         song.remove_polyphony()
-        test_ml64 = ctsML64.export_ML64(song, mode='m')
+        test_ml64 = ctsML64.export_ml64(song, format='m')
         test_ml64_hash = md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
@@ -46,7 +46,7 @@ class TestExportML64(unittest.TestCase):
         song.modulate(3, 2)
         song.quantize(song.ppq // 4, song.ppq // 4) # Quantize to sixteenth notes
         song.remove_polyphony()
-        test_ml64 = ctsML64.export_ML64(song, mode='c')
+        test_ml64 = ctsML64.export_ml64(song, format='c')
         test_ml64_hash = md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)

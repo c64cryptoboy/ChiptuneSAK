@@ -29,6 +29,8 @@ def populate_measures(song, track):
             return (c.start_time, 2)
         elif isinstance(c, ctsSong.Tempo):
             return (c.start_time, 3)
+        elif isinstance(c, ctsSong.Program):
+            return (c.start_time, 4)
         else:
             return (c.start_time, 5)
 
@@ -87,7 +89,10 @@ def populate_measures(song, track):
         for m in track.other:
             if start <= m.start_time < end:
                 # Leave the time of these messages alone
-                current_measure.append(m)
+                if m.msg.type == 'program_change':  # Split out program changes
+                    current_measure.append(ctsSong.Program(m.start_time, m.msg.program))
+                else:
+                    current_measure.append(m)
 
         #  Now add all the song-specific events to the measure.
         for ks in song.key_signature_changes:
