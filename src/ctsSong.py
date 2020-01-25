@@ -28,6 +28,7 @@ Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
 Program = collections.namedtuple('Program', ['start_time', 'program'])
 MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_number'])
 
+
 class Note:
     """
     This class represents a note in human-friendly form:  as a note with a start time, a duration, and
@@ -46,7 +47,8 @@ class Note:
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
-        return "p=%3d  s=%4d  d=%4d  v=%4d, t=%d" % (self.note_num, self.start_time, self.duration, self.velocity, self.tied)
+        return "p=%3d  s=%4d  d=%4d  v=%4d, t=%d" % (
+        self.note_num, self.start_time, self.duration, self.velocity, self.tied)
 
 
 class SongTrack:
@@ -324,7 +326,7 @@ class Song:
         self.in_midi = mido.MidiFile(filename)
         self.ppq = self.in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
         # If MIDI file is not a Type 0 or 1 file, barf
-        if int(self.in_midi.type) > 1:
+        if self.in_midi.type > 1:
             print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (self.in_midi.type),
                   file=sys.stderr)
             sys.exit(1)
@@ -344,8 +346,6 @@ class Song:
                 self.get_meta(track, True if i == 0 else False, True)
             else:
                 self.get_meta(track, False, False)
-
-
 
         # Sort all time changes from meta tracks into a single time signature change list
         self.time_signature_changes = sorted(self.time_signature_changes)
@@ -376,7 +376,6 @@ class Song:
         self.end_time = max(n.start_time + n.duration for t in self.tracks for n in t.notes)
         self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
         self.stats['Measures'] = max(m.measure for m in self.measure_beats)
-
 
     def get_meta(self, track, is_zerotrack=False, is_metatrack=False):
         """ 
@@ -444,25 +443,25 @@ class Song:
         self.end_time = max(t.notes[-1].start_time + t.notes[-1].duration for t in self.tracks)
         self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
 
-    def smart_quantize(self, min_note_duration_string, triplets_allowed=False, dotted_allowed=False):
+    def smart_quantize(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
+        """
+        Quantize song with more user-friendly input than ticks.  Allowed quantizations are the keys for the
+        ctsConstants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
+        values for dotted_allowed and triplets_allowed will be overridden.
+
+        """
         if '.' in min_note_duration_string:
             dotted_allowed = True
+            min_note_duration_string = min_note_duration_string.replace('.', '')
         if '-3' in min_note_duration_string:
             triplets_allowed = True
-        j = len(min_note_duration_string)
-        for i in range(len(min_note_duration_string)):
-            if not min_note_duration_string[i].isdigit():
-                j = i
-                break
-        min_d = min_note_duration_string[:j]
-        print(j, min_d)
-        qticks = int(self.ppq * DURATION_STR[min_d])
+            min_note_duration_string = min_note_duration_string.replace('-3', '')
+        qticks = int(self.ppq * DURATION_STR[min_note_duration_string])
         if dotted_allowed:
             qticks //= 2
         if triplets_allowed:
             qticks //= 3
         self.quantize(qticks, qticks)
-
 
     def remove_polyphony(self):
         """
@@ -749,7 +748,7 @@ def duration_to_note_name(duration, ppq):
     Given a ppq (pulses per quaver) convert a duration to a human readable note length, e.g., 'eighth'
     Works for notes, dotted notes, and triplets down to sixty-fourth notes.
     """
-    f = Fraction(duration/ppq).limit_denominator(64)
+    f = Fraction(duration / ppq).limit_denominator(64)
     return DURATIONS.get(f, '<unknown>')
 
 
