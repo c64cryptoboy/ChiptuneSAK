@@ -37,9 +37,10 @@ def lp_pitch_to_note_name(note_num, octave_offset=4):
 def make_lp_notes(note_name, duration, ppq):
     durs = []
     remainder = duration
+    min_duration = int(min(lp_durations) * ppq)
     while remainder > 0:
-        if remainder < min(lp_durations):
-            raise ChiptuneSAKValueError("Illegal duration: %d (ppq = %d)" % (remainder, ppq))
+        if remainder < min_duration:
+            raise ChiptuneSAKValueError("Illegal duration: %d (min allowed = %d)" % (remainder, min_duration))
         for f in sorted(lp_durations, reverse=True):
             if remainder >= f * ppq:
                 durs.append(f)
@@ -70,15 +71,17 @@ def song_to_lilypond(song, format='full'):
         ''')
     else:
         raise ChiptuneSAKValueError("Unknown format " + format)
+    output.append('\\header {');
     if len(song.name) > 0:
-        output.append('\\header { title = "%s"' % song.name)
-    author = next(m.msg.text for m in song.other if m.msg.type == 'text')
+        output.append(' title = "%s"' % song.name)
+    author = next((m.msg.text for m in song.other if m.msg.type == 'text'), None)
     if author:
         output.append('composer = "%s"' % author)
     output.append('}')
     #  ---- end of headers ----
     output.append('\\new StaffGroup <<')
     all_measures = ctsExportUtil.get_measures(song)
+    print('Measures created...')
     for it, t in enumerate(song.tracks):
         measures = all_measures[it]
         track_range = (min(n.note_num for n in t.notes), max(n.note_num for n in t.notes))
@@ -89,6 +92,7 @@ def song_to_lilypond(song, format='full'):
             measure_contents = []
             output.append("%% measure %d" % (im + 1))
             for e in m:
+                print(e)
                 if isinstance(e, ctsSong.Note):
                     f = Fraction(e.duration / song.ppq).limit_denominator(64)
                     if f in lp_durations:
@@ -125,15 +129,14 @@ def song_to_lilypond(song, format='full'):
 
 if __name__ == '__main__':
     import subprocess
-    in_filename = '../test/yofa.mid'
+    in_filename = 'consultant.mid'
     song = ctsSong.Song(in_filename)
     song.remove_control_notes()
-    song.estimate_quantization()
-    song.quantize()
+    song.smart_quantize('64')
     song.remove_polyphony()
     out = song_to_lilypond(song, 'full')
     os.chdir('../Test/temp')
-    out_filename = 'yofa.ly'
+    out_filename = 'consultant.ly'
     with open(out_filename, 'w') as f:
         f.write(out)
     # TODO:  Put this functionality into a function and move all the files to a temp directory

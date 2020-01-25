@@ -686,6 +686,8 @@ def find_duration_quantization(ppq, durations, qticks_note):
     The algorithm starts from the estimated quantization for note starts.
     """
     min_length = min(durations)
+    if not (min_length > 0):
+        raise ChiptuneSAKQuantizationError("Illegal minimum note length (%d)" % min_length)
     current_q = qticks_note
     ratio = min_length / current_q
     while ratio < 0.9:
@@ -719,7 +721,7 @@ def make_measures(ppq, time_signature_changes, max_time):
     """
     measures = []
     time_signature_changes = sorted(time_signature_changes)
-    if time_signature_changes[0].start_time == 0:
+    if len(time_signature_changes) > 0 and  time_signature_changes[0].start_time == 0:
         last = time_signature_changes[0]
     else:
         last = TimeSignature(0, 4, 4)

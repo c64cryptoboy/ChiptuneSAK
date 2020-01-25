@@ -540,7 +540,7 @@ def convert_to_note_events(sng_data, subtune_num):
 
 
 def main():
-    sng_data = import_sng(r'C:\Users\xxxxxxxxx\git\chiptune-sak\sandbox\consultant.sng')
+    sng_data = import_sng('consultant.sng')
  
     # TODO: Just assuming a single subtune for now...
     channels_time_events = convert_to_note_events(sng_data, 0)
