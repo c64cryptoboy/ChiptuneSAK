@@ -6,16 +6,12 @@
 #    pip install sortedcontainers
 
 
-# Visual Studio Code suddenly stopped being able to understand how to import from the src folder.
-# TODO: Attempting solution here: https://github.com/Microsoft/vscode-python/issues/3840#issuecomment-463789294
-# - Created .env file in project folder containing PYTHONPATH=C:\Users\crypt\git\chiptune-sak\sandbox
-# - created settings.json by arbitrarily chaing stuff in settings
-# -- located at C:\Users\crypt\AppData\Roaming\Code\User\settings.json
-# -- added the line "python.envFile": "${workspaceFolder}/.env"
-# still doesn't work yet
+# TODO: Bug fix: special code to find the tempo for the very first row.
+# Also handle the other attack/decay last instrument default tempo use case
 
 import sys
-sys.path.append('../src')
+sys.path.append(r'./src')
+# sys.path.append(r'C:\Users\crypt\git\chiptune-sak\src')
 import copy
 from ctsErrors import *
 from ctsML64 import pitch_to_ml64_note_name
@@ -78,7 +74,6 @@ TimeEntry = recordtype('TimeEntry',
     ('note_on', None), # True for note on, False for note off, or None (when no note)
     ('tempo', None)]) # shows when the tempo changed (which affected note time placement)
 
-
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
     __patterns = [] # patterns across all subtunes and channels
@@ -118,8 +113,8 @@ class GtChannelState:
         if self.row_ticks_left > 0:
             return None
         
-        self.row_ticks_left = self.curr_tempo # reset the tick counter for the row
         self.__inc_to_next_row() # finished last pattern row, on to the next
+        self.row_ticks_left = self.curr_tempo # reset the tick counter for the row
 
         row = copy.deepcopy(GtChannelState.__patterns[
             self.channel_orderlist[self.orderlist_index]][self.row_index])
@@ -412,7 +407,7 @@ def convert_to_note_events(sng_data, subtune_num):
     channels_state = [GtChannelState(sng_data.subtune_orderlists[subtune_num][i]) for i in range(3)]
     channels_time_events = [SortedDict() for i in range(3)]
 
-    global_tick = 0
+    global_tick = -1
     while not all(cs.restarted for cs in channels_state):
         global_tick += 1
 
@@ -540,19 +535,34 @@ def convert_to_note_events(sng_data, subtune_num):
 
 
 def main():
-    sng_data = import_sng('consultant.sng')
+    # print ("DEBUG:\n%s" % ('\n'.join(sys.path)))
+
+    sng_data = import_sng(r'.\sandbox\consultant.sng')
  
     # TODO: Just assuming a single subtune for now...
     channels_time_events = convert_to_note_events(sng_data, 0)
 
     # CODE: print out channels_time_events
+
+    """
     print("DEBUG")
     for i, channel_time_events in enumerate(channels_time_events):
         print('\nChannel %d/3:' % (i+1))
         for tick, struct in channel_time_events.items():
             print("%d: %s" % (tick, struct))
-    exit("\nDone")
+        exit("early exit)")
+    """
 
+    max_tick = max(max(channels_time_events[i].keys()) for i in range(3))
+    for tick in range(max_tick):
+        if any(tick in channels_time_events[ch] for ch in range(3)):
+            output = "%d: " % tick
+            for i in range(3):
+                if tick in channels_time_events[i]:
+                    output += "%d %d %s, " % (i, channels_time_events[i][tick].note, channels_time_events[i][tick].note_on)
+                else:
+                    output += "%d - -, " % i
+            print(output)
 
 if __name__ == "__main__":
     main()
