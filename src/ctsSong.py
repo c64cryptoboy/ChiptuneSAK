@@ -16,7 +16,7 @@ import mido
 import more_itertools as moreit
 from fractions import Fraction
 from ctsErrors import *
-import ctsConstants
+from ctsConstants import *
 
 # Named tuple types for several lists throughout
 TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
@@ -26,7 +26,7 @@ OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
 Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
 Program = collections.namedtuple('Program', ['start_time', 'program'])
-
+MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_number'])
 
 class Note:
     """
@@ -324,7 +324,7 @@ class Song:
         self.in_midi = mido.MidiFile(filename)
         self.ppq = self.in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
         # If MIDI file is not a Type 0 or 1 file, barf
-        if self.in_midi.type > 1:
+        if int(self.in_midi.type) > 1:
             print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (self.in_midi.type),
                   file=sys.stderr)
             sys.exit(1)
@@ -443,6 +443,26 @@ class Song:
         # Things have changed to re-do the measures calculation
         self.end_time = max(t.notes[-1].start_time + t.notes[-1].duration for t in self.tracks)
         self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
+
+    def smart_quantize(self, min_note_duration_string, triplets_allowed=False, dotted_allowed=False):
+        if '.' in min_note_duration_string:
+            dotted_allowed = True
+        if '-3' in min_note_duration_string:
+            triplets_allowed = True
+        j = len(min_note_duration_string)
+        for i in range(len(min_note_duration_string)):
+            if not min_note_duration_string[i].isdigit():
+                j = i
+                break
+        min_d = min_note_duration_string[:j]
+        print(j, min_d)
+        qticks = int(self.ppq * DURATION_STR[min_d])
+        if dotted_allowed:
+            qticks //= 2
+        if triplets_allowed:
+            qticks //= 3
+        self.quantize(qticks, qticks)
+
 
     def remove_polyphony(self):
         """
@@ -730,7 +750,7 @@ def duration_to_note_name(duration, ppq):
     Works for notes, dotted notes, and triplets down to sixty-fourth notes.
     """
     f = Fraction(duration/ppq).limit_denominator(64)
-    return ctsConstants.DURATIONS.get(f, '<unknown>')
+    return DURATIONS.get(f, '<unknown>')
 
 
 def pitch_to_note_name(note_num, octave_offset=0):
@@ -741,4 +761,4 @@ def pitch_to_note_name(note_num, octave_offset=0):
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave = (note_num // 12) + octave_offset
     pitch = note_num % 12
-    return "%s%d" % (ctsConstants.PITCHES[pitch], octave)
+    return "%s%d" % (PITCHES[pitch], octave)
