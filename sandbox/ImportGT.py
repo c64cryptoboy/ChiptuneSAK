@@ -3,7 +3,7 @@ import ctsSong
 import parseGT
 
 def tick_to_miditick(t):
-    return t * 32  # Scale so that midi will pay back at the same speed as the tracker would play.
+    return (t-1) * 48  # Scale so that midi will pay back at the same speed as the tracker would play.
 
 def import_goattracker(in_filename):
     data = parseGT.import_sng(in_filename)
@@ -50,4 +50,6 @@ def import_goattracker(in_filename):
 
 if __name__ == '__main__':
     song = import_goattracker('consultant.sng')
+    print(song.estimate_quantization())
+    song.quantize()
     song.export_midi('consultant.mid')
