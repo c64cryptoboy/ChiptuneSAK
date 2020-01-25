@@ -6,7 +6,7 @@ from ctsErrors import *
 import ctsConstants
 import ctsSong
 from fractions import Fraction
-from ctsExportUtil import populate_measures
+import ctsExportUtil
 
 import more_itertools as moreit
 
@@ -71,10 +71,16 @@ def song_to_lilypond(song, format='full'):
     else:
         raise ChiptuneSAKValueError("Unknown format " + format)
     if len(song.name) > 0:
-        output.append('\\header { title = "%s" }' % song.name)
+        output.append('\\header { title = "%s"' % song.name)
+    author = next(m.msg.text for m in song.other if m.msg.type == 'text')
+    if author:
+        output.append('composer = "%s"' % author)
+    output.append('}')
+    #  ---- end of headers ----
     output.append('\\new StaffGroup <<')
+    all_measures = ctsExportUtil.get_measures(song)
     for it, t in enumerate(song.tracks):
-        measures = populate_measures(song, t)
+        measures = all_measures[it]
         track_range = (min(n.note_num for n in t.notes), max(n.note_num for n in t.notes))
         output.append('\\new Staff \\with { instrumentName = #"%s" } {' % t.name)
         if track_range[0] < 48:
@@ -97,6 +103,9 @@ def song_to_lilypond(song, format='full'):
                     else:
                         measure_contents.append(make_lp_notes('r', e.duration, song.ppq))
 
+                elif isinstance(e, ctsSong.MeasureMarker):
+                    measure_contents.append('|')
+
                 elif isinstance(e, ctsSong.TimeSignature):
                     measure_contents.append('\\time %d/%d' % (e.num, e.denom))
 
@@ -106,8 +115,8 @@ def song_to_lilypond(song, format='full'):
                     key.replace('b', 'es')
                     measure_contents.append('\\key %s \\major' % (key.lower()))
 
-            measure_contents.append('|')
             output.append(' '.join(measure_contents))
+        output.append('\\bar "||"')
         output.append('}')
     output.append('>>\n')
 

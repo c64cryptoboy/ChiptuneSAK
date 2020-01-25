@@ -15,7 +15,7 @@ ml64_durations = {
     Fraction(1, 4): '16'
 }
 
-ML64MeasureMarker = collections.namedtuple('ML64MeasureMarker', ['start_time', 'measure_number'])
+
 
 
 def pitch_to_ml64_note_name(note_num, octave_offset=1):
@@ -61,7 +61,7 @@ def ml64_sort_order(c):
         return (c.start_time, 10)
     elif isinstance(c, ctsSong.Rest):
         return (c.start_time, 10)
-    elif isinstance(c, ML64MeasureMarker):
+    elif isinstance(c, ctsSong.MeasureMarker):
         return (c.start_time, 1)
     elif isinstance(c, ctsSong.Tempo):
         return (c.start_time, 3)
@@ -113,7 +113,7 @@ def export_ml64(song, format='standard'):
             measures = [m.start_time for m in song.measure_beats if m.beat == 1]
             for im, m in enumerate(measures):
                 if m < last_note_end:
-                    track_events.append(ML64MeasureMarker(m, im + 1))
+                    track_events.append(ctsSong.MeasureMarker(m, im + 1))
         track_events.sort(key=ml64_sort_order)
         # Now send the entire list of events to the ml64 creator
         track_content, stats, *_ = events_to_ml64(track_events, song)
@@ -144,13 +144,13 @@ def export_ml64_measures(song):
     output.append('song(1)')
     output.append('tempo(%d)' % song.bpm)
 
+    all_measures = ctsExportUtil.get_measures(song)
     for it, t in enumerate(song.tracks):
         output.append('track(%d)' % (it + 1))
-        measures = ctsExportUtil.populate_measures(song, t)
+        measures = all_measures[it]
         last_continue = False
         for im, measure in enumerate(measures):
             measure_content, tmp_stats, last_continue = events_to_ml64(measure, song, last_continue)
-            measure_content.insert(0, '[m%d]' % (im + 1))
             output.append(''.join(measure_content))
             stats.update(tmp_stats)
         output.append('track(-)')
@@ -182,8 +182,8 @@ def events_to_ml64(events, song, last_continue=False):
             content.append(tmp_note)
             last_continue = False
             stats['rest'] += tmp_note.count('r(')
-        elif isinstance(e, ML64MeasureMarker):
-            content.append('\n[m%d]' % e.measure_number)
+        elif isinstance(e, ctsSong.MeasureMarker):
+            content.append('[m%d]' % e.measure_number)
         elif isinstance(e, ctsSong.Program):
             content.append('i(%s)' % e.program)
             stats['program'] += 1
@@ -199,9 +199,9 @@ if __name__ == '__main__':
 
     in_song.remove_control_notes()
     # in_song.modulate(3, 2)
-    in_song.quantize(in_song.ppq // 4,
-                     in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
-
+    # in_song.quantize(in_song.ppq // 4,
+    #                  in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
+    in_song.smart_quantize('16')
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     print("(%s, %s)" % (
         ctsSong.duration_to_note_name(in_song.qticks_notes, in_song.ppq),

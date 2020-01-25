@@ -4,6 +4,8 @@ import ctsConstants
 import ctsSong
 import more_itertools as moreit
 
+""" Utility functions for exporting to various formats from the ctsSong.Song representation """
+
 
 def populate_measures(song, track):
     """
@@ -23,6 +25,8 @@ def populate_measures(song, track):
             return (c.start_time, 10)
         elif isinstance(c, ctsSong.Rest):
             return (c.start_time, 10)
+        elif isinstance(c, ctsSong.MeasureMarker):
+            return (c.start_time, 0)
         elif isinstance(c, ctsSong.TimeSignature):
             return (c.start_time, 1)
         elif isinstance(c, ctsSong.KeySignature):
@@ -34,7 +38,8 @@ def populate_measures(song, track):
         else:
             return (c.start_time, 5)
 
-    # Find all the measure positions in time
+    # Find all the measure positions in time; note that since this is song-based, all tracks will have the
+    # same number of measures.
     measure_starts = [m.start_time for m in song.measure_beats if m.beat == 1]
     # Artificially add an extra measure on the end to finish processing the notes in the last measure.
     measure_starts.append(2 * measure_starts[-1] - measure_starts[-2])
@@ -44,14 +49,10 @@ def populate_measures(song, track):
     carry = None  # Note carried over from previous measure
     last_note_end = 0  # Time that the previous note ended
     # First add in the notes to the measure
-    itmp = 0
+    imeasure = 0
     for start, end in moreit.pairwise(measure_starts):
-        if end == measure_starts[-1]:
-            last_measure = True
-        else:
-            last_measure = False
-        itmp += 1
-        current_measure = []  # Make a list of the contents of the current measure
+        imeasure += 1
+        current_measure = [ctsSong.MeasureMarker(start, imeasure)]  # Every measure starts out with a measure marker
         last_note_end = start
         if carry:  # Deal with any notes carried over from the previous measure
             carry.start_time = start
@@ -88,13 +89,8 @@ def populate_measures(song, track):
 
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?
-            if not last_measure:
-                current_measure.append(ctsSong.Rest(last_note_end, gap))
-                last_note_end = end
-            else:
-                if gap < (end - start):
-                    current_measure.append(ctsSong.Rest(last_note_end, gap))
-                    last_note_end = end
+            current_measure.append(ctsSong.Rest(last_note_end, gap))
+            last_note_end = end
 
         # Add any additional track-specific messages to the measure:
         for m in track.other:
@@ -127,8 +123,31 @@ def populate_measures(song, track):
                 current_measure.append(m)
 
         current_measure = sorted(current_measure, key=sort_order)
-        notes_in_measure = sum(1 for e in current_measure if isinstance(e, ctsSong.Note))
-        if (not last_measure) or notes_in_measure > 0:
-            retval.append(current_measure)
+        retval.append(current_measure)
 
     return retval
+
+
+def count_notes(measure):
+    """
+    Counts the number of notes in a measure.  Ignores everything else.
+    """
+    return sum(1 for e in measure if isinstance(e, ctsSong.Note))
+
+
+def trim_measures(measures_list):
+    """
+    Trims all note-free measures from the end of the song.
+    """
+    while all(count_notes(m[-1]) == 0 for m in measures_list):
+        for i in range(len(measures_list)):
+            measures_list[i].pop()
+    return measures_list
+
+
+def get_measures(song):
+    """
+    Gets all the measures from all the tracks in a song, and removes any extra measures from the end.
+    """
+    all_measures = [populate_measures(song, t) for t in song.tracks]
+    return trim_measures(all_measures)
