@@ -24,14 +24,14 @@ Details:
 * ML64: Human-readable music format for Unknown Realm music contributions from those supporting at the "bard tier"
 
 #### Importers: proposed
-* Subset of [MusicXML](https://www.musicxml.com/for-developers/) (a digital sheet music interchange format)
+* Subset of [MusicXML](https://www.musicxml.com/for-developers/): A digital sheet music interchange format
 * jellybiscuits [Music Box Composer](http://www.jellybiscuits.com/?page_id=951) file format
 * Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): Arbitrary C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  Importer proposed as alternative to the closed-source SID2MIDI.
-  
+
 ### Music intermediate representation (MIR): processing / transformations
 * Quantizing of note onset and duration (for "continuous" inputs such as midi)
 * Arbitrary metric modulation with support for music with varying meters
-* Music compression (compute patterns for trackers, including opportunities based on transposition)
+* Music compression (compute patterns for trackers, including compression opportunities based on transposition and tempo)
  
 #### MIR processing: under development
 * Transpose score
@@ -55,6 +55,9 @@ Details:
 * Jellyfish Music Box Composer format
 * [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (targeting dual and triple SID, as SID-Wizard only supports midi->single SID)
 * RobTracker v1.11 (publicly released Dec 25th. 2019)
+
+## Recent milestones
+* Converted example goattracker sng file into both midi and pdf sheet music
 
 ## Requirements/Building
 * Python 3.7+
