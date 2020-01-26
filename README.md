@@ -6,8 +6,14 @@ Many one-off music processing tools were created for the Youd/Knapp/Van Haren [t
 
 That effort has been redirected into this standalone tool / library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
 
+## Team
+* David Knapp
+* David Youd
+* Markus Brenner: Ultima music importing/exporting
+* Hasse Axəlsson-Svala: GoatTracker consultant
+
 ## Project Status
-The code is currently in a pre-alpha state.  Features are being debated and fundamental data representations are in flux.
+The code is currently in a pre-alpha state.  Features are being debated and fundamental data representations are in flux.  Currently working on a variety of concrete importers and exporters from which to generalize the processing pipeline.
 Details:
 
 ### Music importers
@@ -20,7 +26,7 @@ Details:
 #### Importers: proposed
 * Subset of [MusicXML](https://www.musicxml.com/for-developers/) (a digital sheet music interchange format)
 * jellybiscuits [Music Box Composer](http://www.jellybiscuits.com/?page_id=951) file format
-* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): Arbitrary C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  Alternative to the closed-source SID2MIDI.
+* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): Arbitrary C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  Importer proposed as alternative to the closed-source SID2MIDI.
   
 ### Music intermediate representation (MIR): processing / transformations
 * Quantizing of note onset and duration (for "continuous" inputs such as midi)
@@ -47,5 +53,14 @@ Details:
 * Markus's yet-unnamed Dr. Cat-derrived 3-SID C64 player
 * [ABC](http://abcnotation.com/wiki/abc:standard:v2.1) Notation: Human-readable music format.  Used to allow user-submitted music in online games including Starbound, Lord of the Rings Online, and Shroud of the Avatar
 * Jellyfish Music Box Composer format
-* [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (dual / triple SID)
+* [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (targeting dual and triple SID, as SID-Wizard only supports midi->single SID)
 * RobTracker v1.11 (publicly released Dec 25th. 2019)
+
+## Requirements/Building
+* Python 3.7+
+* pip install
+   * numpy
+   * matplotlib
+   * more_itertools
+   * recordtype
+   * sortedcontainers
