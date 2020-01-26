@@ -256,7 +256,7 @@ class SongTrack:
         Convert the SongTrack to a midi track.
         """
         midiTrack = mido.MidiTrack()
-        events = []
+        events = [mido.MetaMessage('track_name', name=self.name)]
         for n in self.notes:
             # For the sake of sorting, create the midi event with the absolute time (which will be
             # changed to a delta time before returning).

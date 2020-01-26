@@ -85,7 +85,6 @@ def song_to_lilypond(song, format='full'):
     #  ---- end of headers ----
     output.append('\\new StaffGroup <<')
     all_measures = ctsExportUtil.get_measures(song)
-    print('Measures created...')
     for it, t in enumerate(song.tracks):
         measures = all_measures[it]
         track_range = (min(n.note_num for n in t.notes), max(n.note_num for n in t.notes))

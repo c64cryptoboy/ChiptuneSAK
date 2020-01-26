@@ -2,8 +2,10 @@ import sandboxPath
 import ctsSong
 import parseGT
 
+
 def tick_to_miditick(t):
-    return t * 32  # Scale so that midi will pay back at the same speed as the tracker would play.
+    return t * 48  # Scale so that midi will pay back at the same speed as the tracker would play.
+
 
 def import_goattracker(in_filename):
     data = parseGT.import_sng(in_filename)
@@ -16,6 +18,7 @@ def import_goattracker(in_filename):
     for it, channel_data in enumerate(channels_time_events):
         track = ctsSong.SongTrack(song)
         track.name = 'Track %d' % (it + 1)
+        track.channel = it
         current_note = None
         for tick, event in channel_data.items():
             midi_tick = tick_to_miditick(tick)
@@ -27,8 +30,6 @@ def import_goattracker(in_filename):
                     if new_note.duration > 0:
                         track.notes.append(new_note)
                 current_note = ctsSong.Note(event.note, midi_tick, 0)
-            elif event.note_on is None:
-                continue
             elif event.note_on is False:
                 if event.note_on:
                     if current_note:
@@ -45,6 +46,7 @@ def import_goattracker(in_filename):
             if new_note.duration > 0:
                 track.notes.append(new_note)
         song.tracks.append(track)
+
     return song
 
 
