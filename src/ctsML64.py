@@ -201,7 +201,7 @@ if __name__ == '__main__':
     # in_song.modulate(3, 2)
     # in_song.quantize(in_song.ppq // 4,
     #                  in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
-    in_song.smart_quantize('16')
+    in_song.quantize_from_note_name('16')
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     print("(%s, %s)" % (
         ctsSong.duration_to_note_name(in_song.qticks_notes, in_song.ppq),

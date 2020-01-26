@@ -210,6 +210,8 @@ class SongTrack:
             elif n.start_time < last.start_time + last.duration:
                 last.duration = n.start_time - last.start_time
                 truncated += 1
+            if last.duration <= 0:
+                deleted += 1
             ret_notes.append(last)
             last = n
         ret_notes.append(last)
@@ -312,7 +314,6 @@ class Song:
         self.time_signature_changes = []  # List of time signature changes
         self.key_signature_changes = []  # List of key signature changes
         self.tempo_changes = []  # List of tempo changes
-        self.end_time = 0  # last MIDI event in the entire song
         self.stats = {}  # Statistics about the song
 
     def import_midi(self, filename):
@@ -371,11 +372,6 @@ class Song:
 
         self.stats["Notes"] = sum(len(t.notes) for t in self.tracks)
         self.stats["Track names"] = [t.name for t in self.tracks]
-
-        # Finally, generate measures and beats
-        self.end_time = max(n.start_time + n.duration for t in self.tracks for n in t.notes)
-        self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
-        self.stats['Measures'] = max(m.measure for m in self.measure_beats)
 
     def get_meta(self, track, is_zerotrack=False, is_metatrack=False):
         """ 
@@ -439,11 +435,7 @@ class Song:
         for i, m in enumerate(self.other):
             self.other[i] = OtherMidi(quantize_fn(m.start_time, self.qticks_notes), m.msg)
 
-        # Things have changed to re-do the measures calculation
-        self.end_time = max(t.notes[-1].start_time + t.notes[-1].duration for t in self.tracks)
-        self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
-
-    def smart_quantize(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
+    def quantize_from_note_name(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
         """
         Quantize song with more user-friendly input than ticks.  Allowed quantizations are the keys for the
         ctsConstants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
@@ -521,10 +513,40 @@ class Song:
         # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
         self.qticks_notes = (self.qticks_notes * n) // d
         self.qticks_durations = (self.qticks_durations * n) // d
-        # Finally finally fix the last event time
-        self.end_time = max(n.start_time + n.duration for t in self.tracks for n in t.notes)
-        # Things have changed to re-do the measures calculation
-        self.measure_beats = make_measures(self.ppq, self.time_signature_changes, self.end_time)
+
+    def end_time(self):
+        return max(n.start_time + n.duration for t in self.tracks for n in t.notes)
+
+    def measure_starts(self):
+        return [m.start_time for m in self.measures_and_beats() if m.beat == 1]
+
+    def measures_and_beats(self):
+        measures = []
+        max_time = self.end_time()
+        time_signature_changes = sorted(self.time_signature_changes)
+        if len(time_signature_changes) > 0 and time_signature_changes[0].start_time == 0:
+            last = time_signature_changes[0]
+        else:
+            last = TimeSignature(0, 4, 4)
+        t, m, b = 0, 1, 1
+        for s in time_signature_changes:
+            while t < s.start_time:
+                measures.append(Beat(t, m, b))
+                t += (self.ppq * 4) // last.denom
+                b += 1
+                if b > last.num:
+                    m += 1
+                    b = 1
+            last = s
+        while t <= max_time:
+            measures.append(Beat(t, m, b))
+            t += (self.ppq * 4) // last.denom
+            b += 1
+            if b > last.num:
+                m += 1
+                b = 1
+        self.stats['Measures'] = m
+        return measures
 
     def get_measure_beat(self, start_time):
         """
@@ -532,12 +554,13 @@ class Song:
         equal to the returned measure and beat but less than the next.  The result should be
         interpreted as the time being during the measure and beat returned.
         """
+        measure_beats = self.measures_and_beats()
         # Make a list of start times from the list of measure-beat times.
-        tmp = [m.start_time for m in self.measure_beats]
+        tmp = [m.start_time for m in measure_beats]
         # Find the index of the desired time in the list.
         pos = bisect.bisect_right(tmp, start_time)
         # Return the corresponding measure/beat
-        return self.measure_beats[pos - 1]
+        return measure_beats[pos - 1]
 
     def split_midi_zero_into_tracks(self):
         """
@@ -712,37 +735,6 @@ def quantize_fn(t, qticks):
         return current
     else:
         return next
-
-
-def make_measures(ppq, time_signature_changes, max_time):
-    """
-    Given a list of times and time signatures (num / denom), generates alist of the positions of measures and
-    beats within that measure.
-    """
-    measures = []
-    time_signature_changes = sorted(time_signature_changes)
-    if len(time_signature_changes) > 0 and  time_signature_changes[0].start_time == 0:
-        last = time_signature_changes[0]
-    else:
-        last = TimeSignature(0, 4, 4)
-    t, m, b = 0, 1, 1
-    for s in time_signature_changes:
-        while t < s.start_time:
-            measures.append(Beat(t, m, b))
-            t += (ppq * 4) // last.denom
-            b += 1
-            if b > last.num:
-                m += 1
-                b = 1
-        last = s
-    while t <= max_time:
-        measures.append(Beat(t, m, b))
-        t += (ppq * 4) // last.denom
-        b += 1
-        if b > last.num:
-            m += 1
-            b = 1
-    return measures
 
 
 def duration_to_note_name(duration, ppq):

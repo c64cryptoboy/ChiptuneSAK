@@ -35,6 +35,8 @@ def lp_pitch_to_note_name(note_num, octave_offset=4):
 
 
 def make_lp_notes(note_name, duration, ppq):
+    if duration <= 0:
+        raise ChiptuneSAKValueError("Illegal note duration: %d" % duration)
     durs = []
     remainder = duration
     min_duration = int(min(lp_durations) * ppq)
@@ -47,8 +49,10 @@ def make_lp_notes(note_name, duration, ppq):
                 remainder -= f * ppq
                 break
     if note_name == 'r':
-        return ' '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
-    return '~ '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
+        retval = ' '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
+    else:
+        retval = '~ '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
+    return retval
 
 
 def song_to_lilypond(song, format='full'):
@@ -71,7 +75,7 @@ def song_to_lilypond(song, format='full'):
         ''')
     else:
         raise ChiptuneSAKValueError("Unknown format " + format)
-    output.append('\\header {');
+    output.append('\\header {')
     if len(song.name) > 0:
         output.append(' title = "%s"' % song.name)
     author = next((m.msg.text for m in song.other if m.msg.type == 'text'), None)
@@ -92,7 +96,6 @@ def song_to_lilypond(song, format='full'):
             measure_contents = []
             output.append("%% measure %d" % (im + 1))
             for e in m:
-                print(e)
                 if isinstance(e, ctsSong.Note):
                     f = Fraction(e.duration / song.ppq).limit_denominator(64)
                     if f in lp_durations:
@@ -132,7 +135,7 @@ if __name__ == '__main__':
     in_filename = 'consultant.mid'
     song = ctsSong.Song(in_filename)
     song.remove_control_notes()
-    song.smart_quantize('64')
+    song.quantize_from_note_name('64')
     song.remove_polyphony()
     out = song_to_lilypond(song, 'full')
     os.chdir('../Test/temp')

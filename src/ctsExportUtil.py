@@ -40,7 +40,7 @@ def populate_measures(song, track):
 
     # Find all the measure positions in time; note that since this is song-based, all tracks will have the
     # same number of measures.
-    measure_starts = [m.start_time for m in song.measure_beats if m.beat == 1]
+    measure_starts = song.measure_starts()
     # Artificially add an extra measure on the end to finish processing the notes in the last measure.
     measure_starts.append(2 * measure_starts[-1] - measure_starts[-2])
     n_notes = len(track.notes)
@@ -57,7 +57,9 @@ def populate_measures(song, track):
         if carry:  # Deal with any notes carried over from the previous measure
             carry.start_time = start
             carry_end = start + carry.duration
-            if carry_end >= end:  # Does the carried note extend past the end of this measure?
+            if carry.duration <= 0:
+                raise ChiptuneSAKValueError("Illegal carry note duration %d" % carry.duration, str(carry))
+            if carry_end > end:  # Does the carried note extend past the end of this measure?
                 current_measure.append(ctsSong.Note(carry.note_num, start, end-start, 100, tied=True))
                 carry.duration -= end - start
                 last_note_end = end
@@ -78,7 +80,7 @@ def populate_measures(song, track):
                 current_measure.append(n)
                 last_note_end = note_end
             else:
-                carry = copy.copy(n)  # Make a copy of the note to use for the carry
+                carry = copy.deepcopy(n)  # Make a copy of the note to use for the carry
                 duration = end - n.start_time
                 n.duration = duration  # truncate the note to the end of the measure
                 n.tied = True  # And mark it as tied to the next note
