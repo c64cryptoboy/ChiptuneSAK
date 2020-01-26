@@ -1,30 +1,20 @@
 # Code to parse goattracker .sng files
-# Currently in sandbox folder.  Will be ultimately be refactored into a generalized chiptune-sak importer
-#
+# 
 # Prereqs
 #    pip install recordtype
 #    pip install sortedcontainers
 
-
-# TODO: Bug fix: special code to find the tempo for the very first row.
-# Also handle the other attack/decay last instrument default tempo use case
+# TODO: Refactor this into a generalized chiptune-sak importer (command line option, etc.), and put in src
+# TODO: Test the repeat command on a different goat tracker tune (consultant one doesn't use it)
 
 import sys
-sys.path.append(r'./src')
-# sys.path.append(r'C:\Users\crypt\git\chiptune-sak\src')
+sys.path.append(r'./src') # from vs code
+#sys.path.append(r'../src') # from command line
 import copy
 from ctsErrors import *
 from ctsML64 import pitch_to_ml64_note_name
 from recordtype import recordtype
 from sortedcontainers import SortedDict
-
-"""
-Style notes to self (delete later):
-
-    You should only use StudlyCaps for class names.
-    Constants should be IN_ALL_CAPS with underscores separating words.
-    Variable, method, and function names should always be snake_case.
-"""
 
 debug = False
 
@@ -37,7 +27,6 @@ MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and follow
 MAX_INSTR_PER_SONG = 63
 MAX_PATTERNS_PER_SONG = 208
 MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
-
 
 class GTSong:
     def __init__(self):
@@ -70,40 +59,68 @@ PATTERN_END_ROW = GtPatternRow(note_data = 0xFF)
 # TimeEntry instances are values in SortedDict where key is tick
 # Over time, might add other commands to this as well (funktempo, Portamento, etc.)
 TimeEntry = recordtype('TimeEntry',
-    [('note', 0), # midi note number
+    [('note', None), # midi note number
     ('note_on', None), # True for note on, False for note off, or None (when no note)
     ('tempo', None)]) # shows when the tempo changed (which affected note time placement)
 
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
+    __init_tempo_override = None
     __patterns = [] # patterns across all subtunes and channels
     # would have init this to None, but this triggers a pylint bug where some references
     # to this variable will trigger an "unscriptable-object" error
     # https://github.com/PyCQA/pylint/issues/1498
 
 
-    def __init__(self, channel_orderlist):
+    def __init__(self, voice_num, channel_orderlist):
         if (GtChannelState.__patterns == []):
             raise ChiptuneSAKException("Must first init class with GtChannelState.set_patterns()")
+
+        self.voice_num = voice_num
         self.orderlist_index = -1 # -1 = bootstrapping value only, None = stuck in loop with no patterns
         self.row_index = -1 # -1 = bootstrapping value only
         self.pat_remaining_plays = 1 # default is to play a pattern once
         self.row_ticks_left = 1 # required value when bootstrapping
-        self.curr_tempo = DEFAULT_TEMPO
+        self.first_tick_of_row = False
         self.curr_transposition = 0
-        self.restarted = False
-        self.curr_note = None # midi note number
+        self.curr_note = None # converted to midi note number
+        self.row_has_note = False # if True, curr_note is immediately set
+        self.row_has_key_on = False # gate bit mask on, reasserting last played note (found in self.curr_note)
+        self.row_has_key_off = False # gate bit mask off
+        self.local_tempo_update = None
+        self.global_tempo_update = None
+        self.restarted = False # channel has encountered restart one or more times
         self.channel_orderlist = channel_orderlist # just this channel's orderlist from the subtune
-        self.__inc_orderlist_to_next_pattern()
+
+        if GtChannelState.__init_tempo_override == None:
+            self.curr_tempo = DEFAULT_TEMPO
+        else:
+            self.curr_tempo = GtChannelState.__init_tempo_override
+
+        self.__inc_orderlist_to_next_pattern() # position atop first pattern in orderlist for channel
 
 
     @classmethod
-    def set_patterns(cls, patterns):
-        GtChannelState.__patterns = patterns
+    def set_song(cls, song):
+        GtChannelState.__patterns = song.patterns
+
+        """ from docs:
+        For very optimized songdata & player you can refrain from using any pattern
+        commands and rely on the instruments' step-programming. Even in this case, you
+        can set song startup default tempo with the Attack/Decay parameter of the last
+        instrument (63/0x3F), if you otherwise leave this instrument unused.
+        """
+        # Handle the sneaky default global tempo (NOTE: THIS CODE IS UNTESTED)
+        if len(song.instruments) == MAX_INSTR_PER_SONG:
+            ad = song.instruments[MAX_INSTR_PER_SONG-1].attack_decay
+            if 0x02 <= ad <= 0x7F:
+                __init_tempo_override = ad
 
 
     # Advance channel/voice by a tick.  If advancing to a new row, then return it, otherwise None.
     def next_tick(self):
+        self.first_tick_of_row = False
+
         # If stuck in an orderlist loop that doesn't contain a pattern, then there's nothing to do
         if self.orderlist_index == None:
             return None
@@ -114,20 +131,94 @@ class GtChannelState:
             return None
         
         self.__inc_to_next_row() # finished last pattern row, on to the next
-        self.row_ticks_left = self.curr_tempo # reset the tick counter for the row
 
         row = copy.deepcopy(GtChannelState.__patterns[
             self.channel_orderlist[self.orderlist_index]][self.row_index])
 
         # If row contains a note, transpose if necessary (0 = no transform)
         if 0x60 <= row.note_data <= 0xBC: # range $60 (C0) to $BC (G#7)
-            # Not yet time to set channel state's curr_note to it's midi value,
-            #   just put the note in the row for now.
             note = row.note_data + self.curr_transposition
             assert note >= 0x60, "Error: transpose dropped note below midi C0"
-            # according to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
-            # that can be entered in the GT GUI, to create a B7
+            # According to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
+            #    that can be entered in the GT GUI, to create a B7
             assert note <= 0xBF, "Error: transpose raised note above midi B7"
+            self.curr_note = patternNoteToMidiNote(note)
+            self.row_has_note = True
+
+        # Rest ($BD/189, gt display "..."):  A note continues through rest rows.  Rest does not mean
+        # what it would in sheet music.  For our purposes, we're ignoring it
+
+        # KeyOff ($BE/190, gt display "---"): Unsets the gate bit mask.  This starts the release phase
+        # of the ADSR.
+        # Going to ignore any effects gateoff timer and hardrestart values might have on perceived note end
+        if row.note_data == 0xBE:
+            if self.curr_note != None:
+                self.row_has_key_off = True
+
+        # KeyOn ($BF/191, gt display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
+        # If no prior note has been started, then nothing will happen.  If a note is playing,
+        # nothing will happen (to the note, to the instrument, etc.).  If a note was turned off,
+        # this will restart it, but will not restart the instrument.
+        if row.note_data == 0xBF:
+            if self.curr_note != None:
+                self.row_has_key_on = True
+            
+        if row.command == 0x0F: # tempo change
+            """
+            From docs:
+            Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
+            $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
+            """
+            # From experiments:
+            # - funktempo is basically swing tempo
+            # - empirically, the higher voice number seems to win ties on simultaneous speed changes
+            # - $80-$81 will recall the funktempo for just that channel
+            # - $02 and $82 are possible speeds under certain constraints, but not going to support
+            #   them here (yet).
+
+            assert row.command_data not in [0x02, 0x82] \
+                , "TODO: Don't know how to support tempo change with value %d" % (row.command_data)     
+
+            # Change tempo for all channels
+            #   From looking at the gt source code (at least for the goat tracker gui's gplay.c)
+            #   when a CMD_SETTEMPO happens (for one or for all three channels), the tempos immediately
+            #   change, but the ticks remaining on each channel's current row (in progress) is left alone --
+            #   another detail that would have been nice to have had in the documentation.
+            if 0x03 <= row.command_data <= 0x7F:
+                self.global_tempo_update = row.command_data
+                self.curr_tempo = self.global_tempo_update
+                # Note: Can't set this global tempo change in the other two channels here, will
+                #    be done elsewhere.
+
+            # Change tempo for just the given channel
+            if 0x83 <= row.command_data <= 0xFF:
+                self.local_tempo_update = row.command_data - 0x80
+                self.curr_tempo = self.local_tempo_update         
+
+        # TODO: Possibly handle some of the (below) commands in the future?
+        """ from docs:
+        Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
+    
+        Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the speedtable.
+    
+        Command 3XY: Toneportamento. Raise or lower pitch until target note has been reached. XY is an index
+        to a 16-bit speed value in the speedtable, or $00 for "tie-note" effect (move pitch instantly to
+        target note)
+        
+        Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
+        copied to the timing mark location, which is playeraddress+$3F.
+    
+        Command EXY: Funktempo. XY is an index to the speedtable, tempo will alternate
+        between left side value and right side value on subsequent pattern
+        steps. Sets the funktempo active on all channels, but you can use
+        the next command to override this per-channel.
+        """
+
+        # Number of ticks for a row is based on tempo.  This can be overwritten by another
+        # channel's global tempo change.  However, this class only knows of one channel at a time.
+        # A different part of this program will coordinate when one instance of GtChannelState affects
+        # the tempo of the others.
+        self.row_ticks_left = self.curr_tempo # reset the tick counter for the row
 
         return row
 
@@ -135,6 +226,9 @@ class GtChannelState:
     # Advance to next row in pattern.  If pattern end, then go to row 0 of next pattern in orderlist
     def __inc_to_next_row(self):
         self.row_index += 1 # init val is -1
+        self.row_has_note = self.row_has_key_on = self.row_has_key_off = False 
+        self.local_tempo_update = self.global_tempo_update = None
+        self.first_tick_of_row = True
         row = GtChannelState.__patterns[self.channel_orderlist[self.orderlist_index]][self.row_index]
         if row == PATTERN_END_ROW:
             self.pat_remaining_plays -= 1
@@ -403,165 +497,102 @@ def import_sng(gt_filename):
 # Convert the orderlist and patterns into three channels of note on/off events in time (ticks)
 def convert_to_note_events(sng_data, subtune_num):
     # init state holders for each channel
-    GtChannelState.set_patterns(sng_data.patterns)
-    channels_state = [GtChannelState(sng_data.subtune_orderlists[subtune_num][i]) for i in range(3)]
+    GtChannelState.set_song(sng_data)
+    channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for i in range(3)]
     channels_time_events = [SortedDict() for i in range(3)]
 
     global_tick = -1
     while not all(cs.restarted for cs in channels_state):
+        # When not using multispeed, tempo = ticks per row = screen refreshes per row.
+        # 'Ticks' on C64 are also 'frames' or 'jiffies'.  Each tick in PAL is around 20ms,
+        # and ~16.7‬ms on NTSC.
+        # For a multispeed of 2, there would be two music updates per frame.
+        # For our purposes, the multispeed multiplier doesn't matter, since ticks in
+        # our music intermediate format (as well as in midi are unitless (not tied to ms
+        # or frames).
         global_tick += 1
+        global_tempo_change = None
 
         for i, channel_state in enumerate(channels_state):
             channel_time_events = channels_time_events[i]
+
             row = channel_state.next_tick()
             if row == None: # if we didn't advance to a new row
                 continue
 
-            # Process note data column
+            # KeyOff (and there's a curr_note defined)
+            if channel_state.row_has_key_off:
+                channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
+                channel_time_events[global_tick].note_on = False
 
-            # Rest ($BD/189, display "..."):  A note continues through rest rows.  Rest does not mean
-            # what it would in sheet music.
-            if row.note_data == 0xBD:
-                pass
-
-            # KeyOff ($BE/190, display "---"): Unsets the gate bit mask.  This starts the release phase
-            # of the ADSR.
-            elif row.note_data == 0xBE:
-                if channel_state.curr_note != None:
-                    channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
-                    channel_time_events[global_tick].note_on = False
-                    if debug: print("%s off" % pitch_to_ml64_note_name(channel_state.curr_note, 0))
-
-            # KeyOn ($BF/191, display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
-            # If no prior note has been started, then nothing will happen.  If a note is playing,
-            # nothing will happen (to the note, to the instrument, etc.).  If a note was turned off,
-            # this will restart it, but will not restart the instrument.
-            elif row.note_data == 0xBF:
-                if channel_state.curr_note != None:
-                    channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
-                    channel_time_events[global_tick].note_on = True
-                    if debug: print("%s on" % pitch_to_ml64_note_name(channel_state.curr_note, 0))
-
-            # if note_data is an actual note
-            elif 0x60 <= row.note_data <= 0xBC: # range $60 (C0) to $BC (G#7)
-                channel_state.curr_note = patternNoteToMidiNote(row.note_data)
+            # KeyOn (and there's a curr_note defined)
+            if channel_state.row_has_key_on:
                 channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
                 channel_time_events[global_tick].note_on = True
-                if debug: print("%s on" % pitch_to_ml64_note_name(channel_state.curr_note, 0))
 
-            # pattern end
-            elif row.note_data == 0xFF: 
-                exit("Error: pattern end handling should have happened elsewhere")
-            # unexpected byte
-            else:
-                # Bounds checks earlier should keep this from happening
-                sys.exit("Error: didn't understand byte %d in pattern data" % row.note_data)
-
-            # process command column:
+            # if note_data is an actual note
+            elif channel_state.row_has_note:
+                channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
+                channel_time_events[global_tick].note_on = True
             
-            if row.command == 0x0F: # tempo change
-                """
-                From docs:
-                Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
-                $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
-                """
-                # From experiments:
-                #    funktempo is basically swing tempo
-                #    empirically, the higher voice number seems to win ties on simultaneous speed changes
-                #    $80-$81 will recall the funktempo for just that channel
-                #    $02 and $82 are possible speeds under certain constraints, but not going to support
-                #       them here (yet).
+            # process tempo changes
 
-                assert row.command_data not in [0x02, 0x82] \
-                    , "TODO: Don't know how to support tempo change with value %d" % (row.command_data)     
+            if channel_state.local_tempo_update != None:
+                channel_time_events.setdefault(global_tick, TimeEntry()).tempo = channel_state.local_tempo_update
 
-                # TODO: Implement this attack/decay way of setting a default tempo:
-                """ from docs:
-                    For very optimized songdata & player you can refrain from using any pattern
-                    commands and rely on the instruments' step-programming. Even in this case, you
-                    can set song startup default tempo with the Attack/Decay parameter of the last
-                    instrument (63/0x3F), if you otherwise leave this instrument unused.
-                """
+            elif channel_state.global_tempo_update != None:
+                global_tempo_change = channel_state.global_tempo_update
 
-                # Going to ignore gateoff timer and hardrestart value when computing note end ticks
+        # By this point, we've passed through all three channels for this particular tick
+        # If more than one channel made a tempo change, the global tempo change on the highest
+        # voice/channel number wins (based on testing in gt)
+        if global_tempo_change != None:
+            for j, cs in enumerate(channels_state):
+                # If a row is in progress, leave it's remaining ticks alone.  But if it's the start of a
+                # new row, then override with new global tempo
+                if cs.first_tick_of_row:
+                    assert cs.row_ticks_left == cs.curr_tempo \
+                        , "Error: unexpected number of ticks left on row prior to global tempo override"
+                    cs.row_ticks_left = global_tempo_change
 
-                # When not using multispeed, tempo = ticks per row = screen refreshes per row.
-                # 'Ticks' on C64 are also 'frames' or 'jiffies'.  Each tick in PAL is around 20ms,
-                # and ~16.7‬ms on NTSC.
-                # For a multispeed of 2, there would be two music updates per frame.
-                # For our purposes, the multispeed multiplier doesn't matter, since ticks in
-                # our music intermediate format (as well as in midi are unitless (not tied to ms
-                # or frames).
+                cs.curr_tempo = global_tempo_change
+                channels_time_events[j].setdefault(global_tick, TimeEntry()).tempo = global_tempo_change
 
-                tempo_update = None
-
-                # Change tempo for all channels
-                #   From looking at the gt source code (at least for the goat tracker gui's gplay.c)
-                #   when a CMD_SETTEMPO happens (for one or for all three channels), the tempos immediately
-                #   change, but the ticks remaining on each channel's current row is left alone --
-                #   another detail that would have been nice to have had in the documentation.
-                if 0x03 <= row.command_data <= 0x7F:
-                    tempo_update = row.command_data
-                    for i, cs in enumerate(channels_state):
-                        cs.curr_tempo = tempo_update
-                        channels_time_events[i].setdefault(global_tick, TimeEntry()).tempo = tempo_update
-
-                # Change tempo for the given channel
-                elif 0x83 <= row.command_data <= 0xFF:
-                    tempo_update = row.command_data - 0x80
-                    channel_state.curr_tempo = tempo_update
-                    channel_time_events.setdefault(global_tick, TimeEntry()).tempo = tempo_update
-
-            # TODO: Possibly handle some of the (below) commands in the future?
-            """ from docs:
-            Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
-        
-            Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the speedtable.
-        
-            Command 3XY: Toneportamento. Raise or lower pitch until target note has been reached. XY is an index
-            to a 16-bit speed value in the speedtable, or $00 for "tie-note" effect (move pitch instantly to
-            target note)
-            
-            Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-            copied to the timing mark location, which is playeraddress+$3F.
-        
-            Command EXY: Funktempo. XY is an index to the speedtable, tempo will alternate
-            between left side value and right side value on subsequent pattern
-            steps. Sets the funktempo active on all channels, but you can use
-            the next command to override this per-channel.
-            """
+    # Create note offs when all channels have hit their orderlist restart one or more times
+    #    Ok, cheesy hack here.  The loop above repeats until all tracks have had a chance to restart, but it
+    #    allows each voice to load in one row after that point.  Taking advantage of that, we modify that
+    #    row with note off events, looking backwards to previous rows to see what the last note was to use
+    #    in the note off events.
+    for i, cs in enumerate(channels_state):
+        reversed_index = list(channels_time_events[i].keys())
+        reversed_index.sort(reverse=True)
+        for index in reversed_index[1:]:
+            if channels_time_events[i][index].note != None:
+                channels_time_events[i].setdefault(global_tick, TimeEntry()).note = \
+                    channels_time_events[i][index].note
+                channels_time_events[i][global_tick].note_on = False
+                break
 
     return channels_time_events
 
 
 def main():
-    # print ("DEBUG:\n%s" % ('\n'.join(sys.path)))
-
     sng_data = import_sng(r'.\sandbox\consultant.sng')
  
-    # TODO: Just assuming a single subtune for now...
+    # TODO: Just process a single subtune for now...
     channels_time_events = convert_to_note_events(sng_data, 0)
 
-    # CODE: print out channels_time_events
-
-    """
-    print("DEBUG")
-    for i, channel_time_events in enumerate(channels_time_events):
-        print('\nChannel %d/3:' % (i+1))
-        for tick, struct in channel_time_events.items():
-            print("%d: %s" % (tick, struct))
-        exit("early exit)")
-    """
-
     max_tick = max(max(channels_time_events[i].keys()) for i in range(3))
-    for tick in range(max_tick):
+    #max_tick = min(max_tick, 500)
+
+    for tick in range(max_tick+1):
         if any(tick in channels_time_events[ch] for ch in range(3)):
             output = "%d: " % tick
             for i in range(3):
                 if tick in channels_time_events[i]:
-                    output += "%d %d %s, " % (i, channels_time_events[i][tick].note, channels_time_events[i][tick].note_on)
+                    output += "V%d N%s On?%s, " % (i, channels_time_events[i][tick].note, channels_time_events[i][tick].note_on)
                 else:
-                    output += "%d - -, " % i
+                    output += "V%d N-- On?None, " % i
             print(output)
 
 if __name__ == "__main__":
