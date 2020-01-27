@@ -51,7 +51,9 @@ def import_goattracker(in_filename):
 
 
 if __name__ == '__main__':
-    song = import_goattracker('consultant.sng')
+    in_filename = sys.argv[1]
+    out_filename = sys.argv[2]
+    song = import_goattracker(in_filename)
     print(song.estimate_quantization())
     song.quantize()
-    song.export_midi('consultant.mid')
+    song.export_midi(out_filename)

@@ -21,7 +21,7 @@ lp_durations = {
 
 def lp_pitch_to_note_name(note_num, octave_offset=4):
     """
-    Gets note name for a given MIDI pitch
+    Gets Lilypond note name for a given MIDI pitch
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
@@ -35,6 +35,9 @@ def lp_pitch_to_note_name(note_num, octave_offset=4):
 
 
 def make_lp_notes(note_name, duration, ppq):
+    """
+    Returns a series of Lilypond notes for a given duration
+    """
     if duration <= 0:
         raise ChiptuneSAKValueError("Illegal note duration: %d" % duration)
     durs = []
@@ -56,6 +59,9 @@ def make_lp_notes(note_name, duration, ppq):
 
 
 def song_to_lilypond(song, format='full'):
+    """
+    Converts a song to Lilypond format
+    """
     output = []
     if not song.is_quantized():
         raise ChiptuneSAKQuantizationError("Song must be quantized for export to Lilypond")
@@ -131,14 +137,14 @@ def song_to_lilypond(song, format='full'):
 
 if __name__ == '__main__':
     import subprocess
-    in_filename = 'consultant.mid'
+    in_filename = sys.argv[1]
     song = ctsSong.Song(in_filename)
     song.remove_control_notes()
     song.quantize_from_note_name('64')
     song.remove_polyphony()
     out = song_to_lilypond(song, 'full')
     os.chdir('../Test/temp')
-    out_filename = 'consultant.ly'
+    out_filename = os.path.splitext(os.path.split(in_filename)[1])[0] + '.ly'
     with open(out_filename, 'w') as f:
         f.write(out)
     # TODO:  Put this functionality into a function and move all the files to a temp directory
