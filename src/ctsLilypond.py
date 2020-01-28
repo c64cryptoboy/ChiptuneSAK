@@ -1,6 +1,6 @@
 import sys
 import os
-import sandboxPath
+import copy
 
 from ctsErrors import *
 import ctsConstants
@@ -57,6 +57,81 @@ def make_lp_notes(note_name, duration, ppq):
         retval = '~ '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
     return retval
 
+def measure_to_lilypond(measure, ppq):
+    measure_contents = []
+    current_time_signature = ctsSong.TimeSignature(0, 4, 4)
+    current_key_signature = ctsSong.KeySignature(0, "C")
+    for e in measure.events:
+        if isinstance(e, ctsSong.Note):
+            f = Fraction(e.duration / ppq).limit_denominator(64)
+            if f in lp_durations:
+                measure_contents.append(
+                    "%s%s%s" % (lp_pitch_to_note_name(e.note_num), lp_durations[f], '~' if e.tied else ''))
+            else:
+                measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.ppq))
+
+        elif isinstance(e, ctsSong.Rest):
+            f = Fraction(e.duration / song.ppq).limit_denominator(64)
+            if f in lp_durations:
+                measure_contents.append("r%s" % (lp_durations[f]))
+            else:
+                measure_contents.append(make_lp_notes('r', e.duration, song.ppq))
+
+        elif isinstance(e, ctsSong.MeasureMarker):
+            measure_contents.append('|')
+
+        elif isinstance(e, ctsSong.TimeSignature):
+            if e.num != current_time_signature.num or e.denom != current_time_signature.denom:
+                measure_contents.append('\\time %d/%d' % (e.num, e.denom))
+                current_time_signature = copy.copy(e)
+
+        elif isinstance(e, ctsSong.KeySignature):
+            if e.key != current_key_signature.key:
+                key = e.key
+                key.replace('#', 'is')
+                key.replace('b', 'es')
+                if key[-1] == 'm':
+                    measure_contents.append('\\key %s \\minor' % (key.lower()[:-1]))
+                else:
+                    measure_contents.append('\\key %s \\major' % (key.lower()))
+                current_key_signature = copy.copy(e)
+
+    return measure_contents
+
+
+def clip_to_lilypond(song, measures):
+    output = []
+    if not song.is_quantized():
+        raise ChiptuneSAKQuantizationError("Song must be quantized for export to Lilypond")
+    if song.is_polyphonic():
+        raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to Lilypond")
+
+    ks = song.get_key_signature(measures[0].start_time)
+    if ks.start_time < measures[0].start_time:
+        measures[0].events.insert(0, ctsSong.KeySignature(measures[0].start_time, ks.key))
+
+    ts = song.get_time_signature(measures[0].start_time)
+    if ts.start_time < measures[0].start_time:
+        measures[0].events.insert(0, ctsSong.TimeSignature(measures[0].start_time, ts.num, ts.denom))
+
+    output.append('\\version "2.18.2"')
+    output.append('''
+        \\paper { 
+        indent=0\\mm line-width=120\\mm oddHeaderMarkup = ##f
+        evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f 
+        page-breaking = #ly:one-line-breaking }
+    ''')
+    note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, ctsSong.Note)),
+                  max(e.note_num for m in measures for e in m.events if isinstance(e, ctsSong.Note)))
+    output.append('\\new Staff  {')
+    if note_range[0] < 48:
+        output.append('\\clef bass')
+    for im, m in enumerate(measures):
+        measure_contents = measure_to_lilypond(m, song.ppq)
+        output.append(' '.join(measure_contents))
+    output.append('}')
+    return '\n'.join(output)
+
 
 def song_to_lilypond(song, format='full'):
     """
@@ -98,40 +173,12 @@ def song_to_lilypond(song, format='full'):
         if track_range[0] < 48:
             output.append('\\clef bass')
         for im, m in enumerate(measures):
-            measure_contents = []
             output.append("%% measure %d" % (im + 1))
-            for e in m:
-                if isinstance(e, ctsSong.Note):
-                    f = Fraction(e.duration / song.ppq).limit_denominator(64)
-                    if f in lp_durations:
-                        measure_contents.append("%s%s%s" % (lp_pitch_to_note_name(e.note_num), lp_durations[f], '~' if e.tied else ''))
-                    else:
-                        measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.ppq))
-
-                elif isinstance(e, ctsSong.Rest):
-                    f = Fraction(e.duration / song.ppq).limit_denominator(64)
-                    if f in lp_durations:
-                        measure_contents.append("r%s" % (lp_durations[f]))
-                    else:
-                        measure_contents.append(make_lp_notes('r', e.duration, song.ppq))
-
-                elif isinstance(e, ctsSong.MeasureMarker):
-                    measure_contents.append('|')
-
-                elif isinstance(e, ctsSong.TimeSignature):
-                    measure_contents.append('\\time %d/%d' % (e.num, e.denom))
-
-                elif isinstance(e, ctsSong.KeySignature):
-                    key = e.key
-                    key.replace('#', 'is')
-                    key.replace('b', 'es')
-                    measure_contents.append('\\key %s \\major' % (key.lower()))
-
+            measure_contents = measure_to_lilypond(m, song.ppq)
             output.append(' '.join(measure_contents))
         output.append('\\bar "||"')
         output.append('}')
     output.append('>>\n')
-
     return '\n'.join(output)
 
 
@@ -140,10 +187,10 @@ if __name__ == '__main__':
     in_filename = sys.argv[1]
     song = ctsSong.Song(in_filename)
     song.remove_control_notes()
-    song.quantize_from_note_name('64')
+    song.quantize_from_note_name('32')
     song.remove_polyphony()
     out = song_to_lilypond(song, 'full')
-    os.chdir('../Test/temp')
+    os.chdir('../test/temp')
     out_filename = os.path.splitext(os.path.split(in_filename)[1])[0] + '.ly'
     with open(out_filename, 'w') as f:
         f.write(out)

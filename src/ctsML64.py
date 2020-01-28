@@ -150,7 +150,7 @@ def export_ml64_measures(song):
         measures = all_measures[it]
         last_continue = False
         for im, measure in enumerate(measures):
-            measure_content, tmp_stats, last_continue = events_to_ml64(measure, song, last_continue)
+            measure_content, tmp_stats, last_continue = events_to_ml64(measure.events, song, last_continue)
             output.append(''.join(measure_content))
             stats.update(tmp_stats)
         output.append('track(-)')

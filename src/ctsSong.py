@@ -28,7 +28,6 @@ Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
 Program = collections.namedtuple('Program', ['start_time', 'program'])
 MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_number'])
 
-
 class Note:
     """
     This class represents a note in human-friendly form:  as a note with a start time, a duration, and
@@ -392,7 +391,13 @@ class Song:
             # Note that these events are stored as midi messages with the global time attached.
             elif msg.is_meta and is_metatrack:
                 self.other.append(OtherMidi(current_time, msg))
-            # Find the very last meta message (which should be an end_track) and use it as the end time.
+
+        # Require initial time signature and key signature values.
+        if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
+            self.key_signature_changes.insert(0, KeySignature(0, "C"))  # Default top key of C
+        if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
+            self.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
+
 
     def estimate_quantization(self):
         """ 
@@ -524,10 +529,9 @@ class Song:
         measures = []
         max_time = self.end_time()
         time_signature_changes = sorted(self.time_signature_changes)
-        if len(time_signature_changes) > 0 and time_signature_changes[0].start_time == 0:
-            last = time_signature_changes[0]
-        else:
-            last = TimeSignature(0, 4, 4)
+        if len(time_signature_changes) == 0 or time_signature_changes[0].start_time != 0:
+            raise ChiptuneSAKValueError("No starting time signature")
+        last = time_signature_changes[0]
         t, m, b = 0, 1, 1
         for s in time_signature_changes:
             while t < s.start_time:
@@ -548,7 +552,7 @@ class Song:
         self.stats['Measures'] = m
         return measures
 
-    def get_measure_beat(self, start_time):
+    def get_measure_beat(self, time_in_ticks):
         """
         This method returns a (measure, beat) tuple for a given time; the time is greater than or
         equal to the returned measure and beat but less than the next.  The result should be
@@ -558,9 +562,27 @@ class Song:
         # Make a list of start times from the list of measure-beat times.
         tmp = [m.start_time for m in measure_beats]
         # Find the index of the desired time in the list.
-        pos = bisect.bisect_right(tmp, start_time)
+        pos = bisect.bisect_right(tmp, time_in_ticks)
         # Return the corresponding measure/beat
         return measure_beats[pos - 1]
+
+    def get_time_signature(self, time_in_ticks):
+        itime = 0
+        if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
+            raise ChiptuneSAKValueError("No starting time signature")
+        n_time_signature_changes = len(self.time_signature_changes)
+        while itime < n_time_signature_changes and self.time_signature_changes[itime].start_time < time_in_ticks:
+            itime += 1
+        return self.time_signature_changes[itime-1]
+
+    def get_key_signature(self, time_in_ticks):
+        ikey = 0
+        if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
+            raise ChiptuneSAKValueError("No starting time signature")
+        n_key_signature_changes = len(self.key_signature_changes)
+        while ikey < n_key_signature_changes and self.key_signature_changes[ikey].start_time < time_in_ticks:
+            ikey += 1
+        return self.key_signature_changes[ikey-1]
 
     def split_midi_zero_into_tracks(self):
         """
