@@ -13,15 +13,18 @@ import more_itertools as moreit
 lp_pitches = ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"]
 
 lp_durations = {
-    Fraction(4, 1):'1', Fraction(3, 1):'2.', Fraction(2, 1):'2', Fraction(3, 2):'4.', Fraction(1, 1):'4',
-    Fraction(3, 4):'8.', Fraction(1, 2):'8', Fraction(3, 8):'16.', Fraction(1, 4):'16',
-    Fraction(3, 16):'32.', Fraction(1, 8):'32', Fraction(3, 32):'64.', Fraction(1, 16):'64'
+    Fraction(4, 1): '1', Fraction(3, 1): '2.', Fraction(2, 1): '2', Fraction(3, 2): '4.', Fraction(1, 1):'4',
+    Fraction(3, 4): '8.', Fraction(1, 2): '8', Fraction(3, 8): '16.', Fraction(1, 4): '16',
+    Fraction(3, 16): '32.', Fraction(1, 8): '32', Fraction(3, 32): '64.', Fraction(1, 16): '64'
 }
 
 
 def lp_pitch_to_note_name(note_num, octave_offset=4):
     """
-    Gets Lilypond note name for a given MIDI pitch
+    Gets the Lilypond note name for a given pitch.
+        :param note_num:       MIDI note number
+        :param octave_offset:  Octave offset (the default is 4, which is the lilypond standard)
+        :return:               Lilypond pitch name
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
@@ -36,7 +39,11 @@ def lp_pitch_to_note_name(note_num, octave_offset=4):
 
 def make_lp_notes(note_name, duration, ppq):
     """
-    Returns a series of Lilypond notes for a given duration
+    Makes a series of Lilypond notes/rests to fill a specified duration
+        :param note_name:  Lilypond note name (from lp_pitch_to_note_name) or 'r' for rest.
+        :param duration:   Duration of the note in ppq ticks
+        :param ppq:        ppq from the song in which the note exists
+        :return:           String representing the notes in Lilypond format
     """
     if duration <= 0:
         raise ChiptuneSAKValueError("Illegal note duration: %d" % duration)
@@ -58,6 +65,12 @@ def make_lp_notes(note_name, duration, ppq):
     return retval
 
 def measure_to_lilypond(measure, ppq):
+    """
+    Converts contents of a measure into Lilypond text
+        :param measure: A ctsExportUtil.Measure object
+        :param ppq:     ppq from the song that made the measure.
+        :return:        Lilypond text encoding the measure content.
+    """
     measure_contents = []
     current_time_signature = ctsSong.TimeSignature(0, 4, 4)
     current_key_signature = ctsSong.KeySignature(0, "C")
@@ -100,6 +113,16 @@ def measure_to_lilypond(measure, ppq):
 
 
 def clip_to_lilypond(song, measures):
+    """
+    Turns a set of measures into Lilypond suitable for use as a clip.  All the music will be on a single line
+    with no margins.  It is recommended that this clip be turned into Lilypond using the command line:
+
+    lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha --png <filename>
+
+        :param song:     Song from which the measures were taken.
+        :param measures: List of measures.
+        :return:         Lilypond text.
+    """
     output = []
     if not song.is_quantized():
         raise ChiptuneSAKQuantizationError("Song must be quantized for export to Lilypond")
@@ -133,9 +156,15 @@ def clip_to_lilypond(song, measures):
     return '\n'.join(output)
 
 
-def song_to_lilypond(song, format='full'):
+def song_to_lilypond(song):
     """
-    Converts a song to Lilypond format
+    Converts a song to Lilypond format. Optimized for multi-page PDF output of the song.
+    Recommended lilypond command:
+
+    lilypond <filename>
+
+        :param song:    Song to convert to Lilypond format
+        :return:        Lilypond text for the song.
     """
     output = []
     if not song.is_quantized():
@@ -144,18 +173,6 @@ def song_to_lilypond(song, format='full'):
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to Lilypond")
 
     output.append('\\version "2.18.2"')
-    format = format.lower()
-    if format == 'full':
-        pass
-    elif format == 'png':
-        output.append('''
-            \\paper { 
-            indent=0\\mm line-width=120\\mm oddHeaderMarkup = ##f
-            evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f 
-            page-breaking = #ly:one-line-breaking }
-        ''')
-    else:
-        raise ChiptuneSAKValueError("Unknown format " + format)
     output.append('\\header {')
     if len(song.name) > 0:
         output.append(' title = "%s"' % song.name)
