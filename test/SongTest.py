@@ -57,6 +57,4 @@ class SongTestCase(unittest.TestCase):
         """
         Tests the measures handling
         """
-        self.assertEqual(len(self.test_song.measure_beats), 52)
-        self.assertEqual(max(m.measure for m in self.test_song.measure_beats), 13)
-        self.assertEqual(max(m.beat for m in self.test_song.measure_beats), 4)
+        self.assertEqual(len(self.test_song.measures_and_beats()), 48)
