@@ -1,4 +1,4 @@
-# Code to parse goattracker .sng files
+# Code to parse and import goattracker .sng files
 # 
 # Prereqs
 #    pip install recordtype
@@ -7,16 +7,14 @@
 # TODO: Refactor this into a generalized chiptune-sak importer (command line option, etc.), and put in src
 # TODO: Test the repeat command on a different goat tracker tune (consultant one doesn't use it)
 
-import sys
-sys.path.append(r'./src') # from vs code
-#sys.path.append(r'../src') # from command line
+from os import path
+import argparse
 import copy
-from ctsErrors import *
+from ctsErrors import ChiptuneSAKException
 from ctsML64 import pitch_to_ml64_note_name
 from recordtype import recordtype
 from sortedcontainers import SortedDict
-
-debug = False
+import ctsSong
 
 OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (note 60) is "C4"
 DEFAULT_TEMPO = 6
@@ -241,7 +239,7 @@ class GtChannelState:
     def __inc_orderlist_to_next_pattern(self):
         self.pat_remaining_plays = 1 # patterns default to one playthrough unless otherwise specified
         while(True):
-            self.orderlist_index += 1; # bootstraps at -1
+            self.orderlist_index += 1 # bootstraps at -1
             a_byte = self.channel_orderlist[self.orderlist_index]
 
             # parse transpose
@@ -345,7 +343,7 @@ def import_sng(gt_filename):
     file_index = 101
     a_song.headers = header
     
-    if debug: print("\nDebug: %s" % header)
+    # print("\nDebug: %s" % header)
 
     """ From goattracker documentation:
     6.1.2 Song orderlists
@@ -374,7 +372,7 @@ def import_sng(gt_filename):
         subtune_orderlists.append(order_list_triple)
     a_song.subtune_orderlists = subtune_orderlists
     
-    if debug: print("\nDebug: %s" % subtune_orderlists)
+    # print("\nDebug: %s" % subtune_orderlists)
 
     """ From goattracker documentation:
     6.1.3 Instruments
@@ -420,7 +418,7 @@ def import_sng(gt_filename):
         instruments.append(an_instrument)
     a_song.instruments = instruments
 
-    if debug: print("\nDebug: %s" % instruments)
+    # print("\nDebug: %s" % instruments)
 
     """ From goattracker documentation:
     6.1.4 Tables
@@ -440,7 +438,7 @@ def import_sng(gt_filename):
         tables.append(a_table)
         file_index += a_table.row_cnt * 2 + 1
 
-    if debug: print("\nDebug: %s" % tables)
+    # print("\nDebug: %s" % tables)
     (a_song.wave_table, a_song.pulse_table, a_song.filter_table, a_song.speed_table) = tables
 
     """ From goattracker documentation:
@@ -485,8 +483,8 @@ def import_sng(gt_filename):
             file_index += 4
             a_pattern.append(a_row)
         patterns.append(a_pattern)
-        if debug:
-            print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" % (pattern_num, len(a_pattern), a_pattern))
+        #print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
+        #    (pattern_num, len(a_pattern), a_pattern))
 
     a_song.patterns = patterns
 
@@ -576,14 +574,9 @@ def convert_to_note_events(sng_data, subtune_num):
     return channels_time_events
 
 
-def main():
-    sng_data = import_sng(r'.\sandbox\consultant.sng')
- 
-    # TODO: Just process a single subtune for now...
-    channels_time_events = convert_to_note_events(sng_data, 0)
-
+def print_note_time_data(channels_time_events):
     max_tick = max(max(channels_time_events[i].keys()) for i in range(3))
-    #max_tick = min(max_tick, 500)
+    #max_tick = min(max_tick, 500) # for testing
 
     for tick in range(max_tick+1):
         if any(tick in channels_time_events[ch] for ch in range(3)):
@@ -594,6 +587,57 @@ def main():
                 else:
                     output += "V%d N-- On?None, " % i
             print(output)
+
+
+def tick_to_miditick(t):
+    return t * 48  # Scale so that midi will play back at the same speed as the tracker would play.
+
+
+def convert_to_chirp(channels_time_events, song_name):
+    song = ctsSong.Song()
+    song.ppq = 960
+    song.name = song_name
+    song.bpm = 120
+
+    for it, channel_data in enumerate(channels_time_events):
+        track = ctsSong.SongTrack(song)
+        track.name = 'Track %d' % (it + 1)
+        track.channel = it
+        current_note = None
+        for tick, event in channel_data.items():
+            midi_tick = tick_to_miditick(tick)
+            if event.note_on:
+                if current_note:
+                    new_note = ctsSong.Note(
+                        current_note.note_num, current_note.start_time, midi_tick - current_note.start_time
+                    )
+                    if new_note.duration > 0:
+                        track.notes.append(new_note)
+                current_note = ctsSong.Note(event.note, midi_tick, 0)
+            elif event.note_on is False:
+                if event.note_on:
+                    if current_note:
+                        new_note = ctsSong.Note(
+                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                        )
+                        if new_note.duration > 0:
+                            track.notes.append(new_note)
+                current_note = None
+        if current_note:
+            new_note = ctsSong.Note(
+                current_note.note_num, current_note.start_time, midi_tick - current_note.start_time
+            )
+            if new_note.duration > 0:
+                track.notes.append(new_note)
+        song.tracks.append(track)
+
+    return song
+
+
+# Here for debugging, remove later
+def main():
+    pass
+
 
 if __name__ == "__main__":
     main()
