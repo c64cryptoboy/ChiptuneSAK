@@ -2,7 +2,7 @@ import collections
 from fractions import Fraction
 import ctsSong
 from ctsErrors import *
-import ctsExportUtil
+import ctsMeasures
 from ctsConstants import PITCHES
 
 '''
@@ -144,7 +144,7 @@ def export_ml64_measures(song):
     output.append('song(1)')
     output.append('tempo(%d)' % song.bpm)
 
-    all_measures = ctsExportUtil.get_measures(song)
+    all_measures = ctsMeasures.get_measures(song)
     for it, t in enumerate(song.tracks):
         output.append('track(%d)' % (it + 1))
         measures = all_measures[it]

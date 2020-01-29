@@ -6,7 +6,7 @@ from ctsErrors import *
 import ctsConstants
 import ctsSong
 from fractions import Fraction
-import ctsExportUtil
+import ctsMeasures
 
 import more_itertools as moreit
 
@@ -67,7 +67,7 @@ def make_lp_notes(note_name, duration, ppq):
 def measure_to_lilypond(measure, ppq):
     """
     Converts contents of a measure into Lilypond text
-        :param measure: A ctsExportUtil.Measure object
+        :param measure: A ctsMeasure.Measure object
         :param ppq:     ppq from the song that made the measure.
         :return:        Lilypond text encoding the measure content.
     """
@@ -182,7 +182,7 @@ def song_to_lilypond(song):
     output.append('}')
     #  ---- end of headers ----
     output.append('\\new StaffGroup <<')
-    all_measures = ctsExportUtil.get_measures(song)
+    all_measures = ctsMeasures.get_measures(song)
     for it, t in enumerate(song.tracks):
         measures = all_measures[it]
         track_range = (min(n.note_num for n in t.notes), max(n.note_num for n in t.notes))

@@ -46,7 +46,7 @@ class Note:
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
-        return "p=%3d  s=%4d  d=%4d  v=%4d, t=%d" % (
+        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tied=%d" % (
         self.note_num, self.start_time, self.duration, self.velocity, self.tied)
 
 
@@ -76,10 +76,10 @@ class SongTrack:
 
     def import_midi_track(self, track):
         """
-        Parse a MIDI track into notes.  This process loses any meta messages in the track
-        except the track name message, which is uses to name itself.
-        """
+        Parse a MIDI track into notes.
 
+            :param track:
+        """
         # Find the first note_on event and use its channel to set the channel for this track.
         ch_msg = next((msg for msg in track if msg.type == 'note_on'), None)
         if ch_msg:
@@ -316,8 +316,10 @@ class Song:
         self.stats = {}  # Statistics about the song
 
     def import_midi(self, filename):
-        """ 
-        Open and initialize from a MIDI Type 0 or 1 file.
+        """
+        Open and import a MIDI file into the Song representation. THis method can handle MIDI type 0 and 1 files.
+
+            :param filename: MIDI filename.
         """
         # Clear everything
         self.reset_all()
@@ -373,8 +375,12 @@ class Song:
         self.stats["Track names"] = [t.name for t in self.tracks]
 
     def get_meta(self, track, is_zerotrack=False, is_metatrack=False):
-        """ 
-        Process meta messages in track.
+        """
+        Process MIDI meta messages in a track.
+
+            :param track:
+            :param is_zerotrack:
+            :param is_metatrack:
         """
         current_time = 0
         for msg in track:
@@ -398,7 +404,6 @@ class Song:
         if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
             self.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
 
-
     def estimate_quantization(self):
         """ 
         This method estimates the optimal quantization for note starts and durations from the note
@@ -419,7 +424,11 @@ class Song:
         This method applies quantization to both note start times and note durations.  If you
         want either to remain unquantized, simply specify a qticks parameter to be 1 (quantization
         of 1 tick).
+
+            :param qticks_notes:     Quantization for note starts, in MIDI ticks
+            :param qticks_durations: Quantization for note durations, in MIDI ticks
         """
+
         self.stats['Note Start Deltas'] = collections.Counter()
         self.stats['Duration Deltas'] = collections.Counter()
         if qticks_notes:
@@ -446,7 +455,11 @@ class Song:
         ctsConstants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
         values for dotted_allowed and triplets_allowed will be overridden.
 
+            :param min_note_duration_string:  Quantization note value
+            :param dotted_allowed:  If true, dotted notes are allowed
+            :param triplets_allowed:  If true, triplets (of the specified quantization) are allowed
         """
+
         if '.' in min_note_duration_string:
             dotted_allowed = True
             min_note_duration_string = min_note_duration_string.replace('.', '')
@@ -474,6 +487,8 @@ class Song:
     def is_polyphonic(self):
         """
         Is the song polyphonic?  Returns true if ANY of the tracks contains polyphony of any kind.
+
+            :return: Boolean True if any track in the song is polyphonic
         """
         return any(t.is_polyphonic() for t in self.tracks)
 
@@ -481,13 +496,17 @@ class Song:
         """
         Has the song been quantized?  This requires that all the tracks have been quantized with their
         current qticks_notes and qticks_durations values.
+
+            :return:  Boolean True if all tracks in the song are quantized
         """
         return all(t.is_quantized() for t in self.tracks)
 
     def remove_control_notes(self, control_max=8):
-        """ 
+        """
         Some MIDI programs use extremely low notes as a signaling mechanism.
         This method removes notes with pitch <= control_max from all tracks.
+
+            :param control_max:  Maximum note number for the control notes
         """
         for t in self.tracks:
             t.remove_control_notes(control_max)
@@ -497,6 +516,9 @@ class Song:
         This method performs metric modulation.  It does so by multiplying the length of all notes by num/denom,
         and also automatically adjusts the time signatures and tempos such that the resulting music will sound
         identical to the original.
+
+            :param num:    Numerator of metric modulation
+            :param denom:  Denominator of metric modulation
         """
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
@@ -520,12 +542,27 @@ class Song:
         self.qticks_durations = (self.qticks_durations * n) // d
 
     def end_time(self):
+        """
+        Finds the end time of the last note in the song.
+
+            :return: Time (in ticks) of the end of the last note in the song.
+        """
         return max(n.start_time + n.duration for t in self.tracks for n in t.notes)
 
     def measure_starts(self):
+        """
+        Returns the starting time for measures in the song.  Calculated using time_signature_changes.
+
+            :return: List of measure starting time in MIDI ticks
+        """
         return [m.start_time for m in self.measures_and_beats() if m.beat == 1]
 
     def measures_and_beats(self):
+        """
+        Returns the positions of all measures and beats in the song.  Calculated using time_signature_changes.
+
+            :return: List of MeasureBeat objects for each beat of the song.
+        """
         measures = []
         max_time = self.end_time()
         time_signature_changes = sorted(self.time_signature_changes)
@@ -557,6 +594,9 @@ class Song:
         This method returns a (measure, beat) tuple for a given time; the time is greater than or
         equal to the returned measure and beat but less than the next.  The result should be
         interpreted as the time being during the measure and beat returned.
+
+        :param time_in_ticks:  Time during the song, in MIDI ticks
+        :return:  MeasureBeat object with the current measure and beat
         """
         measure_beats = self.measures_and_beats()
         # Make a list of start times from the list of measure-beat times.
@@ -567,6 +607,11 @@ class Song:
         return measure_beats[pos - 1]
 
     def get_time_signature(self, time_in_ticks):
+        """
+        Get the active time signature at a given time (in ticks) during the song.
+        :param time_in_ticks:  Time during the song, in MIDI ticks
+        :return:               Active key signature at the time
+        """
         itime = 0
         if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
             raise ChiptuneSAKValueError("No starting time signature")
@@ -576,6 +621,11 @@ class Song:
         return self.time_signature_changes[itime-1]
 
     def get_key_signature(self, time_in_ticks):
+        """
+        Get the active key signature at a given time (in ticks) during the song.
+            :param time_in_ticks: Time during the song, in MIDI ticks
+            :return:    Key signature active at the time
+        """
         ikey = 0
         if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
             raise ChiptuneSAKValueError("No starting time signature")

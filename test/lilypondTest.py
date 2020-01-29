@@ -3,7 +3,7 @@ import os
 import unittest
 import subprocess
 import ctsSong
-import ctsExportUtil
+import ctsMeasures
 import ctsTestingTools
 import ctsLilypond
 
@@ -18,7 +18,7 @@ class TestExportLilypond(unittest.TestCase):
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
 
-        measures = ctsExportUtil.get_measures(song)
+        measures = ctsMeasures.get_measures(song)
 
         test_ly = ctsLilypond.clip_to_lilypond(song, measures[0][3:5])
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)

@@ -6,7 +6,6 @@ import more_itertools as moreit
 
 """ Utility functions for exporting to various formats from the ctsSong.Song representation """
 
-
 class Measure:
     @staticmethod
     def sort_order(c):
@@ -36,19 +35,23 @@ class Measure:
         else:
             return (c.start_time, 5)
 
-    def __init__(self, start_time, duration, events=None):
-        self.reset()
+    def __init__(self, start_time, duration):
+        """
+        Creation for Measure object.  Populating the measure with events is a separate method populate()
+            :param start_time:  Start time of the measure, in MIDI ticks
+            :param duration:    Duration of the measure, in MIDI ticks
+        """
         self.start_time = start_time
         self.duration = duration
-        if events:
-            self.events = copy.deepcopy(events)
-
-    def reset(self):
-        self.start_time = 0
-        self.duration = 0
         self.events = []
 
     def populate(self, track, carry=None):
+        """
+        Populates a single measure with notes, rests, and other events.
+            :param track: Track from which events are to be imported
+            :param carry: If last note in previous measure is continued in this measure, the note with remainining time
+            :return: Carry note, if last note is to be carried into the next measure.
+        """
         n_notes = len(track.notes)
         inote = 0
         while inote < n_notes and track.notes[inote].start_time < self.start_time:
@@ -138,7 +141,14 @@ class Measure:
 def populate_measures(track):
     """
     Converts a track into measures, each of which is a sorted list of notes and other events
+
+        :param track: A ctsSongTrack that has been quantized and had polyphony removed
+        :return:      List of Measure objects corresponding to the measures
     """
+    if not track.is_quantized():
+        raise ChiptuneSAKQuantizationError("Track must be quantized to populate measures.")
+    if track.is_polyphonic():
+        raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to populate measures.")
     measures_list = []
     measure_starts = track.song.measure_starts()
     # Artificially add an extra measure on the end to finish processing the notes in the last measure.
@@ -153,19 +163,32 @@ def populate_measures(track):
     return measures_list
 
 
-def trim_measures(measures_list):
+def trim_measures(measures_lists):
+    """
+    Trims all note-free measures from the end of the song.
+
+        :param measures_list: List of lists of Measure objects corresponding to song tracks.
+        :return:  List of lists of Measure objects with empty measures removed.
+    """
     """
     Trims all note-free measures from the end of the song.
     """
-    while all(m[-1].count_notes() == 0 for m in measures_list):
-        for i in range(len(measures_list)):
-            measures_list[i].pop()
-    return measures_list
+    while all(m[-1].count_notes() == 0 for m in measures_lists):
+        for i in range(len(measures_lists)):
+            measures_lists[i].pop()
+    return measures_lists
 
 
 def get_measures(song):
     """
-    Gets all the measures from all the tracks in a song, and removes any extra measures from the end.
+    Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
+
+        :param song: A ctsSong song
+        :return:     List of lists of measures corresponding to the tracks of the song.
     """
+    if not song.is_quantized():
+        raise ChiptuneSAKQuantizationError("Song must be quantized before populating measures.")
+    if song.is_polyphonic():
+        raise ChiptuneSAKPolyphonyError("Song must not be polyphonic to populate measures.")
     all_measures = [populate_measures(t) for t in song.tracks]
     return trim_measures(all_measures)
