@@ -590,7 +590,7 @@ def print_note_time_data(channels_time_events):
 
 
 def tick_to_miditick(t):
-    return t * 48  # Scale so that midi will play back at the same speed as the tracker would play.
+    return t * 32  # Scale so that midi will play back at the same speed as the tracker would play.
 
 
 def convert_to_chirp(channels_time_events, song_name):
