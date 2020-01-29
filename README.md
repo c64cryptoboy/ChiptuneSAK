@@ -1,3 +1,5 @@
+[comment]: # (Note: for now, can't link to image unless authenticated to private repo)
+![logo](https://github.com/c64cryptoboy/chiptune-sak/blob/master/res/logoSmall.png)
 # chiptune-sak
 chiptune-sak (swiss army knife) is a generalized pipeline for processing music and targeting various constrained playback environments.
 

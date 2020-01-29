@@ -1,3 +1,7 @@
+__pycache__
+.vscode
+.env
+chiptune_sak.code-workspace
 .idea/.gitignore
 .idea/chiptune-sak.iml
 .idea/misc.xml
