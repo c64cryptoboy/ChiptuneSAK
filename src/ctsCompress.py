@@ -29,7 +29,7 @@ def apply_xform(note, xform):
     """
     Applies a transposition and stretching transform to a note, returning a new note
     """
-    return ctsSong.Note(note.note_num + xform.transpose, 0, int(note.duration * xform.stretch))
+    return ctsSong.Note(0, note.note_num + xform.transpose, int(note.duration * xform.stretch))
 
 # TODO:  Probably best to turn compression into a class so that it can preserve state about the song.
 

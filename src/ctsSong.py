@@ -34,7 +34,7 @@ class Note:
     a velocity. 
     """
 
-    def __init__(self, note, start, duration, velocity=100, tied=False):
+    def __init__(self, start, note, duration, velocity=100, tied=False):
         self.note_num = note  # MIDI note number
         self.start_time = start  # In ticks since tick 0
         self.duration = duration  # In ticks
@@ -118,7 +118,7 @@ class SongTrack:
             elif msg.type == 'note_on':
                 # Keep a dictionary of all notes that are currently on
                 if msg.note not in current_notes_on:
-                    current_notes_on[msg.note] = Note(msg.note, current_time, 0, msg.velocity)
+                    current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
             # Other messages of interest in the track are stored in a separate list as native MIDI messages        
             elif msg.is_meta or (msg.type in SongTrack.other_message_types):
                 self.other.append(OtherMidi(current_time, msg))
@@ -259,6 +259,8 @@ class SongTrack:
         for n in self.notes:
             # For the sake of sorting, create the midi event with the absolute time (which will be
             # changed to a delta time before returning).
+            if n.note_num < 0 or n.note_num > 127:
+                print(n.note_num)
             events.append(mido.Message('note_on',
                                        note=n.note_num, channel=self.channel,
                                        velocity=n.velocity, time=n.start_time))

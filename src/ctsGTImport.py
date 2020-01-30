@@ -10,6 +10,8 @@
 from os import path
 import argparse
 import copy
+import math
+from functools import reduce, partial
 from ctsErrors import ChiptuneSAKException
 from ctsML64 import pitch_to_ml64_note_name
 from recordtype import recordtype
@@ -25,6 +27,7 @@ MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and follow
 MAX_INSTR_PER_SONG = 63
 MAX_PATTERNS_PER_SONG = 208
 MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
+
 
 class GTSong:
     def __init__(self):
@@ -69,7 +72,6 @@ class GtChannelState:
     # to this variable will trigger an "unscriptable-object" error
     # https://github.com/PyCQA/pylint/issues/1498
 
-
     def __init__(self, voice_num, channel_orderlist):
         if (GtChannelState.__patterns == []):
             raise ChiptuneSAKException("Must first init class with GtChannelState.set_patterns()")
@@ -90,13 +92,12 @@ class GtChannelState:
         self.restarted = False # channel has encountered restart one or more times
         self.channel_orderlist = channel_orderlist # just this channel's orderlist from the subtune
 
-        if GtChannelState.__init_tempo_override == None:
+        if GtChannelState.__init_tempo_override is None:
             self.curr_tempo = DEFAULT_TEMPO
         else:
             self.curr_tempo = GtChannelState.__init_tempo_override
 
         self.__inc_orderlist_to_next_pattern() # position atop first pattern in orderlist for channel
-
 
     @classmethod
     def set_song(cls, song):
@@ -114,13 +115,12 @@ class GtChannelState:
             if 0x02 <= ad <= 0x7F:
                 __init_tempo_override = ad
 
-
     # Advance channel/voice by a tick.  If advancing to a new row, then return it, otherwise None.
     def next_tick(self):
         self.first_tick_of_row = False
 
         # If stuck in an orderlist loop that doesn't contain a pattern, then there's nothing to do
-        if self.orderlist_index == None:
+        if self.orderlist_index is None:
             return None
 
         self.row_ticks_left -= 1 # init val is 1
@@ -140,7 +140,7 @@ class GtChannelState:
             # According to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
             #    that can be entered in the GT GUI, to create a B7
             assert note <= 0xBF, "Error: transpose raised note above midi B7"
-            self.curr_note = patternNoteToMidiNote(note)
+            self.curr_note = pattern_note_to_midi_note(note)
             self.row_has_note = True
 
         # Rest ($BD/189, gt display "..."):  A note continues through rest rows.  Rest does not mean
@@ -150,7 +150,7 @@ class GtChannelState:
         # of the ADSR.
         # Going to ignore any effects gateoff timer and hardrestart values might have on perceived note end
         if row.note_data == 0xBE:
-            if self.curr_note != None:
+            if self.curr_note is not None:
                 self.row_has_key_off = True
 
         # KeyOn ($BF/191, gt display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
@@ -158,7 +158,7 @@ class GtChannelState:
         # nothing will happen (to the note, to the instrument, etc.).  If a note was turned off,
         # this will restart it, but will not restart the instrument.
         if row.note_data == 0xBF:
-            if self.curr_note != None:
+            if self.curr_note is not None:
                 self.row_has_key_on = True
             
         if row.command == 0x0F: # tempo change
@@ -220,7 +220,6 @@ class GtChannelState:
 
         return row
 
-
     # Advance to next row in pattern.  If pattern end, then go to row 0 of next pattern in orderlist
     def __inc_to_next_row(self):
         self.row_index += 1 # init val is -1
@@ -234,7 +233,6 @@ class GtChannelState:
             self.row_index = 0 # all patterns are guaranteed to start with at least one meaningful (not end mark) row
             if self.pat_remaining_plays == 0: # all done with this pattern, moving on
                 self.__inc_orderlist_to_next_pattern()
-
 
     def __inc_orderlist_to_next_pattern(self):
         self.pat_remaining_plays = 1 # patterns default to one playthrough unless otherwise specified
@@ -285,7 +283,7 @@ class GtChannelState:
 
 # Convert pattern note byte value into midi note value
 # Note: lowest goat tracker note C0 = midi #24
-def patternNoteToMidiNote(pattern_note_byte):
+def pattern_note_to_midi_note(pattern_note_byte):
     return pattern_note_byte - 72 + (OCTAVE_BASE * 12)
 
 
@@ -515,7 +513,7 @@ def convert_to_note_events(sng_data, subtune_num):
             channel_time_events = channels_time_events[i]
 
             row = channel_state.next_tick()
-            if row == None: # if we didn't advance to a new row
+            if row is None:  # if we didn't advance to a new row
                 continue
 
             # KeyOff (and there's a curr_note defined)
@@ -535,16 +533,16 @@ def convert_to_note_events(sng_data, subtune_num):
             
             # process tempo changes
 
-            if channel_state.local_tempo_update != None:
+            if channel_state.local_tempo_update is not None:
                 channel_time_events.setdefault(global_tick, TimeEntry()).tempo = channel_state.local_tempo_update
 
-            elif channel_state.global_tempo_update != None:
+            elif channel_state.global_tempo_update is not None:
                 global_tempo_change = channel_state.global_tempo_update
 
         # By this point, we've passed through all three channels for this particular tick
         # If more than one channel made a tempo change, the global tempo change on the highest
         # voice/channel number wins (based on testing in gt)
-        if global_tempo_change != None:
+        if global_tempo_change is not None:
             for j, cs in enumerate(channels_state):
                 # If a row is in progress, leave it's remaining ticks alone.  But if it's the start of a
                 # new row, then override with new global tempo
@@ -565,7 +563,7 @@ def convert_to_note_events(sng_data, subtune_num):
         reversed_index = list(channels_time_events[i].keys())
         reversed_index.sort(reverse=True)
         for index in reversed_index[1:]:
-            if channels_time_events[i][index].note != None:
+            if channels_time_events[i][index].note is not None:
                 channels_time_events[i].setdefault(global_tick, TimeEntry()).note = \
                     channels_time_events[i][index].note
                 channels_time_events[i][global_tick].note_on = False
@@ -574,10 +572,11 @@ def convert_to_note_events(sng_data, subtune_num):
     return channels_time_events
 
 
-def print_note_time_data(channels_time_events):
+def note_time_data_str(channels_time_events):
     max_tick = max(max(channels_time_events[i].keys()) for i in range(3))
     #max_tick = min(max_tick, 500) # for testing
 
+    ret_val = []
     for tick in range(max_tick+1):
         if any(tick in channels_time_events[ch] for ch in range(3)):
             output = "%d: " % tick
@@ -586,19 +585,32 @@ def print_note_time_data(channels_time_events):
                     output += "V%d N%s On?%s, " % (i, channels_time_events[i][tick].note, channels_time_events[i][tick].note_on)
                 else:
                     output += "V%d N-- On?None, " % i
-            print(output)
-
-
-def tick_to_miditick(t):
-    return t * 32  # Scale so that midi will play back at the same speed as the tracker would play.
+            ret_val.append(output)
+    return '\n'.join(ret_val)
 
 
 def convert_to_chirp(channels_time_events, song_name):
+    def tick_to_midi(tick, offset=0, factor=1):
+        return (tick - offset) * factor
+
     song = ctsSong.Song()
     song.ppq = 960
     song.name = song_name
-    song.bpm = 120
 
+    # print_note_time_data(channels_time_events)
+    all_ticks = sorted(set(int(t) for i in range(3) for t in channels_time_events[i].keys()))
+    note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
+                                                 and (channels_time_events[ch][t].note_on is not None) for ch in range(3))])
+    notes_offset = note_ticks[0]
+    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(400)))
+    notes_per_minute = 60 * 60 / ticks_per_note
+    tmp = notes_per_minute // 100
+    tempo = int(notes_per_minute // tmp)
+    tick_factor = int(song.ppq // tempo * tmp)
+
+    tick_to_miditick = partial(tick_to_midi, offset=notes_offset, factor=tick_factor)
+
+    midi_tick = 0
     for it, channel_data in enumerate(channels_time_events):
         track = ctsSong.SongTrack(song)
         track.name = 'Track %d' % (it + 1)
@@ -609,23 +621,22 @@ def convert_to_chirp(channels_time_events, song_name):
             if event.note_on:
                 if current_note:
                     new_note = ctsSong.Note(
-                        current_note.note_num, current_note.start_time, midi_tick - current_note.start_time
+                        current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                     )
                     if new_note.duration > 0:
                         track.notes.append(new_note)
-                current_note = ctsSong.Note(event.note, midi_tick, 0)
+                current_note = ctsSong.Note(midi_tick, event.note, 1)
             elif event.note_on is False:
-                if event.note_on:
-                    if current_note:
-                        new_note = ctsSong.Note(
-                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
-                        )
-                        if new_note.duration > 0:
-                            track.notes.append(new_note)
+                if current_note:
+                    new_note = ctsSong.Note(
+                        current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                    )
+                    if new_note.duration > 0:
+                        track.notes.append(new_note)
                 current_note = None
         if current_note:
             new_note = ctsSong.Note(
-                current_note.note_num, current_note.start_time, midi_tick - current_note.start_time
+                current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
             )
             if new_note.duration > 0:
                 track.notes.append(new_note)
