@@ -4,7 +4,6 @@
 #    pip install recordtype
 #    pip install sortedcontainers
 
-# TODO: Refactor this into a generalized chiptune-sak importer (command line option, etc.), and put in src
 # TODO: Test the repeat command on a different goat tracker tune (consultant one doesn't use it)
 
 from os import path
@@ -25,7 +24,7 @@ DEFAULT_TEMPO = 6
 MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
 MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte
 MAX_INSTR_PER_SONG = 63
-MAX_PATTERNS_PER_SONG = 208
+MAX_PATTERNS_PER_SONG = 208 # patterns can be shared across channels and subtunes
 MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
 
 
@@ -254,9 +253,10 @@ class GtChannelState:
             # parse repeat
             # Repeat values 1 to 16.  In tracker, instead of R0..RF, it's R1..RF,R0
             #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
+            # Note:  Repeat n really means repeat n-1, so it's actually "number of times to play"
+            #    So R1 (repeat 1) is essentially a NOP
             if 0xD0 <= a_byte <= 0xDF:
-                # repeat range is 1 to 16, so remaining plays (default 1) can reach 17
-                self.pat_remaining_plays = a_byte - 0xCF + 1
+                self.pat_remaining_plays = a_byte - 0xCF
                 continue
 
             # parse RST (restart)

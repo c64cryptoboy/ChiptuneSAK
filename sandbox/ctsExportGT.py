@@ -27,17 +27,16 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
     min_rows = int(rows_per_beat * min_note_length)
 
     print(rows_per_beat, min_note_length, ctsSong.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
-    quit()
 
     # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
-    midi_to_tick = partial(midi_to_gt_tick(offset=0, factor=min_rows))
+    midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=min_rows)
     tempo = min_rows
 
     # Set the tempo at tick 0 for all three voices
 
     for itrack, tracknum in enumerate(tracknums):
-        track = song.tracks[tracknum]
-        for note in track:
+        track = song.tracks[tracknum-1]
+        for note in track.notes:
             tick_start = midi_to_tick(note.start_time)
             tick_end = midi_to_tick(note.start_time + note.duration)
             note_num = note.note_num
