@@ -602,7 +602,9 @@ def convert_to_chirp(channels_time_events, song_name):
     note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
                                                  and (channels_time_events[ch][t].note_on is not None) for ch in range(3))])
     notes_offset = note_ticks[0]
-    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(400)))
+    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))
+    if ticks_per_note < 3:  # no decent gcd for this data
+        ticks_per_note = 6
     notes_per_minute = 60 * 60 / ticks_per_note
     tmp = notes_per_minute // 100
     tempo = int(notes_per_minute // tmp)

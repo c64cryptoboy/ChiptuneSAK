@@ -28,7 +28,7 @@ def main():
     channels_time_events = ctsGTImport.convert_to_note_events(sng_data, args.subtune_number - 1)
 
     chirp_song = ctsGTImport.convert_to_chirp(channels_time_events, sng_data.headers.song_name)
-    ts = ctsSong.TimeSignature(0, 3, 4)
+    # ts = ctsSong.TimeSignature(0, 3, 4)
     chirp_song.time_signature_changes.insert(0, ts)
     chirp_song.export_midi(args.midi_out_file)
 
