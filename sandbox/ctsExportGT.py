@@ -1,3 +1,4 @@
+import sys
 import sandboxPath
 from fractions import Fraction
 from functools import reduce, partial
@@ -22,11 +23,11 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
     # Get the minimum note length for the song from the quantization
     min_note_length = Fraction(song.qticks_durations/song.ppq).limit_denominator(64)
 
-    # Assuming that the beat is a quarter note, get rows per midi tick
-    rows_per_midi_tick = int(rows_per_beat * min_note_length)
-
     # Minimum number of rows needed per note for this song
     min_rows = int(rows_per_beat * min_note_length)
+
+    print(rows_per_beat, min_note_length, ctsSong.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
+    quit()
 
     # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
     midi_to_tick = partial(midi_to_gt_tick(offset=0, factor=min_rows))
@@ -44,3 +45,12 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
 
     ## Clean up and write .sng file
     ##  And that should be it!
+
+
+if __name__ == '__main__':
+    in_filename = sys.argv[1]
+    song = ctsSong.Song(in_filename)
+    song.quantize(240, 240)
+    song.remove_polyphony()
+    song.bpm = 90
+    chirp_to_GT(song)
