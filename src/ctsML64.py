@@ -15,6 +15,7 @@ ml64_durations = {
     Fraction(1, 4): '16'
 }
 
+
 def pitch_to_ml64_note_name(note_num, octave_offset=1):
     """
     Gets note name for a given MIDI pitch

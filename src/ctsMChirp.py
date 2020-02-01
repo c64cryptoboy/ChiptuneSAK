@@ -1,6 +1,5 @@
 import copy
 from ctsErrors import *
-import ctsConstants
 from ctsBase import *
 from ctsChirp import ChirpSong, ChirpTrack, Note
 import more_itertools as moreit

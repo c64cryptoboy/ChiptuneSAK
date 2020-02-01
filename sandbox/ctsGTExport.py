@@ -6,6 +6,7 @@
 import sys
 import sandboxPath
 from fractions import Fraction
+import math
 from functools import reduce, partial
 from ctsErrors import *
 from ctsConstants import *
@@ -33,18 +34,26 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
 
 
     # Count the number of jiffies per beat
-    jiffies_per_beat = jiffy / (song.bpm / 60) # jiffies per sec / bpm / 60
+    jiffies_per_beat = jiffy / (song.metadata.bpm / 60) # jiffies per sec / bpm / 60
 
-    # Get the minimum note length for the song from the quantization
-    min_note_length = Fraction(song.qticks_durations/song.ppq).limit_denominator(64)
+    # Get distinct note lengths from the song
+    note_lengths = set(n.duration for t in song.tracks for n in t.notes)
 
-    # Minimum number of rows needed per note for this song
-    min_rows = int(jiffies_per_beat * min_note_length)
+    required_granularity = reduce(math.gcd, sorted(note_lengths))
+    note_lengths = set(n//required_granularity for n in note_lengths)
+    # This is the minumum number of rows required to have all notes representable by an integer number of rows.
+    min_rows_per_note = min(note_lengths)
 
-    print(jiffies_per_beat, min_note_length, ctsChirp.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
+    # Now we get into the weeds; given a tempo in bpm and number of rows per beat, we can come
+    #  up with a tempo that is closest to the desired bpm and can still play all the notes in the song.
+    print(jiffies_per_beat, required_granularity)
+    maybe_rows_per_beat = 4
+    maybe_jiffies_per_row = jiffies_per_beat / maybe_rows_per_beat  # note: this is a floating_point number
 
-    # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
-    midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=min_rows)
+    # This is now a real number to convert between unitless midi ticks and unitless GT ticks
+    # The complication is that you can multiply the min_rows_per_note by an integer to give better
+    #   time resolution, which will result in a different set of GT tempos available
+    midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=song.metadata.ppq // min_rows_per_note)
 
     # Set the tempo at tick 0 for all three voices
 
@@ -60,10 +69,9 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
     ##  And that should be it!
 
 
-# Here for debugging, remove later
-def main():
-    pass
-
-
 if __name__ == "__main__":
-    main()
+    song = ctsChirp.ChirpSong(sys.argv[1])
+    song.quantize_from_note_name('16')
+    song.remove_polyphony()
+
+    chirp_to_GT(song, 'tmp.sng')

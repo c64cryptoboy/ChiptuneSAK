@@ -4,12 +4,9 @@ import copy
 from fractions import Fraction
 
 from ctsErrors import *
-import ctsConstants
 from ctsBase import *
 from ctsChirp import ChirpSong, Note
 from ctsMChirp import MChirpSong
-
-import more_itertools as moreit
 
 lp_pitches = ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"]
 
