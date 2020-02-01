@@ -11,7 +11,7 @@ from ctsErrors import *
 from ctsConstants import *
 import ctsChirp
 
-def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=60):
+def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_SEC):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -22,28 +22,26 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=60):
 
     ###  For the following, I am currently IGNORING triplets!!!!
 
+    # TODO: Algorithm design
+    # Assertion: chirp ticks and goattracker rows are unitless (no mapping to time without tempo)
+    # Find the unique set of note lengths in chirp ticks
+    # reduce set to create most granular row length (e.g. 20, 30, 40, 80 -> 2, 3, 4, 8)
+    #    this means finding the greatest common divisor, and divising it
+    #    In other words, the minimum reduction that remains integers
+    # From this, map BPM to what the tempo should be
+    #    This creates the minimum number of rows necessary per note type
+
+
     # Count the number of jiffies per beat
-    rows_per_beat = (jiffy * 60) // song.bpm  # (rows/sec) / (beats/min/60)
-
-    # TODO DWY Questions:
-    # how is rows/sec = 60*60?  That's frames per row at tempo 60
-    # goattracker rows/sec are 1/(gtTempo * msPerFrame)
-    # so rows per beat is 60/(tempo*msPerFrame)/bpm
-
-    # Calibrating with PAL default assumptions:
-    # in PAL, tempo 6 * 20msPerFrame = 0.12 sec per row
-    # that's 1/0.12 = x=8.333333 rows per sec
-    # so 60 seconds / 0.12 sec per row = 500 rows per min
-    # Traditional PAL reasoning anchor point is that 6 frames per row (a fast speed)
-    # is tied to 125 BPM, where 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
+    jiffies_per_beat = jiffy / (song.bpm / 60) # jiffies per sec / bpm / 60
 
     # Get the minimum note length for the song from the quantization
     min_note_length = Fraction(song.qticks_durations/song.ppq).limit_denominator(64)
 
     # Minimum number of rows needed per note for this song
-    min_rows = int(rows_per_beat * min_note_length)
+    min_rows = int(jiffies_per_beat * min_note_length)
 
-    print(rows_per_beat, min_note_length, ctsChirp.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
+    print(jiffies_per_beat, min_note_length, ctsChirp.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
 
     # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
     midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=min_rows)

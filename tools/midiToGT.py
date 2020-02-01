@@ -28,7 +28,7 @@ def main():
     # TODO: Derive these and/or allow to be set via command line
     song.quantize(240, 240)
     song.remove_polyphony()
-    song.bpm = 90
+    song.bpm = 125
     
     ctsExportGT.chirp_to_GT(song, args.sng_out_file)
 

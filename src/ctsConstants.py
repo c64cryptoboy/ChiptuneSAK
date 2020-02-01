@@ -24,8 +24,16 @@ DURATION_STR = {
 BASIC_START_C64  = 2049 # $0801
 BASIC_START_C128 = 7169 # $1C01
 
+# Calibrating with PAL default assumptions:
+# in PAL, tempo 6 * 20msPerFrame = 0.12 sec per row
+# that's 1/0.12 = x=8.333333 rows per sec
+# so 60 seconds / 0.12 sec per row = 500 rows per min
+# Traditional PAL reasoning anchor point is that 6 frames per row (a fast speed)
+# is tied to 125 BPM, where 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
+# a row is then a 16th note
+
 NTSC_FRAMES_PER_SEC = 59.94
 PAL_FRAMES_PER_SEC = 50.0
-NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC
-PAL_FRAMES_PER_SEC = 1000 / PAL_FRAMES_PER_SEC
+NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC # 16.68335002ms
+PAL_FRAMES_PER_SEC = 1000 / PAL_FRAMES_PER_SEC # 20ms
 
