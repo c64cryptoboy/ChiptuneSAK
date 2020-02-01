@@ -1,7 +1,5 @@
 import sys
 import mido
-import more_itertools as moreit
-from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsBase import *
@@ -202,5 +200,3 @@ def split_midi_zero_into_tracks(midi_song):
     midi_song.tracks = [t for t in tracks if len(t) > 0]
 
     return midi_song
-
-

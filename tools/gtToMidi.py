@@ -7,7 +7,7 @@ from os import path
 import toolsPath
 import argparse
 import ctsGTImport
-import ctsChirp
+import ctsMidiExport
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a GoatTracker2 sng file to a midi file.")
@@ -36,7 +36,7 @@ def main():
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
     #ts = ctsSong.TimeSignature(0, 3, 4)
     #chirp_song.time_signature_changes.insert(0, ts)
-    chirp_song.export_midi(args.midi_out_file)
+    ctsMidiExport.chirp_to_midi(chirp_song, args.midi_out_file)
 
 if __name__ == "__main__":
     main()

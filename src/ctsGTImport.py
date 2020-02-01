@@ -650,10 +650,5 @@ def convert_to_chirp(channels_time_events, song_name):
     return song
 
 
-# Here for debugging, remove later
-def main():
-    pass
-
-
 if __name__ == "__main__":
-    main()
+    pass

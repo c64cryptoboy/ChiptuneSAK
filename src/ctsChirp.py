@@ -172,38 +172,6 @@ class ChirpTrack:
             n.duration = (n.duration * num) // denom
             self.notes[i] = n
 
-    def to_midi(self):
-        """
-        Convert the ChirpTrack to a midi track.
-        """
-        midiTrack = mido.MidiTrack()
-        events = [mido.MetaMessage('track_name', name=self.name)]
-        for n in self.notes:
-            # For the sake of sorting, create the midi event with the absolute time (which will be
-            # changed to a delta time before returning).
-            if n.note_num < 0 or n.note_num > 127:
-                print(n.note_num)
-            events.append(mido.Message('note_on',
-                                       note=n.note_num, channel=self.channel,
-                                       velocity=n.velocity, time=n.start_time))
-            events.append(mido.Message('note_off',
-                                       note=n.note_num, channel=self.channel,
-                                       velocity=0, time=n.start_time + n.duration))
-        for t, msg in self.other:
-            msg.time = t
-            events.append(msg)
-        # Because 'note_off' comes before 'note_on' this sort will keep note_off events before
-        # note_on events.
-        events.sort(key=lambda m: (m.time, m.type))
-        last_time = 0
-        # Turn the absolute times into delta times.
-        for msg in events:
-            current_time = msg.time
-            msg.time -= last_time
-            midiTrack.append(msg)
-            last_time = current_time
-        return midiTrack
-
     def __str__(self):
         ret_val = "Track: %s (channel %d)\n" % (self.name, self.channel)
         return ret_val + '\n'.join(str(n) for n in self.notes)
@@ -465,43 +433,3 @@ class ChirpSong:
         while ikey < n_key_signature_changes and self.key_signature_changes[ikey].start_time < time_in_ticks:
             ikey += 1
         return self.key_signature_changes[ikey-1]
-
-    def meta_to_midi_track(self):
-        """
-        Exports metadata to a MIDI track.
-        """
-        midi_track = mido.MidiTrack()
-        events = []
-        #  Put all the time signature changes into the track.
-        for t, numerator, denominator in self.time_signature_changes:
-            events.append(mido.MetaMessage('time_signature', numerator=numerator, denominator=denominator, time=t))
-        #  Put the tempo changes into the track.
-        for t, tempo in self.tempo_changes:
-            events.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(tempo), time=t))
-        # Put any other meta-messages that were assign to the song as a whole into the track.
-        for t, msg in self.other:
-            msg.time = t
-            events.append(msg)
-        # Sort the track by time so it's ready for the MIDI delta-time format.
-        events.sort(key=lambda m: (m.time, m.type))
-
-        # Generate the midi from the events.
-        last_time = 0
-        for msg in events:
-            tmp_time = msg.time
-            msg.time -= last_time
-            midi_track.append(msg)
-            last_time = tmp_time
-        return midi_track
-
-    def export_midi(self, midi_filename):
-        """
-        Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
-        is tied to many midi concepts and uses midid messages explicitly for some content.
-        """
-        out_midi_file = mido.MidiFile(ticks_per_beat=self.metadata.ppq)
-        out_midi_file.tracks.append(self.meta_to_midi_track())
-        for t in self.tracks:
-            out_midi_file.tracks.append(t.to_midi())
-        out_midi_file.save(midi_filename)
-

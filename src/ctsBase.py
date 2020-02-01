@@ -152,4 +152,3 @@ def pitch_to_note_name(note_num, octave_offset=0):
     octave = (note_num // 12) + octave_offset
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave)
-
