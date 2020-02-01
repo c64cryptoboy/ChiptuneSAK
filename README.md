@@ -3,7 +3,7 @@
 # chiptune-sak
 chiptune-sak (swiss army knife) is a generalized pipeline for processing music and targeting various constrained playback environments.
 
-It imports from many music formats and converts them to a common representation ChIRp (**CH**iptune-sak **I**ntermediate **R**e**P**resentation).  ChIRp can be processed and transformed in many ways, and then exported to various playback formats and environments.  
+It imports from many music formats and converts them to a common representation chirp (**CH**iptune-sak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.  
 
 ## Background:
 Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we know nothing about the status of the game, so please don't ask).  Recently, Youd/Knapp/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
