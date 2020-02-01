@@ -50,7 +50,7 @@ class Note:
         self.note_num, self.start_time, self.duration, self.velocity, self.tied)
 
 
-class SongTrack:
+class ChirpTrack:
     """
     This class represents a track (or a voice) from a song.  It is basically a list of Notes with some
     other context information.
@@ -120,7 +120,7 @@ class SongTrack:
                 if msg.note not in current_notes_on:
                     current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
             # Other messages of interest in the track are stored in a separate list as native MIDI messages        
-            elif msg.is_meta or (msg.type in SongTrack.other_message_types):
+            elif msg.is_meta or (msg.type in ChirpTrack.other_message_types):
                 self.other.append(OtherMidi(current_time, msg))
         #  Turn off any notes left on
         for n in current_notes_on:
@@ -252,7 +252,7 @@ class SongTrack:
 
     def to_midi(self):
         """
-        Convert the SongTrack to a midi track.
+        Convert the ChirpTrack to a midi track.
         """
         midiTrack = mido.MidiTrack()
         events = [mido.MetaMessage('track_name', name=self.name)]
@@ -287,7 +287,7 @@ class SongTrack:
         return ret_val + '\n'.join(str(n) for n in self.notes)
 
 
-class Song:
+class ChirpSong:
     """
     This class represents a song. It stores notes in an intermediate representation that
     approximates traditional music notationh (as pitch-duration).  It also stores other 
@@ -319,7 +319,7 @@ class Song:
 
     def import_midi(self, filename):
         """
-        Open and import a MIDI file into the Song representation. THis method can handle MIDI type 0 and 1 files.
+        Open and import a MIDI file into the ChirpSong representation. THis method can handle MIDI type 0 and 1 files.
 
             :param filename: MIDI filename.
         """
@@ -371,7 +371,7 @@ class Song:
 
         # Now generate the note tracks
         for track in self.midi_note_tracks:
-            self.tracks.append(SongTrack(self, track))
+            self.tracks.append(ChirpTrack(self, track))
 
         self.stats["Notes"] = sum(len(t.notes) for t in self.tracks)
         self.stats["Track names"] = [t.name for t in self.tracks]

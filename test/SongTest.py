@@ -4,11 +4,11 @@ sys.path.append('../src/')
 import hashlib
 import re
 import unittest
-import ctsSong
+import ctsChirp
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsSong.Song('twinkle.mid')
+        self.test_song = ctsChirp.ChirpSong('twinkle.mid')
 
     def test_notes(self):
         """
@@ -26,7 +26,7 @@ class SongTestCase(unittest.TestCase):
 
     def test_quantization_and_polyphony(self):
         """
-        Tests the quantization and polyphony functions of the Song class.
+        Tests the quantization and polyphony functions of the ChirpSong class.
         """
         self.assertFalse(self.test_song.is_quantized())
         self.assertTrue(self.test_song.is_polyphonic())
@@ -50,7 +50,7 @@ class SongTestCase(unittest.TestCase):
         ppq = self.test_song.ppq
         known_good = 'quarter, eighth, eighth triplet, sixteenth, thirty-second, thirty-second triplet, sixty-fourth'
         test_durations = [1, 2, 3, 4, 8, 12, 16]
-        test_output = ', '.join(ctsSong.duration_to_note_name(ppq//n, ppq) for n in test_durations)
+        test_output = ', '.join(ctsChirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)
         self.assertEqual(test_output, known_good)
 
     def test_measures(self):

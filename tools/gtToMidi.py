@@ -2,7 +2,7 @@ from os import path
 import toolsPath
 import argparse
 import ctsGTImport
-import ctsSong
+import ctsChirp
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a GoatTracker2 sng file to a midi file.")

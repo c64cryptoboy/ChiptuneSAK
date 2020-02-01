@@ -15,7 +15,7 @@ from ctsErrors import ChiptuneSAKException
 from ctsML64 import pitch_to_ml64_note_name
 from recordtype import recordtype
 from sortedcontainers import SortedDict
-import ctsSong
+import ctsChirp
 
 OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (note 60) is "C4"
 DEFAULT_TEMPO = 6
@@ -344,7 +344,7 @@ def import_sng(gt_filename):
     # print("\nDebug: %s" % header)
 
     """ From goattracker documentation:
-    6.1.2 Song orderlists
+    6.1.2 ChirpSong orderlists
     ---------------------
     The orderlist structure repeats first for channels 1,2,3 of first subtune,
     then for channels 1,2,3 of second subtune etc., until all subtunes
@@ -593,7 +593,7 @@ def convert_to_chirp(channels_time_events, song_name):
     def tick_to_midi(tick, offset=0, factor=1):
         return (tick - offset) * factor
 
-    song = ctsSong.Song()
+    song = ctsChirp.ChirpSong()
     song.ppq = 960
     song.name = song_name
 
@@ -614,7 +614,7 @@ def convert_to_chirp(channels_time_events, song_name):
 
     midi_tick = 0
     for it, channel_data in enumerate(channels_time_events):
-        track = ctsSong.SongTrack(song)
+        track = ctsChirp.ChirpTrack(song)
         track.name = 'Track %d' % (it + 1)
         track.channel = it
         current_note = None
@@ -622,22 +622,22 @@ def convert_to_chirp(channels_time_events, song_name):
             midi_tick = tick_to_miditick(tick)
             if event.note_on:
                 if current_note:
-                    new_note = ctsSong.Note(
+                    new_note = ctsChirp.Note(
                         current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                     )
                     if new_note.duration > 0:
                         track.notes.append(new_note)
-                current_note = ctsSong.Note(midi_tick, event.note, 1)
+                current_note = ctsChirp.Note(midi_tick, event.note, 1)
             elif event.note_on is False:
                 if current_note:
-                    new_note = ctsSong.Note(
+                    new_note = ctsChirp.Note(
                         current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                     )
                     if new_note.duration > 0:
                         track.notes.append(new_note)
                 current_note = None
         if current_note:
-            new_note = ctsSong.Note(
+            new_note = ctsChirp.Note(
                 current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
             )
             if new_note.duration > 0:

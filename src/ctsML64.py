@@ -1,6 +1,6 @@
 import collections
 from fractions import Fraction
-import ctsSong
+import ctsChirp
 from ctsErrors import *
 import ctsMeasures
 from ctsConstants import PITCHES
@@ -57,15 +57,15 @@ def ml64_sort_order(c):
         Tempo
         Notes and rests
     """
-    if isinstance(c, ctsSong.Note):
+    if isinstance(c, ctsChirp.Note):
         return (c.start_time, 10)
-    elif isinstance(c, ctsSong.Rest):
+    elif isinstance(c, ctsChirp.Rest):
         return (c.start_time, 10)
-    elif isinstance(c, ctsSong.MeasureMarker):
+    elif isinstance(c, ctsChirp.MeasureMarker):
         return (c.start_time, 1)
-    elif isinstance(c, ctsSong.Tempo):
+    elif isinstance(c, ctsChirp.Tempo):
         return (c.start_time, 3)
-    elif isinstance(c, ctsSong.Program):
+    elif isinstance(c, ctsChirp.Program):
         return (c.start_time, 2)
     else:
         return (c.start_time, 5)
@@ -80,9 +80,9 @@ def export_ml64(song, format='standard'):
     """
     output = []
     if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("Song must be quantized for export to ML64")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to ML64")
     if any(t.qticks_notes < song.ppq // 4 for t in song.tracks):
-        raise ChiptuneSAKQuantizationError("Song must be quantized to 16th notes or larger for ML64")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to 16th notes or larger for ML64")
     if song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
 
@@ -103,17 +103,17 @@ def export_ml64(song, format='standard'):
         # Create a list of events for the entire track
         for n in t.notes:
             if n.start_time > last_note_end:
-                track_events.append(ctsSong.Rest(last_note_end, n.start_time - last_note_end))
+                track_events.append(ctsChirp.Rest(last_note_end, n.start_time - last_note_end))
             track_events.append(n)
             last_note_end = n.start_time + n.duration
         for p in [m for m in t.other if m.msg.type == 'program_change']:
-            track_events.append(ctsSong.Program(p.start_time, str(p.msg.program)))
+            track_events.append(ctsChirp.Program(p.start_time, str(p.msg.program)))
         if mode == 's':  # Add measures for standard format
             last_note_end = max(n.start_time + n.duration for t in song.tracks for n in t.notes)
             measures = [m.start_time for m in song.measure_beats if m.beat == 1]
             for im, m in enumerate(measures):
                 if m < last_note_end:
-                    track_events.append(ctsSong.MeasureMarker(m, im + 1))
+                    track_events.append(ctsChirp.MeasureMarker(m, im + 1))
         track_events.sort(key=ml64_sort_order)
         # Now send the entire list of events to the ml64 creator
         track_content, stats, *_ = events_to_ml64(track_events, song)
@@ -132,9 +132,9 @@ def export_ml64_measures(song):
     """
     output = []
     if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("Song must be quantized for export to ML64")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to ML64")
     if any(t.qticks_notes < song.ppq // 4 for t in song.tracks):
-        raise ChiptuneSAKQuantizationError("Song must be quantized to 16th notes or larger for ML64")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to 16th notes or larger for ML64")
     if song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
 
@@ -168,7 +168,7 @@ def events_to_ml64(events, song, last_continue=False):
     content = []
     stats = collections.Counter()
     for e in events:
-        if isinstance(e, ctsSong.Note):
+        if isinstance(e, ctsChirp.Note):
             if last_continue:
                 tmp_note = make_ml64_notes('c', e.duration, song.ppq)
             else:
@@ -177,14 +177,14 @@ def events_to_ml64(events, song, last_continue=False):
             last_continue = e.tied
             stats['note'] += 1
             stats['continue'] += tmp_note.count('c(')
-        elif isinstance(e, ctsSong.Rest):
+        elif isinstance(e, ctsChirp.Rest):
             tmp_note = make_ml64_notes('r', e.duration, song.ppq)
             content.append(tmp_note)
             last_continue = False
             stats['rest'] += tmp_note.count('r(')
-        elif isinstance(e, ctsSong.MeasureMarker):
+        elif isinstance(e, ctsChirp.MeasureMarker):
             content.append('[m%d]' % e.measure_number)
-        elif isinstance(e, ctsSong.Program):
+        elif isinstance(e, ctsChirp.Program):
             content.append('i(%s)' % e.program)
             stats['program'] += 1
     return (content, stats, last_continue)
@@ -193,7 +193,7 @@ def events_to_ml64(events, song, last_continue=False):
 if __name__ == '__main__':
     import sys
 
-    in_song = ctsSong.Song(sys.argv[1])
+    in_song = ctsChirp.ChirpSong(sys.argv[1])
     print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
     print("Original:", "quantized" if in_song.is_quantized() else 'non quantized')
 
@@ -204,8 +204,8 @@ if __name__ == '__main__':
     in_song.quantize_from_note_name('16')
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     print("(%s, %s)" % (
-        ctsSong.duration_to_note_name(in_song.qticks_notes, in_song.ppq),
-        ctsSong.duration_to_note_name(in_song.qticks_durations, in_song.ppq)))
+        ctsChirp.duration_to_note_name(in_song.qticks_notes, in_song.ppq),
+        ctsChirp.duration_to_note_name(in_song.qticks_durations, in_song.ppq)))
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.remove_polyphony()
     print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')

@@ -2,7 +2,7 @@ import sys
 import fractions
 from dataclasses import dataclass
 import collections
-import ctsSong
+import ctsChirp
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
@@ -29,7 +29,7 @@ def apply_xform(note, xform):
     """
     Applies a transposition and stretching transform to a note, returning a new note
     """
-    return ctsSong.Note(0, note.note_num + xform.transpose, int(note.duration * xform.stretch))
+    return ctsChirp.Note(0, note.note_num + xform.transpose, int(note.duration * xform.stretch))
 
 # TODO:  Probably best to turn compression into a class so that it can preserve state about the song.
 
@@ -124,7 +124,7 @@ def find_best_compression(song, repeats, pattern_definition_overhead, pattern_de
 
 
 if __name__ == '__main__':
-    in_song = ctsSong.Song(sys.argv[1])
+    in_song = ctsChirp.ChirpSong(sys.argv[1])
 
     in_song.remove_control_notes()
     q = in_song.estimate_quantization()

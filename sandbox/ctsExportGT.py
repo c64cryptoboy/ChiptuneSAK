@@ -4,16 +4,16 @@ from fractions import Fraction
 from functools import reduce, partial
 from ctsErrors import *
 from ctsConstants import *
-import ctsSong
+import ctsChirp
 
 def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
     if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("Song must be quantized for export to GT")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to GT")
     if song.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("Song must be non-polyphonic for export to GT")
+        raise ChiptuneSAKPolyphonyError("ChirpSong must be non-polyphonic for export to GT")
 
     ###  For the following, I am currently IGNORING triplets!!!!
 
@@ -26,7 +26,7 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
     # Minimum number of rows needed per note for this song
     min_rows = int(rows_per_beat * min_note_length)
 
-    print(rows_per_beat, min_note_length, ctsSong.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
+    print(rows_per_beat, min_note_length, ctsChirp.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
 
     # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
     midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=min_rows)
@@ -48,7 +48,7 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
 
 if __name__ == '__main__':
     in_filename = sys.argv[1]
-    song = ctsSong.Song(in_filename)
+    song = ctsChirp.ChirpSong(in_filename)
     song.quantize(240, 240)
     song.remove_polyphony()
     song.bpm = 90

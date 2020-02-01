@@ -4,7 +4,7 @@ import copy
 
 from ctsErrors import *
 import ctsConstants
-import ctsSong
+import ctsChirp
 from fractions import Fraction
 import ctsMeasures
 
@@ -72,10 +72,10 @@ def measure_to_lilypond(measure, ppq):
         :return:        Lilypond text encoding the measure content.
     """
     measure_contents = []
-    current_time_signature = ctsSong.TimeSignature(0, 4, 4)
-    current_key_signature = ctsSong.KeySignature(0, "C")
+    current_time_signature = ctsChirp.TimeSignature(0, 4, 4)
+    current_key_signature = ctsChirp.KeySignature(0, "C")
     for e in measure.events:
-        if isinstance(e, ctsSong.Note):
+        if isinstance(e, ctsChirp.Note):
             f = Fraction(e.duration / ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append(
@@ -83,22 +83,22 @@ def measure_to_lilypond(measure, ppq):
             else:
                 measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.ppq))
 
-        elif isinstance(e, ctsSong.Rest):
+        elif isinstance(e, ctsChirp.Rest):
             f = Fraction(e.duration / song.ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append("r%s" % (lp_durations[f]))
             else:
                 measure_contents.append(make_lp_notes('r', e.duration, song.ppq))
 
-        elif isinstance(e, ctsSong.MeasureMarker):
+        elif isinstance(e, ctsChirp.MeasureMarker):
             measure_contents.append('|')
 
-        elif isinstance(e, ctsSong.TimeSignature):
+        elif isinstance(e, ctsChirp.TimeSignature):
             if e.num != current_time_signature.num or e.denom != current_time_signature.denom:
                 measure_contents.append('\\time %d/%d' % (e.num, e.denom))
                 current_time_signature = copy.copy(e)
 
-        elif isinstance(e, ctsSong.KeySignature):
+        elif isinstance(e, ctsChirp.KeySignature):
             if e.key != current_key_signature.key:
                 key = e.key
                 key.replace('#', 'is')
@@ -119,23 +119,23 @@ def clip_to_lilypond(song, measures):
 
     lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha --png <filename>
 
-        :param song:     Song from which the measures were taken.
+        :param song:     ChirpSong from which the measures were taken.
         :param measures: List of measures.
         :return:         Lilypond text.
     """
     output = []
     if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("Song must be quantized for export to Lilypond")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to Lilypond")
     if song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to Lilypond")
 
     ks = song.get_key_signature(measures[0].start_time)
     if ks.start_time < measures[0].start_time:
-        measures[0].events.insert(0, ctsSong.KeySignature(measures[0].start_time, ks.key))
+        measures[0].events.insert(0, ctsChirp.KeySignature(measures[0].start_time, ks.key))
 
     ts = song.get_time_signature(measures[0].start_time)
     if ts.start_time < measures[0].start_time:
-        measures[0].events.insert(0, ctsSong.TimeSignature(measures[0].start_time, ts.num, ts.denom))
+        measures[0].events.insert(0, ctsChirp.TimeSignature(measures[0].start_time, ts.num, ts.denom))
 
     output.append('\\version "2.18.2"')
     output.append('''
@@ -144,8 +144,8 @@ def clip_to_lilypond(song, measures):
         evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f 
         page-breaking = #ly:one-line-breaking }
     ''')
-    note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, ctsSong.Note)),
-                  max(e.note_num for m in measures for e in m.events if isinstance(e, ctsSong.Note)))
+    note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, ctsChirp.Note)),
+                  max(e.note_num for m in measures for e in m.events if isinstance(e, ctsChirp.Note)))
     output.append('\\new Staff  {')
     if note_range[0] < 48:
         output.append('\\clef bass')
@@ -163,12 +163,12 @@ def song_to_lilypond(song):
 
     lilypond <filename>
 
-        :param song:    Song to convert to Lilypond format
+        :param song:    ChirpSong to convert to Lilypond format
         :return:        Lilypond text for the song.
     """
     output = []
     if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("Song must be quantized for export to Lilypond")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to Lilypond")
     if song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to Lilypond")
 
@@ -202,7 +202,7 @@ def song_to_lilypond(song):
 if __name__ == '__main__':
     import subprocess
     in_filename = sys.argv[1]
-    song = ctsSong.Song(in_filename)
+    song = ctsChirp.ChirpSong(in_filename)
     song.remove_control_notes()
     song.quantize_from_note_name('32')
     song.remove_polyphony()

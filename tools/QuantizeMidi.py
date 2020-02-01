@@ -2,12 +2,12 @@ import sys
 
 sys.path.append('../src')
 
-import ctsSong
+import ctsChirp
 
 in_filename = sys.argv[1]
 out_filename = sys.argv[2]
 
-in_midi = ctsSong.Song()
+in_midi = ctsChirp.ChirpSong()
 in_midi.import_midi(in_filename)
 
 # Print stats
@@ -18,8 +18,8 @@ p_state = "" if in_midi.is_polyphonic() else "not"
 print("Input midi is %s quantized and %s polyphonic" % (q_state, p_state))
 qticks_n, qticks_d = in_midi.estimate_quantization()
 print("Estimated quantization = (%d, %d) ticks" % (qticks_n, qticks_d))
-print("                       = (%s, %s)" % (ctsSong.duration_to_note_name(qticks_n, in_midi.ppq),
-                                             ctsSong.duration_to_note_name(qticks_d, in_midi.ppq)))
+print("                       = (%s, %s)" % (ctsChirp.duration_to_note_name(qticks_n, in_midi.ppq),
+                                             ctsChirp.duration_to_note_name(qticks_d, in_midi.ppq)))
 
 print("Removing control notes...")
 in_midi.remove_control_notes()
@@ -33,7 +33,7 @@ in_midi.eliminate_polyphony()
 
 q_state = "" if in_midi.is_quantized() else "not"
 p_state = "" if in_midi.is_polyphonic() else "not"
-print("Song is %s quantized and %s polyphonic" % (q_state, p_state))
+print("ChirpSong is %s quantized and %s polyphonic" % (q_state, p_state))
 
 print('\n'.join("%24s %s" % (s, str(v)) for s, v in in_midi.stats.items()))
 

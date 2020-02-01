@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../src')
 import matplotlib.pyplot as plt
-import ctsSong
+import ctsChirp
 
 def plot_quantization(stats, elements):
     fig = plt.figure()
@@ -40,7 +40,7 @@ def plot_quantization(stats, elements):
 
 
 
-in_song = ctsSong.Song(sys.argv[1])
+in_song = ctsChirp.ChirpSong(sys.argv[1])
 in_song.remove_control_notes()
 
 q = in_song.estimate_quantization()

@@ -1,10 +1,10 @@
 import copy
 from ctsErrors import *
 import ctsConstants
-import ctsSong
+import ctsChirp
 import more_itertools as moreit
 
-""" Utility functions for exporting to various formats from the ctsSong.Song representation """
+""" Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
 
 class Measure:
     @staticmethod
@@ -18,19 +18,19 @@ class Measure:
             Other MIDI message(s)
             Notes and rests
         """
-        if isinstance(c, ctsSong.Note):
+        if isinstance(c, ctsChirp.Note):
             return (c.start_time, 10)
-        elif isinstance(c, ctsSong.Rest):
+        elif isinstance(c, ctsChirp.Rest):
             return (c.start_time, 10)
-        elif isinstance(c, ctsSong.MeasureMarker):
+        elif isinstance(c, ctsChirp.MeasureMarker):
             return (c.start_time, 0)
-        elif isinstance(c, ctsSong.TimeSignature):
+        elif isinstance(c, ctsChirp.TimeSignature):
             return (c.start_time, 1)
-        elif isinstance(c, ctsSong.KeySignature):
+        elif isinstance(c, ctsChirp.KeySignature):
             return (c.start_time, 2)
-        elif isinstance(c, ctsSong.Tempo):
+        elif isinstance(c, ctsChirp.Tempo):
             return (c.start_time, 3)
-        elif isinstance(c, ctsSong.Program):
+        elif isinstance(c, ctsChirp.Program):
             return (c.start_time, 4)
         else:
             return (c.start_time, 5)
@@ -57,7 +57,7 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < self.start_time:
             inote += 1
         # Measure number is obtained from the song.
-        self.events.append(ctsSong.MeasureMarker(self.start_time, track.song.get_measure_beat(self.start_time).measure))
+        self.events.append(ctsChirp.MeasureMarker(self.start_time, track.song.get_measure_beat(self.start_time).measure))
         end = self.start_time + self.duration
         last_note_end = self.start_time
         if carry:  # Deal with any notes carried over from the previous measure
@@ -66,7 +66,7 @@ class Measure:
             if carry.duration <= 0:
                 raise ChiptuneSAKValueError("Illegal carry note duration %d" % carry.duration, str(carry))
             if carry_end > end:  # Does the carried note extend past the end of this measure?
-                self.events.append(ctsSong.Note(self.start_time, carry.note_num, end-self.start_time, 100, tied=True))
+                self.events.append(ctsChirp.Note(self.start_time, carry.note_num, end - self.start_time, 100, tied=True))
                 carry.duration -= end - self.start_time
                 last_note_end = end
             else:  # Carried note ends during this measure
@@ -79,7 +79,7 @@ class Measure:
             n = track.notes[inote]
             gap = n.start_time - last_note_end
             if gap > 0:  # Is there a rest before the note starts?
-                self.events.append(ctsSong.Rest(last_note_end, gap))
+                self.events.append(ctsChirp.Rest(last_note_end, gap))
                 last_note_end = n.start_time
             note_end = n.start_time + n.duration  # Time that this note ends
             if note_end <= end:  # Note fits within the current measure
@@ -97,7 +97,7 @@ class Measure:
 
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?
-            self.events.append(ctsSong.Rest(last_note_end, gap))
+            self.events.append(ctsChirp.Rest(last_note_end, gap))
             last_note_end = end
 
         # Add any additional track-specific messages to the measure:
@@ -105,7 +105,7 @@ class Measure:
             if self.start_time <= m.start_time < end:
                 # Leave the time of these messages alone
                 if m.msg.type == 'program_change':  # Split out program changes
-                    self.events.append(ctsSong.Program(m.start_time, m.msg.program))
+                    self.events.append(ctsChirp.Program(m.start_time, m.msg.program))
                 else:
                     self.events.append(m)
 
@@ -113,17 +113,17 @@ class Measure:
         for ks in track.song.key_signature_changes:
             if self.start_time <= ks.start_time < end:
                 # Key signature changes must occur at the start of the measure
-                self.events.append(ctsSong.KeySignature(self.start_time, ks.key))
+                self.events.append(ctsChirp.KeySignature(self.start_time, ks.key))
 
         for ts in track.song.time_signature_changes:
             if self.start_time <= ts.start_time < end:
                 # Time signature changes must occur at the start of the measure
-                self.events.append(ctsSong.TimeSignature(self.start_time, ts.num, ts.denom))
+                self.events.append(ctsChirp.TimeSignature(self.start_time, ts.num, ts.denom))
 
         for tm in track.song.tempo_changes:
             if self.start_time <= tm.start_time < end:
                 # Tempo changes can happen anywhere in the measure
-                self.events.append(ctsSong.Tempo(tm.start_time, tm.bpm))
+                self.events.append(ctsChirp.Tempo(tm.start_time, tm.bpm))
 
         for m in track.song.other:
             if self.start_time <= m.start_time < end:
@@ -135,7 +135,7 @@ class Measure:
         return carry
 
     def count_notes(self):
-        return sum(1 for e in self.events if isinstance(e, ctsSong.Note))
+        return sum(1 for e in self.events if isinstance(e, ctsChirp.Note))
 
 
 def populate_measures(track):
@@ -187,8 +187,8 @@ def get_measures(song):
         :return:     List of lists of measures corresponding to the tracks of the song.
     """
     if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("Song must be quantized before populating measures.")
+        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized before populating measures.")
     if song.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("Song must not be polyphonic to populate measures.")
+        raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to populate measures.")
     all_measures = [populate_measures(t) for t in song.tracks]
     return trim_measures(all_measures)
