@@ -21,12 +21,12 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
     rows_per_beat = (jiffy * 60) // song.bpm  # (rows/sec) / (beats/min/60)
 
     # Get the minimum note length for the song from the quantization
-    min_note_length = Fraction(song.qticks_durations/song.ppq).limit_denominator(64)
+    min_note_length = Fraction(song.qticks_durations/song.metadata.ppq).limit_denominator(64)
 
     # Minimum number of rows needed per note for this song
     min_rows = int(rows_per_beat * min_note_length)
 
-    print(rows_per_beat, min_note_length, ctsChirp.duration_to_note_name(min_note_length * song.ppq, song.ppq), min_rows)
+    print(rows_per_beat, min_note_length, ctsChirp.duration_to_note_name(min_note_length * song.metadata.ppq, song.metadata.ppq), min_rows)
 
     # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
     midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=min_rows)

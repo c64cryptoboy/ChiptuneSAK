@@ -1,12 +1,13 @@
 import sys
 import os
 import copy
+from fractions import Fraction
 
 from ctsErrors import *
 import ctsConstants
-import ctsChirp
-from fractions import Fraction
-import ctsMChirp
+from ctsBase import *
+from ctsChirp import ChirpSong, Note
+from ctsMChirp import MChirpSong
 
 import more_itertools as moreit
 
@@ -72,33 +73,33 @@ def measure_to_lilypond(measure, ppq):
         :return:        Lilypond text encoding the measure content.
     """
     measure_contents = []
-    current_time_signature = ctsChirp.TimeSignature(0, 4, 4)
-    current_key_signature = ctsChirp.KeySignature(0, "C")
+    current_time_signature = TimeSignature(0, 4, 4)
+    current_key_signature = KeySignature(0, "C")
     for e in measure.events:
-        if isinstance(e, ctsChirp.Note):
+        if isinstance(e, Note):
             f = Fraction(e.duration / ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append(
                     "%s%s%s" % (lp_pitch_to_note_name(e.note_num), lp_durations[f], '~' if e.tied else ''))
             else:
-                measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.ppq))
+                measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.metadata.ppq))
 
-        elif isinstance(e, ctsChirp.Rest):
-            f = Fraction(e.duration / song.ppq).limit_denominator(64)
+        elif isinstance(e, Rest):
+            f = Fraction(e.duration / song.metadata.ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append("r%s" % (lp_durations[f]))
             else:
-                measure_contents.append(make_lp_notes('r', e.duration, song.ppq))
+                measure_contents.append(make_lp_notes('r', e.duration, song.metadata.ppq))
 
-        elif isinstance(e, ctsChirp.MeasureMarker):
+        elif isinstance(e, MeasureMarker):
             measure_contents.append('|')
 
-        elif isinstance(e, ctsChirp.TimeSignature):
+        elif isinstance(e, TimeSignature):
             if e.num != current_time_signature.num or e.denom != current_time_signature.denom:
                 measure_contents.append('\\time %d/%d' % (e.num, e.denom))
                 current_time_signature = copy.copy(e)
 
-        elif isinstance(e, ctsChirp.KeySignature):
+        elif isinstance(e, KeySignature):
             if e.key != current_key_signature.key:
                 key = e.key
                 key.replace('#', 'is')
@@ -126,11 +127,11 @@ def clip_to_lilypond(mchirp_song, measures):
     output = []
     ks = mchirp_song.get_key_signature(measures[0].start_time)
     if ks.start_time < measures[0].start_time:
-        measures[0].events.insert(0, ctsChirp.KeySignature(measures[0].start_time, ks.key))
+        measures[0].events.insert(0, KeySignature(measures[0].start_time, ks.key))
 
     ts = mchirp_song.get_time_signature(measures[0].start_time)
     if ts.start_time < measures[0].start_time:
-        measures[0].events.insert(0, ctsChirp.TimeSignature(measures[0].start_time, ts.num, ts.denom))
+        measures[0].events.insert(0, TimeSignature(measures[0].start_time, ts.num, ts.denom))
 
     output.append('\\version "2.18.2"')
     output.append('''
@@ -139,13 +140,13 @@ def clip_to_lilypond(mchirp_song, measures):
         evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f 
         page-breaking = #ly:one-line-breaking }
     ''')
-    note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, ctsChirp.Note)),
-                  max(e.note_num for m in measures for e in m.events if isinstance(e, ctsChirp.Note)))
+    note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, Note)),
+                  max(e.note_num for m in measures for e in m.events if isinstance(e, Note)))
     output.append('\\new Staff  {')
     if note_range[0] < 48:
         output.append('\\clef bass')
     for im, m in enumerate(measures):
-        measure_contents = measure_to_lilypond(m, mchirp_song.ppq)
+        measure_contents = measure_to_lilypond(m, mchirp_song.metadata.ppq)
         output.append(' '.join(measure_contents))
     output.append('}')
     return '\n'.join(output)
@@ -165,23 +166,21 @@ def song_to_lilypond(mchirp_song):
     output.append('\\version "2.18.2"')
     output.append('\\header {')
     if len(mchirp_song.name) > 0:
-        output.append(' title = "%s"' % mchirp_song.name)
-    author = mchirp_song.composer
-    if author:
-        output.append('composer = "%s"' % author)
+        output.append(' title = "%s"' % mchirp_song.metadata.name)
+    output.append('composer = "%s"' % mchirp_song.metadata.composer)
     output.append('}')
     #  ---- end of headers ----
     output.append('\\new StaffGroup <<')
     for it, t in enumerate(mchirp_song.tracks):
         measures = copy.copy(t.measures)
-        track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, ctsChirp.Note)),
-                       max(e.note_num for m in t.measures for e in m.events if isinstance(e, ctsChirp.Note)))
+        track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)),
+                       max(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)))
         output.append('\\new Staff \\with { instrumentName = #"%s" } {' % t.name)
         if track_range[0] < 48:
             output.append('\\clef bass')
         for im, m in enumerate(measures):
             output.append("%% measure %d" % (im + 1))
-            measure_contents = measure_to_lilypond(m, mchirp_song.ppq)
+            measure_contents = measure_to_lilypond(m, mchirp_song.metadata.ppq)
             output.append(' '.join(measure_contents))
         output.append('\\bar "||"')
         output.append('}')
@@ -192,11 +191,11 @@ def song_to_lilypond(mchirp_song):
 if __name__ == '__main__':
     import subprocess
     in_filename = sys.argv[1]
-    song = ctsChirp.ChirpSong(in_filename)
+    song = ChirpSong(in_filename)
     song.remove_control_notes()
     song.quantize_from_note_name('32')
     song.remove_polyphony()
-    m_song = ctsMChirp.MChirpSong(song)
+    m_song = MChirpSong(song)
     out = song_to_lilypond(m_song)
     os.chdir('../test/temp')
     out_filename = os.path.splitext(os.path.split(in_filename)[1])[0] + '.ly'

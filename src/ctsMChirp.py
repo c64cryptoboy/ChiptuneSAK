@@ -1,7 +1,8 @@
 import copy
 from ctsErrors import *
 import ctsConstants
-import ctsChirp
+from ctsBase import *
+from ctsChirp import ChirpSong, ChirpTrack, Note
 import more_itertools as moreit
 
 """ Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
@@ -19,19 +20,19 @@ class Measure:
             Other MIDI message(s)
             Notes and rests
         """
-        if isinstance(c, ctsChirp.Note):
+        if isinstance(c, Note):
             return (c.start_time, 10)
-        elif isinstance(c, ctsChirp.Rest):
+        elif isinstance(c, Rest):
             return (c.start_time, 10)
-        elif isinstance(c, ctsChirp.MeasureMarker):
+        elif isinstance(c, MeasureMarker):
             return (c.start_time, 0)
-        elif isinstance(c, ctsChirp.TimeSignature):
+        elif isinstance(c, TimeSignature):
             return (c.start_time, 1)
-        elif isinstance(c, ctsChirp.KeySignature):
+        elif isinstance(c, KeySignature):
             return (c.start_time, 2)
-        elif isinstance(c, ctsChirp.Tempo):
+        elif isinstance(c, Tempo):
             return (c.start_time, 3)
-        elif isinstance(c, ctsChirp.Program):
+        elif isinstance(c, Program):
             return (c.start_time, 4)
         else:
             return (c.start_time, 5)
@@ -58,7 +59,7 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < self.start_time:
             inote += 1
         # Measure number is obtained from the song.
-        self.events.append(ctsChirp.MeasureMarker(self.start_time, track.song.get_measure_beat(self.start_time).measure))
+        self.events.append(MeasureMarker(self.start_time, track.song.get_measure_beat(self.start_time).measure))
         end = self.start_time + self.duration
         last_note_end = self.start_time
         if carry:  # Deal with any notes carried over from the previous measure
@@ -67,7 +68,7 @@ class Measure:
             if carry.duration <= 0:
                 raise ChiptuneSAKValueError("Illegal carry note duration %d" % carry.duration, str(carry))
             if carry_end > end:  # Does the carried note extend past the end of this measure?
-                self.events.append(ctsChirp.Note(self.start_time, carry.note_num, end - self.start_time, 100, tied=True))
+                self.events.append(Note(self.start_time, carry.note_num, end - self.start_time, 100, tied=True))
                 carry.duration -= end - self.start_time
                 last_note_end = end
             else:  # Carried note ends during this measure
@@ -80,7 +81,7 @@ class Measure:
             n = track.notes[inote]
             gap = n.start_time - last_note_end
             if gap > 0:  # Is there a rest before the note starts?
-                self.events.append(ctsChirp.Rest(last_note_end, gap))
+                self.events.append(Rest(last_note_end, gap))
                 last_note_end = n.start_time
             note_end = n.start_time + n.duration  # Time that this note ends
             if note_end <= end:  # Note fits within the current measure
@@ -98,7 +99,7 @@ class Measure:
 
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?
-            self.events.append(ctsChirp.Rest(last_note_end, gap))
+            self.events.append(Rest(last_note_end, gap))
             last_note_end = end
 
         # Add any additional track-specific messages to the measure:
@@ -106,7 +107,7 @@ class Measure:
             if self.start_time <= m.start_time < end:
                 # Leave the time of these messages alone
                 if m.msg.type == 'program_change':  # Split out program changes
-                    self.events.append(ctsChirp.Program(m.start_time, m.msg.program))
+                    self.events.append(Program(m.start_time, m.msg.program))
                 else:
                     self.events.append(m)
 
@@ -114,17 +115,17 @@ class Measure:
         for ks in track.song.key_signature_changes:
             if self.start_time <= ks.start_time < end:
                 # Key signature changes must occur at the start of the measure
-                self.events.append(ctsChirp.KeySignature(self.start_time, ks.key))
+                self.events.append(KeySignature(self.start_time, ks.key))
 
         for ts in track.song.time_signature_changes:
             if self.start_time <= ts.start_time < end:
                 # Time signature changes must occur at the start of the measure
-                self.events.append(ctsChirp.TimeSignature(self.start_time, ts.num, ts.denom))
+                self.events.append(TimeSignature(self.start_time, ts.num, ts.denom))
 
         for tm in track.song.tempo_changes:
             if self.start_time <= tm.start_time < end:
                 # Tempo changes can happen anywhere in the measure
-                self.events.append(ctsChirp.Tempo(tm.start_time, tm.bpm))
+                self.events.append(Tempo(tm.start_time, tm.bpm))
 
         for m in track.song.other:
             if self.start_time <= m.start_time < end:
@@ -136,7 +137,7 @@ class Measure:
         return carry
 
     def count_notes(self):
-        return sum(1 for e in self.events if isinstance(e, ctsChirp.Note))
+        return sum(1 for e in self.events if isinstance(e, Note))
 
 
 class MChirpTrack:
@@ -190,7 +191,6 @@ class MChirpSong:
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to populate measures.")
         for t in chirp_song.tracks:
             self.tracks.append(MChirpTrack(self, t))
-        self.ppq = chirp_song.ppq
         self.metadata = copy.deepcopy(chirp_song.metadata)
         self.trim()
 
@@ -203,22 +203,22 @@ class MChirpSong:
                 t.measures.pop()
 
     def get_time_signature(self, time_in_ticks):
-        current_time_signature = ctsChirp.TimeSignature(0, 4, 4)
+        current_time_signature = TimeSignature(0, 4, 4)
         for m in self.tracks[0].measures:
             if m.start_time > time_in_ticks:
                 break
             else:
-                ts = [e for e in m.events if isinstance(e, ctsChirp.TimeSignature)]
+                ts = [e for e in m.events if isinstance(e, TimeSignature)]
                 current_time_signature = ts[-1] if len(ts) > 0 else current_time_signature
         return current_time_signature
 
     def get_key_signature(self, time_in_ticks):
-        current_key_signature = ctsChirp.KeySignature(0, 'C')
+        current_key_signature = KeySignature(0, 'C')
         for m in self.tracks[0].measures:
             if m.start_time > time_in_ticks:
                 break
             else:
-                ks = [e for e in m.events if isinstance(e, ctsChirp.KeySignature)]
+                ks = [e for e in m.events if isinstance(e, KeySignature)]
                 current_key_signature = ks[-1] if len(ks) > 0 else current_key_signature
         return current_key_signature
 

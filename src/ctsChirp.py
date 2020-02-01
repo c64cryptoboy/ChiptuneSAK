@@ -17,16 +17,7 @@ import more_itertools as moreit
 from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
-
-# Named tuple types for several lists throughout
-TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
-KeySignature = collections.namedtuple('KeySignature', ['start_time', 'key'])
-Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
-OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
-Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
-Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
-Program = collections.namedtuple('Program', ['start_time', 'program'])
-MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_number'])
+from ctsBase import *
 
 class Note:
     """
@@ -149,9 +140,9 @@ class ChirpTrack:
         quantization.  These values are easily overridden.
         """
         tmpNotes = [n.start_time for n in self.notes]
-        self.qticks_notes = find_quantization(self.song.ppq, tmpNotes)
+        self.qticks_notes = find_quantization(self.song.metadata.ppq, tmpNotes)
         tmpNotes = [n.duration for n in self.notes]
-        self.qticks_durations = find_quantization(self.song.ppq, tmpNotes)
+        self.qticks_durations = find_quantization(self.song.metadata.ppq, tmpNotes)
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)
@@ -303,9 +294,10 @@ class ChirpSong:
         """ 
         Clear all tracks and reinitialize to default values
         """
-        self.ppq = 480  # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
-        self.qticks_notes = self.ppq  # Quantization for note starts, in ticks
-        self.qticks_durations = self.ppq  # Quantization for note durations, in ticks
+        self.metadata = SongMetadata()
+        self.metadata.ppq = 480  # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
+        self.qticks_notes = self.metadata.ppq  # Quantization for note starts, in ticks
+        self.qticks_durations = self.metadata.ppq  # Quantization for note durations, in ticks
         self.tracks = []  # List of Songtrack tracks
         self.other = []  # List of all meta events that apply to the song as a whole
         self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
@@ -313,12 +305,6 @@ class ChirpSong:
         self.time_signature_changes = []  # List of time signature changes
         self.key_signature_changes = []  # List of key signature changes
         self.tempo_changes = []  # List of tempo changes
-        self.metadata = {}
-        self.metadata['name'] = ''
-        self.metadata['composer'] = ''
-        self.metadata['initial key'] = KeySignature(0, 'C')
-        self.metadata['initial time signature'] = TimeSignature(0, 4, 4)
-        self.metadata['initial bpm'] = int(mido.tempo2bpm(500000))  # Default tempo (it's the midi default)
         self.stats = {}  # Statistics about the song
 
     def import_midi(self, filename):
@@ -332,7 +318,7 @@ class ChirpSong:
 
         # Open the midi file using the Python mido library
         self.in_midi = mido.MidiFile(filename)
-        self.ppq = self.in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
+        self.metadata.ppq = self.in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
         # If MIDI file is not a Type 0 or 1 file, barf
         if self.in_midi.type > 1:
             print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (self.in_midi.type),
@@ -394,7 +380,7 @@ class ChirpSong:
             elif msg.type == 'key_signature':
                 self.key_signature_changes.append(KeySignature(current_time, msg.key))
             elif msg.type == 'track_name' and is_zerotrack:
-                self.metadata['name'] = msg.name.strip()
+                self.metadata.name = msg.name.strip()
             # Keep meta events from tracks without notes
             # Note that these events are stored as midi messages with the global time attached.
             elif msg.is_meta and is_metatrack:
@@ -403,13 +389,13 @@ class ChirpSong:
         # Require initial time signature, key signature, and tempo values.
         if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
             self.key_signature_changes.insert(0, KeySignature(0, "C"))  # Default top key of C
-        self.metadata['initial key signature'] = self.key_signature_changes[0]
+        self.metadata.key_signature = self.key_signature_changes[0]
         if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
             self.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
-        self.metadata['initial time signature'] = self.time_signature_changes[0]
+        self.metadata.time_signature= self.time_signature_changes[0]
         if len(self.tempo_changes) == 0 or self.tempo_changes[0].start_time != 0:
             self.tempo_changes.insert(0, Tempo(0, int(mido.tempo2bpm(500000))))
-        self.metadata['initial bpm'] = self.tempo_changes[0]
+        self.metadata.bpm = self.tempo_changes[0].bpm
 
     def estimate_quantization(self):
         """ 
@@ -419,9 +405,9 @@ class ChirpSong:
         These values are easily overridden.
         """
         tmp_notes = [n.start_time for t in self.tracks for n in t.notes]
-        self.qticks_notes = find_quantization(self.ppq, tmp_notes)
+        self.qticks_notes = find_quantization(self.metadata.ppq, tmp_notes)
         tmp_durations = [n.duration for t in self.tracks for n in t.notes]
-        self.qticks_durations = find_duration_quantization(self.ppq, tmp_durations, self.qticks_notes)
+        self.qticks_durations = find_duration_quantization(self.metadata.ppq, tmp_durations, self.qticks_notes)
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)
@@ -473,7 +459,7 @@ class ChirpSong:
         if '-3' in min_note_duration_string:
             triplets_allowed = True
             min_note_duration_string = min_note_duration_string.replace('-3', '')
-        qticks = int(self.ppq * DURATION_STR[min_note_duration_string])
+        qticks = int(self.metadata.ppq * DURATION_STR[min_note_duration_string])
         if dotted_allowed:
             qticks //= 2
         if triplets_allowed:
@@ -580,7 +566,7 @@ class ChirpSong:
         for s in time_signature_changes:
             while t < s.start_time:
                 measures.append(Beat(t, m, b))
-                t += (self.ppq * 4) // last.denom
+                t += (self.metadata.ppq * 4) // last.denom
                 b += 1
                 if b > last.num:
                     m += 1
@@ -588,7 +574,7 @@ class ChirpSong:
             last = s
         while t <= max_time:
             measures.append(Beat(t, m, b))
-            t += (self.ppq * 4) // last.denom
+            t += (self.metadata.ppq * 4) // last.denom
             b += 1
             if b > last.num:
                 m += 1
@@ -700,7 +686,7 @@ class ChirpSong:
         Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
         is tied to many midi concepts and uses midid messages explicitly for some content.
         """
-        out_midi_file = mido.MidiFile(ticks_per_beat=self.ppq)
+        out_midi_file = mido.MidiFile(ticks_per_beat=self.metadata.ppq)
         out_midi_file.tracks.append(self.meta_to_midi_track())
         for t in self.tracks:
             out_midi_file.tracks.append(t.to_midi())

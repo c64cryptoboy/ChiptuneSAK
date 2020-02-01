@@ -47,7 +47,7 @@ class SongTestCase(unittest.TestCase):
         """
         Test conversion of durations (in ticks) to note names
         """
-        ppq = self.test_song.ppq
+        ppq = self.test_song.metadata.ppq
         known_good = 'quarter, eighth, eighth triplet, sixteenth, thirty-second, thirty-second triplet, sixty-fourth'
         test_durations = [1, 2, 3, 4, 8, 12, 16]
         test_output = ', '.join(ctsChirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)

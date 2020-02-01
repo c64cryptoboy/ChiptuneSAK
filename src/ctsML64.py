@@ -15,9 +15,6 @@ ml64_durations = {
     Fraction(1, 4): '16'
 }
 
-
-
-
 def pitch_to_ml64_note_name(note_num, octave_offset=1):
     """
     Gets note name for a given MIDI pitch
@@ -81,7 +78,7 @@ def export_chirp_to_ml64(chirp_song, format='standard'):
     output = []
     if not chirp_song.is_quantized():
         raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to ML64")
-    if any(t.qticks_notes < chirp_song.ppq // 4 for t in chirp_song.tracks):
+    if any(t.qticks_notes < chirp_song.metadata.ppq // 4 for t in chirp_song.tracks):
         raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to 16th notes or larger for ML64")
     if chirp_song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
@@ -89,10 +86,10 @@ def export_chirp_to_ml64(chirp_song, format='standard'):
     mode = format[0].lower()
 
     stats = collections.Counter()
-    ppq = chirp_song.ppq
+    ppq = chirp_song.metadata.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
-    output.append('tempo(%d)' % chirp_song.metadata['initial bpm'].bpm)
+    output.append('tempo(%d)' % chirp_song.metadata.bpm)
 
     for it, t in enumerate(chirp_song.tracks):
         output.append('track(%d)' % (it + 1))
@@ -130,10 +127,10 @@ def export_mchirp_to_ml64(mchirp_song):
     """
     output = []
     stats = collections.Counter()
-    ppq = mchirp_song.ppq
+    ppq = mchirp_song.metadata.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
-    output.append('tempo(%d)' % mchirp_song.metadata['initial bpm'].bpm)
+    output.append('tempo(%d)' % mchirp_song.metadata.bpm)
 
     for it, t in enumerate(mchirp_song.tracks):
         output.append('track(%d)' % (it + 1))
@@ -160,15 +157,15 @@ def events_to_ml64(events, song, last_continue=False):
     for e in events:
         if isinstance(e, ctsChirp.Note):
             if last_continue:
-                tmp_note = make_ml64_notes('c', e.duration, song.ppq)
+                tmp_note = make_ml64_notes('c', e.duration, song.metadata.ppq)
             else:
-                tmp_note = make_ml64_notes(pitch_to_ml64_note_name(e.note_num), e.duration, song.ppq)
+                tmp_note = make_ml64_notes(pitch_to_ml64_note_name(e.note_num), e.duration, song.metadata.ppq)
             content.append(tmp_note)
             last_continue = e.tied
             stats['note'] += 1
             stats['continue'] += tmp_note.count('c(')
         elif isinstance(e, ctsChirp.Rest):
-            tmp_note = make_ml64_notes('r', e.duration, song.ppq)
+            tmp_note = make_ml64_notes('r', e.duration, song.metadata.ppq)
             content.append(tmp_note)
             last_continue = False
             stats['rest'] += tmp_note.count('r(')
@@ -189,13 +186,13 @@ if __name__ == '__main__':
 
     in_song.remove_control_notes()
     # in_song.modulate(3, 2)
-    # in_song.quantize(in_song.ppq // 4,
-    #                  in_song.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
+    # in_song.quantize(in_song.metadata.ppq // 4,
+    #                  in_song.metadata.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
     in_song.quantize_from_note_name('16')
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     print("(%s, %s)" % (
-        ctsChirp.duration_to_note_name(in_song.qticks_notes, in_song.ppq),
-        ctsChirp.duration_to_note_name(in_song.qticks_durations, in_song.ppq)))
+        ctsChirp.duration_to_note_name(in_song.qticks_notes, in_song.metadata.ppq),
+        ctsChirp.duration_to_note_name(in_song.qticks_durations, in_song.metadata.ppq)))
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.remove_polyphony()
     print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')

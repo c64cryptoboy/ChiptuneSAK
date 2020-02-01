@@ -594,7 +594,7 @@ def convert_to_chirp(channels_time_events, song_name):
         return (tick - offset) * factor
 
     song = ctsChirp.ChirpSong()
-    song.ppq = 960
+    song.metadata.ppq = 960
     song.name = song_name
 
     # print_note_time_data(channels_time_events)
@@ -608,7 +608,7 @@ def convert_to_chirp(channels_time_events, song_name):
     notes_per_minute = 60 * 60 / ticks_per_note
     tmp = notes_per_minute // 100
     tempo = int(notes_per_minute // tmp)
-    tick_factor = int(song.ppq // tempo * tmp)
+    tick_factor = int(song.metadata.ppq // tempo * tmp)
 
     tick_to_miditick = partial(tick_to_midi, offset=notes_offset, factor=tick_factor)
 
