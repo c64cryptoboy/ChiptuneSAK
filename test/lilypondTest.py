@@ -4,6 +4,7 @@ import unittest
 import subprocess
 import ctsChirp
 import ctsMChirp
+import ctsMidiImport
 import ctsTestingTools
 import ctsLilypond
 
@@ -14,7 +15,7 @@ class TestExportLilypond(unittest.TestCase):
         known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ly_file)
 
 
-        song = ctsChirp.ChirpSong(midi_file)
+        song = ctsMidiImport.midi_to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
 

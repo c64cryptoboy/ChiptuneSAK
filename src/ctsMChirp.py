@@ -58,7 +58,7 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < self.start_time:
             inote += 1
         # Measure number is obtained from the song.
-        self.events.append(MeasureMarker(self.start_time, track.song.get_measure_beat(self.start_time).measure))
+        self.events.append(MeasureMarker(self.start_time, track.chirp_song.get_measure_beat(self.start_time).measure))
         end = self.start_time + self.duration
         last_note_end = self.start_time
         if carry:  # Deal with any notes carried over from the previous measure
@@ -111,22 +111,22 @@ class Measure:
                     self.events.append(m)
 
         #  Now add all the song-specific events to the measure.
-        for ks in track.song.key_signature_changes:
+        for ks in track.chirp_song.key_signature_changes:
             if self.start_time <= ks.start_time < end:
                 # Key signature changes must occur at the start of the measure
                 self.events.append(KeySignature(self.start_time, ks.key))
 
-        for ts in track.song.time_signature_changes:
+        for ts in track.chirp_song.time_signature_changes:
             if self.start_time <= ts.start_time < end:
                 # Time signature changes must occur at the start of the measure
                 self.events.append(TimeSignature(self.start_time, ts.num, ts.denom))
 
-        for tm in track.song.tempo_changes:
+        for tm in track.chirp_song.tempo_changes:
             if self.start_time <= tm.start_time < end:
                 # Tempo changes can happen anywhere in the measure
                 self.events.append(Tempo(tm.start_time, tm.bpm))
 
-        for m in track.song.other:
+        for m in track.chirp_song.other:
             if self.start_time <= m.start_time < end:
                 # Leave the time of these messages alone
                 self.events.append(m)
@@ -157,7 +157,7 @@ class MChirpTrack:
         if chirp_track.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to populate measures.")
         measures_list = []
-        measure_starts = chirp_track.song.measure_starts()
+        measure_starts = chirp_track.chirp_song.measure_starts()
         # Artificially add an extra measure on the end to finish processing the notes in the last measure.
         measure_starts.append(2 * measure_starts[-1] - measure_starts[-2])
         # First add in the notes to the measure

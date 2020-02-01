@@ -10,9 +10,8 @@ TOOLVERSION = "0.1"
 #
 
 import sys
-import bisect
-import collections
 import mido
+import bisect
 import more_itertools as moreit
 from fractions import Fraction
 from ctsErrors import *
@@ -53,82 +52,14 @@ class ChirpTrack:
     # Define the message types to preserve as a static variable
     other_message_types = ['program_change', 'pitchwheel', 'control_change']
 
-    def __init__(self, song, track=None):
-        self.song = song  # Parent song
+    def __init__(self, chirp_song):
+        self.chirp_song = chirp_song  # Parent song
         self.name = 'none'  # Track name
         self.channel = 0  # This track's midi channel.  Each track should have notes from only one channel.
         self.notes = []  # The notes in the track
         self.other = []  # Other events in the track (includes voice changes and pitchwheel)
-        self.qticks_notes = song.qticks_notes  # Inherit quantization from song
-        self.qticks_durations = song.qticks_durations  # inherit quantization from song
-        # If a track is given to the constructor, it must be a midi track from mido.
-        if track is not None:
-            self.import_midi_track(track)
-
-    def import_midi_track(self, track):
-        """
-        Parse a MIDI track into notes.
-
-            :param track:
-        """
-        # Find the first note_on event and use its channel to set the channel for this track.
-        ch_msg = next((msg for msg in track if msg.type == 'note_on'), None)
-        if ch_msg:
-            self.channel = ch_msg.channel
-            self.name = 'Channel %d' % self.channel
-        # Find the name meta message to get the track's name. Default is the channel.
-        name_msg = next((msg for msg in track if msg.type == 'track_name'), None)
-        if name_msg:
-            if len(name_msg.name.strip()) > 0:
-                self.name = name_msg.name.strip()
-        # Convert Midi events in the track into notes and durations
-        current_time = 0
-        current_notes_on = {}
-        self.notes = []  # list of notes
-        self.other = []  # list of other things int the track, such as patch changes or pitchwheel
-        channels = set()
-        for msg in track:
-            current_time += msg.time
-            if not msg.is_meta:
-                # Keep track of unique channels for non-meta messages
-                channels.add(msg.channel)
-            # Some MIDI devices use a note_on with velocity of 0 to turn notes off.
-            if msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
-                # If this note is not in our dictionary of notes that are on, ignore the note_off
-                if msg.note in current_notes_on:
-                    current_note = current_notes_on[msg.note]
-                    start = current_note.start_time
-                    delta = current_time - start
-                    if delta > 0:
-                        current_note.duration = delta
-                        self.notes.append(current_note)
-                    elif delta < 0:
-                        raise ChiptuneSAKValueError("Error in MIDI import: Illegal note length %d" % delta)
-                    # Remove the note from the dictionary of notes that are on.
-                    del current_notes_on[msg.note]
-            elif msg.type == 'note_on':
-                # Keep a dictionary of all notes that are currently on
-                if msg.note not in current_notes_on:
-                    current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
-            # Other messages of interest in the track are stored in a separate list as native MIDI messages        
-            elif msg.is_meta or (msg.type in ChirpTrack.other_message_types):
-                self.other.append(OtherMidi(current_time, msg))
-        #  Turn off any notes left on
-        for n in current_notes_on:
-            start = current_notes_on[n].start_time
-            delta = current_time - start
-            if delta > 0:
-                current_notes_on[n].duration = delta
-                self.notes.append(current_notes_on[n])
-
-        # Check that there was only one channel used in the track
-        if len(channels) > 1:
-            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s'
-                                       % (len(channels), self.name))
-
-        # Now sort the notes by the time they turn on. They were inserted into the list in
-        # the order they were turned off.  To do the sort, take advatage of automatic sorting of tuples.
-        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+        self.qticks_notes = chirp_song.qticks_notes  # Inherit quantization from song
+        self.qticks_durations = chirp_song.qticks_durations  # inherit quantization from song
 
     def estimate_quantization(self):
         """ 
@@ -140,9 +71,9 @@ class ChirpTrack:
         quantization.  These values are easily overridden.
         """
         tmpNotes = [n.start_time for n in self.notes]
-        self.qticks_notes = find_quantization(self.song.metadata.ppq, tmpNotes)
+        self.qticks_notes = find_quantization(self.chirp_song.metadata.ppq, tmpNotes)
         tmpNotes = [n.duration for n in self.notes]
-        self.qticks_durations = find_quantization(self.song.metadata.ppq, tmpNotes)
+        self.qticks_durations = find_quantization(self.chirp_song.metadata.ppq, tmpNotes)
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)
@@ -287,18 +218,16 @@ class ChirpSong:
 
     def __init__(self, filename=None):
         self.reset_all()
-        if filename:
-            self.import_midi(filename)
 
     def reset_all(self):
         """ 
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = 480  # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
+        self.metadata.ppq = 960  # Pulses (ticks) per quarter note. Default is 960, which is commonly used.
         self.qticks_notes = self.metadata.ppq  # Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  # Quantization for note durations, in ticks
-        self.tracks = []  # List of Songtrack tracks
+        self.tracks = []  # List of ChirpTrack tracks
         self.other = []  # List of all meta events that apply to the song as a whole
         self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  # list of all the tracks that contain notes
@@ -306,96 +235,6 @@ class ChirpSong:
         self.key_signature_changes = []  # List of key signature changes
         self.tempo_changes = []  # List of tempo changes
         self.stats = {}  # Statistics about the song
-
-    def import_midi(self, filename):
-        """
-        Open and import a MIDI file into the ChirpSong representation. THis method can handle MIDI type 0 and 1 files.
-
-            :param filename: MIDI filename.
-        """
-        # Clear everything
-        self.reset_all()
-
-        # Open the midi file using the Python mido library
-        self.in_midi = mido.MidiFile(filename)
-        self.metadata.ppq = self.in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
-        # If MIDI file is not a Type 0 or 1 file, barf
-        if self.in_midi.type > 1:
-            print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (self.in_midi.type),
-                  file=sys.stderr)
-            sys.exit(1)
-
-        # Parse and process the MIDI file into tracks 
-        # if this is a MIDI type 0 file, then there will only be one track with all the data in it.
-        if self.in_midi.type == 0:
-            self.split_midi_zero_into_tracks()  # Splits into tracks: track 0 (metadata), and tracks 1-16 are note data.
-
-        # Process meta commands in ALL tracks
-        self.time_signature_changes = []
-        self.key_signature_changes = []
-        for i, track in enumerate(self.in_midi.tracks):
-            n_notes = sum(1 for m in track if m.type == 'note_on')
-            if n_notes == 0:
-                self.midi_meta_tracks.append(track)
-                self.get_meta(track, True if i == 0 else False, True)
-            else:
-                self.get_meta(track, False, False)
-
-        # Sort all time changes from meta tracks into a single time signature change list
-        self.time_signature_changes = sorted(self.time_signature_changes)
-        self.stats['Time Signature Changes'] = len(self.time_signature_changes)
-        self.key_signature_changes = sorted(self.key_signature_changes)
-        self.stats['Key Signature Changes'] = len(self.key_signature_changes)
-        self.tempo_changes = sorted(self.tempo_changes)
-        self.stats['Tempo Changes'] = len(self.tempo_changes)
-
-        # Find all tracks that contain notes
-        self.midi_note_tracks = [t for t in self.in_midi.tracks if sum(1 for m in t if m.type == 'note_on') > 0]
-
-        self.stats["MIDI notes"] = sum(1 for t in self.midi_note_tracks
-                                       for m in t if m.type == 'note_on' and m.velocity != 0)
-
-        # Now generate the note tracks
-        for track in self.midi_note_tracks:
-            self.tracks.append(ChirpTrack(self, track))
-
-        self.stats["Notes"] = sum(len(t.notes) for t in self.tracks)
-        self.stats["Track names"] = [t.name for t in self.tracks]
-
-    def get_meta(self, track, is_zerotrack=False, is_metatrack=False):
-        """
-        Process MIDI meta messages in a track.
-
-            :param track:
-            :param is_zerotrack:
-            :param is_metatrack:
-        """
-        current_time = 0
-        for msg in track:
-            current_time += msg.time
-            if msg.type == 'time_signature':
-                self.time_signature_changes.append(TimeSignature(current_time, msg.numerator, msg.denominator))
-            elif msg.type == 'set_tempo':
-                self.tempo_changes.append(Tempo(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
-            elif msg.type == 'key_signature':
-                self.key_signature_changes.append(KeySignature(current_time, msg.key))
-            elif msg.type == 'track_name' and is_zerotrack:
-                self.metadata.name = msg.name.strip()
-            # Keep meta events from tracks without notes
-            # Note that these events are stored as midi messages with the global time attached.
-            elif msg.is_meta and is_metatrack:
-                self.other.append(OtherMidi(current_time, msg))
-
-        # Require initial time signature, key signature, and tempo values.
-        if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
-            self.key_signature_changes.insert(0, KeySignature(0, "C"))  # Default top key of C
-        self.metadata.key_signature = self.key_signature_changes[0]
-        if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
-            self.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
-        self.metadata.time_signature= self.time_signature_changes[0]
-        if len(self.tempo_changes) == 0 or self.tempo_changes[0].start_time != 0:
-            self.tempo_changes.insert(0, Tempo(0, int(mido.tempo2bpm(500000))))
-        self.metadata.bpm = self.tempo_changes[0].bpm
 
     def estimate_quantization(self):
         """ 
@@ -627,32 +466,6 @@ class ChirpSong:
             ikey += 1
         return self.key_signature_changes[ikey-1]
 
-    def split_midi_zero_into_tracks(self):
-        """
-        For MIDI Type 0 files, split the notes into tracks.  To accomplish this, we
-        move the metadata into Track 0 and then assign tracks 1-16 to the note data.
-        """
-        last_times = [0 for i in range(17)]
-        tracks = [[] for i in range(17)]
-        current_time = 0
-        for msg in self.in_midi.tracks[0]:
-            current_time += msg.time
-            # Move all the meta messages into a single track.  Midi type 0 files should not
-            # contain any track-specific meta-messages, so this is safe.
-            if msg.is_meta:
-                msg.time = current_time - last_times[0]
-                last_times[0] = current_time
-                tracks[0].append(msg)
-            # All other messages get assigned to tracks based on their channel.
-            else:
-                ch = msg.channel + 1
-                msg.time = current_time - last_times[ch]
-                last_times[ch] = current_time
-                tracks[ch].append(msg)
-        self.in_midi.type = 1  # Change the midi type for the mido object to Type 1
-        # Eliminate tracks that have no events in them.
-        self.in_midi.tracks = [t for t in tracks if len(t) > 0]
-
     def meta_to_midi_track(self):
         """
         Exports metadata to a MIDI track.
@@ -692,131 +505,3 @@ class ChirpSong:
             out_midi_file.tracks.append(t.to_midi())
         out_midi_file.save(midi_filename)
 
-
-# --------------------------------------------------------------------------------------
-#
-#  Utility functions
-#
-# --------------------------------------------------------------------------------------
-
-def quantization_error(t_ticks, q_ticks):
-    """
-    Calculated the error, in ticks, for the given time for a quantization of q ticks.
-    """
-    j = t_ticks // q_ticks
-    return int(min(abs(t_ticks - q_ticks * j), abs(t_ticks - q_ticks * (j + 1))))
-
-
-def objective_error(notes, test_quantization):
-    """
-    This is the objective function for getting the error for the entire set of notes for a
-    given quantization in ticks.  The function used here could be a sum, RMS, or other
-    statistic, but empirical tests indicate that the max used here works well and is robust.
-    """
-    return max(quantization_error(n, test_quantization) for n in notes)
-
-
-def find_quantization(ppq, time_series):
-    """
-    Find the optimal quantization in ticks to use for a given set of times.  The algorithm given
-    here is by no means universal or guaranteed, but it usually gives a sensible answer.
-
-    The algorithm works as follows:
-    - Starting with quarter notes, obtain the error from quantization of the entire set of times.
-    - Then obtain the error from quantization by 2/3 that value (i.e. triplets).
-    - Then go to the next power of two (e.g. 8th notes, a6th notes, etc.) and repeat
-
-    A minimum in quantization error will be observed at the "right" quantization.  In either case
-    above, the next quantization tested will be incommensurate (either a factor of 2/3 or a factor
-    of 3/4) which will make the quantization error worse.
-
-    Thus, the first minimum that appears will be the correct value.
-
-    The algorithm does not seem to work as well for note durations as it does for note starts, probably
-    because performed music rarely has clean note cutoffs.
-    """
-    last_err = len(time_series) * ppq
-    n_notes = len(time_series)
-    last_q = ppq
-    note_value = 4
-    while note_value <= 128:  # We have arbitrarily chosen 128th notes as the fastest possible
-        test_quantization = ppq * 4 // note_value
-        e = objective_error(time_series, test_quantization)
-        # print(test_quantization, e) # This was useful for observing the behavior of real-world music
-        if e == 0:  # Perfect quantization!  We are done.
-            return test_quantization
-        # If this is worse than the last one, the last one was the right one.
-        elif e > last_err:
-            return last_q
-        last_q = test_quantization
-        last_err = e
-
-        # Now test the quantization for triplets of the current note value.
-        test_quantization = test_quantization * 2 // 3
-        e = objective_error(time_series, test_quantization)
-        # print(test_quantization, e) # This was useful for observing the behavior of real-world music
-        if e == 0:  # Perfect quantization!  We are done.
-            return test_quantization
-            # If this is worse than the last one, the last one was the right one.
-        elif e > last_err:
-            return last_q
-        last_q = test_quantization
-        last_err = e
-
-        # Try the next power of two
-        note_value *= 2
-    return 1  # Return a 1 for failed quantization means 1 tick resolution
-
-
-def find_duration_quantization(ppq, durations, qticks_note):
-    """
-    The duration quantization is determined from the shortest note length.
-    The algorithm starts from the estimated quantization for note starts.
-    """
-    min_length = min(durations)
-    if not (min_length > 0):
-        raise ChiptuneSAKQuantizationError("Illegal minimum note length (%d)" % min_length)
-    current_q = qticks_note
-    ratio = min_length / current_q
-    while ratio < 0.9:
-        # Try a triplet
-        tmp_q = current_q
-        current_q = current_q * 3 // 2
-        if ratio > 0.9:
-            break
-        current_q = tmp_q // 2
-    return current_q
-
-
-def quantize_fn(t, qticks):
-    """ 
-    This function quantizes a time to a certain number of ticks.
-    """
-    current = t // qticks
-    next = current + 1
-    current *= qticks
-    next *= qticks
-    if abs(t - current) <= abs(next - t):
-        return current
-    else:
-        return next
-
-
-def duration_to_note_name(duration, ppq):
-    """
-    Given a ppq (pulses per quaver) convert a duration to a human readable note length, e.g., 'eighth'
-    Works for notes, dotted notes, and triplets down to sixty-fourth notes.
-    """
-    f = Fraction(duration / ppq).limit_denominator(64)
-    return DURATIONS.get(f, '<unknown>')
-
-
-def pitch_to_note_name(note_num, octave_offset=0):
-    """
-    Gets note name for a given MIDI pitch
-    """
-    if not 0 <= note_num <= 127:
-        raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave = (note_num // 12) + octave_offset
-    pitch = note_num % 12
-    return "%s%d" % (PITCHES[pitch], octave)

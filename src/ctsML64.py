@@ -1,8 +1,10 @@
 import collections
 from fractions import Fraction
-import ctsChirp
 from ctsErrors import *
+from ctsBase import *
+from ctsChirp import Note, ChirpTrack, ChirpSong
 import ctsMChirp
+import ctsMidiImport
 from ctsConstants import PITCHES
 
 '''
@@ -55,15 +57,15 @@ def ml64_sort_order(c):
         Tempo
         Notes and rests
     """
-    if isinstance(c, ctsChirp.Note):
+    if isinstance(c, Note):
         return (c.start_time, 10)
-    elif isinstance(c, ctsChirp.Rest):
+    elif isinstance(c, Rest):
         return (c.start_time, 10)
-    elif isinstance(c, ctsChirp.MeasureMarker):
+    elif isinstance(c, MeasureMarker):
         return (c.start_time, 1)
-    elif isinstance(c, ctsChirp.Tempo):
+    elif isinstance(c, Tempo):
         return (c.start_time, 3)
-    elif isinstance(c, ctsChirp.Program):
+    elif isinstance(c, Program):
         return (c.start_time, 2)
     else:
         return (c.start_time, 5)
@@ -99,17 +101,17 @@ def export_chirp_to_ml64(chirp_song, format='standard'):
         # Create a list of events for the entire track
         for n in t.notes:
             if n.start_time > last_note_end:
-                track_events.append(ctsChirp.Rest(last_note_end, n.start_time - last_note_end))
+                track_events.append(Rest(last_note_end, n.start_time - last_note_end))
             track_events.append(n)
             last_note_end = n.start_time + n.duration
         for p in [m for m in t.other if m.msg.type == 'program_change']:
-            track_events.append(ctsChirp.Program(p.start_time, str(p.msg.program)))
+            track_events.append(Program(p.start_time, str(p.msg.program)))
         if mode == 's':  # Add measures for standard format
             last_note_end = max(n.start_time + n.duration for t in chirp_song.tracks for n in t.notes)
             measures = [m.start_time for m in chirp_song.measure_beats if m.beat == 1]
             for im, m in enumerate(measures):
                 if m < last_note_end:
-                    track_events.append(ctsChirp.MeasureMarker(m, im + 1))
+                    track_events.append(MeasureMarker(m, im + 1))
         track_events.sort(key=ml64_sort_order)
         # Now send the entire list of events to the ml64 creator
         track_content, stats, *_ = events_to_ml64(track_events, chirp_song)
@@ -156,7 +158,7 @@ def events_to_ml64(events, song, last_continue=False):
     content = []
     stats = collections.Counter()
     for e in events:
-        if isinstance(e, ctsChirp.Note):
+        if isinstance(e, Note):
             if last_continue:
                 tmp_note = make_ml64_notes('c', e.duration, song.metadata.ppq)
             else:
@@ -165,14 +167,14 @@ def events_to_ml64(events, song, last_continue=False):
             last_continue = e.tied
             stats['note'] += 1
             stats['continue'] += tmp_note.count('c(')
-        elif isinstance(e, ctsChirp.Rest):
+        elif isinstance(e, Rest):
             tmp_note = make_ml64_notes('r', e.duration, song.metadata.ppq)
             content.append(tmp_note)
             last_continue = False
             stats['rest'] += tmp_note.count('r(')
-        elif isinstance(e, ctsChirp.MeasureMarker):
+        elif isinstance(e, MeasureMarker):
             content.append('[m%d]' % e.measure_number)
-        elif isinstance(e, ctsChirp.Program):
+        elif isinstance(e, Program):
             content.append('i(%s)' % e.program)
             stats['program'] += 1
     return (content, stats, last_continue)
@@ -181,7 +183,7 @@ def events_to_ml64(events, song, last_continue=False):
 if __name__ == '__main__':
     import sys
 
-    in_song = ctsChirp.ChirpSong(sys.argv[1])
+    in_song = ctsMidiImport.midi_to_chirp(sys.argv[1])
     print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
     print("Original:", "quantized" if in_song.is_quantized() else 'non quantized')
 
@@ -192,8 +194,8 @@ if __name__ == '__main__':
     in_song.quantize_from_note_name('16')
     print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
     print("(%s, %s)" % (
-        ctsChirp.duration_to_note_name(in_song.qticks_notes, in_song.metadata.ppq),
-        ctsChirp.duration_to_note_name(in_song.qticks_durations, in_song.metadata.ppq)))
+        duration_to_note_name(in_song.qticks_notes, in_song.metadata.ppq),
+        duration_to_note_name(in_song.qticks_durations, in_song.metadata.ppq)))
     # Note:  for ML64 ALWAYS remove_polyphony after quantization.
     in_song.remove_polyphony()
     print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')

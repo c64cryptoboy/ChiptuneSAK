@@ -1,14 +1,13 @@
 import sys
 import copy
 sys.path.append('../src/')
-import hashlib
-import re
 import unittest
 import ctsChirp
+import ctsMidiImport
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsChirp.ChirpSong('twinkle.mid')
+        self.test_song = ctsMidiImport.midi_to_chirp('twinkle.mid')
 
     def test_notes(self):
         """
@@ -22,7 +21,7 @@ class SongTestCase(unittest.TestCase):
         """
         Tests both the number and the names of extracted tracks
         """
-        self.assertTupleEqual(tuple(t.name for t in  self.test_song.tracks), ('Lead', 'Counter', 'Bass'))
+        self.assertTupleEqual(tuple(t.name for t in self.test_song.tracks), ('Lead', 'Counter', 'Bass'))
 
     def test_quantization_and_polyphony(self):
         """
