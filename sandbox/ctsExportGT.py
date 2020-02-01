@@ -6,7 +6,7 @@ from ctsErrors import *
 from ctsConstants import *
 import ctsChirp
 
-def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
+def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=60):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -46,10 +46,10 @@ def chirp_to_GT(song, tracknums = [1, 2, 3], jiffy=60):
     ##  And that should be it!
 
 
-if __name__ == '__main__':
-    in_filename = sys.argv[1]
-    song = ctsChirp.ChirpSong(in_filename)
-    song.quantize(240, 240)
-    song.remove_polyphony()
-    song.bpm = 90
-    chirp_to_GT(song)
+# Here for debugging, remove later
+def main():
+    pass
+
+
+if __name__ == "__main__":
+    main()

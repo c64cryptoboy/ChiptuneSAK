@@ -1,3 +1,8 @@
+# Convert goattracker .sng file into a midi .mid file
+#
+# TODOs:
+# - Need to consider inferring time signature and/or having the user be able to set it
+
 from os import path
 import toolsPath
 import argparse
@@ -7,7 +12,7 @@ import ctsChirp
 def main():
     parser = argparse.ArgumentParser(description="Convert a GoatTracker2 sng file to a midi file.")
     parser.add_argument('sng_in_file', help='sng filename to import')
-    parser.add_argument('midi_out_file', help='sng filename to import')
+    parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('-s', '--subtune_number', type=int, default=1,
         help='subtune number (default: 1)')
     
