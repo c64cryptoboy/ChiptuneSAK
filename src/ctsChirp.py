@@ -306,16 +306,19 @@ class ChirpSong:
         self.ppq = 480  # Pulses (ticks) per quarter note. Default is 480, which is commonly used.
         self.qticks_notes = self.ppq  # Quantization for note starts, in ticks
         self.qticks_durations = self.ppq  # Quantization for note durations, in ticks
-        self.bpm = mido.tempo2bpm(500000)  # Default tempo (it's the midi default)
         self.tracks = []  # List of Songtrack tracks
-        self.name = ''
-        self.composer = ''
         self.other = []  # List of all meta events that apply to the song as a whole
         self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  # list of all the tracks that contain notes
         self.time_signature_changes = []  # List of time signature changes
         self.key_signature_changes = []  # List of key signature changes
         self.tempo_changes = []  # List of tempo changes
+        self.metadata = {}
+        self.metadata['name'] = ''
+        self.metadata['composer'] = ''
+        self.metadata['initial key'] = KeySignature(0, 'C')
+        self.metadata['initial time signature'] = TimeSignature(0, 4, 4)
+        self.metadata['initial bpm'] = int(mido.tempo2bpm(500000))  # Default tempo (it's the midi default)
         self.stats = {}  # Statistics about the song
 
     def import_midi(self, filename):
@@ -360,10 +363,6 @@ class ChirpSong:
         self.tempo_changes = sorted(self.tempo_changes)
         self.stats['Tempo Changes'] = len(self.tempo_changes)
 
-        # Set the tempo to that specified by the first tempo event
-        if len(self.tempo_changes) > 0:
-            self.bpm = self.tempo_changes[0].bpm
-
         # Find all tracks that contain notes
         self.midi_note_tracks = [t for t in self.in_midi.tracks if sum(1 for m in t if m.type == 'note_on') > 0]
 
@@ -395,17 +394,22 @@ class ChirpSong:
             elif msg.type == 'key_signature':
                 self.key_signature_changes.append(KeySignature(current_time, msg.key))
             elif msg.type == 'track_name' and is_zerotrack:
-                self.name = msg.name.strip()
+                self.metadata['name'] = msg.name.strip()
             # Keep meta events from tracks without notes
             # Note that these events are stored as midi messages with the global time attached.
             elif msg.is_meta and is_metatrack:
                 self.other.append(OtherMidi(current_time, msg))
 
-        # Require initial time signature and key signature values.
+        # Require initial time signature, key signature, and tempo values.
         if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
             self.key_signature_changes.insert(0, KeySignature(0, "C"))  # Default top key of C
+        self.metadata['initial key signature'] = self.key_signature_changes[0]
         if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
             self.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
+        self.metadata['initial time signature'] = self.time_signature_changes[0]
+        if len(self.tempo_changes) == 0 or self.tempo_changes[0].start_time != 0:
+            self.tempo_changes.insert(0, Tempo(0, int(mido.tempo2bpm(500000))))
+        self.metadata['initial bpm'] = self.tempo_changes[0]
 
     def estimate_quantization(self):
         """ 

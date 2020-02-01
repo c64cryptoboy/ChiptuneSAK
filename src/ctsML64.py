@@ -92,7 +92,7 @@ def export_chirp_to_ml64(chirp_song, format='standard'):
     ppq = chirp_song.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
-    output.append('tempo(%d)' % chirp_song.bpm)
+    output.append('tempo(%d)' % chirp_song.metadata['initial bpm'].bpm)
 
     for it, t in enumerate(chirp_song.tracks):
         output.append('track(%d)' % (it + 1))
@@ -133,7 +133,7 @@ def export_mchirp_to_ml64(mchirp_song):
     ppq = mchirp_song.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
-    output.append('tempo(%d)' % mchirp_song.bpm)
+    output.append('tempo(%d)' % mchirp_song.metadata['initial bpm'].bpm)
 
     for it, t in enumerate(mchirp_song.tracks):
         output.append('track(%d)' % (it + 1))

@@ -191,9 +191,7 @@ class MChirpSong:
         for t in chirp_song.tracks:
             self.tracks.append(MChirpTrack(self, t))
         self.ppq = chirp_song.ppq
-        self.name = chirp_song.name
-        self.composer = chirp_song.composer
-        self.bpm = chirp_song.bpm
+        self.metadata = copy.deepcopy(chirp_song.metadata)
         self.trim()
 
     def trim(self):
