@@ -1,3 +1,8 @@
+# Convert Chirp to GoatTracker2 and save as .sng file
+#
+# TODOs:
+# - 
+
 import sys
 import sandboxPath
 from fractions import Fraction
@@ -20,6 +25,18 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=60):
     # Count the number of jiffies per beat
     rows_per_beat = (jiffy * 60) // song.bpm  # (rows/sec) / (beats/min/60)
 
+    # TODO DWY Questions:
+    # how is rows/sec = 60*60?  That's frames per row at tempo 60
+    # goattracker rows/sec are 1/(gtTempo * msPerFrame)
+    # so rows per beat is 60/(tempo*msPerFrame)/bpm
+
+    # Calibrating with PAL default assumptions:
+    # in PAL, tempo 6 * 20msPerFrame = 0.12 sec per row
+    # that's 1/0.12 = x=8.333333 rows per sec
+    # so 60 seconds / 0.12 sec per row = 500 rows per min
+    # Traditional PAL reasoning anchor point is that 6 frames per row (a fast speed)
+    # is tied to 125 BPM, where 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
+
     # Get the minimum note length for the song from the quantization
     min_note_length = Fraction(song.qticks_durations/song.ppq).limit_denominator(64)
 
@@ -30,7 +47,6 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=60):
 
     # TODO: Change GT tempos to reflect upcoming note lengths.  For now, just set to the tempo needed.
     midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=min_rows)
-    tempo = min_rows
 
     # Set the tempo at tick 0 for all three voices
 

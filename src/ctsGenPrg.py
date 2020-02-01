@@ -19,10 +19,8 @@ Some notes on Commodore BASIC:
 """
 
 import sys
+import ctsConstants
 from ctsBytesUtil import little_endian_bytes, hexdump
-
-basic_start_c64  = 2049 # $0801
-basic_start_c128 = 7169 # $1C01
 
 rem_len = len('rem')
 
@@ -166,11 +164,11 @@ def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
 
 
 def ascii_to_c128prg(ascii_prg):
-    return ascii_to_prg(ascii_prg, basic_start_c128, c128_tokens)
+    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C128, c128_tokens)
 
 
 def ascii_to_c64prg(ascii_prg):
-    return ascii_to_prg(ascii_prg, basic_start_c64, c64_tokens)
+    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C64, c64_tokens)
 
 
     

@@ -18,3 +18,14 @@ DURATION_STR = {
     '32.':Fraction(3, 16), '16-3':Fraction(1, 6), '32':Fraction(1, 8), '64.':Fraction(3, 32),
     '32-3':Fraction(1, 12), '64':Fraction(1, 16), '64-3':Fraction(1, 24)
 }
+
+# Commodore Constants:
+
+BASIC_START_C64  = 2049 # $0801
+BASIC_START_C128 = 7169 # $1C01
+
+NTSC_FRAMES_PER_SEC = 59.94
+PAL_FRAMES_PER_SEC = 50.0
+NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC
+PAL_FRAMES_PER_SEC = 1000 / PAL_FRAMES_PER_SEC
+
