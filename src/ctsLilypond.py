@@ -6,7 +6,7 @@ from ctsErrors import *
 import ctsConstants
 import ctsChirp
 from fractions import Fraction
-import ctsMeasures
+import ctsMChirp
 
 import more_itertools as moreit
 
@@ -112,28 +112,23 @@ def measure_to_lilypond(measure, ppq):
     return measure_contents
 
 
-def clip_to_lilypond(song, measures):
+def clip_to_lilypond(mchirp_song, measures):
     """
     Turns a set of measures into Lilypond suitable for use as a clip.  All the music will be on a single line
     with no margins.  It is recommended that this clip be turned into Lilypond using the command line:
 
     lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha --png <filename>
 
-        :param song:     ChirpSong from which the measures were taken.
+        :param mchirp_song:     ChirpSong from which the measures were taken.
         :param measures: List of measures.
         :return:         Lilypond text.
     """
     output = []
-    if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to Lilypond")
-    if song.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to Lilypond")
-
-    ks = song.get_key_signature(measures[0].start_time)
+    ks = mchirp_song.get_key_signature(measures[0].start_time)
     if ks.start_time < measures[0].start_time:
         measures[0].events.insert(0, ctsChirp.KeySignature(measures[0].start_time, ks.key))
 
-    ts = song.get_time_signature(measures[0].start_time)
+    ts = mchirp_song.get_time_signature(measures[0].start_time)
     if ts.start_time < measures[0].start_time:
         measures[0].events.insert(0, ctsChirp.TimeSignature(measures[0].start_time, ts.num, ts.denom))
 
@@ -150,48 +145,43 @@ def clip_to_lilypond(song, measures):
     if note_range[0] < 48:
         output.append('\\clef bass')
     for im, m in enumerate(measures):
-        measure_contents = measure_to_lilypond(m, song.ppq)
+        measure_contents = measure_to_lilypond(m, mchirp_song.ppq)
         output.append(' '.join(measure_contents))
     output.append('}')
     return '\n'.join(output)
 
 
-def song_to_lilypond(song):
+def song_to_lilypond(mchirp_song):
     """
     Converts a song to Lilypond format. Optimized for multi-page PDF output of the song.
     Recommended lilypond command:
 
     lilypond <filename>
 
-        :param song:    ChirpSong to convert to Lilypond format
+        :param mchirp_song:    ChirpSong to convert to Lilypond format
         :return:        Lilypond text for the song.
     """
     output = []
-    if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to Lilypond")
-    if song.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to Lilypond")
-
     output.append('\\version "2.18.2"')
     output.append('\\header {')
-    if len(song.name) > 0:
-        output.append(' title = "%s"' % song.name)
-    author = next((m.msg.text for m in song.other if m.msg.type == 'text'), None)
+    if len(mchirp_song.name) > 0:
+        output.append(' title = "%s"' % mchirp_song.name)
+    author = mchirp_song.composer
     if author:
         output.append('composer = "%s"' % author)
     output.append('}')
     #  ---- end of headers ----
     output.append('\\new StaffGroup <<')
-    all_measures = ctsMeasures.get_measures(song)
-    for it, t in enumerate(song.tracks):
-        measures = all_measures[it]
-        track_range = (min(n.note_num for n in t.notes), max(n.note_num for n in t.notes))
+    for it, t in enumerate(mchirp_song.tracks):
+        measures = copy.copy(t.measures)
+        track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, ctsChirp.Note)),
+                       max(e.note_num for m in t.measures for e in m.events if isinstance(e, ctsChirp.Note)))
         output.append('\\new Staff \\with { instrumentName = #"%s" } {' % t.name)
         if track_range[0] < 48:
             output.append('\\clef bass')
         for im, m in enumerate(measures):
             output.append("%% measure %d" % (im + 1))
-            measure_contents = measure_to_lilypond(m, song.ppq)
+            measure_contents = measure_to_lilypond(m, mchirp_song.ppq)
             output.append(' '.join(measure_contents))
         output.append('\\bar "||"')
         output.append('}')
@@ -206,7 +196,8 @@ if __name__ == '__main__':
     song.remove_control_notes()
     song.quantize_from_note_name('32')
     song.remove_polyphony()
-    out = song_to_lilypond(song, 'full')
+    m_song = ctsMChirp.MChirpSong(song)
+    out = song_to_lilypond(m_song)
     os.chdir('../test/temp')
     out_filename = os.path.splitext(os.path.split(in_filename)[1])[0] + '.ly'
     with open(out_filename, 'w') as f:

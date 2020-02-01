@@ -309,6 +309,7 @@ class ChirpSong:
         self.bpm = mido.tempo2bpm(500000)  # Default tempo (it's the midi default)
         self.tracks = []  # List of Songtrack tracks
         self.name = ''
+        self.composer = ''
         self.other = []  # List of all meta events that apply to the song as a whole
         self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  # list of all the tracks that contain notes

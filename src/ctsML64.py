@@ -2,7 +2,7 @@ import collections
 from fractions import Fraction
 import ctsChirp
 from ctsErrors import *
-import ctsMeasures
+import ctsMChirp
 from ctsConstants import PITCHES
 
 '''
@@ -71,7 +71,7 @@ def ml64_sort_order(c):
         return (c.start_time, 5)
 
 
-def export_ml64(song, format='standard'):
+def export_chirp_to_ml64(chirp_song, format='standard'):
     """
     Export song to ML64 format, with a minimum number of notes, either with or without measure comments.
     With measure comments, the comments appear within the measure but are not guaranteed to be exactly at the
@@ -79,24 +79,22 @@ def export_ml64(song, format='standard'):
     as small as possible.
     """
     output = []
-    if not song.is_quantized():
+    if not chirp_song.is_quantized():
         raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to ML64")
-    if any(t.qticks_notes < song.ppq // 4 for t in song.tracks):
+    if any(t.qticks_notes < chirp_song.ppq // 4 for t in chirp_song.tracks):
         raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to 16th notes or larger for ML64")
-    if song.is_polyphonic():
+    if chirp_song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
 
-    mode = format.lower()[0]
-    if mode == 'm':
-        return export_ml64_measures(song)
+    mode = format[0].lower()
 
     stats = collections.Counter()
-    ppq = song.ppq
+    ppq = chirp_song.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
-    output.append('tempo(%d)' % song.bpm)
+    output.append('tempo(%d)' % chirp_song.bpm)
 
-    for it, t in enumerate(song.tracks):
+    for it, t in enumerate(chirp_song.tracks):
         output.append('track(%d)' % (it + 1))
         track_events = []
         last_note_end = 0
@@ -109,54 +107,46 @@ def export_ml64(song, format='standard'):
         for p in [m for m in t.other if m.msg.type == 'program_change']:
             track_events.append(ctsChirp.Program(p.start_time, str(p.msg.program)))
         if mode == 's':  # Add measures for standard format
-            last_note_end = max(n.start_time + n.duration for t in song.tracks for n in t.notes)
-            measures = [m.start_time for m in song.measure_beats if m.beat == 1]
+            last_note_end = max(n.start_time + n.duration for t in chirp_song.tracks for n in t.notes)
+            measures = [m.start_time for m in chirp_song.measure_beats if m.beat == 1]
             for im, m in enumerate(measures):
                 if m < last_note_end:
                     track_events.append(ctsChirp.MeasureMarker(m, im + 1))
         track_events.sort(key=ml64_sort_order)
         # Now send the entire list of events to the ml64 creator
-        track_content, stats, *_ = events_to_ml64(track_events, song)
+        track_content, stats, *_ = events_to_ml64(track_events, chirp_song)
         output.append(''.join(track_content).strip())
         output.append('track(-)')
     output.append('song(-)')
     output.append('ML64(-)')
-    song.stats['ML64'] = stats
+    chirp_song.stats['ML64'] = stats
     return '\n'.join(output)
 
 
-def export_ml64_measures(song):
+def export_mchirp_to_ml64(mchirp_song):
     """
     Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to
     appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.
     """
     output = []
-    if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to ML64")
-    if any(t.qticks_notes < song.ppq // 4 for t in song.tracks):
-        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to 16th notes or larger for ML64")
-    if song.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
-
     stats = collections.Counter()
-    ppq = song.ppq
+    ppq = mchirp_song.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
-    output.append('tempo(%d)' % song.bpm)
+    output.append('tempo(%d)' % mchirp_song.bpm)
 
-    all_measures = ctsMeasures.get_measures(song)
-    for it, t in enumerate(song.tracks):
+    for it, t in enumerate(mchirp_song.tracks):
         output.append('track(%d)' % (it + 1))
-        measures = all_measures[it]
+        measures = t.measures
         last_continue = False
         for im, measure in enumerate(measures):
-            measure_content, tmp_stats, last_continue = events_to_ml64(measure.events, song, last_continue)
+            measure_content, tmp_stats, last_continue = events_to_ml64(measure.events, mchirp_song, last_continue)
             output.append(''.join(measure_content))
             stats.update(tmp_stats)
         output.append('track(-)')
     output.append('song(-)')
     output.append('ML64(-)')
-    song.stats['ML64'] = stats
+    mchirp_song.stats['ML64'] = stats
     return '\n'.join(output)
 
 
@@ -213,6 +203,8 @@ if __name__ == '__main__':
 
     # print(sum(len(t.notes) for t in in_song.tracks))
 
-    print(export_ml64(in_song, format='m'))
+    m_song = ctsMChirp.MChirpSong(in_song)
+
+    print(export_mchirp_to_ml64(m_song))
     print('------------------')
-    print('\n'.join('%9ss: %d' % (k, in_song.stats['ML64'][k]) for k in in_song.stats['ML64']))
+    print('\n'.join('%9ss: %d' % (k, m_song.stats['ML64'][k]) for k in m_song.stats['ML64']))

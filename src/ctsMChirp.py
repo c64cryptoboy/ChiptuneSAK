@@ -6,6 +6,7 @@ import more_itertools as moreit
 
 """ Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
 
+
 class Measure:
     @staticmethod
     def sort_order(c):
@@ -138,57 +139,89 @@ class Measure:
         return sum(1 for e in self.events if isinstance(e, ctsChirp.Note))
 
 
-def populate_measures(track):
-    """
-    Converts a track into measures, each of which is a sorted list of notes and other events
+class MChirpTrack:
+    def __init__(self, mchirp_song, chirp_track=None):
+        self.mchirp_song = mchirp_song
+        if chirp_track is not None:
+            self.import_chirp_track(chirp_track)
 
-        :param track: A ctsSongTrack that has been quantized and had polyphony removed
-        :return:      List of Measure objects corresponding to the measures
-    """
-    if not track.is_quantized():
-        raise ChiptuneSAKQuantizationError("Track must be quantized to populate measures.")
-    if track.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to populate measures.")
-    measures_list = []
-    measure_starts = track.song.measure_starts()
-    # Artificially add an extra measure on the end to finish processing the notes in the last measure.
-    measure_starts.append(2 * measure_starts[-1] - measure_starts[-2])
-    # First add in the notes to the measure
-    imeasure = 0
-    carry = None
-    for start, end in moreit.pairwise(measure_starts):
-        current_measure = Measure(start, end - start)
-        carry = current_measure.populate(track, carry)
-        measures_list.append(current_measure)
-    return measures_list
+    def import_chirp_track(self, chirp_track):
+        """
+        Converts a track into measures, each of which is a sorted list of notes and other events
 
-
-def trim_measures(measures_lists):
-    """
-    Trims all note-free measures from the end of the song.
-
-        :param measures_list: List of lists of Measure objects corresponding to song tracks.
-        :return:  List of lists of Measure objects with empty measures removed.
-    """
-    """
-    Trims all note-free measures from the end of the song.
-    """
-    while all(m[-1].count_notes() == 0 for m in measures_lists):
-        for i in range(len(measures_lists)):
-            measures_lists[i].pop()
-    return measures_lists
+            :param track: A ctsSongTrack that has been quantized and had polyphony removed
+            :return:      List of Measure objects corresponding to the measures
+        """
+        if not chirp_track.is_quantized():
+            raise ChiptuneSAKQuantizationError("Track must be quantized to populate measures.")
+        if chirp_track.is_polyphonic():
+            raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to populate measures.")
+        measures_list = []
+        measure_starts = chirp_track.song.measure_starts()
+        # Artificially add an extra measure on the end to finish processing the notes in the last measure.
+        measure_starts.append(2 * measure_starts[-1] - measure_starts[-2])
+        # First add in the notes to the measure
+        carry = None
+        for start, end in moreit.pairwise(measure_starts):
+            current_measure = Measure(start, end - start)
+            carry = current_measure.populate(chirp_track, carry)
+            measures_list.append(current_measure)
+        self.measures = measures_list
+        self.name = chirp_track.name
 
 
-def get_measures(song):
-    """
-    Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
+class MChirpSong:
+    def __init__(self, chirp_song=None):
+        self.tracks = []
+        self.name = ''
+        self.stats = {}
+        if chirp_song is not None:
+            self.import_chirp_song(chirp_song)
 
-        :param song: A ctsSong song
-        :return:     List of lists of measures corresponding to the tracks of the song.
-    """
-    if not song.is_quantized():
-        raise ChiptuneSAKQuantizationError("ChirpSong must be quantized before populating measures.")
-    if song.is_polyphonic():
-        raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to populate measures.")
-    all_measures = [populate_measures(t) for t in song.tracks]
-    return trim_measures(all_measures)
+    def import_chirp_song(self, chirp_song):
+        """
+        Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
+
+            :param song: A ctsChirp.ChirpSong song
+        """
+        if not chirp_song.is_quantized():
+            raise ChiptuneSAKQuantizationError("ChirpSong must be quantized before populating measures.")
+        if chirp_song.is_polyphonic():
+            raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to populate measures.")
+        for t in chirp_song.tracks:
+            self.tracks.append(MChirpTrack(self, t))
+        self.ppq = chirp_song.ppq
+        self.name = chirp_song.name
+        self.composer = chirp_song.composer
+        self.bpm = chirp_song.bpm
+        self.trim()
+
+    def trim(self):
+        """
+        Trims all note-free measures from the end of the song.
+        """
+        while all(t.measures[-1].count_notes() == 0 for t in self.tracks):
+            for t in self.tracks:
+                t.measures.pop()
+
+    def get_time_signature(self, time_in_ticks):
+        current_time_signature = ctsChirp.TimeSignature(0, 4, 4)
+        for m in self.tracks[0].measures:
+            if m.start_time > time_in_ticks:
+                break
+            else:
+                ts = [e for e in m.events if isinstance(e, ctsChirp.TimeSignature)]
+                current_time_signature = ts[-1] if len(ts) > 0 else current_time_signature
+        return current_time_signature
+
+    def get_key_signature(self, time_in_ticks):
+        current_key_signature = ctsChirp.KeySignature(0, 'C')
+        for m in self.tracks[0].measures:
+            if m.start_time > time_in_ticks:
+                break
+            else:
+                ks = [e for e in m.events if isinstance(e, ctsChirp.KeySignature)]
+                current_key_signature = ks[-1] if len(ks) > 0 else current_key_signature
+        return current_key_signature
+
+
