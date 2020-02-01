@@ -1,11 +1,15 @@
 # Flow types:
 ## Chirp
-TODO Desc
+Chirp (**CH**iptune-sak **I**ntermediate **R**e**P**resentation) is chiptune-sak's framework-independent music representation.  Different music formats can be converted to and from chirp.
+
+Chirp maps note events to a tick timeline.  This is different than midi, which records the ticks between events.  Ticks are temporally unitless, and can be mapped to time by applying a BPM.  This has parallels to other music formats such as GoatTracker sng files, in which rows are not tied to time until a tempo is applied.
+
 
 ## MChirp
-TODO Desc
+MChirp is closely related to chirp, but is measure aware, and is used when reasoning about sheet music measures/bars.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
 
-Quantized, and has no single-channel polyphony
+Chirp can be converted to MChirp and vise versa.  Because each format retains different details, the conversion is necessarily lossy.
+
 
 # Workflow Components
 

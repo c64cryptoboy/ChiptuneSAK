@@ -3,8 +3,9 @@
 # Prereqs
 #    pip install recordtype
 #    pip install sortedcontainers
-
-# TODO: Test the repeat command on a different goat tracker tune (consultant one doesn't use it)
+#
+# TODOs:
+# - test a .sng file with > 1 subtune
 
 from os import path
 import argparse
@@ -219,6 +220,7 @@ class GtChannelState:
 
         return row
 
+
     # Advance to next row in pattern.  If pattern end, then go to row 0 of next pattern in orderlist
     def __inc_to_next_row(self):
         self.row_index += 1 # init val is -1
@@ -232,6 +234,7 @@ class GtChannelState:
             self.row_index = 0 # all patterns are guaranteed to start with at least one meaningful (not end mark) row
             if self.pat_remaining_plays == 0: # all done with this pattern, moving on
                 self.__inc_orderlist_to_next_pattern()
+
 
     def __inc_orderlist_to_next_pattern(self):
         self.pat_remaining_plays = 1 # patterns default to one playthrough unless otherwise specified
