@@ -138,6 +138,13 @@ class Measure:
     def count_notes(self):
         return sum(1 for e in self.events if isinstance(e, Note))
 
+    def get_notes(self):
+        return [e for e in self.events if isinstance(e, Note)]
+
+    def get_rests(self):
+        return [e for e in self.events if isinstance(e, Rest)]
+
+
 
 class MChirpTrack:
     def __init__(self, mchirp_song, chirp_track=None):

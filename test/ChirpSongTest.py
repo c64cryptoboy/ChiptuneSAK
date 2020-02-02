@@ -2,8 +2,9 @@ import sys
 import copy
 sys.path.append('../src/')
 import unittest
-import ctsChirp
 import ctsMidiImport
+import ctsChirp
+
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
