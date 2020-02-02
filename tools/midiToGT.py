@@ -1,13 +1,14 @@
 # Convert midi .mid file into a goattracker .sng file
 #
 # TODOs:
-# - Derive BPM or allow to be set via command line
+# - 
 
 from os import path
 import toolsPath
 import argparse
 import ctsChirp
-import ctsExportGT
+import ctsGTExport
+import ctsMidiImport
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a midi file into a GoatTracker2 sng file.")
@@ -21,16 +22,12 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
     
-    #in_midi = ctsChirp.ChirpSong()
-    #in_midi.import_midi(args.midi_in_file)
-    song = ctsChirp.ChirpSong(args.midi_in_file)
-
-    # TODO: Derive these and/or allow to be set via command line
-    song.quantize(240, 240)
+    song = ctsMidiImport.midi_to_chirp(args.midi_in_file)
+    song.estimate_quantization()
+    song.quantize()
     song.remove_polyphony()
-    song.bpm = 125
-    
-    ctsExportGT.chirp_to_GT(song, args.sng_out_file)
 
+    ctsGTExport.chirp_to_GT(song, args.sng_out_file)
+    
 if __name__ == "__main__":
     main()
