@@ -10,7 +10,9 @@ import math
 from functools import reduce, partial
 from ctsErrors import *
 from ctsConstants import *
+from ctsBase import *
 import ctsChirp
+import ctsMidiImport
 
 def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_SEC):
     def midi_to_gt_tick(midi_ticks, offset, factor):
@@ -47,6 +49,8 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
     # Now we get into the weeds; given a tempo in bpm and number of rows per beat, we can come
     #  up with a tempo that is closest to the desired bpm and can still play all the notes in the song.
     print(jiffies_per_beat, required_granularity)
+    dur_str = duration_to_note_name(required_granularity, song.metadata.ppq)
+    print("required granularity = %s note" % dur_str)
     maybe_rows_per_beat = 4
     maybe_jiffies_per_row = jiffies_per_beat / maybe_rows_per_beat  # note: this is a floating_point number
 
@@ -58,6 +62,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
     # Set the tempo at tick 0 for all three voices
 
     for itrack, tracknum in enumerate(tracknums):
+        print(tracknum)
         track = song.tracks[tracknum-1]
         for note in track.notes:
             tick_start = midi_to_tick(note.start_time)
@@ -70,7 +75,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
 
 
 if __name__ == "__main__":
-    song = ctsChirp.ChirpSong(sys.argv[1])
+    song = ctsMidiImport.midi_to_chirp(sys.argv[1])
     song.quantize_from_note_name('16')
     song.remove_polyphony()
 

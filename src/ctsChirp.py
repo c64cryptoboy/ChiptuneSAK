@@ -10,10 +10,8 @@ TOOLVERSION = "0.1"
 #
 
 import sys
-import mido
 import bisect
 import more_itertools as moreit
-from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsBase import *
