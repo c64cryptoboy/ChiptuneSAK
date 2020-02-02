@@ -38,8 +38,10 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     # Count the number of jiffies per beat
     jiffies_per_beat = jiffy / (song.metadata.bpm / 60) # jiffies per sec / bpm / 60
 
-    # Get distinct note lengths from the song
-    note_lengths = set(n.duration for t in song.tracks for n in t.notes)
+    # Get distinct note lengths from the tracks
+    selected_tracks = [song.tracks[i-1] for i in tracknums]
+    note_lengths = set(n.duration for t in selected_tracks for n in t.notes)
+    print('Selected tracks: %s' % ', '.join(t.name for t in selected_tracks))
 
     required_granularity = reduce(math.gcd, sorted(note_lengths))
     note_lengths = set(n//required_granularity for n in note_lengths)
@@ -61,8 +63,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
 
     # Set the tempo at tick 0 for all three voices
 
-    for itrack, tracknum in enumerate(tracknums):
-        track = song.tracks[tracknum-1]
+    for itrack, track in enumerate(selected_tracks):
         for note in track.notes:
             tick_start = midi_to_tick(note.start_time)
             tick_end = midi_to_tick(note.start_time + note.duration)
