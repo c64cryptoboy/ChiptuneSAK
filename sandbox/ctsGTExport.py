@@ -10,7 +10,8 @@ import math
 from functools import reduce, partial
 from ctsErrors import ChiptuneSAKQuantizationError, ChiptuneSAKPolyphonyError
 from ctsConstants import GT_FILE_HEADER, NTSC_FRAMES_PER_SEC, PAL_FRAMES_PER_SEC, \
-    GT_MAX_ELM_PER_ORDERLIST, GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN
+    GT_MAX_ELM_PER_ORDERLIST, GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN, \
+    GT_OCTAVE_BASE
 from ctsBase import duration_to_note_name
 import ctsChirp
 import ctsMidiImport
@@ -21,6 +22,12 @@ def pad_or_truncate(to_pad, length):
     if isinstance(to_pad, str):
         to_pad = to_pad.encode('latin-1')
     return to_pad.ljust(length, b'\0')[0:length]
+
+
+# Convert midi note value into pattern note value
+# Note: lowest goat tracker note C0 = midi #24
+def midi_note_to_pattern_note(midi_note):
+    return midi_note + 72 + (GT_OCTAVE_BASE * -12)
 
 
 def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER_SEC):
@@ -60,32 +67,49 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     jiffies_per_beat = jiffy / (song.metadata.bpm / 60) # jiffies per sec / bps
     min_rows_per_quarter = song.metadata.ppq // required_tick_granularity
 
-    # Convert chirp tracks into patterns and orderlists
-    # TODO: This simple transformation will need to be changed when it's time
-    #       to incorporate music compression
-    EXPORT_PATTERN_LEN = 64 # will actually be this +1 (there's a 0xFF pattern end mark)
-    for itrack, tracknum in enumerate(tracknums):
-        track = song.tracks[tracknum-1]
-        for note in track.notes:
-            note_num = note.note_num # do midi to gt conversion
-            tick_start = midi_to_tick(note.start_time)
-            tick_end = midi_to_tick(note.start_time + note.duration)
-
-            # CODE: divide note.duraiton by required_tick_granularity to get rows for the note
-            #   use note.duration to insert note off, which will likely get overwriten by
-            #   the next upcoming note on event.
-
-            # When EXPORT_PATTERN_LEN notes processed, add that pattern to collection, update
-            # the order list structure
-
-        # Take any notes left, make them a pattern, update order list
-
     gt_binary = bytearray()
     gt_binary += GT_FILE_HEADER
     gt_binary += pad_or_truncate(song.metadata.name, 32)
     gt_binary += pad_or_truncate(song.metadata.composer, 32)
     gt_binary += pad_or_truncate("TODO: copyright", 32)
     gt_binary += b'0x01' # number of subtunes
+
+    # Convert chirp tracks into patterns and orderlists
+    # TODO: This simple transformation will need to be changed when it's time
+    #       to incorporate music compression
+    EXPORT_PATTERN_LEN = 64 # will actually be this +1 (there's a 0xFF pattern end mark)
+    patterns = [] # can be shared across all channels
+    orderlists = [] # for all channels
+    for itrack, tracknum in enumerate(tracknums):
+        track = song.tracks[tracknum-1]
+        orderlist = [] # for a single channel
+        curr_pattern_num = 0
+        curr_notes_in_pattern = 0
+        for note in track.notes:
+            note_num = midi_note_to_pattern_note(note.note_num)
+            curr_notes_in_pattern += 1
+            assert note.duration % required_tick_granularity == 0, \
+                'Error: unexpected quantized value'
+            assert note.start_time % required_tick_granularity == 0, \
+                'Error: unexpected quantized value'
+            global_row_start = int(note.start_time / required_tick_granularity)
+            global_row_end = int((note.start_time + note.duration) / required_tick_granularity)
+            #tick_start = midi_to_tick(note.start_time)
+            #tick_end = midi_to_tick(note.start_time + note.duration)
+
+            # CODE: Create note off using note.duration.  This will usually get overwritten by
+            # the next upcoming note in that channel
+
+            if curr_notes_in_pattern > EXPORT_PATTERN_LEN:
+                
+                curr_pattern_num += 1
+                curr_notes_in_pattern = 0
+
+            # When EXPORT_PATTERN_LEN notes processed, add that pattern to collection, update
+            # the order list structure
+
+        # CODE: if >0 notes left, make them a pattern, update order list
+        orderlists.append(orderlist)
 
     # CODE: Next things to go into the binary is the orderlist for each channel
  
