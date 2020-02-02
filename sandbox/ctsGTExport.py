@@ -14,7 +14,7 @@ from ctsBase import *
 import ctsChirp
 import ctsMidiImport
 
-def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_SEC):
+def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER_SEC):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -45,14 +45,14 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
     note_lengths = set(n//required_granularity for n in note_lengths)
     # This is the minumum number of rows required to have all notes representable by an integer number of rows.
     min_rows_per_note = min(note_lengths)
-
-    # Now we get into the weeds; given a tempo in bpm and number of rows per beat, we can come
-    #  up with a tempo that is closest to the desired bpm and can still play all the notes in the song.
-    print(jiffies_per_beat, required_granularity)
+    min_rows_per_quarter = song.metadata.ppq // required_granularity
     dur_str = duration_to_note_name(required_granularity, song.metadata.ppq)
     print("required granularity = %s note" % dur_str)
-    maybe_rows_per_beat = 4
-    maybe_jiffies_per_row = jiffies_per_beat / maybe_rows_per_beat  # note: this is a floating_point number
+    print("song time signature denominator = %d" % song.metadata.time_signature.denom)
+    min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_granularity
+    print("minimum rows per beat = %d" % min_rows_per_beat)
+    print("available bpms:")
+    print('\n'.join("%.1lf bpm" % (jiffy / (n * min_rows_per_beat) * 60.) for n in range(1, 20)))
 
     # This is now a real number to convert between unitless midi ticks and unitless GT ticks
     # The complication is that you can multiply the min_rows_per_note by an integer to give better
@@ -62,7 +62,6 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
     # Set the tempo at tick 0 for all three voices
 
     for itrack, tracknum in enumerate(tracknums):
-        print(tracknum)
         track = song.tracks[tracknum-1]
         for note in track.notes:
             tick_start = midi_to_tick(note.start_time)
@@ -76,7 +75,8 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=PAL_FRAMES_PER_
 
 if __name__ == "__main__":
     song = ctsMidiImport.midi_to_chirp(sys.argv[1])
-    song.quantize_from_note_name('16')
+    song.estimate_quantization()
+    song.quantize()
     song.remove_polyphony()
 
     chirp_to_GT(song, 'tmp.sng')
