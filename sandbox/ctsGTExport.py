@@ -5,6 +5,7 @@
 
 import sys
 import sandboxPath
+import copy
 from fractions import Fraction
 import math
 from functools import reduce, partial
@@ -25,9 +26,9 @@ def pad_or_truncate(to_pad, length):
 
 
 # Convert midi note value into pattern note value
-# Note: lowest goat tracker note C0 = midi #24
+# Note: lowest goat tracker note C0 (0x60) = midi #24
 def midi_note_to_pattern_note(midi_note):
-    return midi_note + 72 + (GT_OCTAVE_BASE * -12)
+    return midi_note + 0x60 + (-1 * GT_OCTAVE_BASE * 12)
 
 
 def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER_SEC):
@@ -39,14 +40,15 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     if song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("ChirpSong must be non-polyphonic for export to GT")
 
+    export_tracks = [copy.deepcopy(song.tracks[t-1]) for t in tracknums]
     # Get distinct note lengths from quantized song
-    note_lengths_ticks = set(n.duration for t in song.tracks for n in t.notes)
+    note_lengths_ticks = set(n.duration for t in export_tracks for n in t.notes)
 
     # Any note length can be formed from a multiple of tick granularity
     required_tick_granularity = reduce(math.gcd, sorted(note_lengths_ticks))
 
     min_row_note_lengths = set(n//required_tick_granularity for n in note_lengths_ticks)
-    # This is the minumum number of rows required to have all notes representable by an integer number of rows.
+    # This is the minimum number of rows required to have all notes representable by an integer number of rows.
     min_rows_per_note = min(min_row_note_lengths)
 
     # TODO: Debug info (remove or turn into comments later)
@@ -71,8 +73,8 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     gt_binary += GT_FILE_HEADER
     gt_binary += pad_or_truncate(song.metadata.name, 32)
     gt_binary += pad_or_truncate(song.metadata.composer, 32)
-    gt_binary += pad_or_truncate("TODO: copyright", 32)
-    gt_binary += b'0x01' # number of subtunes
+    gt_binary += pad_or_truncate(song.metadata.copyright, 32)
+    gt_binary.append(0x01) # number of subtunes
 
     # Convert chirp tracks into patterns and orderlists
     # TODO: This simple transformation will need to be changed when it's time
@@ -80,8 +82,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     EXPORT_PATTERN_LEN = 64 # will actually be this +1 (there's a 0xFF pattern end mark)
     patterns = [] # can be shared across all channels
     orderlists = [] # for all channels
-    for itrack, tracknum in enumerate(tracknums):
-        track = song.tracks[tracknum-1]
+    for itrack, track in enumerate(export_tracks):
         orderlist = [] # for a single channel
         curr_pattern_num = 0
         curr_notes_in_pattern = 0

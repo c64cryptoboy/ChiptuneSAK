@@ -18,13 +18,13 @@ ml64_durations = {
 }
 
 
-def pitch_to_ml64_note_name(note_num, octave_offset=1):
+def pitch_to_ml64_note_name(note_num, ml64_octave_offset=-1):
     """
     Gets note name for a given MIDI pitch
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = (note_num // 12) - octave_offset
+    octave_num = (note_num // 12) + ml64_octave_offset
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave_num)
 
