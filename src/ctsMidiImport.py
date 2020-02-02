@@ -89,7 +89,7 @@ def midi_to_chirp(filename):
     chirp_song.metadata.ppq = in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
     # If MIDI file is not a Type 0 or 1 file, barf
     if in_midi.type > 1:
-        print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (self.in_midi.type),
+        print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (in_midi.type),
               file=sys.stderr)
         sys.exit(1)
 
@@ -143,6 +143,8 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
         :param is_zerotrack:
         :param is_metatrack:
     """
+    is_composer_set = False
+    is_name_set = False
     current_time = 0
     for msg in meta_track:
         current_time += msg.time
@@ -152,8 +154,15 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
             chirp_song.tempo_changes.append(Tempo(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
         elif msg.type == 'key_signature':
             chirp_song.key_signature_changes.append(KeySignature(current_time, msg.key))
-        elif msg.type == 'track_name' and is_zerotrack:
+        elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
             chirp_song.metadata.name = msg.name.strip()
+            is_name_set = True
+        # Composer seems to be the first text message in track zero.  Not required but maybe a semi-standard
+        elif msg.type == 'text' and is_zerotrack and not is_composer_set:
+            chirp_song.metadata.composer = msg.text.strip()
+            is_composer_set = True
+        elif msg.type == 'copyright' and is_zerotrack:
+            chirp_song.metadata.copyright = msg.text.strip()
         # Keep meta events from tracks without notes
         # Note that these events are stored as midi messages with the global time attached.
         elif msg.is_meta and is_metatrack:
@@ -181,7 +190,7 @@ def split_midi_zero_into_tracks(midi_song):
     last_times = [0 for i in range(17)]
     tracks = [mido.MidiTrack() for i in range(17)]
     current_time = 0
-    for msg in midi.tracks[0]:
+    for msg in midi_song.tracks[0]:
         current_time += msg.time
         # Move all the meta messages into a single track.  Midi type 0 files should not
         # contain any track-specific meta-messages, so this is safe.
