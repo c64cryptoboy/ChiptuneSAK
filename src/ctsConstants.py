@@ -24,16 +24,26 @@ DURATION_STR = {
 BASIC_START_C64  = 2049 # $0801
 BASIC_START_C128 = 7169 # $1C01
 
-# Calibrating with PAL default assumptions:
-# in PAL, tempo 6 * 20msPerFrame = 0.12 sec per row
-# that's 1/0.12 = x=8.333333 rows per sec
-# so 60 seconds / 0.12 sec per row = 500 rows per min
-# Traditional PAL reasoning anchor point is that 6 frames per row (a fast speed)
-# is tied to 125 BPM, where 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
-# a row is then a 16th note
+# A traditional PAL tracker reasoning anchor point between temporally-unitless rows
+# and BPM is that 6 frames per row (a fast speed) is easily tied to 125 BPM.
+# This forms the basis of many PAL tracker defaults, and is used when giving simple
+# concrete examples of computing tempos.
+# Details: 6 frames per row * PAL 20msPerFrame = 0.12 sec per row
+# that's 1/0.12 = x=8.333333 rows per sec, so 60 seconds / 0.12 sec per row = 500 rows per min
+# 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
+# so a row becomes a 16th note
 
 NTSC_FRAMES_PER_SEC = 59.94
 PAL_FRAMES_PER_SEC = 50.0
 NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC # 16.68335002ms
 PAL_MS_PER_FRAME = 1000 / PAL_FRAMES_PER_SEC # 20ms
 
+# GoatTracker constants
+GT_FILE_HEADER = b'GTS5'
+
+# Goat tracker uses the term "song" to mean a collection of independently-playable subtunes
+GT_MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
+GT_MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte
+GT_MAX_INSTR_PER_SONG = 63
+GT_MAX_PATTERNS_PER_SONG = 208 # patterns can be shared across channels and subtunes
+GT_MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
