@@ -25,3 +25,9 @@ class ChiptuneSAKPolyphonyError(ChiptuneSAKException):
     Polyphony error
     """
     pass
+
+class ChiptuneSAKContentError(ChiptuneSAKException):
+    """
+    Content error (such as no measures or no tracks)
+    """
+    pass

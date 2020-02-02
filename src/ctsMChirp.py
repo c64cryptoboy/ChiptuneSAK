@@ -204,9 +204,14 @@ class MChirpSong:
         """
         Trims all note-free measures from the end of the song.
         """
+
+        if len(self.tracks) == 0:
+            raise ChiptuneSAKContentError("No tracks in song")
         while all(t.measures[-1].count_notes() == 0 for t in self.tracks):
             for t in self.tracks:
                 t.measures.pop()
+                if len(t.measures) == 0:
+                    raise ChiptuneSAKContentError("No measures left in track %s" % t.name)
 
     def get_time_signature(self, time_in_ticks):
         current_time_signature = TimeSignature(0, 4, 4)

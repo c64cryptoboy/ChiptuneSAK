@@ -112,7 +112,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
         orderlists.append(orderlist)
 
     # CODE: Next things to go into the binary is the orderlist for each channel
- 
+
     """
     6.1.2 ChirpSong orderlists
     ---------------------

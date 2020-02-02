@@ -7,6 +7,7 @@ from ctsErrors import *
 from ctsBase import *
 from ctsChirp import ChirpSong, Note
 from ctsMChirp import MChirpSong
+import ctsMidiImport
 
 lp_pitches = ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"]
 
@@ -162,7 +163,7 @@ def song_to_lilypond(mchirp_song):
     output = []
     output.append('\\version "2.18.2"')
     output.append('\\header {')
-    if len(mchirp_song.name) > 0:
+    if len(mchirp_song.metadata.name) > 0:
         output.append(' title = "%s"' % mchirp_song.metadata.name)
     output.append('composer = "%s"' % mchirp_song.metadata.composer)
     output.append('}')
@@ -188,7 +189,7 @@ def song_to_lilypond(mchirp_song):
 if __name__ == '__main__':
     import subprocess
     in_filename = sys.argv[1]
-    song = ChirpSong(in_filename)
+    song = ctsMidiImport.midi_to_chirp(in_filename)
     song.remove_control_notes()
     song.quantize_from_note_name('32')
     song.remove_polyphony()

@@ -19,6 +19,7 @@ class SongMetadata:
         self.ppq = 960
         self.name = ''
         self.composer = ''
+        self.copyright = ''
         self.time_signature = TimeSignature(0, 4, 4)
         self.key_signature = KeySignature(0, 'C')
         self.bpm = 112
