@@ -51,7 +51,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     print("song time signature denominator = %d" % song.metadata.time_signature.denom)
     min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_granularity
     print("minimum rows per beat = %d" % min_rows_per_beat)
-    print("available bpms:")
+    print("available bpms for jiffy = %.2lf per sec:" % jiffy)
     print('\n'.join("%.1lf bpm" % (jiffy / (n * min_rows_per_beat) * 60.) for n in range(1, 20)))
 
     # This is now a real number to convert between unitless midi ticks and unitless GT ticks
