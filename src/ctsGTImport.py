@@ -5,12 +5,14 @@
 #    pip install sortedcontainers
 #
 # TODOs:
-# - test a .sng file with > 1 subtune
+# - test a .sng file import with subtune number > 1
 
 from os import path
 import argparse
 import copy
 import math
+from ctsConstants import GT_FILE_HEADER, GT_MAX_SUBTUNES_PER_SONG, GT_MAX_INSTR_PER_SONG, \
+    GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN
 from functools import reduce, partial
 from ctsErrors import ChiptuneSAKException
 from ctsML64 import pitch_to_ml64_note_name
@@ -20,14 +22,6 @@ import ctsChirp
 
 OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (note 60) is "C4"
 DEFAULT_TEMPO = 6
-
-# Goat tracker uses the term "song" to mean a collection of independently-playable subtunes
-MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
-MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte
-MAX_INSTR_PER_SONG = 63
-MAX_PATTERNS_PER_SONG = 208 # patterns can be shared across channels and subtunes
-MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
-
 
 class GTSong:
     def __init__(self):
@@ -110,8 +104,8 @@ class GtChannelState:
         instrument (63/0x3F), if you otherwise leave this instrument unused.
         """
         # Handle the sneaky default global tempo (NOTE: THIS CODE IS UNTESTED)
-        if len(song.instruments) == MAX_INSTR_PER_SONG:
-            ad = song.instruments[MAX_INSTR_PER_SONG-1].attack_decay
+        if len(song.instruments) == GT_MAX_INSTR_PER_SONG:
+            ad = song.instruments[GT_MAX_INSTR_PER_SONG-1].attack_decay
             if 0x02 <= ad <= 0x7F:
                 __init_tempo_override = ad
 
@@ -270,7 +264,7 @@ class GtChannelState:
                 end_index = self.orderlist_index # byte containing RST
                 self.orderlist_index = self.channel_orderlist[self.orderlist_index+1] # perform orderlist "goto" jump
                 # check if there's at least one pattern between the restart location and the RST
-                if sum(1 for p in self.channel_orderlist[start_index:end_index] if p < MAX_PATTERNS_PER_SONG) == 0:
+                if sum(1 for p in self.channel_orderlist[start_index:end_index] if p < GT_MAX_PATTERNS_PER_SONG) == 0:
                     self.orderlist_index = None
                     break # no pattern to ultimately end up on, so we're done
                 # continue loop, just in case we land on a repeat or transpose that needs resolving
@@ -278,7 +272,7 @@ class GtChannelState:
                 continue 
 
             # parse pattern
-            if a_byte < MAX_PATTERNS_PER_SONG: # if it's a pattern
+            if a_byte < GT_MAX_PATTERNS_PER_SONG: # if it's a pattern
                 break # found one, done parsing
 
             raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
@@ -298,6 +292,9 @@ def get_chars(in_bytes, trim_nulls=True):
 
 
 def get_order_list(an_index, file_bytes):
+    # Note: orderlist length byte is length -1
+    #    e.g. orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
+    #    length-1 (06), followed by 7 bytes
     length = file_bytes[an_index] + 1  # add one for restart
     an_index += 1
 
@@ -332,14 +329,14 @@ def import_sng(gt_filename):
     header = GtHeader()
 
     header.id = sng_bytes[0:4]
-    assert header.id == b'GTS5', "Error: Did not find magic header used by goattracker sng files"
+    assert header.id == GT_FILE_HEADER, "Error: Did not find magic header used by goattracker sng files"
 
     header.song_name = get_chars(sng_bytes[4:36])
     header.author_name = get_chars(sng_bytes[36:68])
     header.copyright = get_chars(sng_bytes[68:100])
     header.num_subtunes = sng_bytes[100]
 
-    assert header.num_subtunes <= MAX_SUBTUNES_PER_SONG, 'Error:  too many subtunes'
+    assert header.num_subtunes <= GT_MAX_SUBTUNES_PER_SONG, 'Error:  too many subtunes'
 
     file_index = 101
     a_song.headers = header
@@ -473,13 +470,13 @@ def import_sng(gt_filename):
     for pattern_num in range(num_patterns):
         a_pattern = []
         num_rows = sng_bytes[file_index]
-        assert num_rows <= MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
+        assert num_rows <= GT_MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
         file_index += 1
         for row_num in range(num_rows):
             a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
                                  command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
             assert (0x60 <= a_row.note_data < 0xBF) or a_row.note_data == 0xFF, "Error: unexpected note data value"
-            assert a_row.inst_num <= MAX_INSTR_PER_SONG, "Error: instrument number out of range"
+            assert a_row.inst_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
             assert a_row.command <= 0x0F, "Error: command number out of range"                     
             file_index += 4
             a_pattern.append(a_row)
