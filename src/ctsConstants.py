@@ -40,9 +40,9 @@ PAL_MS_PER_FRAME = 1000 / PAL_FRAMES_PER_SEC # 20ms
 
 # GoatTracker constants
 GT_FILE_HEADER = b'GTS5'
-
-# Goat tracker uses the term "song" to mean a collection of independently-playable subtunes
+GT_OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (note 60) is "C4"
 GT_MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
+                              # "song" means a collection of independently-playable subtunes
 GT_MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte
 GT_MAX_INSTR_PER_SONG = 63
 GT_MAX_PATTERNS_PER_SONG = 208 # patterns can be shared across channels and subtunes

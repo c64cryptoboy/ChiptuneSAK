@@ -27,7 +27,7 @@ Chirp can be converted to MChirp and vise versa.  Because each format retains di
 
 ## FileToMChirp
 * Input:
-   * MusicXML .xml file
+   * MusicXML .mxl file
 * Output:
    * MChirp
 * Notes:

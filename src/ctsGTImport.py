@@ -12,7 +12,7 @@ import argparse
 import copy
 import math
 from ctsConstants import GT_FILE_HEADER, GT_MAX_SUBTUNES_PER_SONG, GT_MAX_INSTR_PER_SONG, \
-    GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN
+    GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN, GT_OCTAVE_BASE
 from functools import reduce, partial
 from ctsErrors import ChiptuneSAKException
 from ctsML64 import pitch_to_ml64_note_name
@@ -20,7 +20,6 @@ from recordtype import recordtype
 from sortedcontainers import SortedDict
 import ctsChirp
 
-OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (note 60) is "C4"
 DEFAULT_TEMPO = 6
 
 class GTSong:
@@ -281,7 +280,7 @@ class GtChannelState:
 # Convert pattern note byte value into midi note value
 # Note: lowest goat tracker note C0 = midi #24
 def pattern_note_to_midi_note(pattern_note_byte):
-    return pattern_note_byte - 72 + (OCTAVE_BASE * 12)
+    return pattern_note_byte - 72 + (GT_OCTAVE_BASE * 12)
 
 
 def get_chars(in_bytes, trim_nulls=True):
