@@ -39,8 +39,9 @@ NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC # 16.68335002ms
 PAL_MS_PER_FRAME = 1000 / PAL_FRAMES_PER_SEC # 20ms
 
 # GoatTracker constants
+# TODO: All of these need to be moved into a combined gt importer and exporter
 GT_FILE_HEADER = b'GTS5'
-GT_OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (note 60) is "C4"
+GT_OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (261.63 Hz / note 60) is "C4" 
 GT_MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
                               # "song" means a collection of independently-playable subtunes
 GT_MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte

@@ -29,9 +29,9 @@ def pad_or_truncate(to_pad, length):
 
 
 # Convert midi note value into pattern note value
-# Note: lowest goat tracker note C0 (0x60) = midi #24
+# Note: lowest goat tracker note C0 (0x60) = midi #24, 0x60-24=72
 def midi_note_to_pattern_note(midi_note):
-    return midi_note + 0x60 + (-1 * GT_OCTAVE_BASE * 12)
+    return midi_note + 72 + (-1 * GT_OCTAVE_BASE * 12)
 
 
 def row_to_bytes(row):
@@ -196,21 +196,17 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
         wave_ptr=0x01, inst_name='simple triangle'))
     # TODO: In the future, more instruments appended here (in instrument number order)
     
-    # TODO: append the four tables (create the wavetable first)
+    # append tables
+    gt_binary.append(0x02) # wavetable with two row entries
+    gt_binary += bytes([0x11, 0xFF, 0x00, 0x00]) # simple triangle instrument waveform
+    gt_binary.append(0x00) # length 0 pulsetable
+    gt_binary.append(0x00) # length 0 filtertable
+    gt_binary.append(0x00) # length 0 speedtable
 
     # TODO: append patterns
+    gt_binary.append(len(patterns)) # number of patterns
+
     """
-    This structure repeats for each of the 4 tables (wavetable, pulsetable,
-    filtertable, speedtable).
-
-    Offset  Size    Description
-    +0      byte    Amount n of rows in the table
-    +1      n       Left side of the table
-    +1+n    n       Right side of the table
-
-    Offset  Size    Description
-    +0      byte    Number of patterns n
-
     Repeat n times, starting from pattern number 0.
 
     Offset  Size    Description

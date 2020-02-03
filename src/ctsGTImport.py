@@ -270,9 +270,9 @@ class GtChannelState:
 
 
 # Convert pattern note byte value into midi note value
-# Note: lowest goat tracker note C0 (0x60) = midi #24
+# Note: lowest goat tracker note C0 (0x60) = midi #24, 0x60-24=72
 def pattern_note_to_midi_note(pattern_note_byte):
-    return pattern_note_byte - 0x60 + (GT_OCTAVE_BASE * 12)
+    return pattern_note_byte - 72 + (GT_OCTAVE_BASE * 12)
 
 
 def get_chars(in_bytes, trim_nulls=True):
