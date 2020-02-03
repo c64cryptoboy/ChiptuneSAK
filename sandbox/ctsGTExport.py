@@ -1,21 +1,24 @@
 # Convert Chirp to GoatTracker2 and save as .sng file
 #
 # TODOs:
-# -
+# - get a simplified end-to-end working, then add features
 
 import sys
 import sandboxPath
 import copy
-from fractions import Fraction
 import math
+from fractions import Fraction
+from recordtype import recordtype
 from functools import reduce, partial
-from ctsErrors import ChiptuneSAKQuantizationError, ChiptuneSAKPolyphonyError
+from sortedcontainers import SortedDict
 from ctsConstants import GT_FILE_HEADER, NTSC_FRAMES_PER_SEC, PAL_FRAMES_PER_SEC, \
     GT_MAX_ELM_PER_ORDERLIST, GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN, \
-    GT_OCTAVE_BASE
-from ctsBase import duration_to_note_name
+    GT_OCTAVE_BASE, GT_KEY_ON, GT_KEY_OFF, GT_OL_RST
+from ctsBase import duration_to_note_name, GtPatternRow, PATTERN_END_ROW, PATTERN_EMPTY_ROW, \
+    GtInstrument
 import ctsChirp
 import ctsMidiImport
+from ctsErrors import ChiptuneSAKQuantizationError, ChiptuneSAKPolyphonyError
 
 
 # A Procrustean bed for GT text fields.  Can accept a string or bytes.
@@ -29,6 +32,20 @@ def pad_or_truncate(to_pad, length):
 # Note: lowest goat tracker note C0 (0x60) = midi #24
 def midi_note_to_pattern_note(midi_note):
     return midi_note + 0x60 + (-1 * GT_OCTAVE_BASE * 12)
+
+
+def row_to_bytes(row):
+    return bytes([row.note_data, row.inst_num, row.command, row.command_data])
+
+
+def instrument_to_bytes(instrument):
+    result = bytearray()
+    result += bytes([instrument.attack_decay, instrument.sustain_release, 
+        instrument.wave_ptr, instrument.pulse_ptr, instrument.filter_ptr,
+        instrument.vib_speedtable_ptr, instrument.vib_delay, instrument.gateoff_timer,
+        instrument.hard_restart_1st_frame_wave])
+    result += pad_or_truncate(instrument.inst_name, 16)
+    return result
 
 
 def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER_SEC):
@@ -69,74 +86,146 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     jiffies_per_beat = jiffy / (song.metadata.bpm / 60) # jiffies per sec / bps
     min_rows_per_quarter = song.metadata.ppq // required_tick_granularity
 
-    gt_binary = bytearray()
-    gt_binary += GT_FILE_HEADER
-    gt_binary += pad_or_truncate(song.metadata.name, 32)
-    gt_binary += pad_or_truncate(song.metadata.composer, 32)
-    gt_binary += pad_or_truncate(song.metadata.copyright, 32)
-    gt_binary.append(0x01) # number of subtunes
 
-    # Convert chirp tracks into patterns and orderlists
+    # Make a sparse representation of rows for each channel
     # TODO: This simple transformation will need to be changed when it's time
-    #       to incorporate music compression
-    EXPORT_PATTERN_LEN = 64 # will actually be this +1 (there's a 0xFF pattern end mark)
-    patterns = [] # can be shared across all channels
-    orderlists = [] # for all channels
-    for itrack, track in enumerate(export_tracks):
-        orderlist = [] # for a single channel
-        curr_pattern_num = 0
-        curr_notes_in_pattern = 0
+    #       to incorporate music compression, mid-tune tempo changes, etc.
+    DEFAULT_INSTRUMENT = 1
+    channels_rows = [SortedDict() for i in range(3)]
+    for i, track in enumerate(export_tracks):
+        channel_row = channels_rows[i]
         for note in track.notes:
             note_num = midi_note_to_pattern_note(note.note_num)
-            curr_notes_in_pattern += 1
             assert note.duration % required_tick_granularity == 0, \
                 'Error: unexpected quantized value'
             assert note.start_time % required_tick_granularity == 0, \
                 'Error: unexpected quantized value'
             global_row_start = int(note.start_time / required_tick_granularity)
             global_row_end = int((note.start_time + note.duration) / required_tick_granularity)
-            #tick_start = midi_to_tick(note.start_time)
-            #tick_end = midi_to_tick(note.start_time + note.duration)
 
-            # CODE: Create note off using note.duration.  This will usually get overwritten by
-            # the next upcoming note in that channel
+            # insert or update a pattern row
+            channel_row.setdefault(global_row_start, GtPatternRow()).note_data=note_num
+            # update that pattern row
+            channel_row[global_row_start].inst_num=DEFAULT_INSTRUMENT
 
-            if curr_notes_in_pattern > EXPORT_PATTERN_LEN:
-                
+            # Since we get the notes in order, this note end is very likely to be overwritten
+            # later by the next note (this is good)
+            channel_row.setdefault(global_row_end, GtPatternRow()).note_data=GT_KEY_OFF
+
+    # TODO: In sparse representation, add code to inject the initial tempo into the first row
+    # of one of the channels
+
+    # Convert the sparse representation into separate patterns (of bytes)
+    EXPORT_PATTERN_LEN = 64 # index 0 to len-1 for data, index len for 0xFF pattern end mark
+    patterns = [] # can be shared across all channels
+    orderlists = [[],[],[]] # one for each channel
+    curr_pattern_num = 0
+    for i, channel_rows in enumerate(channels_rows):
+        pattern_row_index = 0
+        pattern = bytearray()
+        max_row = channel_rows.keys()[-1]
+        for j in range(max_row+1): # iterate across row num span (inclusive)
+            if j in channel_rows:
+                pattern += row_to_bytes(channel_rows[j])
+            else:
+                pattern += row_to_bytes(PATTERN_EMPTY_ROW)
+            pattern_row_index += 1
+            if pattern_row_index == EXPORT_PATTERN_LEN:
+                pattern += row_to_bytes(PATTERN_END_ROW)
+                patterns.append(pattern)
+                orderlists[i].append(curr_pattern_num)
                 curr_pattern_num += 1
-                curr_notes_in_pattern = 0
+                pattern = bytearray()
+                pattern_row_index = 0
+        if len(pattern) > 0: # if there's a final partially-filled pattern, add it
+             pattern += row_to_bytes(PATTERN_END_ROW)
+             patterns.append(pattern)
+             orderlists[i].append(curr_pattern_num)
+             curr_pattern_num += 1
+    
+    # Usually, songs repeat.  Each channel's orderlist ends with RST00, which means restart at the
+    # 1st entry in that channel's pattern list (note: orderlist is normally full of pattern numbers,
+    # but the number after RST is not a pattern number, but an index back into that channel's orderlist)
+    # As far as I can tell, people create an infinite loop at the end when they don't want a song to
+    # repeat, so that's what this code can do.
 
-            # When EXPORT_PATTERN_LEN notes processed, add that pattern to collection, update
-            # the order list structure
+    # TODO: Setting this boolean should be an optional command line flag
+    END_WITH_REPEAT = False # This doesn't imply that all tracks will restart at the same time...
 
-        # CODE: if >0 notes left, make them a pattern, update order list
-        orderlists.append(orderlist)
+    if not END_WITH_REPEAT:
+        # create a new empty pattern for all three channels to loop on forever
+        # and add to the end of each orderlist
+        loop_pattern = []
+        loop_pattern += row_to_bytes(GtPatternRow(note_data=GT_KEY_OFF))
+        loop_pattern += row_to_bytes(PATTERN_END_ROW)
+        patterns.append(loop_pattern)
+        loop_pattern_num = len(patterns)-1
+        for i in range(3):
+            orderlists[i].append(loop_pattern_num)
 
-    # CODE: Next things to go into the binary is the orderlist for each channel
+    for i in range(3):
+        orderlists[i].append(GT_OL_RST) # patterns end with restart indicator
+        if END_WITH_REPEAT:
+            orderlists[i].append(0) # index of start of channel order list 
+        else:
+            orderlists[i].append(len(orderlists[i])-2) # index of the empty loop pattern
 
+    gt_binary = bytearray()
+
+    # append headers to gt binary
+    gt_binary += GT_FILE_HEADER
+    gt_binary += pad_or_truncate(song.metadata.name, 32)
+    gt_binary += pad_or_truncate(song.metadata.composer, 32)
+    gt_binary += pad_or_truncate(song.metadata.copyright, 32)
+    gt_binary.append(0x01) # number of subtunes
+
+    # append orderlists to gt binary
+    for i in range(3):
+        gt_binary.append(len(orderlists[i])-1) # orderlist length minus 1
+        gt_binary += bytes(orderlists[i])
+
+    # Need an instrument
+    # For now, just going to design a simple triangle sound as instrument number 1.
+    # This requires setting ADSR, and a wavetable position of 01.
+    # Then a wavetable with the entires 01:11 00, and 02:FF 00
+
+    # TODO: At some point, should add support for loading gt .ins instrument files for the channels
+
+    gt_binary.append(0x01) # number of instruments (not counting NOP instrument 0)
+    gt_binary += instrument_to_bytes(GtInstrument(inst_num=1, attack_decay=0x22, sustain_release=0xFA,
+        wave_ptr=0x01, inst_name='simple triangle'))
+    # TODO: In the future, more instruments appended here (in instrument number order)
+    
+    # TODO: append the four tables (create the wavetable first)
+
+    # TODO: append patterns
     """
-    6.1.2 ChirpSong orderlists
-    ---------------------
-    The orderlist structure repeats first for channels 1,2,3 of first subtune,
-    then for channels 1,2,3 of second subtune etc., until all subtunes
-    have been gone thru.
+    This structure repeats for each of the 4 tables (wavetable, pulsetable,
+    filtertable, speedtable).
 
     Offset  Size    Description
-    +0      byte    Length of this channel's orderlist n, not counting restart pos.
-    +1      n+1     The orderlist data:
-                    Values $00-$CF are pattern numbers
-                    Values $D0-$DF are repeat commands
-                    Values $E0-$FE are transpose commands
-                    Value $FF is the RST endmark, followed by a byte that indicates
-                    the restart position
+    +0      byte    Amount n of rows in the table
+    +1      n       Left side of the table
+    +1+n    n       Right side of the table
+
+    Offset  Size    Description
+    +0      byte    Number of patterns n
+
+    Repeat n times, starting from pattern number 0.
+
+    Offset  Size    Description
+    +0      byte    Length of pattern in rows m
+    +1      m*4     Groups of 4 bytes for each row of the pattern:
+                    1st byte: Notenumber
+                            Values $60-$BC are the notes C-0 - G#7
+                            Value $BD is rest
+                            Value $BE is keyoff
+                            Value $BF is keyon
+                            Value $FF is pattern end
+                    2nd byte: Instrument number ($00-$3F)
+                    3rd byte: Command ($00-$0F)
+                    4th byte: Command databyte   
     """
-
-    # Note: orderlist length byte is length -1
-    #    e.g. CHN1: 00 04 07 0d 09 RST00 in file as 06 00 04 07 0d 09 FF 00
-    #    length-1 (06), followed by 7 bytes
-
-    # TODO: Set the tempo at tick 0 for all three voices
-
 
     return gt_binary
 

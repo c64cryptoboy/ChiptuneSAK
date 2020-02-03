@@ -11,14 +11,15 @@ from os import path
 import argparse
 import copy
 import math
-from ctsConstants import GT_FILE_HEADER, GT_MAX_SUBTUNES_PER_SONG, GT_MAX_INSTR_PER_SONG, \
-    GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN, GT_OCTAVE_BASE
 from functools import reduce, partial
-from ctsErrors import ChiptuneSAKException
-from ctsML64 import pitch_to_ml64_note_name
 from recordtype import recordtype
 from sortedcontainers import SortedDict
+from ctsBase import GtPatternRow, PATTERN_END_ROW, GtInstrument
+from ctsConstants import GT_FILE_HEADER, GT_MAX_SUBTUNES_PER_SONG, GT_MAX_INSTR_PER_SONG, \
+    GT_MAX_PATTERNS_PER_SONG, GT_MAX_ROWS_PER_PATTERN, GT_OCTAVE_BASE, GT_KEY_ON, GT_KEY_OFF, \
+    GT_OL_RST
 import ctsChirp
+from ctsErrors import ChiptuneSAKException
 
 DEFAULT_TEMPO = 6
 
@@ -37,18 +38,9 @@ class GTSong:
 GtHeader = recordtype('GtHeader',
     [('id', ''), ('song_name', ''), ('author_name', ''), ('copyright', ''), ('num_subtunes', 0)])
 
-GtInstrument = recordtype('GtInstrument',
-    [('inst_num', 0), ('attack_decay', 0), ('sustain_release', 0), ('wave_ptr', 0), ('pulse_ptr', 0),
-    ('filter_ptr', 0), ('vib_speedtable_ptr', 0), ('vib_delay', 0), ('gateoff_timer', 0),
-    ('hard_restart_1st_frame_wave', 0), ('inst_name', '')])
-
 GtTable = recordtype('GtTable',
     [('row_cnt', 0), ('left_col', b''), ('right_col', b'')])
 
-GtPatternRow = recordtype('GtPatternRow',
-    [('note_data', 0), ('inst_num', 0), ('command', 0), ('command_data', 0)])
-
-PATTERN_END_ROW = GtPatternRow(note_data = 0xFF)
 
 # TimeEntry instances are values in SortedDict where key is tick
 # Over time, might add other commands to this as well (funktempo, Portamento, etc.)
@@ -136,21 +128,21 @@ class GtChannelState:
             self.curr_note = pattern_note_to_midi_note(note)
             self.row_has_note = True
 
-        # Rest ($BD/189, gt display "..."):  A note continues through rest rows.  Rest does not mean
+        # GT_REST ($BD/189, gt display "..."):  A note continues through rest rows.  Rest does not mean
         # what it would in sheet music.  For our purposes, we're ignoring it
 
-        # KeyOff ($BE/190, gt display "---"): Unsets the gate bit mask.  This starts the release phase
+        # GT_KEY_OFF ($BE/190, gt display "---"): Unsets the gate bit mask.  This starts the release phase
         # of the ADSR.
         # Going to ignore any effects gateoff timer and hardrestart values might have on perceived note end
-        if row.note_data == 0xBE:
+        if row.note_data == GT_KEY_OFF:
             if self.curr_note is not None:
                 self.row_has_key_off = True
 
-        # KeyOn ($BF/191, gt display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
+        # GT_KEY_ON ($BF/191, gt display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
         # If no prior note has been started, then nothing will happen.  If a note is playing,
         # nothing will happen (to the note, to the instrument, etc.).  If a note was turned off,
         # this will restart it, but will not restart the instrument.
-        if row.note_data == 0xBF:
+        if row.note_data == GT_KEY_ON:
             if self.curr_note is not None:
                 self.row_has_key_on = True
             
@@ -256,7 +248,7 @@ class GtChannelState:
                 continue
 
             # parse RST (restart)
-            if a_byte == 0xFF:  # RST
+            if a_byte == GT_OL_RST:  # RST ($FF)
                 self.restarted = True
 
                 start_index = self.channel_orderlist[self.orderlist_index+1] # byte following RST is orderlist restart index

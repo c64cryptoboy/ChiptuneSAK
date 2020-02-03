@@ -47,3 +47,7 @@ GT_MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and fol
 GT_MAX_INSTR_PER_SONG = 63
 GT_MAX_PATTERNS_PER_SONG = 208 # patterns can be shared across channels and subtunes
 GT_MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
+GT_REST = 0xBD # A rest in goattracker means NOP, not rest
+GT_KEY_OFF = 0xBE
+GT_KEY_ON = 0xBF
+GT_OL_RST = 0xFF # order list restart marker
