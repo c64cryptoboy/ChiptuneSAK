@@ -7,7 +7,7 @@ Chirp maps note events to a tick timeline.  This is different than midi, which r
 Chirp frequency reasoning will default to a twelve-tone equal temperament system.
 Middle C is 261.63Hz, and following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number and its frequency is 440*2^((m-69)*12), where 69 is the midi number for A4, which is defined as exactly 440Hz.
 
-Many midi conventions differ, e.g., assigning middle C (261.63Hz) to C3 with midi note number 60.  We say that with respect to chirp, such a system has an octave offset of -1.  Non-zero octave offsets are common when comparing note-octave notation systems.
+Some midi conventions differ, e.g., assigning middle C (261.63Hz) to C3 with midi note number 60.  With respect to chirp, such a system has an octave offset of -1.  Non-zero octave offsets are common when comparing note-octave notation systems.
 
 
 ## MChirp
