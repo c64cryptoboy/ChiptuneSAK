@@ -161,8 +161,10 @@ def pitch_to_note_name(note_num, octave_offset=0):
 GtPatternRow = recordtype('GtPatternRow',
     [('note_data', 0), ('inst_num', 0), ('command', 0), ('command_data', 0)])
 
-PATTERN_EMPTY_ROW = GtPatternRow()
+# TODO: Replace 0xBD with GT_REST after refactoring
+PATTERN_EMPTY_ROW = GtPatternRow(note_data = 0xBD) 
 
+# TODO: Replace 0xFF with GT_PAT_END
 PATTERN_END_ROW = GtPatternRow(note_data = 0xFF)
 
 GtInstrument = recordtype('GtInstrument',

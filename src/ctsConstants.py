@@ -52,3 +52,4 @@ GT_REST = 0xBD # A rest in goattracker means NOP, not rest
 GT_KEY_OFF = 0xBE
 GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF # order list restart marker
+GT_PAT_END = 0xFF # pattern end

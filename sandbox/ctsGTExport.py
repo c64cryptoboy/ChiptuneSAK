@@ -1,7 +1,8 @@
 # Convert Chirp to GoatTracker2 and save as .sng file
 #
 # TODOs:
-# - get a simplified end-to-end working, then add features
+# - refactor: merge ctsGTImport with ctsGTExport, and pull in stuff from ctsBase and ctsConstants
+# - Add instrument file loader to use with channels on exports
 
 import sys
 import sandboxPath
@@ -68,7 +69,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     # This is the minimum number of rows required to have all notes representable by an integer number of rows.
     min_rows_per_note = min(min_row_note_lengths)
 
-    # TODO: Debug info (remove or turn into comments later)
+    """
     dur_str = duration_to_note_name(required_tick_granularity, song.metadata.ppq)
     print("required granularity = %s note" % dur_str)
     print("song time signature denominator = %d" % song.metadata.time_signature.denom)
@@ -85,7 +86,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     # Logic that can help with assigning a tempo to the GT rows:
     jiffies_per_beat = jiffy / (song.metadata.bpm / 60) # jiffies per sec / bps
     min_rows_per_quarter = song.metadata.ppq // required_tick_granularity
-
+    """
 
     # Make a sparse representation of rows for each channel
     # TODO: This simple transformation will need to be changed when it's time
@@ -112,8 +113,14 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
             # later by the next note (this is good)
             channel_row.setdefault(global_row_end, GtPatternRow()).note_data=GT_KEY_OFF
 
-    # TODO: In sparse representation, add code to inject the initial tempo into the first row
-    # of one of the channels
+    # Inject tempo updates here
+    # TODO: Someday, inject tempo updates where needed.  For right now, just set the initial tempo.
+    # TODO: Initial tempo should be set by logic, not hardcoded like this, which injects global tempo 6
+    #       into channel 0 at row 0 (row 0 will belong to the first pattern later).
+    channels_rows[0].setdefault(0, GtPatternRow()).command=0x0F # tempo change command
+    # $03-$7F sets tempo on all channels
+    # $83-$FF only on current channel (subtract $80 to get actual tempo)
+    channels_rows[0][0].command_data=0x06 # global tempo of 6 (goat tracker's default)
 
     # Convert the sparse representation into separate patterns (of bytes)
     EXPORT_PATTERN_LEN = 64 # index 0 to len-1 for data, index len for 0xFF pattern end mark
@@ -155,7 +162,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     if not END_WITH_REPEAT:
         # create a new empty pattern for all three channels to loop on forever
         # and add to the end of each orderlist
-        loop_pattern = []
+        loop_pattern = bytearray()
         loop_pattern += row_to_bytes(GtPatternRow(note_data=GT_KEY_OFF))
         loop_pattern += row_to_bytes(PATTERN_END_ROW)
         patterns.append(loop_pattern)
@@ -184,13 +191,12 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
         gt_binary.append(len(orderlists[i])-1) # orderlist length minus 1
         gt_binary += bytes(orderlists[i])
 
+    # append instruments
+    # TODO: At some point, should add support for loading gt .ins instrument files for the channels
     # Need an instrument
     # For now, just going to design a simple triangle sound as instrument number 1.
     # This requires setting ADSR, and a wavetable position of 01.
-    # Then a wavetable with the entires 01:11 00, and 02:FF 00
-
-    # TODO: At some point, should add support for loading gt .ins instrument files for the channels
-
+    # Then a wavetable with the entires 01:11 00, and 02:FF 00 
     gt_binary.append(0x01) # number of instruments (not counting NOP instrument 0)
     gt_binary += instrument_to_bytes(GtInstrument(inst_num=1, attack_decay=0x22, sustain_release=0xFA,
         wave_ptr=0x01, inst_name='simple triangle'))
@@ -203,29 +209,16 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     gt_binary.append(0x00) # length 0 filtertable
     gt_binary.append(0x00) # length 0 speedtable
 
-    # TODO: append patterns
+    # append patterns
     gt_binary.append(len(patterns)) # number of patterns
-
-    """
-    Repeat n times, starting from pattern number 0.
-
-    Offset  Size    Description
-    +0      byte    Length of pattern in rows m
-    +1      m*4     Groups of 4 bytes for each row of the pattern:
-                    1st byte: Notenumber
-                            Values $60-$BC are the notes C-0 - G#7
-                            Value $BD is rest
-                            Value $BE is keyoff
-                            Value $BF is keyon
-                            Value $FF is pattern end
-                    2nd byte: Instrument number ($00-$3F)
-                    3rd byte: Command ($00-$0F)
-                    4th byte: Command databyte   
-    """
+    for pattern in patterns:
+        assert len(pattern) % 4 == 0, "Error: unexpected pattern byte length"
+        gt_binary.append(len(pattern) // 4) # length of pattern in rows
+        gt_binary += pattern
 
     return gt_binary
 
-
+"""
 if __name__ == "__main__":
     song = ctsMidiImport.midi_to_chirp(sys.argv[1])
     song.estimate_quantization()
@@ -233,3 +226,4 @@ if __name__ == "__main__":
     song.remove_polyphony()
 
     gt_binary = chirp_to_GT(song, 'tmp.sng')
+"""

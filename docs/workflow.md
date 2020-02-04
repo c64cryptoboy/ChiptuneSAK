@@ -2,7 +2,12 @@
 ## Chirp
 Chirp (**CH**iptune-sak **I**ntermediate **R**e**P**resentation) is chiptune-sak's framework-independent music representation.  Different music formats can be converted to and from chirp.
 
-Chirp maps note events to a tick timeline.  This is different than midi, which records the ticks between events.  Ticks are temporally unitless, and can be mapped to time by applying a BPM.  This has parallels to other music formats such as GoatTracker sng files, in which rows are not tied to time until a tempo is applied.
+Chirp maps note events to a tick timeline.  This is different than midi, which records the ticks between events.  Ticks are temporally unitless, and can be mapped to time by applying a BPM.  This has parallels to other music formats such as GoatTracker sng files, in which rows show order and proportion, but are not tied to time until a tempo is applied (number of jiffies per row).
+
+Chirp frequency reasoning will default to a twelve-tone equal temperament system.
+Middle C is 261.63Hz, and following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number and its frequency is 440*2^((m-69)*12), where 69 is the midi number for A4, which is defined as exactly 440Hz.
+
+Many midi conventions differ, e.g., assigning middle C (261.63Hz) to C3 with midi note number 60.  We say that with respect to chirp, such a system has an octave offset of -1.  Non-zero octave offsets are common when comparing note-octave notation systems.
 
 
 ## MChirp

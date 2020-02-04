@@ -6,6 +6,7 @@
 #
 # TODOs:
 # - test a .sng file import with subtune number > 1
+# - refactor: merge ctsGTImport with ctsGTExport, and pull in stuff from ctsBase and ctsConstants
 
 from os import path
 import argparse

@@ -27,7 +27,12 @@ def main():
     song.quantize()
     song.remove_polyphony()
 
-    ctsGTExport.chirp_to_GT(song, args.sng_out_file)
+    gt_binary = ctsGTExport.chirp_to_GT(song, args.sng_out_file)
     
+    with open(args.sng_out_file, 'wb') as out_file:
+        out_file.write(gt_binary)
+
+    print("\ndone")
+
 if __name__ == "__main__":
     main()
