@@ -19,7 +19,7 @@ from ctsBase import duration_to_note_name, GtPatternRow, PATTERN_END_ROW, PATTER
     GtInstrument
 import ctsChirp
 import ctsMidiImport
-from ctsErrors import ChiptuneSAKQuantizationError, ChiptuneSAKPolyphonyError
+from ctsErrors import ChiptuneSAKQuantizationError, ChiptuneSAKPolyphonyError, ChiptuneSAKContentError
 
 
 # A Procrustean bed for GT text fields.  Can accept a string or bytes.
@@ -149,7 +149,11 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
              patterns.append(pattern)
              orderlists[i].append(curr_pattern_num)
              curr_pattern_num += 1
+    if curr_pattern_num >= GT_MAX_PATTERNS_PER_SONG:
+        raise ChiptuneSAKContentError("Error: More than %d goattracker patterns created"
+             % GT_MAX_PATTERNS_PER_SONG)
     
+
     # Usually, songs repeat.  Each channel's orderlist ends with RST00, which means restart at the
     # 1st entry in that channel's pattern list (note: orderlist is normally full of pattern numbers,
     # but the number after RST is not a pattern number, but an index back into that channel's orderlist)
