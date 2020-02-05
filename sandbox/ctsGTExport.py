@@ -18,7 +18,7 @@ from ctsConstants import GT_FILE_HEADER, NTSC_FRAMES_PER_SEC, PAL_FRAMES_PER_SEC
 from ctsBase import duration_to_note_name, GtPatternRow, PATTERN_END_ROW, PATTERN_EMPTY_ROW, \
     GtInstrument
 import ctsChirp
-import ctsMidiImport
+import ctsMidi
 from ctsErrors import ChiptuneSAKQuantizationError, ChiptuneSAKPolyphonyError, ChiptuneSAKContentError
 
 
@@ -84,8 +84,9 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=song.metadata.ppq // min_rows_per_note)
 
     # Logic that can help with assigning a tempo to the GT rows:
-    jiffies_per_beat = jiffy / (song.metadata.bpm / 60) # jiffies per sec / bps
-    min_rows_per_quarter = song.metadata.ppq // required_tick_granularity
+    jiffies_per_beat= int(jiffy / (song.metadata.bpm / 60)) # jiffies per sec / bps
+    rows_per_beat = min_rows_per_beat
+    jiffies_per_row = jiffies_per_beat / rows_per_beat 
     """
 
     # Make a sparse representation of rows for each channel
@@ -120,7 +121,16 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     channels_rows[0].setdefault(0, GtPatternRow()).command=0x0F # tempo change command
     # $03-$7F sets tempo on all channels
     # $83-$FF only on current channel (subtract $80 to get actual tempo)
-    channels_rows[0][0].command_data=0x06 # global tempo of 6 (goat tracker's default)
+    min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_tick_granularity
+    print('Rows per beat = %d' % min_rows_per_beat)
+    jiffies_per_beat= int(jiffy / (song.metadata.bpm / 60) + 0.5) # jiffies per sec / bps
+    print('bpm = %d, jiffies/beat = %d' % (song.metadata.bpm, jiffies_per_beat))
+    rows_per_beat = min_rows_per_beat
+    jiffies_per_row = jiffies_per_beat // rows_per_beat
+    print("%d jiffies per row" % jiffies_per_row)
+
+    #channels_rows[0][0].command_data=0x06 # global tempo of 6 (goat tracker's default)
+    channels_rows[0][0].command_data=jiffies_per_row # global tempo of 6 (goat tracker's default)
 
     # Convert the sparse representation into separate patterns (of bytes)
     EXPORT_PATTERN_LEN = 64 # index 0 to len-1 for data, index len for 0xFF pattern end mark

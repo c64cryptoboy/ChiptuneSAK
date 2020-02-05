@@ -8,7 +8,7 @@ import toolsPath
 import argparse
 import ctsChirp
 import ctsGTExport
-import ctsMidiImport
+import ctsMidi
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a midi file into a GoatTracker2 sng file.")
@@ -22,7 +22,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
     
-    song = ctsMidiImport.midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.midi_to_chirp(args.midi_in_file)
     
     song.estimate_quantization()
     song.quantize()
