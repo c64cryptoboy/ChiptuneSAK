@@ -159,7 +159,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
 # Goat tracker commons (TODO: Move this someplace else at some point)
 
 GtPatternRow = recordtype('GtPatternRow',
-    [('note_data', 0), ('inst_num', 0), ('command', 0), ('command_data', 0)])
+    [('note_data', 0xBD), ('inst_num', 0), ('command', 0), ('command_data', 0)])
 
 # TODO: Replace 0xBD with GT_REST after refactoring
 PATTERN_EMPTY_ROW = GtPatternRow(note_data = 0xBD) 

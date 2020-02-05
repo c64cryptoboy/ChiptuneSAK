@@ -23,8 +23,11 @@ def main():
         parser.error('Cannot find "%s"' % args.midi_in_file)
     
     song = ctsMidiImport.midi_to_chirp(args.midi_in_file)
+    
     song.estimate_quantization()
     song.quantize()
+    # For Bleibet (due to rit), do line below instead of above two lines
+    #song.quantize_from_note_name("16")
     song.remove_polyphony()
 
     gt_binary = ctsGTExport.chirp_to_GT(song, args.sng_out_file)
