@@ -8,6 +8,12 @@ class ChiptuneSAKException(Exception):
     """
     pass
 
+class ChiptuneSAKTypeError(Exception):
+    """
+    Type error
+    """
+    pass
+
 class ChiptuneSAKValueError(ChiptuneSAKException, ValueError):
     """
     Value error
