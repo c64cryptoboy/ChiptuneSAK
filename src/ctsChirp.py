@@ -1,5 +1,3 @@
-TOOLVERSION = "0.1"
-
 # Midi Simple Processing Library
 #
 # 2019, David Knapp / David Youd

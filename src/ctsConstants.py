@@ -1,5 +1,7 @@
 from fractions import Fraction
 
+CHIPTUNESAK_VERSION = "0.13"
+
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 DURATIONS = {
     Fraction(6, 1):'dotted whole', Fraction(4, 1):'whole',
