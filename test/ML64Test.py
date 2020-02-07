@@ -3,7 +3,7 @@ import unittest
 import ctsTestingTools
 import ctsChirp
 import ctsMChirp
-import ctsMidiImport
+import ctsMidi
 import ctsML64
 
 
@@ -16,7 +16,7 @@ class TestExportML64(unittest.TestCase):
         known_good_ml64_file = 'jingleBellsSDG_good.ml64'
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
-        song = ctsMidiImport.midi_to_chirp(midi_file)
+        song = ctsMidi.midi_to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         m_song = ctsMChirp.MChirpSong(song)
@@ -29,7 +29,7 @@ class TestExportML64(unittest.TestCase):
         known_good_ml64_file = 'bach_invention_4_good.ml64'
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
-        song = ctsMidiImport.midi_to_chirp(midi_file)
+        song = ctsMidi.midi_to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         m_song = ctsMChirp.MChirpSong(song)
@@ -46,7 +46,7 @@ class TestExportML64(unittest.TestCase):
         known_good_ml64_file = 'tripletTest_good.ml64'
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
-        song = ctsMidiImport.midi_to_chirp(midi_file)
+        song = ctsMidi.midi_to_chirp(midi_file)
         song.modulate(3, 2)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()

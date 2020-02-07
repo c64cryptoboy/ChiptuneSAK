@@ -62,12 +62,13 @@ class Measure:
         end = self.start_time + self.duration
         last_note_end = self.start_time
         if carry:  # Deal with any notes carried over from the previous measure
+            carry.tied_to = True
             carry.start_time = self.start_time
             carry_end = self.start_time + carry.duration
             if carry.duration <= 0:
                 raise ChiptuneSAKValueError("Illegal carry note duration %d" % carry.duration, str(carry))
             if carry_end > end:  # Does the carried note extend past the end of this measure?
-                self.events.append(Note(self.start_time, carry.note_num, end - self.start_time, 100, tied=True))
+                self.events.append(Note(self.start_time, carry.note_num, end - self.start_time, 100, tied_from=True))
                 carry.duration -= end - self.start_time
                 last_note_end = end
             else:  # Carried note ends during this measure
@@ -90,7 +91,7 @@ class Measure:
                 carry = copy.copy(n)  # Make a copy of the note to use for the carry
                 duration = end - n.start_time
                 n.duration = duration  # truncate the note to the end of the measure
-                n.tied = True  # And mark it as tied to the next note
+                n.tied_from = True  # And mark it as tied to the next note
                 self.events.append(n)
                 last_note_end = end
                 carry.duration -= duration  # Det the length of the carried note to the remaining time

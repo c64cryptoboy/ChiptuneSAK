@@ -78,7 +78,7 @@ def measure_to_lilypond(measure, ppq):
             f = Fraction(e.duration / ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append(
-                    "%s%s%s" % (lp_pitch_to_note_name(e.note_num), lp_durations[f], '~' if e.tied else ''))
+                    "%s%s%s" % (lp_pitch_to_note_name(e.note_num), lp_durations[f], '~' if e.tied_from else ''))
             else:
                 measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.metadata.ppq))
 

@@ -22,20 +22,21 @@ class Note:
     a velocity. 
     """
 
-    def __init__(self, start, note, duration, velocity=100, tied=False):
+    def __init__(self, start, note, duration, velocity=100, tied_from=False, tied_to=False):
         self.note_num = note  # MIDI note number
         self.start_time = start  # In ticks since tick 0
         self.duration = duration  # In ticks
         self.velocity = velocity  # MIDI velocity 0-127
-        self.tied = tied
+        self.tied_from = tied_from
+        self.tied_to = tied_to
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
-        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tied=%d" % (
-        self.note_num, self.start_time, self.duration, self.velocity, self.tied)
+        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" % (
+        self.note_num, self.start_time, self.duration, self.velocity, self.tied_from, self.tied_to)
 
 
 class ChirpTrack:

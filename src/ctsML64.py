@@ -4,7 +4,7 @@ from ctsErrors import *
 from ctsBase import *
 from ctsChirp import Note, ChirpTrack, ChirpSong
 import ctsMChirp
-import ctsMidiImport
+import ctsMidi
 from ctsConstants import PITCHES
 
 '''
@@ -164,7 +164,7 @@ def events_to_ml64(events, song, last_continue=False):
             else:
                 tmp_note = make_ml64_notes(pitch_to_ml64_note_name(e.note_num), e.duration, song.metadata.ppq)
             content.append(tmp_note)
-            last_continue = e.tied
+            last_continue = e.tied_from
             stats['note'] += 1
             stats['continue'] += tmp_note.count('c(')
         elif isinstance(e, Rest):
@@ -183,7 +183,7 @@ def events_to_ml64(events, song, last_continue=False):
 if __name__ == '__main__':
     import sys
 
-    in_song = ctsMidiImport.midi_to_chirp(sys.argv[1])
+    in_song = ctsMidi.midi_to_chirp(sys.argv[1])
     print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
     print("Original:", "quantized" if in_song.is_quantized() else 'non quantized')
 

@@ -2,12 +2,12 @@ import sys
 import copy
 sys.path.append('../src/')
 import unittest
-import ctsMidiImport
+import ctsMidi
 import ctsMChirp
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidiImport.midi_to_chirp('twinkle.mid')
+        self.test_song = ctsMidi.midi_to_chirp('twinkle.mid')
         self.test_song.quantize()
         self.test_song.remove_polyphony()
         self.test_mchirp_song = ctsMChirp.MChirpSong(self.test_song)

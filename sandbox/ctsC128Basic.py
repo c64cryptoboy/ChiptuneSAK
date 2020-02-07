@@ -92,7 +92,8 @@ def measures_to_basic(mchirp_song):
             # Extract the notes and rests and put them into a list.
             for e in m.events:
                 if isinstance(e, Note):
-                    contents.append(BasicNote(e.start_time, e.note_num, e.duration, v + 1))
+                    if not e.tied_to:
+                        contents.append(BasicNote(e.start_time, e.note_num, e.duration, v + 1))
                 elif isinstance(e, Rest):
                     contents.append(BasicRest(e.start_time, e.duration, v + 1))
 
