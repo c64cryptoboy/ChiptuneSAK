@@ -1,11 +1,9 @@
 import sys
-import sandboxPath
-import collections
-from fractions import Fraction
+import cbmcodecs
+import ctsMidi
 from ctsBase import *
 from ctsChirp import Note
 from ctsMChirp import MChirpSong
-import ctsMidi
 
 # These types are similar to standard notes and rests but with voice added
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
@@ -67,7 +65,7 @@ def trim_note_lengths(song):
                     if f >= d:
                         n.duration = d * song.metadata.ppq
                         break
-                song.tracks[i_t].notes[i_n] = n   # Trim the note in place
+                song.tracks[i_t].notes[i_n] = n  # Trim the note in place
 
 
 def measures_to_basic(mchirp_song):
@@ -94,9 +92,9 @@ def measures_to_basic(mchirp_song):
             # Extract the notes and rests and put them into a list.
             for e in m.events:
                 if isinstance(e, Note):
-                    contents.append(BasicNote(e.start_time, e.note_num, e.duration, v+1))
+                    contents.append(BasicNote(e.start_time, e.note_num, e.duration, v + 1))
                 elif isinstance(e, Rest):
-                    contents.append(BasicRest(e.start_time, e.duration, v+1))
+                    contents.append(BasicRest(e.start_time, e.duration, v + 1))
 
         # Use the sort order to sort all the events in the measure
         contents.sort(key=sort_order)
@@ -150,6 +148,9 @@ def measures_to_basic(mchirp_song):
 
 
 def midi_to_C128_BASIC(filename):
+    """
+    Convert a midi file into a C128 Basic program that plays the song.
+    """
     song = ctsMidi.midi_to_chirp(filename)
     song.remove_control_notes(8)
     song.quantize_from_note_name('16')
@@ -157,6 +158,7 @@ def midi_to_C128_BASIC(filename):
     trim_note_lengths(song)
     if len(song.metadata.name) == 0:
         song.metadata.name = filename
+    # Now make the MChirp song
     mchirp_song = MChirpSong(song)
 
     basic_strings = measures_to_basic(mchirp_song)
@@ -174,11 +176,10 @@ def midi_to_C128_BASIC(filename):
         result.append('%d PLAY "%s"' % (current_line * 10, s))
         current_line += 1
 
-    # Doing this properly would involve using the PETSCII encoder and decoder: encode to ASCII and decode to PETSCII
-    print('\n'.join(line.lower() for line in result))
+    # Convert to PETSCII (I don't know if this belongs in this function or outside of it)
+    return '\n'.join(line.encode('ascii').decode('petscii-c64en-lc') for line in result)
 
 
 if __name__ == '__main__':
-    midi_to_C128_BASIC(sys.argv[1])
-
-
+    program = midi_to_C128_BASIC(sys.argv[1])
+    print(program)
