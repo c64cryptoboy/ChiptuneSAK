@@ -7,9 +7,11 @@ from ctsChirp import Note
 from ctsMChirp import MChirpSong
 import ctsMidi
 
+# These types are similar to standard notes and rests but with voice added
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
 BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voice'])
 
+# These appear to be the only allowed not durations for C128 BASIC
 basic_durations = {
     Fraction(6, 1): "W.", Fraction(4, 1): 'W',
     Fraction(3, 1): 'H.', Fraction(2, 1): 'H',
@@ -25,10 +27,9 @@ def sort_order(c):
     Items are sorted by time and then, for equal times, by duration (decreasing) and voice
     """
     if isinstance(c, BasicNote):
-        return (c.start_time, -c.duration, c.voice, 10)
+        return (c.start_time, -c.duration, c.voice)
     elif isinstance(c, BasicRest):
-        return (c.start_time, -c.duration, c.voice, 10)
-
+        return (c.start_time, -c.duration, c.voice)
 
 
 def basic_pitch_to_note_name(note_num, octave_offset=-2):
@@ -38,8 +39,10 @@ def basic_pitch_to_note_name(note_num, octave_offset=-2):
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave = (note_num // 12) + octave_offset
+    octave = max(octave, 0)
+    octave = min(octave, 6)
     pitch = note_num % 12
-    return (PITCHES[pitch][::-1], octave)  # Accidentals come BEFORE note name
+    return (PITCHES[pitch][::-1], octave)  # Accidentals come BEFORE note name so reverse standard
 
 
 def basic_duration_to_name(duration, ppq):
@@ -54,7 +57,7 @@ def basic_duration_to_name(duration, ppq):
 
 def trim_note_lengths(song):
     """
-    Trims the note lengths in a  ChirpSong to only those allowed in C128 basic
+    Trims the note lengths in a  ChirpSong to only those allowed in C128 Basic
     """
     for i_t, t in enumerate(song.tracks):
         for i_n, n in enumerate(t.notes):
@@ -74,25 +77,28 @@ def measures_to_basic(mchirp_song):
     :return:
     """
     commands = []
-    n_measures = len(mchirp_song.tracks[0].measures)
+    n_measures = len(mchirp_song.tracks[0].measures)  # in mchirp, all tracks have the same number of measures.
     last_voice = 0
     last_octave = -10
     last_duration = 0
     for im in range(n_measures):
         contents = []
+        # Combine events from all three voices into a single list corresponding to the measure
         for v in range(len(mchirp_song.tracks)):
             m = mchirp_song.tracks[v].measures[im]
-
-            # If this voice doesn't have any notes in the measure, just ignore it.
+            # If the voice doesn't have any notes in the measure, just ignore it.
             note_count = sum(1 for e in m.events if isinstance(e, Note))
             if note_count == 0:
                 continue
 
+            # Extract the notes and rests and put them into a list.
             for e in m.events:
                 if isinstance(e, Note):
                     contents.append(BasicNote(e.start_time, e.note_num, e.duration, v+1))
                 elif isinstance(e, Rest):
                     contents.append(BasicRest(e.start_time, e.duration, v+1))
+
+        # Use the sort order to sort all the events in the measure
         contents.sort(key=sort_order)
         measure_commands = []
         # Last voice gets reset at the start of each measure.
@@ -110,10 +116,11 @@ def measures_to_basic(mchirp_song):
         """
         last_voice = 0
         for e in contents:
+            #  We only care about notes and rests.  For now.
             if isinstance(e, BasicNote):
                 d_name = basic_duration_to_name(e.duration, mchirp_song.metadata.ppq)
                 note_name, octave = basic_pitch_to_note_name(e.note_num)
-                current_command = []
+                current_command = []  # Build the command for this note
                 if e.voice != last_voice:
                     current_command.append('V%d' % e.voice)
                 if octave != last_octave:
@@ -138,12 +145,13 @@ def measures_to_basic(mchirp_song):
                 # Set the state variables
                 last_voice = e.voice
                 last_duration = e.duration
-        commands.append(' '.join(measure_commands) + ' M')
+        commands.append(''.join(measure_commands) + 'M')  # No spaces for now.
     return commands
 
 
 def midi_to_C128_BASIC(filename):
     song = ctsMidi.midi_to_chirp(filename)
+    song.remove_control_notes(8)
     song.quantize_from_note_name('16')
     song.remove_polyphony()
     trim_note_lengths(song)
@@ -157,15 +165,16 @@ def midi_to_C128_BASIC(filename):
     current_line = 1
     result.append('%d REM %s' % (current_line * 10, song.metadata.name))
     current_line += 1
-    result.append('%d TEMPO 10' % (current_line * 10))
+    result.append('%d TEMPO 15' % (current_line * 10))
     current_line += 1
-    result.append('%d PLAY"V1T0V2T0V3T0"' % (current_line * 10))
+    result.append('%d PLAY"V1T6V2T0V3T0"' % (current_line * 10))
     current_line += 1
 
     for s in basic_strings:
         result.append('%d PLAY "%s"' % (current_line * 10, s))
         current_line += 1
 
+    # Doing this properly would involve using the PETSCII encoder and decoder: encode to ASCII and decode to PETSCII
     print('\n'.join(line.lower() for line in result))
 
 
