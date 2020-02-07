@@ -5,6 +5,7 @@ from fractions import Fraction
 from ctsBase import *
 from ctsChirp import Note
 from ctsMChirp import MChirpSong
+import ctsMidi
 
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
 BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voice'])
@@ -141,16 +142,34 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-if __name__ == '__main__':
-    import ctsMidi
-    song = ctsMidi.midi_to_chirp(sys.argv[1])
+def midi_to_C128_BASIC(filename):
+    song = ctsMidi.midi_to_chirp(filename)
     song.quantize_from_note_name('16')
     song.remove_polyphony()
     trim_note_lengths(song)
+    if len(song.metadata.name) == 0:
+        song.metadata.name = filename
     mchirp_song = MChirpSong(song)
 
-    result = measures_to_basic(mchirp_song)
+    basic_strings = measures_to_basic(mchirp_song)
 
-    print('\n'.join(result))
+    result = []
+    current_line = 1
+    result.append('%d REM %s' % (current_line * 10, song.metadata.name))
+    current_line += 1
+    result.append('%d TEMPO 10' % (current_line * 10))
+    current_line += 1
+    result.append('%d PLAY"V1T0V2T0V3T0"' % (current_line * 10))
+    current_line += 1
+
+    for s in basic_strings:
+        result.append('%d PLAY "%s"' % (current_line * 10, s))
+        current_line += 1
+
+    print('\n'.join(line.lower() for line in result))
+
+
+if __name__ == '__main__':
+    midi_to_C128_BASIC(sys.argv[1])
 
 
