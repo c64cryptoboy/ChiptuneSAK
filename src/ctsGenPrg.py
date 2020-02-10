@@ -93,7 +93,7 @@ def ascii_to_petscii(ascii_bytes):
 
 # Convert an ascii char to a petscii char
 #
-# This treates lowercase letters as "unshifted", which means that, by default, lowercase
+# This treats lowercase letters as "unshifted", which means that, by default, lowercase
 # letters display as uppercase on the c64.  So this method simply swaps the cases around.
 #
 # No BASIC tokens are harmed in this conversion (tokens live at 0 and between 128 and 255)
