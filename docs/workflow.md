@@ -11,12 +11,17 @@ Some midi conventions differ, e.g., assigning middle C (261.63Hz) to C3 with mid
 
 
 ## MChirp
-MChirp is closely related to chirp, but is measure aware, and is used when reasoning about sheet music measures/bars.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
+MChirp is measure aware, and is used when reasoning about sheet music measures/bars.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
 
 Chirp can be converted to MChirp and vise versa.  Because each format retains different details, the conversion is necessarily lossy.
 
+## RChirp
+RChirp is used when reasoning about row-based music representations, and representing chip-specific effects associated with those rows.  RChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
 
-# Workflow Components
+Chirp can be converted to RChirp and vise versa.  Because each format retains different details, the conversion is necessarily lossy.
+
+
+# Workflow Components (TODO: Rework this section)
 
 ## FileToChirp
 * Input:

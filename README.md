@@ -47,10 +47,11 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * MIDI
 * [LilyPond](http://lilypond.org/doc/v2.19/Documentation/notation.pdf): Sheet music markup language
 * ML64
+* [Commodore 128 BASIC](https://www.c64-wiki.com/wiki/BASIC#Overview_of_BASIC_Version_7.0_Commands) music program
  
 #### Exporters: Under development
-* [Commodore 128 BASIC](https://www.c64-wiki.com/wiki/BASIC#Overview_of_BASIC_Version_7.0_Commands) music program
-* GoatTracker 2
+
+* GoatTracker 2 (working, except for automatic compressed pattern creation)
   
 #### Exporters: Proposed
 * Markus's yet-unnamed Dr. Cat-derrived 3-SID C64 player
