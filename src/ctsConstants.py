@@ -26,8 +26,9 @@ DURATION_STR = {
 BASIC_START_C64  = 2049 # $0801
 BASIC_START_C128 = 7169 # $1C01
 
-BASIC_LINE_MAX_C64 = 80
-BASIC_LINE_MAX_C128 = 160 # BASIC line allowed to wrap to 4 lines in 40 col mode
+BASIC_LINE_MAX_C64 = 80 # 2 lines of 40 col
+BASIC_LINE_MAX_VIC20 = 88 # 4 lines of 22 col
+BASIC_LINE_MAX_C128 = 160 # 4 lines of 40 col
 
 # A traditional PAL tracker reasoning anchor point between temporally-unitless rows
 # and BPM is that 6 frames per row (a fast speed) is easily tied to 125 BPM.

@@ -1,17 +1,15 @@
 # Lower MChirp to C128 BASIC PLAY commands
+# returns ascii representation of the program
 #
 # TODOs:
 # - Don't hardcode the tempo
-# - create command line options to spit out either .bas or .prg files
-# - Use ctsGenPrg.py to create .prg output files
-# - command line to pick (or modify) default envelopes
 
 import sys
 import os
 import math
 import collections
 from fractions import Fraction
-import cbmcodecs
+#import cbmcodecs
 import ctsMidi
 from ctsConstants import PITCHES, BASIC_LINE_MAX_C128
 from ctsBase import Rest
@@ -26,11 +24,11 @@ BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voic
 
 # These appear to be the only allowed not durations for C128 BASIC
 basic_durations = {
-    Fraction(6, 1): "W.", Fraction(4, 1): 'W',
-    Fraction(3, 1): 'H.', Fraction(2, 1): 'H',
-    Fraction(3, 2): 'Q.', Fraction(1, 1): 'Q',
-    Fraction(3, 4): 'I.', Fraction(1, 2): 'I',
-    Fraction(1, 4): 'S'
+    Fraction(6, 1): "w.", Fraction(4, 1): 'w',
+    Fraction(3, 1): 'h.', Fraction(2, 1): 'h',
+    Fraction(3, 2): 'q.', Fraction(1, 1): 'q',
+    Fraction(3, 4): 'i.', Fraction(1, 2): 'i',
+    Fraction(1, 4): 's'
 }
 
 
@@ -70,7 +68,7 @@ def basic_duration_to_name(duration, ppq):
 
 def trim_note_lengths(song):
     """
-    Trims the note lengths in a  ChirpSong to only those allowed in C128 Basic
+    Trims the note lengths in a ChirpSong to only those allowed in C128 Basic
     """
     for i_t, t in enumerate(song.tracks):
         for i_n, n in enumerate(t.notes):
@@ -116,18 +114,6 @@ def measures_to_basic(mchirp_song):
         contents.sort(key=sort_order)
         measure_commands = []
         # Last voice gets reset at the start of each measure.
-        """
-        For this initial version, I make the following assumptions:
-        -  current voice is global, but NOT preserved between measures
-        -  current octave is global and preserved between measures and voice changes
-        -  current note length is global and IS preserved between measures and voice changes
-        
-        I chose these assumptions because they gave the closest approximation to the hand-coded example.
-        The most likely incorrect assumption is that the octaves may be stored separately for the 3
-        voices.
-        
-        If any of these assumptions is not correct, fixing the code should be fairly simple.
-        """
         last_voice = 0
         for e in contents:
             #  We only care about notes and rests.  For now.
@@ -136,12 +122,12 @@ def measures_to_basic(mchirp_song):
                 note_name, octave = basic_pitch_to_note_name(e.note_num)
                 current_command = []  # Build the command for this note
                 if e.voice != last_voice:
-                    current_command.append(' V%d' % e.voice)
+                    current_command.append(' v%d' % e.voice)
                 if octave != last_octave:
-                    current_command.append('O%s' % octave)
+                    current_command.append('o%s' % octave)
                 if e.duration != last_duration:
                     current_command.append(d_name)
-                current_command.append(note_name)
+                current_command.append(note_name.lower())
                 measure_commands.append(''.join(current_command))
                 # Set all the state variables
                 last_voice = e.voice
@@ -151,16 +137,16 @@ def measures_to_basic(mchirp_song):
                 d_name = basic_duration_to_name(e.duration, mchirp_song.metadata.ppq)
                 current_command = []
                 if e.voice != last_voice:
-                    current_command.append(' V%d' % e.voice)
+                    current_command.append(' v%d' % e.voice)
                 if e.duration != last_duration:
                     current_command.append(d_name)
-                current_command.append('R')
+                current_command.append('r')
                 measure_commands.append(''.join(current_command))
                 # Set the state variables
                 last_voice = e.voice
                 last_duration = e.duration
 
-        finished_basic_line = (''.join(measure_commands) + 'M').strip()
+        finished_basic_line = (''.join(measure_commands) + ' m').strip()
         if len(finished_basic_line) > BASIC_LINE_MAX_C128:
             raise ChiptuneSAKContentError("C128 BASIC line too long")
         commands.append(finished_basic_line)
@@ -168,36 +154,25 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-def midi_to_C128_BASIC(filename):
+def midi_to_C128_BASIC(mchirp_song):
     """
-    Convert a midi file into a C128 Basic program that plays the song.
+    Convert mchirp into a C128 Basic program that plays the song.
     """
-    song = ctsMidi.midi_to_chirp(filename)
-    song.remove_control_notes(8)
-    song.quantize_from_note_name('16')
-    song.remove_polyphony()
-    trim_note_lengths(song)
-    if len(song.metadata.name) == 0:
-        song.metadata.name = filename.split(os.sep)[-1]
-    # Now make the MChirp song
-    mchirp_song = MChirpSong(song)
-
     basic_strings = measures_to_basic(mchirp_song)
 
     result = []
     current_line = 10
-    result.append('%d REM %s' % (current_line, song.metadata.name))
+    result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
     # TODO: Don't hardcode this value
-    result.append('%d TEMPO 10' % (current_line))
+    result.append('%d tempo 10' % (current_line))
 
     current_line = 100
     for measure_num, s in enumerate(basic_strings):
         result.append('%d %s$="%s"' % (current_line, num_to_str_name(measure_num), s))
         current_line += 10
 
-    # TODO: For each voice, provide a way to pick (or override) the default envelopes
     # Here's the envelope commands that would have created the set of defaults:
     """
              n,  A,  D,  S,  R, wf,  pw      instrument
@@ -216,7 +191,8 @@ def midi_to_C128_BASIC(filename):
 
     current_line = 7000 # data might reach line 6740
     # Note: U9 = volume 15
-    result.append('%d PLAY"U9V1T6V2T0V3T0":REM INIT INSTRUMENTS' % (current_line))
+    # TODO: For each voice, provide a way to pick (or override) the default envelopes
+    result.append('%d play"u9v1t6v2t0v3t0":rem init instruments' % (current_line))
     current_line += 10
 
     # Command likely out of scope:
@@ -235,23 +211,26 @@ def midi_to_C128_BASIC(filename):
             result.append('%d %s' % (current_line, ':'.join(line_buf)))
             line_buf = []
             current_line += 10
-        line_buf.append("PLAY %s$" % (num_to_str_name(measure_num)))
+        line_buf.append("play %s$" % (num_to_str_name(measure_num)))
     if len(line_buf) > 0:
         result.append('%d %s' % (current_line, ':'.join(line_buf)))
         current_line += 10
 
-    # Convert to PETSCII (I don't know if this belongs in this function or outside of it)
-    return '\n'.join(line.encode('ascii').decode('petscii-c64en-lc') for line in result)
+    # debug = '\n'.join(line.encode('ascii').decode('petscii-c64en-lc') for line in result)
+    return '\n'.join(result)
 
 # Convert measure number to a BASIC string name
-def num_to_str_name(num):
+def num_to_str_name(num, upper=False):
     if num < 0 or num > 675:
         raise ChiptuneSAKValueError("number to convert to str var name out of range")
-    str_name = chr((num//26)+65) + chr((num%26)+65)
+    if upper:
+        offset = ord('A')
+    else:
+        offset = ord('a')
+    str_name = chr((num//26)+offset) + chr((num%26)+offset)
     return str_name
 
-
+# only for debugging
 if __name__ == '__main__':
-    program = midi_to_C128_BASIC(sys.argv[1])
-    print(program)
+    pass
 

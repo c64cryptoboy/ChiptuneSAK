@@ -125,6 +125,12 @@ def find_1st_rem_outside_quotes(line):
     return -1 # no rem outside of quotes
 
 
+def ascii_to_prg_c128(ascii_prg):
+    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C128, c128_tokens)
+
+def ascii_to_prg_c64(ascii_prg):
+    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C64, c128_tokens)
+
 def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
     mem_pointer = start_of_basic
 
