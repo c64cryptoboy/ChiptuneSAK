@@ -28,17 +28,17 @@ rem_len = len('rem')
 I created these token dictionaries based on this:
     https://portcommodore.com/dokuwiki/lib/exe/fetch.php?media=larry:comp:commodore:cbmmultichart.pdf
 
-The basic token for pi is 255.  Petscii characters 126, 222, and 255 all seem to print out as pi.
-In VICE, control-shift tilda types a pi symbol which, if put in an ASC statement, yields 255.
+Some notes on the pi token:
 
-When I ran this c64 program:
-10 print{pi}:rem{pi}
-20 fort=0to9:printpeek(t+2049);:next:rem 2049 start of basic program
-it prints
- 3.14159265
- 11  8  10  0  153  255  58  143  255 0
-So the tokenized pi and the untokenized pi (in the REM) are both petscii 255
-Therefore, the pi token doesn't need to appear in the dictionary
+   The basic token for pi is 255.  Petscii characters 126, 222, and 255 all seem to print out as pi.
+   In VICE, control-shift tilda types a pi symbol which, if put in an ASC statement, yields 255.
+
+   Example program using tokenzied and untokenzied (rem) pi:
+      10 print{pi}:rem{pi}
+      20 fort=0to9:printpeek(t+2049);:next:rem 2049 start of basic program
+   line 10 in bytes: 11  8  10  0  153  255  58  143  255 0
+   So the tokenized pi and the untokenized pi are both byte 255
+   Therefore, the pi doesn't need to appear in the token dictionary
 """
 
 c64_tokens = {
@@ -93,7 +93,7 @@ def ascii_to_petscii(ascii_bytes):
 
 # Convert an ascii char to a petscii char
 #
-# This treates lowercase letters as "unshifted", which means that, by default, lowercase
+# This treats lowercase letters as "unshifted", which means that, by default, lowercase
 # letters display as uppercase on the c64.  So this method simply swaps the cases around.
 #
 # No BASIC tokens are harmed in this conversion (tokens live at 0 and between 128 and 255)
@@ -123,6 +123,14 @@ def find_1st_rem_outside_quotes(line):
         if line[i:i+rem_len] == 'rem':
             return i
     return -1 # no rem outside of quotes
+
+
+def ascii_to_prg_c128(ascii_prg):
+    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C128, c128_tokens)
+
+
+def ascii_to_prg_c64(ascii_prg):
+    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C64, c128_tokens)
 
 
 def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
@@ -162,14 +170,4 @@ def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
     tokenized_lines += b'\x00\x00'
     return tokenized_lines
 
-
-def ascii_to_c128prg(ascii_prg):
-    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C128, c128_tokens)
-
-
-def ascii_to_c64prg(ascii_prg):
-    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C64, c64_tokens)
-
-
-    
 	
