@@ -156,6 +156,18 @@ def pitch_to_note_name(note_num, octave_offset=0):
     return "%s%d" % (PITCHES[pitch], octave)
 
 
+def is_triplet(note, ppq):
+    """
+    Determine if note is a triplet
+        :param note:
+        :param ppq:
+        :return:
+    """
+    f = Fraction(note.duration/ppq).limit_denominator(16)
+    if f.denominator % 3 == 0:
+        return True
+    return False
+
 # Goat tracker commons (TODO: Move this someplace else at some point)
 
 GtPatternRow = recordtype('GtPatternRow',

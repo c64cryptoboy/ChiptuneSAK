@@ -25,8 +25,8 @@ class Note:
         self.start_time = start  # In ticks since tick 0
         self.duration = duration  # In ticks
         self.velocity = velocity  # MIDI velocity 0-127
-        self.tied_from = tied_from
-        self.tied_to = tied_to
+        self.tied_from = tied_from  # Is the next note tied from this note?
+        self.tied_to = tied_to  # Is this note ties from the previous note?
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """

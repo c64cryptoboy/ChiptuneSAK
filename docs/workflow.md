@@ -11,10 +11,14 @@ Some midi conventions differ, e.g., assigning middle C (261.63Hz) to C3 with mid
 
 
 ## MChirp
-MChirp is closely related to chirp, but is measure aware, and is used when reasoning about sheet music measures/bars.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
+MChirp is Measure-Based Chirp.  It is closely related to chirp, but is measure aware, and is designed to aid reasoning about measures and bars, as is often the case when dealing with sheet music.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
 
 Chirp can be converted to MChirp and vise versa.  Because each format retains different details, the conversion is necessarily lossy.
 
+## RChirp
+RChirp is Row-Based Chirp.  It is meant to represent row-based sequences, as would be created by a tracker. RChirp is designed to enable operations that are naturally tied to row-based music players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.
+
+RChirp is quantized, and has no single-channel polyphony.
 
 # Workflow Components
 
@@ -35,6 +39,15 @@ Chirp can be converted to MChirp and vise versa.  Because each format retains di
    * MusicXML .mxl file
 * Output:
    * MChirp
+* Notes:
+   * Functionality may live with respective importers
+   
+## FileToRChirp
+* Input:
+   * GoatTracker 2 .sng file
+   * Commodore 64 SID .sid file
+* Output:
+   * RChirp
 * Notes:
    * Functionality may live with respective importers
 
