@@ -141,6 +141,8 @@ class ChirpTrack:
         return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
 
     def is_quantized(self):
+        if self.qticks_notes < 4 or self.qticks_durations < 4:
+            return False
         return all(n.start_time % self.qticks_notes == 0
                    and n.duration % self.qticks_durations == 0
                    for n in self.notes)
@@ -167,6 +169,27 @@ class ChirpTrack:
         for i, n in enumerate(self.notes):
             n.start_time = (n.start_time * num) // denom
             n.duration = (n.duration * num) // denom
+            self.notes[i] = n
+
+    def scale_ticks(self, scale_factor):
+        for i, (t, m) in enumerate(self.other):
+            t = int(round(t * scale_factor, 0))
+            self.other[i] = OtherMidi(t, m)
+        # Change all the note start times and durations
+        for i, n in enumerate(self.notes):
+            n.start_time = int(round(n.start_time * scale_factor, 0))
+            n.duration = int(round(n.duration * scale_factor, 0))
+            self.notes[i] = n
+        self.qticks_notes = int(round(self.qticks_notes * scale_factor, 0))
+        self.qticks_durations = int(round(self.qticks_durations * scale_factor, 0))
+
+    def move_ticks(self, offset_ticks):
+        for i, (t, m) in enumerate(self.other):
+            t = max(t + offset_ticks, 0)
+            self.other[i] = OtherMidi(t, m)
+        # Change all the note start times and durations
+        for i, n in enumerate(self.notes):
+            n.start_time = max(n.start_time + offset_ticks, 0)
             self.notes[i] = n
 
     def __str__(self):
@@ -322,7 +345,13 @@ class ChirpSong:
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
             #  by multiplying by 3/2
             t, n, d = ts
-            self.time_signature_changes[i] = TimeSignature(t, n * num, d * denom)
+            self.time_signature_changes[i] = TimeSignature((t * num) // denom, n * num, d * denom)
+        # Now the key signatures
+        for i, ks in enumerate(self.key_signature_changes):
+            # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
+            #  by multiplying by 3/2
+            t, k = ks
+            self.key_signature_changes[i] = KeySignature((t * num) // denom, k)
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
             t, bpm = tm
@@ -337,6 +366,60 @@ class ChirpSong:
         # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
         self.qticks_notes = (self.qticks_notes * n) // d
         self.qticks_durations = (self.qticks_durations * n) // d
+
+    def scale_ticks(self, scale_factor):
+        self.metadata.ppq = int(round(self.metadata.ppq * scale_factor, 0))
+        # First adjust the time signatures
+        for i, ts in enumerate(self.time_signature_changes):
+            # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
+            #  by multiplying by 3/2
+            t = int(round(ts.start_time * scale_factor, 0))
+            self.time_signature_changes[i] = TimeSignature(t, ts.num, ts.denom)
+        # Now the key signature changes
+        for i, ks in enumerate(self.key_signature_changes):
+            t = int(round(ks.start_time * scale_factor, 0))
+            self.key_signature_changes[i] = KeySignature(t, ks.key)
+        # Next the tempos
+        for i, tm in enumerate(self.tempo_changes):
+            t = int(round(tm.start_time * scale_factor, 0))
+            self.tempo_changes[i] = Tempo(t, tm.bpm)
+        # Now all the rest of the meta messages
+        for i, ms in enumerate(self.other):
+            t = int(round(ms.start_time * scale_factor, 0))
+            self.other[i] = OtherMidi(t, ms.msg)
+        # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
+        self.qticks_notes = int(round(self.qticks_notes * scale_factor, 0))
+        self.qticks_durations = int(round(self.qticks_durations * scale_factor, 0))
+        # Finally, scale each track
+        for i, _ in enumerate(self.tracks):
+            self.tracks[i].scale_ticks(scale_factor)
+
+    def move_ticks(self, offset_ticks):
+        # First adjust the time signatures
+        for i, ts in enumerate(self.time_signature_changes):
+            # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
+            #  by multiplying by 3/2
+            t = max(ts.start_time + offset_ticks, 0)
+            self.time_signature_changes[i] = TimeSignature(t, ts.num, ts.denom)
+        # Now the key signature changes
+        for i, ks in enumerate(self.key_signature_changes):
+            t = max(ks.start_time + offset_ticks, 0)
+            self.key_signature_changes[i] = KeySignature(t, ks.key)
+        # Next the tempos
+        for i, tm in enumerate(self.tempo_changes):
+            t = max(tm.start_time + offset_ticks, 0)
+            self.tempo_changes[i] = Tempo(t, tm.bpm)
+        # Now all the rest of the meta messages
+        for i, ms in enumerate(self.other):
+            t = max(ms.start_time + offset_ticks, 0)
+            self.other[i] = OtherMidi(t, ms.msg)
+        # Finally, offset each track
+        for i, _ in enumerate(self.tracks):
+            self.tracks[i].move_ticks(offset_ticks)
+
+    def set_bpm(self, bpm):
+        self.metadata.bpm = bpm
+        self.tempo_changes = [Tempo(0, bpm)]
 
     def end_time(self):
         """
