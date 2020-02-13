@@ -421,6 +421,12 @@ class ChirpSong:
         self.metadata.bpm = bpm
         self.tempo_changes = [Tempo(0, bpm)]
 
+    def set_time_signature(self, num, denom):
+        self.time_signature_changes = [TimeSignature(0, num, denom)]
+
+    def set_key_signature(self, key):
+        self.key_signature_changes = [KeySignature(0, key)]
+
     def end_time(self):
         """
         Finds the end time of the last note in the song.
