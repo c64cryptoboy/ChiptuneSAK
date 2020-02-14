@@ -9,7 +9,14 @@ from ctsChirp import ChirpSong, Note
 from ctsMChirp import MChirpSong
 import ctsMidi
 
-lp_pitches = ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"]
+lp_keys = {'sharps': frozenset(['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#',
+                                'Am', 'Em', 'Bm', 'F#m', 'C#m', 'G#m', 'D#m', 'A#m']),
+           'flats':  frozenset(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb',
+                                'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm', 'Abm'])}
+
+lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
+              'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
+              }
 
 lp_durations = {
     Fraction(4, 1): '1', Fraction(3, 1): '2.', Fraction(2, 1): '2', Fraction(3, 2): '4.', Fraction(1, 1):'4',
@@ -17,11 +24,15 @@ lp_durations = {
     Fraction(3, 16): '32.', Fraction(1, 8): '32', Fraction(3, 32): '64.', Fraction(1, 16): '64'
 }
 
+current_pitch_set = lp_pitches['sharps']
+current_clef = 'treble'
+current_ottava = 0
 
-def lp_pitch_to_note_name(note_num, octave_offset=4):
+def lp_pitch_to_note_name(note_num, pitches, octave_offset=4):
     """
     Gets the Lilypond note name for a given pitch.
         :param note_num:       MIDI note number
+        :param pitches:        Set of pitches to use (sharp or flat)
         :param octave_offset:  Octave offset (the default is 4, which is the lilypond standard)
         :return:               Lilypond pitch name
     """
@@ -33,7 +44,7 @@ def lp_pitch_to_note_name(note_num, octave_offset=4):
     else:
         octave = "," * abs(octave_num)
     pitch = note_num % 12
-    return "%s%s" % (lp_pitches[pitch], octave)
+    return "%s%s" % (pitches[pitch], octave)
 
 
 def make_lp_notes(note_name, duration, ppq):
@@ -70,17 +81,22 @@ def measure_to_lilypond(measure, ppq):
         :param ppq:     ppq from the song that made the measure.
         :return:        Lilypond text encoding the measure content.
     """
+    global current_pitch_set, current_clef, current_ottava
     measure_contents = []
     current_time_signature = TimeSignature(0, 4, 4)
     current_key_signature = KeySignature(0, "C")
+    measure_range = note_range = (min(e.note_num for e in measure.events if isinstance(e, Note)),
+                                  max(e.note_num for e in measure.events if isinstance(e, Note)))
     for e in measure.events:
         if isinstance(e, Note):
             f = Fraction(e.duration / ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append(
-                    "%s%s%s" % (lp_pitch_to_note_name(e.note_num), lp_durations[f], '~' if e.tied_from else ''))
+                    "%s%s%s" % (lp_pitch_to_note_name(e.note_num, current_pitch_set),
+                                lp_durations[f], '~' if e.tied_from else ''))
             else:
-                measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num), e.duration, song.metadata.ppq))
+                measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num, current_pitch_set),
+                                                      e.duration, song.metadata.ppq))
 
         elif isinstance(e, Rest):
             f = Fraction(e.duration / song.metadata.ppq).limit_denominator(64)
@@ -100,6 +116,15 @@ def measure_to_lilypond(measure, ppq):
         elif isinstance(e, KeySignature):
             if e.key != current_key_signature.key:
                 key = e.key
+                key = key.upper()
+                if len(key) > 1:
+                    key = key[0] + key[1:].lower()
+                if key in lp_keys['sharps']:
+                    current_pitch_set = lp_pitches['sharps']
+                elif key in lp_keys['flats']:
+                    current_pitch_set = lp_pitches['flats']
+                else:
+                    raise ChiptuneSAKValueError("Illegal key signature %s" % key)
                 key.replace('#', 'is')
                 key.replace('b', 'es')
                 if key[-1] == 'm':
@@ -160,6 +185,8 @@ def song_to_lilypond(mchirp_song):
         :param mchirp_song:    ChirpSong to convert to Lilypond format
         :return:        Lilypond text for the song.
     """
+    global current_pitch_set
+    current_pitch_set = lp_pitches['sharps']  # default is sharps
     output = []
     output.append('\\version "2.18.2"')
     output.append('\\header {')

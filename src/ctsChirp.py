@@ -172,6 +172,10 @@ class ChirpTrack:
             self.notes[i] = n
 
     def scale_ticks(self, scale_factor):
+        """
+        Scales the ticks for this track by scale_factor.
+            :param scale_factor:
+        """
         for i, (t, m) in enumerate(self.other):
             t = int(round(t * scale_factor, 0))
             self.other[i] = OtherMidi(t, m)
@@ -184,6 +188,11 @@ class ChirpTrack:
         self.qticks_durations = int(round(self.qticks_durations * scale_factor, 0))
 
     def move_ticks(self, offset_ticks):
+        """
+        Moves all the events in this track by offset_ticks.  Any events that would have a time in ticks less than 0 are
+        set to time zero.
+            :param offset_ticks:
+        """
         for i, (t, m) in enumerate(self.other):
             t = max(t + offset_ticks, 0)
             self.other[i] = OtherMidi(t, m)
@@ -368,6 +377,11 @@ class ChirpSong:
         self.qticks_durations = (self.qticks_durations * n) // d
 
     def scale_ticks(self, scale_factor):
+        """
+        Scales the ticks for all events in the song.  Multiplies the time for each event by scale_factor.
+        This method also changes the ppq by the scale factor.
+            :param scale_factor: Floating-point scale factor to multiply all events.
+        """
         self.metadata.ppq = int(round(self.metadata.ppq * scale_factor, 0))
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
@@ -395,6 +409,11 @@ class ChirpSong:
             self.tracks[i].scale_ticks(scale_factor)
 
     def move_ticks(self, offset_ticks):
+        """
+        Moves all notes in the song a given number of ticks.  Adds the offset to the current tick for every event.
+        If the resulting event has a negative starting time in ticks, it is set to 0.
+            :param offset_ticks:  Offset in ticks
+        """
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
@@ -418,13 +437,26 @@ class ChirpSong:
             self.tracks[i].move_ticks(offset_ticks)
 
     def set_bpm(self, bpm):
+        """
+        Sets the tempo in BPM for the entire song.  Any existing tempo events will be removed.
+            :param bpm:
+        """
         self.metadata.bpm = bpm
         self.tempo_changes = [Tempo(0, bpm)]
 
     def set_time_signature(self, num, denom):
+        """
+        Sets the time signature for the entire song.  Any existing time signature changes will be removed.
+            :param num:
+            :param denom:
+        """
         self.time_signature_changes = [TimeSignature(0, num, denom)]
 
     def set_key_signature(self, key):
+        """
+        Sets the key signature for the entire song.  Any existing key signatures and changes will be removed.
+            :param key:
+        """
         self.key_signature_changes = [KeySignature(0, key)]
 
     def end_time(self):

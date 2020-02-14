@@ -7,7 +7,8 @@ import ctsMidi
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert a midi file into a GoatTracker2 sng file.")
+    parser = argparse.ArgumentParser(description="Perform transformations on MIDI files.",
+                                     epilog="Operations are performed in the order given in this help.")
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('-x', '--removecontrolnotes', action="store_true", help='remove control notes')
