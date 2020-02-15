@@ -74,6 +74,36 @@ def make_lp_notes(note_name, duration, ppq):
         retval = '~ '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
     return retval
 
+def clef(t_range, current_clef):
+    avg = sum(t_range) / len(t_range)
+    clef = current_clef
+    if current_clef == 'treble' and avg < 60:
+        clef = 'bass'
+    elif current_clef == 'bass' and avg > 60:
+        clef = 'treble'
+    return clef
+
+def ottava(note_num, clef, current_ottava):
+    ottava = current_ottava
+    bass_transitions = (41 - 3*current_ottava, 66 + 3*current_ottava)
+    treble_transitions = (55 + 3*current_ottava, 84 - 3*current_ottava)
+    if clef == 'bass':
+        if note_num < bass_transitions[0]:
+            ottava = -1
+        elif note_num > bass_transitions[1]:
+            ottava = 1
+        else:
+            ottava = 0
+    else:
+        if note_num < treble_transitions[0]:
+            ottava = -1
+        elif note_num > treble_transitions[1]:
+            ottava = 1
+        else:
+            ottava = 0
+    return ottava
+
+
 def measure_to_lilypond(measure, ppq):
     """
     Converts contents of a measure into Lilypond text
@@ -88,8 +118,16 @@ def measure_to_lilypond(measure, ppq):
     measure_notes = [e.note_num for e in measure.events if isinstance(e, Note)]
     if len(measure_notes) > 0:
         measure_range = (min(measure_notes), max(measure_notes))
+        measure_clef = clef(measure_range, current_clef)
+        if measure_clef != current_clef:
+            current_clef = measure_clef
+            measure_contents.append("\\clef %s" % current_clef)
     for e in measure.events:
         if isinstance(e, Note):
+            note_ottava = ottava(e.note_num, current_clef, current_ottava)
+            if note_ottava != current_ottava:
+                current_ottava = note_ottava
+                measure_contents.append("\\ottava #%d" % current_ottava)
             f = Fraction(e.duration / ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append(
@@ -148,6 +186,7 @@ def clip_to_lilypond(mchirp_song, measures):
         :param measures: List of measures.
         :return:         Lilypond text.
     """
+    global current_pitch_set, current_clef, current_ottava
     output = []
     ks = mchirp_song.get_key_signature(measures[0].start_time)
     if ks.start_time < measures[0].start_time:
@@ -166,17 +205,24 @@ def clip_to_lilypond(mchirp_song, measures):
     ''')
     note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, Note)),
                   max(e.note_num for m in measures for e in m.events if isinstance(e, Note)))
+    current_clef = clef(note_range, 'treble')
+    current_ottava = 0
     output.append('\\new Staff  {')
-    if note_range[0] < 48:
-        output.append('\\clef bass')
+    output.append('\\clef %s' % current_clef)
     for im, m in enumerate(measures):
         measure_contents = measure_to_lilypond(m, mchirp_song.metadata.ppq)
         output.append(' '.join(measure_contents))
     output.append('}')
     return '\n'.join(output)
 
+def avg_pitch(track):
+    total = sum(n.note_num for measure in track.measures for n in measure.events if isinstance(n, Note))
+    number = sum(1 for measure in track.measures for n in measure.events if isinstance(n, Note))
+    if number == 0:
+        raise ChiptuneSAKContentError("Track %s has no notes" % track.name)
+    return total / number
 
-def song_to_lilypond(mchirp_song):
+def song_to_lilypond(mchirp_song, auto_sort=False):
     """
     Converts a song to Lilypond format. Optimized for multi-page PDF output of the song.
     Recommended lilypond command:
@@ -186,7 +232,7 @@ def song_to_lilypond(mchirp_song):
         :param mchirp_song:    ChirpSong to convert to Lilypond format
         :return:        Lilypond text for the song.
     """
-    global current_pitch_set
+    global current_pitch_set, current_clef, current_ottava
     current_pitch_set = lp_pitches['sharps']  # default is sharps
     output = []
     output.append('\\version "2.18.2"')
@@ -196,14 +242,18 @@ def song_to_lilypond(mchirp_song):
     output.append('composer = "%s"' % mchirp_song.metadata.composer)
     output.append('}')
     #  ---- end of headers ----
+    tracks = [t for t in mchirp_song.tracks]
+    if auto_sort:
+        tracks = sorted([t for t in mchirp_song.tracks], key=avg_pitch, reverse=True)
     output.append('\\new StaffGroup <<')
-    for it, t in enumerate(mchirp_song.tracks):
+    for it, t in enumerate(tracks):
         measures = copy.copy(t.measures)
         track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)),
                        max(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)))
+        current_clef = clef(track_range, 'treble')
+        current_ottava = 0
         output.append('\\new Staff \\with { instrumentName = #"%s" } {' % t.name)
-        if track_range[0] < 48:
-            output.append('\\clef bass')
+        output.append('\\clef %s' % current_clef)
         for im, m in enumerate(measures):
             output.append("%% measure %d" % (im + 1))
             measure_contents = measure_to_lilypond(m, mchirp_song.metadata.ppq)
@@ -222,7 +272,7 @@ if __name__ == '__main__':
     song.quantize_from_note_name('32')
     song.remove_polyphony()
     m_song = MChirpSong(song)
-    out = song_to_lilypond(m_song)
+    out = song_to_lilypond(m_song, auto_sort=True)
     os.chdir('../test/temp')
     out_filename = os.path.splitext(os.path.split(in_filename)[1])[0] + '.ly'
     with open(out_filename, 'w') as f:
