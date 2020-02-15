@@ -67,7 +67,7 @@ def main():
     notes = [n for t in song.tracks for n in t.notes]
 
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
-    f_max = f_min * 4.
+    f_max = f_min * 8.
     f_step = .01
     offset_est = min(n.start_time for n in notes)
     last_min_e = 1.e9
