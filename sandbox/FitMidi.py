@@ -3,6 +3,12 @@ import sandboxPath
 from ctsBase import *
 import ctsMidi
 
+""" This module contains an algorithm to estimate offset and scale factors for MIDI songs that do not have
+    an accurate ppq.  It attempts to infer the ppq from the note starts alone, assuming a minimum note-to-note
+    interval of a 16th note.  It then writes out an adjusted midi file set to a ppq of 960 for that inferred
+    16th note speed.
+"""
+
 song = ctsMidi.midi_to_chirp(sys.argv[1])
 
 desired_ppq = 960
@@ -42,7 +48,7 @@ def find_best_offset(o_start, o_end, f):
     return (best_offset, min_e)
 
 f_min = round(960 / song.metadata.ppq / 2, 3)
-f_max = f_min * 2
+f_max = f_min * 4
 f_step = .01
 offset_est = min(n.start_time for n in notes)
 last_min_e = 1.e9
@@ -57,10 +63,12 @@ while min_e < last_min_e:
     best_f, min_e = find_best_f(f_min, f_max, f_step, best_offset)
     best_offset, min_e = find_best_offset(offset_est - 20, offset_est + 20, best_f)
 
-print("%.5lf, %d, %.6lf" % (best_f, best_offset, min_e))
+tick_error = min_e / len(notes)
+print("scale_factor = %.5lf, offset = %d, total error = %.1lf ticks (%.2lf ticks/note for ppq = 960)"
+      % (best_f, best_offset, min_e, tick_error))
 
 song.move_ticks(-best_offset)
 song.scale_ticks(best_f)
 song.metadata.ppq = 960
-song.quantize_from_note_name('16')
+#song.quantize_from_note_name('16')
 ctsMidi.chirp_to_midi(song, sys.argv[2])

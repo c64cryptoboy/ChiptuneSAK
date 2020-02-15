@@ -85,8 +85,9 @@ def measure_to_lilypond(measure, ppq):
     measure_contents = []
     current_time_signature = TimeSignature(0, 4, 4)
     current_key_signature = KeySignature(0, "C")
-    measure_range = note_range = (min(e.note_num for e in measure.events if isinstance(e, Note)),
-                                  max(e.note_num for e in measure.events if isinstance(e, Note)))
+    measure_notes = [e.note_num for e in measure.events if isinstance(e, Note)]
+    if len(measure_notes) > 0:
+        measure_range = (min(measure_notes), max(measure_notes))
     for e in measure.events:
         if isinstance(e, Note):
             f = Fraction(e.duration / ppq).limit_denominator(64)
