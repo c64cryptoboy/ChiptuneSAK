@@ -135,14 +135,14 @@ def measure_to_lilypond(measure, ppq):
                                 lp_durations[f], '~' if e.tied_from else ''))
             else:
                 measure_contents.append(make_lp_notes(lp_pitch_to_note_name(e.note_num, current_pitch_set),
-                                                      e.duration, song.metadata.ppq))
+                                                      e.duration, ppq))
 
         elif isinstance(e, Rest):
-            f = Fraction(e.duration / song.metadata.ppq).limit_denominator(64)
+            f = Fraction(e.duration / ppq).limit_denominator(64)
             if f in lp_durations:
                 measure_contents.append("r%s" % (lp_durations[f]))
             else:
-                measure_contents.append(make_lp_notes('r', e.duration, song.metadata.ppq))
+                measure_contents.append(make_lp_notes('r', e.duration, ppq))
 
         elif isinstance(e, MeasureMarker):
             measure_contents.append('|')

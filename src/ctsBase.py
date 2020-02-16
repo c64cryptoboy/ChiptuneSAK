@@ -116,9 +116,11 @@ def find_duration_quantization(ppq, durations, qticks_note):
         # Try a triplet
         tmp_q = current_q
         current_q = current_q * 3 // 2
+        ratio = min_length / current_q
         if ratio > 0.9:
             break
         current_q = tmp_q // 2
+        ratio = min_length / current_q
     return current_q
 
 

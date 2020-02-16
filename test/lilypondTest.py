@@ -21,7 +21,7 @@ class TestExportLilypond(unittest.TestCase):
 
         m_song = ctsMChirp.MChirpSong(song)
 
-        test_ly = ctsLilypond.clip_to_lilypond(m_song, m_song.tracks[0].measures[3:5])
+        test_ly = ctsLilypond.clip_to_lilypond(m_song, m_song.tracks[0].measures[3:8])
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 
         self.assertEqual(known_good_ly_hash, test_ly_hash)

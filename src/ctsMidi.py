@@ -250,7 +250,7 @@ def meta_to_midi_track(chirp_song):
     Exports metadata to a MIDI track.
     """
     midi_track = mido.MidiTrack()
-    events = []
+    events = [mido.MetaMessage('track_name', name=chirp_song.metadata.name)]
     #  Put all the time signature changes into the track.
     for t, key in chirp_song.key_signature_changes:
         events.append(mido.MetaMessage('key_signature', key=key, time=t))

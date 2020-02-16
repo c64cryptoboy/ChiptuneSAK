@@ -1,7 +1,7 @@
 import sys
 import argparse
 import functools
-import sandboxPath
+import toolsPath
 from ctsBase import *
 from ctsConstants import DURATION_STR
 import ctsMidi
@@ -22,7 +22,7 @@ def objective_function(notes, desired_q, offset, scale_factor):
         start = (n.start_time - offset) * scale_factor
         delta = quantization_error(start, desired_q)
         err += abs(delta)
-    return err
+    return err / scale_factor
 
 
 def find_best_f(notes, desired_q, f_start, f_end, step, offset):
@@ -65,16 +65,25 @@ def main():
     print("Reading file %s" % args.midi_out_file)
     song = ctsMidi.midi_to_chirp(args.midi_in_file)
     notes = [n for t in song.tracks for n in t.notes]
-
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
     f_max = f_min * 8.
+    if f_min < 1.:
+        f_min = 1.
+    if f_max > 10.:
+        f_max = 10.
     f_step = .01
     offset_est = min(n.start_time for n in notes)
     last_min_e = 1.e9
-    print('Finding initial parameters...')
-    best_f, min_e = find_best_f(notes, desired_q, f_min, f_max, f_step, offset_est)
-    best_offset, min_e = find_best_offset(notes, desired_q, offset_est - 20, offset_est + 20, best_f)
 
+    get_best_f = functools.partial(find_best_f, notes, desired_q)
+    get_best_offset = functools.partial(find_best_offset, notes, desired_q, offset_est-20, offset_est+20)
+
+    print('Finding initial parameters...')
+    # Do wide-range search for best scale factor and offset.
+    best_f, min_e = get_best_f(f_min, f_max, f_step, offset_est)
+    best_offset, min_e = get_best_offset(best_f)
+
+    # Now refine the scale factor and ofset iteratively until they converge
     print('Refining...')
     while min_e < last_min_e:
         last_min_e = min_e
@@ -83,10 +92,11 @@ def main():
         if (f_min < 1.0):
             f_min = 1.0
         f_max = f_min + (f_step * 200)
-        best_f, min_e = find_best_f(notes, desired_q, f_min, f_max, f_step, best_offset)
-        best_offset, min_e = find_best_offset(notes, desired_q, offset_est - 20, offset_est + 20, best_f)
+        best_f, min_e = get_best_f(f_min, f_max, f_step, best_offset)
+        best_offset, min_e = get_best_offset(best_f)
 
-    tick_error = min_e / len(notes)
+    # Average error in new ticks
+    tick_error = min_e / len(notes) * best_f
     print("scale_factor = %.5lf, offset = %d, total error = %.1lf ticks (%.2lf ticks/note for ppq = %d)"
           % (best_f, best_offset, min_e, tick_error, desired_ppq))
 
