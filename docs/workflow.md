@@ -118,7 +118,7 @@ The result will be `bach.png` that looks like this:
 
  ### Recorded midi from game to sheet music
  
- Often, the music recorded from a game has no concept of the note lengths for the music; it is recorded in arbitrary ticks with an arbitrary offset.  This workflow shows how to turn such music into Lilypond-generated sheet music.
+ Often, the music recorded from a game has no concept of the note lengths for the music; it is recorded in arbitrary ticks with an arbitrary offset.  This example workflow shows how to turn such music into Lilypond-generated sheet music.
  
  First, we use the FitPPQ.py script to estimate the actual note lengths and adjust them to have a ppq of 960.  From the tools directory, run:
  

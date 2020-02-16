@@ -18,7 +18,7 @@ class TestExportPRG(unittest.TestCase):
                  22 00 00 00'''
         bin_from_vice = bytearray(int(x, 16) for x in tmp.split())
 
-        self.assertEqual(ctsGenPrg.ascii_to_c128prg(ascii_prg), bin_from_vice)
+        self.assertEqual(ctsGenPrg.ascii_to_prg_c128(ascii_prg), bin_from_vice)
 
 
 if __name__ == '__main__':
