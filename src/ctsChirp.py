@@ -156,6 +156,15 @@ class ChirpTrack:
         """
         self.notes = [n for n in self.notes if n.note_num > control_max]
 
+    def transpose(self, semitones):
+        for i, n in enumerate(self.notes):
+            new_note_num = n.note_num + semitones
+            if 0 <= new_note_num <= 127:
+                self.notes[i].note_num = new_note_num
+            else:
+                self.notes[i].duration = 0  # Set duration to zero for later deletion
+        self.notes = [n for n in self.notes if n.duration > 0]
+
     def modulate(self, num, denom):
         """
         Modulates this track metrically by a factor of num / denom
@@ -339,6 +348,23 @@ class ChirpSong:
         """
         for t in self.tracks:
             t.remove_control_notes(control_max)
+
+    def transpose(self, semitones):
+        """
+        Transposes the song by semitones
+            :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
+        """
+        # First, transpose key signatures
+        for ik, ks in enumerate(self.key_signature_changes):
+            for key_type in ['major', 'minor']:
+                if ks.key in KEYS[key_type]:
+                    idx = KEYS[key_type].index(ks.key)
+                    idx = (idx + semitones) % 12
+                    self.key_signature_changes[ik] = KeySignature(ks.start_time, KEYS[key_type][idx])
+
+        # Now transpose the tracks
+        for it, t in self.tracks:
+            self.tracks[it].transpose(semitones)
 
     def modulate(self, num, denom):
         """

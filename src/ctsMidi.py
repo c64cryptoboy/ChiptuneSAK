@@ -217,7 +217,7 @@ def chirp_track_to_midi_track(chirp_track):
     Convert  ChirpTrack to a midi track.
     """
     midiTrack = mido.MidiTrack()
-    events = [mido.MetaMessage('track_name', name=chirp_track.name)]
+    events = [mido.MetaMessage('track_name', name=chirp_track.name, time=0)]
     for n in chirp_track.notes:
         # For the sake of sorting, create the midi event with the absolute time (which will be
         # changed to a delta time before returning).
@@ -250,7 +250,11 @@ def meta_to_midi_track(chirp_song):
     Exports metadata to a MIDI track.
     """
     midi_track = mido.MidiTrack()
-    events = [mido.MetaMessage('track_name', name=chirp_song.metadata.name)]
+    events = [mido.MetaMessage('track_name', name=chirp_song.metadata.name, time=0)]
+    if len(chirp_song.metadata.composer) > 0:
+        events.append(mido.MetaMessage('text', text=chirp_song.metadata.composer, time=0))
+    if len(chirp_song.metadata.copyright) > 0:
+        events.append(mido.MetaMessage('copyright', text=chirp_song.metadata.copyright, time=0))
     #  Put all the time signature changes into the track.
     for t, key in chirp_song.key_signature_changes:
         events.append(mido.MetaMessage('key_signature', key=key, time=t))
