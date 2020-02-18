@@ -1,11 +1,10 @@
 import copy
 from ctsErrors import *
 from ctsBase import *
-from ctsChirp import ChirpSong, ChirpTrack, Note
+from ctsChirp import Note
 import more_itertools as moreit
 
 """ Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
-
 
 class Measure:
     @staticmethod
@@ -106,10 +105,7 @@ class Measure:
         for m in track.other:
             if self.start_time <= m.start_time < end:
                 # Leave the time of these messages alone
-                if m.msg.type == 'program_change':  # Split out program changes
-                    self.events.append(Program(m.start_time, m.msg.program))
-                else:
-                    self.events.append(m)
+                self.events.append(m)
 
         #  Now add all the song-specific events to the measure.
         for ks in track.chirp_song.key_signature_changes:
@@ -126,11 +122,6 @@ class Measure:
             if self.start_time <= tm.start_time < end:
                 # Tempo changes can happen anywhere in the measure
                 self.events.append(Tempo(tm.start_time, tm.bpm))
-
-        for m in track.chirp_song.other:
-            if self.start_time <= m.start_time < end:
-                # Leave the time of these messages alone
-                self.events.append(m)
 
         self.events = sorted(self.events, key=self.sort_order)
 
@@ -176,6 +167,7 @@ class MChirpTrack:
             measures_list.append(current_measure)
         self.measures = measures_list
         self.name = chirp_track.name
+        self.channel = chirp_track.channel
 
 
 class MChirpSong:
@@ -199,6 +191,7 @@ class MChirpSong:
         for t in chirp_song.tracks:
             self.tracks.append(MChirpTrack(self, t))
         self.metadata = copy.deepcopy(chirp_song.metadata)
+        self.other = copy.deepcopy(chirp_song.other)
         self.trim()
 
     def trim(self):

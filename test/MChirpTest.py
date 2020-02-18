@@ -1,29 +1,31 @@
 import sys
 import copy
-sys.path.append('../src/')
+import testingPath
 import unittest
 import ctsMidi
-import ctsMChirp
+from ctsMChirp import MChirpSong, MChirpTrack
+from ctsChirp import ChirpSong, ChirpTrack
+
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp('twinkle.mid')
-        self.test_song.quantize()
+        self.test_song = ctsMidi.midi_to_chirp('bach_invention_4.mid')
+        self.test_song.quantize_from_note_name('16')
         self.test_song.remove_polyphony()
-        self.test_mchirp_song = ctsMChirp.MChirpSong(self.test_song)
+        self.test_mchirp_song = MChirpSong(self.test_song)
 
     def test_tracks(self):
         """
         Tests both the number and the names of extracted tracks
         """
-        self.assertTupleEqual(tuple(t.name for t in self.test_mchirp_song.tracks), ('Lead', 'Counter', 'Bass'))
+        self.assertTupleEqual(tuple(t.name for t in self.test_mchirp_song.tracks), ('I', 'II'))
 
     def test_measures(self):
         """
         Tests the measures handling
         """
         # There should be 36 measures:  12 per track x 3 tracks
-        self.assertEqual(sum(len(t.measures) for t in self.test_mchirp_song.tracks), 36)
+        self.assertEqual(sum(len(t.measures) for t in self.test_mchirp_song.tracks), 104)
 
         #  Test that the sum of note and rest durations in every measure is equal to the measure duration.
         for t in self.test_mchirp_song.tracks:
@@ -31,3 +33,17 @@ class SongTestCase(unittest.TestCase):
                 s = sum(n.duration for n in m.get_notes())
                 r = sum(r.duration for r in m.get_rests())
                 self.assertEqual(s+r, m.duration)
+
+    def test_conversion(self):
+        chirp_song = ChirpSong(self.test_mchirp_song)
+
+        # Used to generate output midi file to check that they sound the same.
+        # ctsMidi.chirp_to_midi(chirp_song, 'MChirp_test.mid')
+
+        self.assertEqual(len(chirp_song.tracks), len(self.test_song.tracks))
+        self.assertEqual([t.name for t in chirp_song.tracks], [t.name for t in self.test_song.tracks])
+        self.assertEqual(chirp_song.metadata, self.test_song.metadata)
+
+        test_total_notes = sum(1 for t in self.test_song.tracks for n in t.notes)
+        chirp_total_notes = sum(1 for t in chirp_song.tracks for n in t.notes)
+        self.assertEqual(test_total_notes, chirp_total_notes)

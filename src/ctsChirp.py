@@ -8,6 +8,7 @@
 #
 
 import sys
+import copy
 import bisect
 import more_itertools as moreit
 from ctsErrors import *
@@ -33,9 +34,8 @@ class Note:
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
-        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" % (
-        self.note_num, self.start_time, self.duration, self.velocity, self.tied_from, self.tied_to)
-
+        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" \
+               % (self.note_num, self.start_time, self.duration, self.velocity, self.tied_from, self.tied_to)
 
 class ChirpTrack:
     """
@@ -49,7 +49,7 @@ class ChirpTrack:
     # Define the message types to preserve as a static variable
     other_message_types = ['program_change', 'pitchwheel', 'control_change']
 
-    def __init__(self, chirp_song):
+    def __init__(self, chirp_song, mchirp_track=None):
         self.chirp_song = chirp_song  # Parent song
         self.name = 'none'  # Track name
         self.channel = 0  # This track's midi channel.  Each track should have notes from only one channel.
@@ -57,6 +57,36 @@ class ChirpTrack:
         self.other = []  # Other events in the track (includes voice changes and pitchwheel)
         self.qticks_notes = chirp_song.qticks_notes  # Inherit quantization from song
         self.qticks_durations = chirp_song.qticks_durations  # inherit quantization from song
+        if mchirp_track is not None:
+            self.import_mchirp_track(mchirp_track)
+
+    def import_mchirp_track(self, mchirp_track):
+        """
+        Imports an  MChirpTrack
+            :param mchirp_track:
+        """
+        self.name = mchirp_track.name
+        self.channel = mchirp_track.channel
+        continued_note = None
+        for m in mchirp_track.measures:
+            for e in m.events:
+                if isinstance(e, Note):
+                    if continued_note is not None:
+                        continued_note.duration += e.duration
+                        if not e.tied_from:
+                            self.notes.append(continued_note)
+                            continued_note = None
+                    else:
+                        new_note = Note(e.start_time, e.note_num, e.duration, e.velocity)
+                        if e.tied_from:
+                            continued_note = copy.copy(new_note)
+                        else:
+                            self.notes.append(new_note)
+                            continued_note = None
+                elif isinstance(e, OtherMidi):
+                    self.other.append(e)
+        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+        self.other.sort(key=lambda n: n.start_time)
 
     def estimate_quantization(self):
         """ 
@@ -222,8 +252,10 @@ class ChirpSong:
     information, such as time signatures and tempi, in a similar way.
     """
 
-    def __init__(self, filename=None):
+    def __init__(self, mchirp_song=None):
         self.reset_all()
+        if mchirp_song is not None:
+            self.import_mchirp_song(mchirp_song)
 
     def reset_all(self):
         """ 
@@ -241,6 +273,22 @@ class ChirpSong:
         self.key_signature_changes = []  # List of key signature changes
         self.tempo_changes = []  # List of tempo changes
         self.stats = {}  # Statistics about the song
+
+    def import_mchirp_song(self, mchirp_song):
+        """
+        Imports an MChirpSong
+            :param mchirp_song:
+        """
+        for t in mchirp_song.tracks:
+            self.tracks.append(ChirpTrack(self, t))
+        self.metadata = copy.deepcopy(mchirp_song.metadata)
+        # Now transfer over key signature, time signature, and tempo changes
+        # these are stored inside measures for ALL tracks so we only have to extract them from one.
+        t = mchirp_song.tracks[0]
+        self.time_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, TimeSignature)]
+        self.key_signature_changes= [e for m in t.measures for e in m.events if isinstance(e, KeySignature)]
+        self.tempo_changes = [e for m in t.measures for e in m.events if isinstance(e, Tempo)]
+        self.other = copy.deepcopy(mchirp_song.other)
 
     def estimate_quantization(self):
         """ 

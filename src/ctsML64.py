@@ -174,6 +174,9 @@ def events_to_ml64(events, song, last_continue=False):
             stats['rest'] += tmp_note.count('r(')
         elif isinstance(e, MeasureMarker):
             content.append('[m%d]' % e.measure_number)
+        elif isinstance(e, OtherMidi) and e.msg.type == 'program_change':  # Here because not explicitly in measure
+            content.append('i(%s)' % e.msg.program)
+            stats['program'] += 1
         elif isinstance(e, Program):
             content.append('i(%s)' % e.program)
             stats['program'] += 1

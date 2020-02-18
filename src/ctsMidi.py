@@ -6,6 +6,19 @@ from ctsBase import *
 from ctsChirp import Note, ChirpTrack, ChirpSong
 
 
+def sort_midi_events(msg):
+    if msg.type == 'note_off':
+        return (msg.time, 9)
+    elif msg.type == 'note_on':
+        return (msg.time, 10)
+    elif msg.type == 'program_change':
+        return (msg.time, 5)
+    elif msg.type == 'track_name':
+        return (msg.time, 0)
+    else:
+        return (msg.time, 7)
+
+
 def midi_track_to_chirp_track(chirp_song, midi_track):
     """
     Parse a MIDI track into notes.
@@ -103,8 +116,7 @@ def midi_to_chirp(filename):
     chirp_song.key_signature_changes = []
     midi_meta_tracks = []
     for i, track in enumerate(in_midi.tracks):
-        n_notes = sum(1 for m in track if m.type == 'note_on')
-        if n_notes == 0:
+        if i == 0:
             midi_meta_tracks.append(track)
             chirp_song = get_meta(chirp_song, track, True if i == 0 else False, True)
         else:
@@ -122,7 +134,7 @@ def midi_to_chirp(filename):
     midi_note_tracks = [t for t in in_midi.tracks if sum(1 for m in t if m.type == 'note_on') > 0]
 
     chirp_song.stats["MIDI notes"] = sum(1 for t in midi_note_tracks
-                                   for m in t if m.type == 'note_on' and m.velocity != 0)
+                                         for m in t if m.type == 'note_on' and m.velocity != 0)
 
     # Now generate the note tracks
     for track in midi_note_tracks:
@@ -133,6 +145,7 @@ def midi_to_chirp(filename):
     chirp_song.stats["Track names"] = [t.name for t in chirp_song.tracks]
 
     return chirp_song
+
 
 def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
     """
@@ -211,13 +224,12 @@ def split_midi_zero_into_tracks(midi_song):
     return midi_song
 
 
-
 def chirp_track_to_midi_track(chirp_track):
     """
     Convert  ChirpTrack to a midi track.
     """
     midiTrack = mido.MidiTrack()
-    events = [mido.MetaMessage('track_name', name=chirp_track.name, time=0)]
+    events = []
     for n in chirp_track.notes:
         # For the sake of sorting, create the midi event with the absolute time (which will be
         # changed to a delta time before returning).
@@ -234,7 +246,7 @@ def chirp_track_to_midi_track(chirp_track):
         events.append(msg)
     # Because 'note_off' comes before 'note_on' this sort will keep note_off events before
     # note_on events.
-    events.sort(key=lambda m: (m.time, m.type))
+    events.sort(key=sort_midi_events)
     last_time = 0
     # Turn the absolute times into delta times.
     for msg in events:
@@ -269,7 +281,7 @@ def meta_to_midi_track(chirp_song):
         msg.time = t
         events.append(msg)
     # Sort the track by time so it's ready for the MIDI delta-time format.
-    events.sort(key=lambda m: (m.time, m.type))
+    events.sort(key=sort_midi_events)
 
     # Generate the midi from the events.
     last_time = 0

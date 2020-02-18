@@ -3,6 +3,7 @@ from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from recordtype import recordtype
+from dataclasses import dataclass
 
 # Named tuple types for several lists throughout
 TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
@@ -15,16 +16,15 @@ Program = collections.namedtuple('Program', ['start_time', 'program'])
 MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_number'])
 
 
+@dataclass
 class SongMetadata:
-    def __init__(self):
-        self.ppq = 960
-        self.name = ''
-        self.composer = ''
-        self.copyright = ''
-        self.time_signature = TimeSignature(0, 4, 4)
-        self.key_signature = KeySignature(0, 'C')
-        self.bpm = 112
-
+    ppq: int = 960
+    name: str = ''
+    composer: str = ''
+    copyright: str = ''
+    time_signature: TimeSignature = TimeSignature(0, 4, 4)
+    key_signature: KeySignature = KeySignature(0, 'C')
+    bpm: int = 112
 
 
 # --------------------------------------------------------------------------------------
