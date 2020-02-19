@@ -35,6 +35,9 @@ class SongTestCase(unittest.TestCase):
                 self.assertEqual(s+r, m.duration)
 
     def test_conversion(self):
+        """
+        Tests midi-chirp-mchirp-chirp-midi pipeline.
+        """
         chirp_song = ChirpSong(self.test_mchirp_song)
 
         # Used to generate output midi file to check that they sound the same.
