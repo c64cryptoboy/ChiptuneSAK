@@ -72,6 +72,7 @@ class ChirpKey:
         assert(len(possible) == 1)
         self.key_name = possible[0]
         self.key = KEYS[self.key_name]
+        return self
 
     def minimize_accidentals(self):
         possible = [k for k in KEYS if KEYS[k].offset == self.key.offset and KEYS[k].type == self.key.type]
@@ -79,9 +80,13 @@ class ChirpKey:
             possible.sort(key=lambda k: len(KEYS[k].sharps) + len(KEYS[k].flats))
         self.key_name = possible[0]
         self.key = KEYS[self.key_name]
+        return self
 
     def accidentals(self):
         return accidentals(self.key_name)
+
+    def __eq__(self, other):
+        return self.key == other.key
 
     def __str__(self):
         return self.key_name

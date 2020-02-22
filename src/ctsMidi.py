@@ -185,7 +185,7 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
     # Require initial time signature, key signature, and tempo values.
     if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
         chirp_song.key_signature_changes.insert(0, KeySignature(0, ChirpKey("C")))  # Default top key of C
-    chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0].key.key_name
+    chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
     if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
         chirp_song.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
     chirp_song.metadata.time_signature = chirp_song.time_signature_changes[0]

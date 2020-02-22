@@ -407,11 +407,13 @@ class ChirpSong:
         for ik, ks in enumerate(self.key_signature_changes):
             new_key = ks.key.transpose(semitones)
             if minimize_accidentals:
-                new_key.minimize_accidentals
+                new_key.minimize_accidentals()
             self.key_signature_changes[ik] = KeySignature(ks.start_time, new_key)
+            if ik == 0:
+                self.metadata.key_signature = self.key_signature_changes[0]
 
         # Now transpose the tracks
-        for it, t in self.tracks:
+        for it, t in enumerate(self.tracks):
             self.tracks[it].transpose(semitones)
 
     def modulate(self, num, denom):
@@ -428,7 +430,15 @@ class ChirpSong:
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
             #  by multiplying by 3/2
             t, n, d = ts
-            self.time_signature_changes[i] = TimeSignature((t * num) // denom, n * num, d * denom)
+            new_time_signature = (n * num, d * denom)
+            if num < denom:
+                if all((v % 4) == 0 for v in new_time_signature):
+                    factor = new_time_signature[1] // 4
+                    if all((v % factor) == 0 for v in new_time_signature):
+                        new_time_signature = (v // factor for v in new_time_signature)
+            self.time_signature_changes[i] = TimeSignature((t * num) // denom, *new_time_signature)
+            if i == 0:
+                self.metadata.time_signature = self.time_signature_changes[0]
         # Now the key signatures
         for i, ks in enumerate(self.key_signature_changes):
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that

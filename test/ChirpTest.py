@@ -4,6 +4,7 @@ sys.path.append('../src/')
 import unittest
 import ctsMidi
 import ctsChirp
+from ctsKey import ChirpKey
 
 
 class SongTestCase(unittest.TestCase):
@@ -58,3 +59,27 @@ class SongTestCase(unittest.TestCase):
         Tests the measures handling
         """
         self.assertEqual(len(self.test_song.measures_and_beats()), 48)
+
+    def test_modulation(self):
+        test_song_mod = copy.deepcopy(self.test_song)
+        test_song_mod.modulate(3, 2)
+
+        self.assertEqual(test_song_mod.metadata.time_signature, (0, 12, 8))
+
+        test_song_mod.modulate(2, 3)
+
+        self.assertEqual(test_song_mod.metadata.time_signature, (0, 4, 4))
+
+    def test_transposition(self):
+        orig_notes = [n for t in self.test_song.tracks for n in t.notes]
+        test_transpose = 7
+        test_song_transposed = copy.deepcopy(self.test_song)
+        test_song_transposed.transpose(test_transpose)
+        test_notes = [n for t in test_song_transposed.tracks for n in t.notes]
+
+        self.assertTrue(all(n.note_num - o.note_num == test_transpose for o, n in zip(orig_notes, test_notes)))
+
+        orig_key_offset = self.test_song.metadata.key_signature.key.key.offset
+        test_key_offset = test_song_transposed.metadata.key_signature.key.key.offset
+
+        self.assertTrue((test_key_offset - orig_key_offset) % 12 == test_transpose % 12)
