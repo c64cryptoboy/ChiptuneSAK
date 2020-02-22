@@ -2,6 +2,7 @@ import collections
 from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
+from ctsKey import ChirpKey
 from recordtype import recordtype
 from dataclasses import dataclass
 
@@ -23,7 +24,7 @@ class SongMetadata:
     composer: str = ''
     copyright: str = ''
     time_signature: TimeSignature = TimeSignature(0, 4, 4)
-    key_signature: KeySignature = KeySignature(0, 'C')
+    key_signature: KeySignature = KeySignature(0, ChirpKey('C'))
     bpm: int = 112
 
 

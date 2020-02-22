@@ -4,15 +4,11 @@ import copy
 from fractions import Fraction
 
 from ctsErrors import *
+from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import ChirpSong, Note
 from ctsMChirp import MChirpSong
 import ctsMidi
-
-lp_keys = {'sharps': frozenset(['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#',
-                                'Am', 'Em', 'Bm', 'F#m', 'C#m', 'G#m', 'D#m', 'A#m']),
-           'flats':  frozenset(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb',
-                                'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm', 'Abm'])}
 
 lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
               'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
@@ -114,7 +110,7 @@ def measure_to_lilypond(measure, ppq):
     global current_pitch_set, current_clef, current_ottava
     measure_contents = []
     current_time_signature = TimeSignature(0, 4, 4)
-    current_key_signature = KeySignature(0, "C")
+    current_key_signature = KeySignature(0, ChirpKey('C'))
     measure_notes = [e.note_num for e in measure.events if isinstance(e, Note)]
     if len(measure_notes) > 0:
         measure_range = (min(measure_notes), max(measure_notes))
@@ -153,23 +149,15 @@ def measure_to_lilypond(measure, ppq):
                 current_time_signature = copy.copy(e)
 
         elif isinstance(e, KeySignature):
-            if e.key != current_key_signature.key:
-                key = e.key
-                key = key.upper()
-                if len(key) > 1:
-                    key = key[0] + key[1:].lower()
-                if key in lp_keys['sharps']:
-                    current_pitch_set = lp_pitches['sharps']
-                elif key in lp_keys['flats']:
-                    current_pitch_set = lp_pitches['flats']
+            if e.key.key_name != current_key_signature.key.key_name:
+                key_name = e.key.key_name
+                current_pitch_set = lp_pitches[e.key.accidentals()]
+                key_name.replace('#', 'is')
+                key_name.replace('b', 'es')
+                if e.key.key.type == 'minor':
+                    measure_contents.append('\\key %s \\minor' % (key_name.lower()[:-1]))
                 else:
-                    raise ChiptuneSAKValueError("Illegal key signature %s" % key)
-                key.replace('#', 'is')
-                key.replace('b', 'es')
-                if key[-1] == 'm':
-                    measure_contents.append('\\key %s \\minor' % (key.lower()[:-1]))
-                else:
-                    measure_contents.append('\\key %s \\major' % (key.lower()))
+                    measure_contents.append('\\key %s \\major' % (key_name.lower()))
                 current_key_signature = copy.copy(e)
 
     return measure_contents

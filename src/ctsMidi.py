@@ -2,6 +2,7 @@ import sys
 import mido
 from ctsErrors import *
 from ctsConstants import *
+from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import Note, ChirpTrack, ChirpSong
 
@@ -166,7 +167,7 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
         elif msg.type == 'set_tempo':
             chirp_song.tempo_changes.append(Tempo(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
         elif msg.type == 'key_signature':
-            chirp_song.key_signature_changes.append(KeySignature(current_time, msg.key))
+            chirp_song.key_signature_changes.append(KeySignature(current_time, ChirpKey(msg.key)))
         elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
             chirp_song.metadata.name = msg.name.strip()
             is_name_set = True
@@ -183,11 +184,11 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
 
     # Require initial time signature, key signature, and tempo values.
     if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
-        chirp_song.key_signature_changes.insert(0, KeySignature(0, "C"))  # Default top key of C
-    chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
+        chirp_song.key_signature_changes.insert(0, KeySignature(0, ChirpKey("C")))  # Default top key of C
+    chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0].key.key_name
     if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
         chirp_song.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
-    chirp_song.metadata.time_signature= chirp_song.time_signature_changes[0]
+    chirp_song.metadata.time_signature = chirp_song.time_signature_changes[0]
     if len(chirp_song.tempo_changes) == 0 or chirp_song.tempo_changes[0].start_time != 0:
         chirp_song.tempo_changes.insert(0, Tempo(0, int(mido.tempo2bpm(500000))))
     chirp_song.metadata.bpm = chirp_song.tempo_changes[0].bpm
@@ -269,7 +270,7 @@ def meta_to_midi_track(chirp_song):
         events.append(mido.MetaMessage('copyright', text=chirp_song.metadata.copyright, time=0))
     #  Put all the time signature changes into the track.
     for t, key in chirp_song.key_signature_changes:
-        events.append(mido.MetaMessage('key_signature', key=key, time=t))
+        events.append(mido.MetaMessage('key_signature', key=key.key_name, time=t))
     #  Put all the time signature changes into the track.
     for t, numerator, denominator in chirp_song.time_signature_changes:
         events.append(mido.MetaMessage('time_signature', numerator=numerator, denominator=denominator, time=t))

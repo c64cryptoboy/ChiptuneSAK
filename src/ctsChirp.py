@@ -13,6 +13,7 @@ import bisect
 import more_itertools as moreit
 from ctsErrors import *
 from ctsConstants import *
+from ctsKey import ChirpKey
 from ctsBase import *
 
 class Note:
@@ -397,18 +398,17 @@ class ChirpSong:
         for t in self.tracks:
             t.remove_control_notes(control_max)
 
-    def transpose(self, semitones):
+    def transpose(self, semitones, minimize_accidentals=True):
         """
         Transposes the song by semitones
             :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
         """
         # First, transpose key signatures
         for ik, ks in enumerate(self.key_signature_changes):
-            for key_type in ['major', 'minor']:
-                if ks.key in KEYS[key_type]:
-                    idx = KEYS[key_type].index(ks.key)
-                    idx = (idx + semitones) % 12
-                    self.key_signature_changes[ik] = KeySignature(ks.start_time, KEYS[key_type][idx])
+            new_key = ks.key.transpose(semitones)
+            if minimize_accidentals:
+                new_key.minimize_accidentals
+            self.key_signature_changes[ik] = KeySignature(ks.start_time, new_key)
 
         # Now transpose the tracks
         for it, t in self.tracks:
@@ -526,12 +526,12 @@ class ChirpSong:
         """
         self.time_signature_changes = [TimeSignature(0, num, denom)]
 
-    def set_key_signature(self, key):
+    def set_key_signature(self, new_key):
         """
         Sets the key signature for the entire song.  Any existing key signatures and changes will be removed.
             :param key:
         """
-        self.key_signature_changes = [KeySignature(0, key)]
+        self.key_signature_changes = [KeySignature(0, ChirpKey(new_key))]
 
     def end_time(self):
         """
