@@ -18,6 +18,8 @@ from ctsMChirp import MChirpSong
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 import ctsGenPrg
 
+OCTAVE_BASE = -1
+
 # These types are similar to standard notes and rests but with voice added
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
 BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voice'])
@@ -43,7 +45,7 @@ def sort_order(c):
         return (c.start_time, -c.duration, c.voice)
 
 
-def basic_pitch_to_note_name(note_num, octave_offset=-2):
+def basic_pitch_to_note_name(note_num, octave_offset=OCTAVE_BASE):
     """
     Gets note name for a given MIDI pitch
     """

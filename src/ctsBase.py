@@ -169,19 +169,3 @@ def is_triplet(note, ppq):
     if f.denominator % 3 == 0:
         return True
     return False
-
-# Goat tracker commons (TODO: Move this someplace else at some point)
-
-GtPatternRow = recordtype('GtPatternRow',
-    [('note_data', 0xBD), ('inst_num', 0), ('command', 0), ('command_data', 0)])
-
-# TODO: Replace 0xBD with GT_REST after refactoring
-PATTERN_EMPTY_ROW = GtPatternRow(note_data = 0xBD) 
-
-# TODO: Replace 0xFF with GT_PAT_END
-PATTERN_END_ROW = GtPatternRow(note_data = 0xFF)
-
-GtInstrument = recordtype('GtInstrument',
-    [('inst_num', 0), ('attack_decay', 0), ('sustain_release', 0), ('wave_ptr', 0), ('pulse_ptr', 0),
-    ('filter_ptr', 0), ('vib_speedtable_ptr', 0), ('vib_delay', 0), ('gateoff_timer', 0x02),
-    ('hard_restart_1st_frame_wave', 0x09), ('inst_name', '')])

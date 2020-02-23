@@ -62,6 +62,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 
 ## Recent milestones
 * Exported goattracker's example "consultant.sng" file as midi and as pdf sheet music
+* Exported some Betrayal at Krondor (MS-DOS, 1993) midi capture to pdf sheet music, goat tracker, and Commodore 128 BASIC program
 
 ## Requirements/Building
 * Python 3.7+
