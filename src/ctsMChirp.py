@@ -24,13 +24,13 @@ class Measure:
             return (c.start_time, 10)
         elif isinstance(c, MeasureMarker):
             return (c.start_time, 0)
-        elif isinstance(c, TimeSignature):
+        elif isinstance(c, TimeSignatureEvent):
             return (c.start_time, 1)
-        elif isinstance(c, KeySignature):
+        elif isinstance(c, KeySignatureEvent):
             return (c.start_time, 2)
-        elif isinstance(c, Tempo):
+        elif isinstance(c, TempoEvent):
             return (c.start_time, 3)
-        elif isinstance(c, Program):
+        elif isinstance(c, ProgramEvent):
             return (c.start_time, 4)
         else:
             return (c.start_time, 5)
@@ -111,17 +111,17 @@ class Measure:
         for ks in track.chirp_song.key_signature_changes:
             if self.start_time <= ks.start_time < end:
                 # Key signature changes must occur at the start of the measure
-                self.events.append(KeySignature(self.start_time, ks.key))
+                self.events.append(KeySignatureEvent(self.start_time, ks.key))
 
         for ts in track.chirp_song.time_signature_changes:
             if self.start_time <= ts.start_time < end:
                 # Time signature changes must occur at the start of the measure
-                self.events.append(TimeSignature(self.start_time, ts.num, ts.denom))
+                self.events.append(TimeSignatureEvent(self.start_time, ts.num, ts.denom))
 
         for tm in track.chirp_song.tempo_changes:
             if self.start_time <= tm.start_time < end:
                 # Tempo changes can happen anywhere in the measure
-                self.events.append(Tempo(tm.start_time, tm.bpm))
+                self.events.append(TempoEvent(tm.start_time, tm.bpm))
 
         self.events = sorted(self.events, key=self.sort_order)
 
@@ -208,22 +208,22 @@ class MChirpSong:
                     raise ChiptuneSAKContentError("No measures left in track %s" % t.name)
 
     def get_time_signature(self, time_in_ticks):
-        current_time_signature = TimeSignature(0, 4, 4)
+        current_time_signature = TimeSignatureEvent(0, 4, 4)
         for m in self.tracks[0].measures:
             if m.start_time > time_in_ticks:
                 break
             else:
-                ts = [e for e in m.events if isinstance(e, TimeSignature)]
+                ts = [e for e in m.events if isinstance(e, TimeSignatureEvent)]
                 current_time_signature = ts[-1] if len(ts) > 0 else current_time_signature
         return current_time_signature
 
     def get_key_signature(self, time_in_ticks):
-        current_key_signature = KeySignature(0, 'C')
+        current_key_signature = KeySignatureEvent(0, 'C')
         for m in self.tracks[0].measures:
             if m.start_time > time_in_ticks:
                 break
             else:
-                ks = [e for e in m.events if isinstance(e, KeySignature)]
+                ks = [e for e in m.events if isinstance(e, KeySignatureEvent)]
                 current_key_signature = ks[-1] if len(ks) > 0 else current_key_signature
         return current_key_signature
 

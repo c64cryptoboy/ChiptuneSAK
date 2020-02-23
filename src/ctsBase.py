@@ -2,17 +2,18 @@ import collections
 from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
+from ctsKey import ChirpKey
 from recordtype import recordtype
 from dataclasses import dataclass
 
 # Named tuple types for several lists throughout
-TimeSignature = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
-KeySignature = collections.namedtuple('KeySignature', ['start_time', 'key'])
-Tempo = collections.namedtuple('Tempo', ['start_time', 'bpm'])
-OtherMidi = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
+TimeSignatureEvent = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
+KeySignatureEvent = collections.namedtuple('KeySignature', ['start_time', 'key'])
+TempoEvent = collections.namedtuple('Tempo', ['start_time', 'bpm'])
+OtherMidiEvent = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
+ProgramEvent = collections.namedtuple('Program', ['start_time', 'program'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
 Rest = collections.namedtuple('Rest', ['start_time', 'duration'])
-Program = collections.namedtuple('Program', ['start_time', 'program'])
 MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_number'])
 
 
@@ -22,8 +23,8 @@ class SongMetadata:
     name: str = ''
     composer: str = ''
     copyright: str = ''
-    time_signature: TimeSignature = TimeSignature(0, 4, 4)
-    key_signature: KeySignature = KeySignature(0, 'C')
+    time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)
+    key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C'))
     bpm: int = 112
 
 

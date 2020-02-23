@@ -24,7 +24,7 @@ OCTAVE_BASE = -1
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
 BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voice'])
 
-# These appear to be the only allowed not durations for C128 BASIC
+# These appear to be the only allowed note durations for C128 BASIC
 basic_durations = {
     Fraction(6, 1): "w.", Fraction(4, 1): 'w',
     Fraction(3, 1): 'h.', Fraction(2, 1): 'h',
@@ -191,7 +191,7 @@ def midi_to_C128_BASIC(mchirp_song):
     ENVELOPE 9,  0,  9,  0,  0,  0           xylophone    
     """
 
-    current_line = 7000 # data might reach line 6740
+    current_line = 7000  # data might reach line 6740
     # Note: U9 = volume 15
     # TODO: For each voice, provide a way to pick (or override) the default envelopes
     result.append('%d play"u9v1t6v2t0v3t0":rem init instruments' % (current_line))
@@ -221,6 +221,7 @@ def midi_to_C128_BASIC(mchirp_song):
     # debug = '\n'.join(line.encode('ascii').decode('petscii-c64en-lc') for line in result)
     return '\n'.join(result)
 
+
 # Convert measure number to a BASIC string name
 def num_to_str_name(num, upper=False):
     if num < 0 or num > 675:
@@ -231,6 +232,7 @@ def num_to_str_name(num, upper=False):
         offset = ord('a')
     str_name = chr((num//26)+offset) + chr((num%26)+offset)
     return str_name
+
 
 # only for debugging
 if __name__ == '__main__':

@@ -4,15 +4,11 @@ import copy
 from fractions import Fraction
 
 from ctsErrors import *
+from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import ChirpSong, Note
 from ctsMChirp import MChirpSong
 import ctsMidi
-
-lp_keys = {'sharps': frozenset(['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#',
-                                'Am', 'Em', 'Bm', 'F#m', 'C#m', 'G#m', 'D#m', 'A#m']),
-           'flats':  frozenset(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb',
-                                'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm', 'Abm'])}
 
 lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
               'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
@@ -112,9 +108,8 @@ def measure_to_lilypond(measure, ppq):
         :return:        Lilypond text encoding the measure content.
     """
     global current_pitch_set, current_clef, current_ottava
+    global current_key_signature, current_time_signature
     measure_contents = []
-    current_time_signature = TimeSignature(0, 4, 4)
-    current_key_signature = KeySignature(0, "C")
     measure_notes = [e.note_num for e in measure.events if isinstance(e, Note)]
     if len(measure_notes) > 0:
         measure_range = (min(measure_notes), max(measure_notes))
@@ -147,30 +142,22 @@ def measure_to_lilypond(measure, ppq):
         elif isinstance(e, MeasureMarker):
             measure_contents.append('|')
 
-        elif isinstance(e, TimeSignature):
+        elif isinstance(e, TimeSignatureEvent):
             if e.num != current_time_signature.num or e.denom != current_time_signature.denom:
                 measure_contents.append('\\time %d/%d' % (e.num, e.denom))
                 current_time_signature = copy.copy(e)
 
-        elif isinstance(e, KeySignature):
-            if e.key != current_key_signature.key:
-                key = e.key
-                key = key.upper()
-                if len(key) > 1:
-                    key = key[0] + key[1:].lower()
-                if key in lp_keys['sharps']:
-                    current_pitch_set = lp_pitches['sharps']
-                elif key in lp_keys['flats']:
-                    current_pitch_set = lp_pitches['flats']
+        elif isinstance(e, KeySignatureEvent):
+            if e.key.key_signature != current_key_signature:
+                key_name = e.key.key_name
+                current_pitch_set = lp_pitches[e.key.accidentals()]
+                key_name.replace('#', 'is')
+                key_name.replace('b', 'es')
+                if e.key.key_signature.type == 'minor':
+                    measure_contents.append('\\key %s \\minor' % (key_name.lower()[:-1]))
                 else:
-                    raise ChiptuneSAKValueError("Illegal key signature %s" % key)
-                key.replace('#', 'is')
-                key.replace('b', 'es')
-                if key[-1] == 'm':
-                    measure_contents.append('\\key %s \\minor' % (key.lower()[:-1]))
-                else:
-                    measure_contents.append('\\key %s \\major' % (key.lower()))
-                current_key_signature = copy.copy(e)
+                    measure_contents.append('\\key %s \\major' % (key_name.lower()))
+                current_key_signature = copy.copy(e.key.key_signature)
 
     return measure_contents
 
@@ -187,14 +174,18 @@ def clip_to_lilypond(mchirp_song, measures):
         :return:         Lilypond text.
     """
     global current_pitch_set, current_clef, current_ottava
+    global current_key_signature, current_time_signature
+    # Set these to the default so that they will change on the first measure.
+    current_time_signature = TimeSignatureEvent(0, 4, 4)
+    current_key_signature = ChirpKey('C').key_signature
     output = []
     ks = mchirp_song.get_key_signature(measures[0].start_time)
     if ks.start_time < measures[0].start_time:
-        measures[0].events.insert(0, KeySignature(measures[0].start_time, ks.key))
+        measures[0].events.insert(0, KeySignatureEvent(measures[0].start_time, ks.key))
 
     ts = mchirp_song.get_time_signature(measures[0].start_time)
     if ts.start_time < measures[0].start_time:
-        measures[0].events.insert(0, TimeSignature(measures[0].start_time, ts.num, ts.denom))
+        measures[0].events.insert(0, TimeSignatureEvent(measures[0].start_time, ts.num, ts.denom))
 
     output.append('\\version "2.18.2"')
     output.append('''
@@ -233,6 +224,10 @@ def song_to_lilypond(mchirp_song, auto_sort=False):
         :return:        Lilypond text for the song.
     """
     global current_pitch_set, current_clef, current_ottava
+    global current_key_signature, current_time_signature
+    # Set these to the default, so that they will change on the first measure.
+    current_time_signature = TimeSignatureEvent(0, 4, 4)
+    current_key_signature = ChirpKey('C').key_signature
     current_pitch_set = lp_pitches['sharps']  # default is sharps
     output = []
     output.append('\\version "2.18.2"')

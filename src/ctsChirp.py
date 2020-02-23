@@ -13,6 +13,7 @@ import bisect
 import more_itertools as moreit
 from ctsErrors import *
 from ctsConstants import *
+from ctsKey import ChirpKey
 from ctsBase import *
 
 class Note:
@@ -83,7 +84,7 @@ class ChirpTrack:
                         else:
                             self.notes.append(new_note)
                             continued_note = None
-                elif isinstance(e, OtherMidi):
+                elif isinstance(e, OtherMidiEvent):
                     self.other.append(e)
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         self.other.sort(key=lambda n: n.start_time)
@@ -136,7 +137,7 @@ class ChirpTrack:
 
         # Quantize the other MIDI messages in the track
         for i, m in enumerate(self.other):
-            self.other[i] = OtherMidi(quantize_fn(m.start_time, self.qticks_notes), m.msg)
+            self.other[i] = OtherMidiEvent(quantize_fn(m.start_time, self.qticks_notes), m.msg)
 
         # Return the statistics about changes
         return (note_start_changes, duration_changes)
@@ -202,7 +203,7 @@ class ChirpTrack:
         # Change the start times of all the "other" events
         for i, (t, m) in enumerate(self.other):
             t = (t * num) // denom
-            self.other[i] = OtherMidi(t, m)
+            self.other[i] = OtherMidiEvent(t, m)
 
         # Change all the note start times and durations
         for i, n in enumerate(self.notes):
@@ -217,7 +218,7 @@ class ChirpTrack:
         """
         for i, (t, m) in enumerate(self.other):
             t = int(round(t * scale_factor, 0))
-            self.other[i] = OtherMidi(t, m)
+            self.other[i] = OtherMidiEvent(t, m)
         # Change all the note start times and durations
         for i, n in enumerate(self.notes):
             n.start_time = int(round(n.start_time * scale_factor, 0))
@@ -234,7 +235,7 @@ class ChirpTrack:
         """
         for i, (t, m) in enumerate(self.other):
             t = max(t + offset_ticks, 0)
-            self.other[i] = OtherMidi(t, m)
+            self.other[i] = OtherMidiEvent(t, m)
         # Change all the note start times and durations
         for i, n in enumerate(self.notes):
             n.start_time = max(n.start_time + offset_ticks, 0)
@@ -285,9 +286,9 @@ class ChirpSong:
         # Now transfer over key signature, time signature, and tempo changes
         # these are stored inside measures for ALL tracks so we only have to extract them from one.
         t = mchirp_song.tracks[0]
-        self.time_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, TimeSignature)]
-        self.key_signature_changes= [e for m in t.measures for e in m.events if isinstance(e, KeySignature)]
-        self.tempo_changes = [e for m in t.measures for e in m.events if isinstance(e, Tempo)]
+        self.time_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, TimeSignatureEvent)]
+        self.key_signature_changes= [e for m in t.measures for e in m.events if isinstance(e, KeySignatureEvent)]
+        self.tempo_changes = [e for m in t.measures for e in m.events if isinstance(e, TempoEvent)]
         self.other = copy.deepcopy(mchirp_song.other)
 
     def estimate_quantization(self):
@@ -327,13 +328,13 @@ class ChirpSong:
             self.stats['Duration Deltas'].update(duration_changes)
 
         for i, m in enumerate(self.tempo_changes):
-            self.tempo_changes[i] = Tempo(quantize_fn(m.start_time, self.qticks_notes), m.bpm)
+            self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.bpm)
         for i, m in enumerate(self.time_signature_changes):
-            self.time_signature_changes[i] = TimeSignature(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
+            self.time_signature_changes[i] = TimeSignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
         for i, m in enumerate(self.key_signature_changes):
-            self.key_signature_changes[i] = KeySignature(quantize_fn(m.start_time, self.qticks_notes), m.key)
+            self.key_signature_changes[i] = KeySignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.key)
         for i, m in enumerate(self.other):
-            self.other[i] = OtherMidi(quantize_fn(m.start_time, self.qticks_notes), m.msg)
+            self.other[i] = OtherMidiEvent(quantize_fn(m.start_time, self.qticks_notes), m.msg)
 
     def quantize_from_note_name(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
         """
@@ -397,21 +398,22 @@ class ChirpSong:
         for t in self.tracks:
             t.remove_control_notes(control_max)
 
-    def transpose(self, semitones):
+    def transpose(self, semitones, minimize_accidentals=True):
         """
         Transposes the song by semitones
             :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
         """
         # First, transpose key signatures
         for ik, ks in enumerate(self.key_signature_changes):
-            for key_type in ['major', 'minor']:
-                if ks.key in KEYS[key_type]:
-                    idx = KEYS[key_type].index(ks.key)
-                    idx = (idx + semitones) % 12
-                    self.key_signature_changes[ik] = KeySignature(ks.start_time, KEYS[key_type][idx])
+            new_key = ks.key.transpose(semitones)
+            if minimize_accidentals:
+                new_key.minimize_accidentals()
+            self.key_signature_changes[ik] = KeySignatureEvent(ks.start_time, new_key)
+            if ik == 0:
+                self.metadata.key_signature = self.key_signature_changes[0]
 
         # Now transpose the tracks
-        for it, t in self.tracks:
+        for it, t in enumerate(self.tracks):
             self.tracks[it].transpose(semitones)
 
     def modulate(self, num, denom):
@@ -428,21 +430,29 @@ class ChirpSong:
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
             #  by multiplying by 3/2
             t, n, d = ts
-            self.time_signature_changes[i] = TimeSignature((t * num) // denom, n * num, d * denom)
+            new_time_signature = (n * num, d * denom)
+            if num < denom:
+                if all((v % 4) == 0 for v in new_time_signature):
+                    factor = new_time_signature[1] // 4
+                    if all((v % factor) == 0 for v in new_time_signature):
+                        new_time_signature = (v // factor for v in new_time_signature)
+            self.time_signature_changes[i] = TimeSignatureEvent((t * num) // denom, *new_time_signature)
+            if i == 0:
+                self.metadata.time_signature = self.time_signature_changes[0]
         # Now the key signatures
         for i, ks in enumerate(self.key_signature_changes):
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
             #  by multiplying by 3/2
             t, k = ks
-            self.key_signature_changes[i] = KeySignature((t * num) // denom, k)
+            self.key_signature_changes[i] = KeySignatureEvent((t * num) // denom, k)
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
             t, bpm = tm
-            self.tempo_changes[i] = Tempo((t * num) // denom, (bpm * num) // denom)
+            self.tempo_changes[i] = TempoEvent((t * num) // denom, (bpm * num) // denom)
         # Now all the rest of the meta messages
         for i, ms in enumerate(self.other):
             t, m = ms
-            self.other[i] = OtherMidi((t * num) // denom, m)
+            self.other[i] = OtherMidiEvent((t * num) // denom, m)
         # Finally, modulate each track
         for i, _ in enumerate(self.tracks):
             self.tracks[i].modulate(num, denom)
@@ -462,19 +472,19 @@ class ChirpSong:
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
             #  by multiplying by 3/2
             t = int(round(ts.start_time * scale_factor, 0))
-            self.time_signature_changes[i] = TimeSignature(t, ts.num, ts.denom)
+            self.time_signature_changes[i] = TimeSignatureEvent(t, ts.num, ts.denom)
         # Now the key signature changes
         for i, ks in enumerate(self.key_signature_changes):
             t = int(round(ks.start_time * scale_factor, 0))
-            self.key_signature_changes[i] = KeySignature(t, ks.key)
+            self.key_signature_changes[i] = KeySignatureEvent(t, ks.key)
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
             t = int(round(tm.start_time * scale_factor, 0))
-            self.tempo_changes[i] = Tempo(t, tm.bpm)
+            self.tempo_changes[i] = TempoEvent(t, tm.bpm)
         # Now all the rest of the meta messages
         for i, ms in enumerate(self.other):
             t = int(round(ms.start_time * scale_factor, 0))
-            self.other[i] = OtherMidi(t, ms.msg)
+            self.other[i] = OtherMidiEvent(t, ms.msg)
         # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
         self.qticks_notes = int(round(self.qticks_notes * scale_factor, 0))
         self.qticks_durations = int(round(self.qticks_durations * scale_factor, 0))
@@ -493,19 +503,19 @@ class ChirpSong:
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
             #  by multiplying by 3/2
             t = max(ts.start_time + offset_ticks, 0)
-            self.time_signature_changes[i] = TimeSignature(t, ts.num, ts.denom)
+            self.time_signature_changes[i] = TimeSignatureEvent(t, ts.num, ts.denom)
         # Now the key signature changes
         for i, ks in enumerate(self.key_signature_changes):
             t = max(ks.start_time + offset_ticks, 0)
-            self.key_signature_changes[i] = KeySignature(t, ks.key)
+            self.key_signature_changes[i] = KeySignatureEvent(t, ks.key)
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
             t = max(tm.start_time + offset_ticks, 0)
-            self.tempo_changes[i] = Tempo(t, tm.bpm)
+            self.tempo_changes[i] = TempoEvent(t, tm.bpm)
         # Now all the rest of the meta messages
         for i, ms in enumerate(self.other):
             t = max(ms.start_time + offset_ticks, 0)
-            self.other[i] = OtherMidi(t, ms.msg)
+            self.other[i] = OtherMidiEvent(t, ms.msg)
         # Finally, offset each track
         for i, _ in enumerate(self.tracks):
             self.tracks[i].move_ticks(offset_ticks)
@@ -516,7 +526,7 @@ class ChirpSong:
             :param bpm:
         """
         self.metadata.bpm = bpm
-        self.tempo_changes = [Tempo(0, bpm)]
+        self.tempo_changes = [TempoEvent(0, bpm)]
 
     def set_time_signature(self, num, denom):
         """
@@ -524,14 +534,14 @@ class ChirpSong:
             :param num:
             :param denom:
         """
-        self.time_signature_changes = [TimeSignature(0, num, denom)]
+        self.time_signature_changes = [TimeSignatureEvent(0, num, denom)]
 
-    def set_key_signature(self, key):
+    def set_key_signature(self, new_key):
         """
         Sets the key signature for the entire song.  Any existing key signatures and changes will be removed.
             :param key:
         """
-        self.key_signature_changes = [KeySignature(0, key)]
+        self.key_signature_changes = [KeySignatureEvent(0, ChirpKey(new_key))]
 
     def end_time(self):
         """

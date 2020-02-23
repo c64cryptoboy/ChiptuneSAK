@@ -63,9 +63,9 @@ def ml64_sort_order(c):
         return (c.start_time, 10)
     elif isinstance(c, MeasureMarker):
         return (c.start_time, 1)
-    elif isinstance(c, Tempo):
+    elif isinstance(c, TempoEvent):
         return (c.start_time, 3)
-    elif isinstance(c, Program):
+    elif isinstance(c, ProgramEvent):
         return (c.start_time, 2)
     else:
         return (c.start_time, 5)
@@ -105,7 +105,7 @@ def export_chirp_to_ml64(chirp_song, format='standard'):
             track_events.append(n)
             last_note_end = n.start_time + n.duration
         for p in [m for m in t.other if m.msg.type == 'program_change']:
-            track_events.append(Program(p.start_time, str(p.msg.program)))
+            track_events.append(ProgramEvent(p.start_time, str(p.msg.program)))
         if mode == 's':  # Add measures for standard format
             last_note_end = max(n.start_time + n.duration for t in chirp_song.tracks for n in t.notes)
             measures = [m.start_time for m in chirp_song.measure_beats if m.beat == 1]
@@ -174,10 +174,10 @@ def events_to_ml64(events, song, last_continue=False):
             stats['rest'] += tmp_note.count('r(')
         elif isinstance(e, MeasureMarker):
             content.append('[m%d]' % e.measure_number)
-        elif isinstance(e, OtherMidi) and e.msg.type == 'program_change':  # Here because not explicitly in measure
+        elif isinstance(e, OtherMidiEvent) and e.msg.type == 'program_change':  # Here because not explicitly in measure
             content.append('i(%s)' % e.msg.program)
             stats['program'] += 1
-        elif isinstance(e, Program):
+        elif isinstance(e, ProgramEvent):
             content.append('i(%s)' % e.program)
             stats['program'] += 1
     return (content, stats, last_continue)

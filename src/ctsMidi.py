@@ -2,6 +2,7 @@ import sys
 import mido
 from ctsErrors import *
 from ctsConstants import *
+from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import Note, ChirpTrack, ChirpSong
 
@@ -67,7 +68,7 @@ def midi_track_to_chirp_track(chirp_song, midi_track):
                 current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
         # Other messages of interest in the track are stored in a separate list as native MIDI messages
         elif msg.is_meta or (msg.type in ChirpTrack.other_message_types):
-            chirp_track.other.append(OtherMidi(current_time, msg))
+            chirp_track.other.append(OtherMidiEvent(current_time, msg))
     #  Turn off any notes left on
     for n in current_notes_on:
         start = current_notes_on[n].start_time
@@ -162,11 +163,11 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
     for msg in meta_track:
         current_time += msg.time
         if msg.type == 'time_signature':
-            chirp_song.time_signature_changes.append(TimeSignature(current_time, msg.numerator, msg.denominator))
+            chirp_song.time_signature_changes.append(TimeSignatureEvent(current_time, msg.numerator, msg.denominator))
         elif msg.type == 'set_tempo':
-            chirp_song.tempo_changes.append(Tempo(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
+            chirp_song.tempo_changes.append(TempoEvent(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
         elif msg.type == 'key_signature':
-            chirp_song.key_signature_changes.append(KeySignature(current_time, msg.key))
+            chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, ChirpKey(msg.key)))
         elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
             chirp_song.metadata.name = msg.name.strip()
             is_name_set = True
@@ -179,17 +180,17 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
         # Keep meta events from tracks without notes
         # Note that these events are stored as midi messages with the global time attached.
         elif msg.is_meta and is_metatrack:
-            chirp_song.other.append(OtherMidi(current_time, msg))
+            chirp_song.other.append(OtherMidiEvent(current_time, msg))
 
     # Require initial time signature, key signature, and tempo values.
     if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
-        chirp_song.key_signature_changes.insert(0, KeySignature(0, "C"))  # Default top key of C
+        chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, ChirpKey("C")))  # Default top key of C
     chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
     if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
-        chirp_song.time_signature_changes.insert(0, TimeSignature(0, 4, 4))  # Default to 4/4
-    chirp_song.metadata.time_signature= chirp_song.time_signature_changes[0]
+        chirp_song.time_signature_changes.insert(0, TimeSignatureEvent(0, 4, 4))  # Default to 4/4
+    chirp_song.metadata.time_signature = chirp_song.time_signature_changes[0]
     if len(chirp_song.tempo_changes) == 0 or chirp_song.tempo_changes[0].start_time != 0:
-        chirp_song.tempo_changes.insert(0, Tempo(0, int(mido.tempo2bpm(500000))))
+        chirp_song.tempo_changes.insert(0, TempoEvent(0, int(mido.tempo2bpm(500000))))
     chirp_song.metadata.bpm = chirp_song.tempo_changes[0].bpm
 
     return chirp_song
@@ -269,7 +270,7 @@ def meta_to_midi_track(chirp_song):
         events.append(mido.MetaMessage('copyright', text=chirp_song.metadata.copyright, time=0))
     #  Put all the time signature changes into the track.
     for t, key in chirp_song.key_signature_changes:
-        events.append(mido.MetaMessage('key_signature', key=key, time=t))
+        events.append(mido.MetaMessage('key_signature', key=key.key_name, time=t))
     #  Put all the time signature changes into the track.
     for t, numerator, denominator in chirp_song.time_signature_changes:
         events.append(mido.MetaMessage('time_signature', numerator=numerator, denominator=denominator, time=t))
