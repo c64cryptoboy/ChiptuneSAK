@@ -24,6 +24,9 @@ class TestExportLilypond(unittest.TestCase):
         test_ly = ctsLilypond.clip_to_lilypond(m_song, m_song.tracks[0].measures[3:8])
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 
+        with open('test.ly', 'w') as f:
+            f.write(test_ly)
+
         self.assertEqual(known_good_ly_hash, test_ly_hash)
 
 

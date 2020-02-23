@@ -79,7 +79,7 @@ class SongTestCase(unittest.TestCase):
 
         self.assertTrue(all(n.note_num - o.note_num == test_transpose for o, n in zip(orig_notes, test_notes)))
 
-        orig_key_offset = self.test_song.metadata.key_signature.key.key.offset
-        test_key_offset = test_song_transposed.metadata.key_signature.key.key.offset
+        orig_key_offset = self.test_song.metadata.key_signature.key.key_signature.offset
+        test_key_offset = test_song_transposed.metadata.key_signature.key.key_signature.offset
 
         self.assertTrue((test_key_offset - orig_key_offset) % 12 == test_transpose % 12)
