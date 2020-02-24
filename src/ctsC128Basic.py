@@ -151,8 +151,6 @@ def measures_to_basic(mchirp_song):
                 last_duration = e.duration
 
         finished_basic_line = (''.join(measure_commands) + ' m').strip()
-        if len(finished_basic_line) > BASIC_LINE_MAX_C128:
-            raise ChiptuneSAKContentError("C128 BASIC line too long")
         commands.append(finished_basic_line)
 
     return commands
@@ -170,11 +168,19 @@ def midi_to_C128_BASIC(mchirp_song):
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
     # TODO: Don't hardcode this value
-    result.append('%d tempo 10' % (current_line))
+    result.append('%d tempo 14' % (current_line))
 
     current_line = 100
     for measure_num, s in enumerate(basic_strings):
-        result.append('%d %s$="%s"' % (current_line, num_to_str_name(measure_num), s))
+        tmp_line = '%d %s$="%s"' % (current_line, num_to_str_name(measure_num), s)
+        if len(tmp_line) >= BASIC_LINE_MAX_C128:
+            # it's ok if space removed between line number and first character
+            tmp_line = tmp_line.replace(" ", "")
+            # If the line is still too long...
+            if len(tmp_line) >= BASIC_LINE_MAX_C128:
+                raise ChiptuneSAKContentError("C128 BASIC line too long")
+        result.append(tmp_line)
+
         current_line += 10
 
     # Here's the envelope commands that would have created the set of defaults:
@@ -216,6 +222,7 @@ def midi_to_C128_BASIC(mchirp_song):
             line_buf = []
             current_line += 10
         line_buf.append("play %s$" % (num_to_str_name(measure_num)))
+
     if len(line_buf) > 0:
         result.append('%d %s' % (current_line, ':'.join(line_buf)))
         current_line += 10

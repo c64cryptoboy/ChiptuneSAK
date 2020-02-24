@@ -4,9 +4,10 @@
 # Does not implement a grammar for BASIC, so no grammar checking, but will generate a valid PRG
 # for a valid ascii BASIC program
 #
-# TODO?: Probably don't want to implement a syntax for control characters (e.g. {CYN})
-#    https://www.c64-wiki.com/wiki/control_character
-#    Currently, one must simply use the petscii byte with the correct control code value
+# TODO
+# - Probably don't want to implement a syntax for control characters (e.g. {CYN})
+#   https://www.c64-wiki.com/wiki/control_character
+#   Currently, one must simply use the petscii byte with the correct control code value
 
 """
 Some notes on Commodore BASIC:
@@ -19,8 +20,10 @@ Some notes on Commodore BASIC:
 """
 
 import sys
-import ctsConstants
+from ctsConstants import BASIC_START_C64, BASIC_START_C128, BASIC_LINE_MAX_C64, \
+    BASIC_LINE_MAX_VIC20, BASIC_LINE_MAX_C128
 from ctsBytesUtil import little_endian_bytes, hexdump
+from ctsErrors import ChiptuneSAKContentError
 
 rem_len = len('rem')
 
@@ -126,14 +129,14 @@ def find_1st_rem_outside_quotes(line):
 
 
 def ascii_to_prg_c128(ascii_prg):
-    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C128, c128_tokens)
+    return ascii_to_prg(ascii_prg, BASIC_START_C128, BASIC_LINE_MAX_C128, c128_tokens)
 
 
 def ascii_to_prg_c64(ascii_prg):
-    return ascii_to_prg(ascii_prg, ctsConstants.BASIC_START_C64, c128_tokens)
+    return ascii_to_prg(ascii_prg, BASIC_START_C64, BASIC_LINE_MAX_C64, c64_tokens)
 
 
-def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
+def ascii_to_prg(ascii_prg, start_of_basic, max_line_len, basic_tokens):
     mem_pointer = start_of_basic
 
     # prg file load addr, gets stripped off during load
@@ -141,12 +144,16 @@ def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
     
     lines = ascii_prg.strip().split("\n")
     for line in lines:
-        tokenized_line = bytearray()
+        if len(line) > max_line_len:
+            raise ChiptuneSAKContentError('BASIC line too long\n"%s"' % line)
 
-        # strip off the line number
-        (line_num, line) = line.split(" ", 1) # lazy coding assumes a space delimiter in the ascii BASIC
-        line_num = int(line_num)
-        line = line.lstrip()
+        # strip off the line number (may or may not be a space following line number)
+
+        i = 0
+        while line[i].isdigit():
+            i+=1
+        line_num = int(line[:i])
+        line = line[i:].lstrip()
 
         # Anything to the right of a REM doesn't get tokenized
         rem_split_loc = find_1st_rem_outside_quotes(line)
@@ -157,6 +164,7 @@ def ascii_to_prg(ascii_prg, start_of_basic, basic_tokens):
             remBytes = b''
 
         # divide up line into parts that do and don't get tokenized
+        tokenized_line = bytearray()
         for i, part in enumerate(line.split('"')):
             part = bytearray(part + '"', 'latin-1') # add the split char back in
             if i%2 == 0: # if outside quotes, then tokenize
