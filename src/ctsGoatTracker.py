@@ -1,10 +1,6 @@
 # Code to import and export goattracker .sng files
 # 
-# Prereqs
-#    pip install recordtype
-#    pip install sortedcontainers
-#
-# Note: this file combines what used to be in src\ctsGTImport.py and sandbox\ctsGTExport.py 
+# Note: this file combines what used to be in src\ctsGTImport.py and sandbox\ctsGTExport.py
 #
 # TODOs:
 # - test a .sng file import with subtune number > 1
@@ -17,9 +13,9 @@ import copy
 import math
 from fractions import Fraction
 from functools import reduce, partial
-from recordtype import recordtype
-from sortedcontainers import SortedDict
-from ctsConstants import NTSC_FRAMES_PER_SEC, PAL_FRAMES_PER_SEC
+from dataclasses import dataclass
+from collections import defaultdict
+from ctsConstants import FRAME_RATE
 import ctsChirp
 import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
@@ -43,18 +39,52 @@ GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF # order list restart marker
 GT_PAT_END = 0xFF # pattern end
 
-GtPatternRow = recordtype('GtPatternRow',
-    [('note_data', GT_REST), ('inst_num', 0), ('command', 0), ('command_data', 0)])
+@dataclass
+class GtPatternRow:
+    note_data: int = GT_REST
+    inst_num: int = 0
+    command: int = 0
+    command_data: int = 0
 
-PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST) 
+@dataclass
+class GtHeader:
+    id: str = ''
+    song_name: str = ''
+    author_name: str = ''
+    copyright: str = ''
+    num_subtunes: int = 0
+
+@dataclass
+class GtTable:
+    row_cnt: int = 0
+    left_col: bytes = b''
+    right_col: bytes = b''
+
+@dataclass
+class GtInstrument:
+    inst_num: int = 0
+    attack_decay: int = 0
+    sustain_release: int = 0
+    wave_ptr: int = 0
+    pulse_ptr: int = 0
+    filter_ptr: int = 0
+    vib_speedtable_ptr: int = 0
+    vib_delay: int = 0
+    gateoff_timer: int = 0x02
+    hard_restart_1st_frame_wave: int = 0x09
+    inst_name: str = ''
+
+PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
 
 PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
 
-GtInstrument = recordtype('GtInstrument',
-    [('inst_num', 0), ('attack_decay', 0), ('sustain_release', 0), ('wave_ptr', 0), ('pulse_ptr', 0),
-    ('filter_ptr', 0), ('vib_speedtable_ptr', 0), ('vib_delay', 0), ('gateoff_timer', 0x02),
-    ('hard_restart_1st_frame_wave', 0x09), ('inst_name', '')])
-
+# TimeEntry instances are values where key is tick
+# Over time, might add other commands to this as well (funktempo, Portamento, etc.)
+@dataclass
+class TimeEntry:
+    note: int = None
+    note_on: bool = None
+    tempo: int = None
 
 class GTSong:
     def __init__(self):
@@ -66,21 +96,6 @@ class GTSong:
         self.filter_table = GtTable()
         self.speed_table = GtTable()
         self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances        
-
-
-GtHeader = recordtype('GtHeader',
-    [('id', ''), ('song_name', ''), ('author_name', ''), ('copyright', ''), ('num_subtunes', 0)])
-
-GtTable = recordtype('GtTable',
-    [('row_cnt', 0), ('left_col', b''), ('right_col', b'')])
-
-
-# TimeEntry instances are values in SortedDict where key is tick
-# Over time, might add other commands to this as well (funktempo, Portamento, etc.)
-TimeEntry = recordtype('TimeEntry',
-    [('note', None), # midi note number
-    ('note_on', None), # True for note on, False for note off, or None (when no note)
-    ('tempo', None)]) # shows when the tempo changed (which affected note time placement)
 
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
@@ -519,7 +534,7 @@ def convert_to_note_events(sng_data, subtune_num):
     # init state holders for each channel
     GtChannelState.set_song(sng_data)
     channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for i in range(3)]
-    channels_time_events = [SortedDict() for i in range(3)]
+    channels_time_events = [defaultdict(TimeEntry) for i in range(3)]
 
     global_tick = -1
     while not all(cs.restarted for cs in channels_state):
@@ -542,23 +557,23 @@ def convert_to_note_events(sng_data, subtune_num):
 
             # KeyOff (and there's a curr_note defined)
             if channel_state.row_has_key_off:
-                channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
+                channel_time_events[global_tick].note = channel_state.curr_note
                 channel_time_events[global_tick].note_on = False
 
             # KeyOn (and there's a curr_note defined)
             if channel_state.row_has_key_on:
-                channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
+                channel_time_events[global_tick].note = channel_state.curr_note
                 channel_time_events[global_tick].note_on = True
 
             # if note_data is an actual note
             elif channel_state.row_has_note:
-                channel_time_events.setdefault(global_tick, TimeEntry()).note = channel_state.curr_note
+                channel_time_events[global_tick].note = channel_state.curr_note
                 channel_time_events[global_tick].note_on = True
             
             # process tempo changes
 
             if channel_state.local_tempo_update is not None:
-                channel_time_events.setdefault(global_tick, TimeEntry()).tempo = channel_state.local_tempo_update
+                channel_time_events[global_tick].tempo = channel_state.local_tempo_update
 
             elif channel_state.global_tempo_update is not None:
                 global_tempo_change = channel_state.global_tempo_update
@@ -576,7 +591,7 @@ def convert_to_note_events(sng_data, subtune_num):
                     cs.row_ticks_left = global_tempo_change
 
                 cs.curr_tempo = global_tempo_change
-                channels_time_events[j].setdefault(global_tick, TimeEntry()).tempo = global_tempo_change
+                channels_time_events[j][global_tick].tempo = global_tempo_change
 
     # Create note offs when all channels have hit their orderlist restart one or more times
     #    Ok, cheesy hack here.  The loop above repeats until all tracks have had a chance to restart, but it
@@ -588,8 +603,7 @@ def convert_to_note_events(sng_data, subtune_num):
         reversed_index.sort(reverse=True)
         for index in reversed_index[1:]:
             if channels_time_events[i][index].note is not None:
-                channels_time_events[i].setdefault(global_tick, TimeEntry()).note = \
-                    channels_time_events[i][index].note
+                channels_time_events[i][global_tick].note = channels_time_events[i][index].note
                 channels_time_events[i][global_tick].note_on = False
                 break
 
@@ -698,7 +712,7 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER_SEC):
+def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], rate='NTSC'):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -742,7 +756,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     # TODO: This simple transformation will need to be changed when it's time
     #       to incorporate music compression, mid-tune tempo changes, etc.
     DEFAULT_INSTRUMENT = 1
-    channels_rows = [SortedDict() for i in range(3)]
+    channels_rows = [defaultdict(GtPatternRow) for i in range(3)]
     for i, track in enumerate(export_tracks):
         channel_row = channels_rows[i]
         for note in track.notes:
@@ -755,24 +769,24 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
             global_row_end = int((note.start_time + note.duration) / required_tick_granularity)
 
             # insert or update a pattern row
-            channel_row.setdefault(global_row_start, GtPatternRow()).note_data=note_num
+            channel_row[global_row_start].note_data = note_num
             # update that pattern row
-            channel_row[global_row_start].inst_num=DEFAULT_INSTRUMENT
+            channel_row[global_row_start].inst_num = DEFAULT_INSTRUMENT
 
             # Since we get the notes in order, this note end is very likely to be overwritten
             # later by the next note (this is good)
-            channel_row.setdefault(global_row_end, GtPatternRow()).note_data=GT_KEY_OFF
+            channel_row[global_row_end].note_data = GT_KEY_OFF
 
     # Inject tempo updates here
     # TODO: Someday, inject tempo updates where needed.  For right now, just set the initial tempo.
     # TODO: Initial tempo should be set by logic, not hardcoded like this, which injects global tempo 6
     #       into channel 0 at row 0 (row 0 will belong to the first pattern later).
-    channels_rows[0].setdefault(0, GtPatternRow()).command=0x0F # tempo change command
+    channels_rows[0][0].command = 0x0F  # tempo change command
     # $03-$7F sets tempo on all channels
     # $83-$FF only on current channel (subtract $80 to get actual tempo)
     min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_tick_granularity
     print('Rows per beat = %d' % min_rows_per_beat)
-    jiffies_per_beat= int(jiffy / (song.metadata.bpm / 60) + 0.5) # jiffies per sec / bps
+    jiffies_per_beat = int(FRAME_RATE[rate] / (song.metadata.bpm / 60) + 0.5)  # jiffies per sec / bps
     print('bpm = %d, jiffies/beat = %d' % (song.metadata.bpm, jiffies_per_beat))
     rows_per_beat = min_rows_per_beat
     jiffies_per_row = jiffies_per_beat // rows_per_beat
@@ -789,7 +803,7 @@ def chirp_to_GT(song, out_filename, tracknums = [1, 2, 3], jiffy=NTSC_FRAMES_PER
     for i, channel_rows in enumerate(channels_rows):
         pattern_row_index = 0
         pattern = bytearray()
-        max_row = channel_rows.keys()[-1]
+        max_row = max(channel_rows)
         for j in range(max_row+1): # iterate across row num span (inclusive)
             if j in channel_rows:
                 pattern += row_to_bytes(channel_rows[j])

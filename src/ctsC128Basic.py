@@ -9,9 +9,8 @@ import os
 import math
 import collections
 from fractions import Fraction
-#import cbmcodecs
 import ctsMidi
-from ctsConstants *
+from ctsConstants import *
 from ctsBase import Rest
 from ctsChirp import Note
 from ctsMChirp import MChirpSong
