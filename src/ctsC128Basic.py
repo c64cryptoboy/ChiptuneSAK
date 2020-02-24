@@ -167,8 +167,8 @@ def midi_to_C128_BASIC(mchirp_song):
     result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
-    # TODO: Don't hardcode this value
-    result.append('%d tempo 14' % (current_line))
+    tempo = (mchirp_song.metadata.bpm * mchirp_song.metadata.time_signature.denom / 4) // 12
+    result.append('%d tempo %d' % (current_line, tempo))
 
     current_line = 100
     for measure_num, s in enumerate(basic_strings):
