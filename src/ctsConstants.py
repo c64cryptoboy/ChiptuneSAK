@@ -43,6 +43,7 @@ BASIC_LINE_MAX_C128 = 160 # 4 lines of 40 col
 # 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
 # so a row becomes a 16th note
 
+FRAME_RATE = {'NTSC': 59.94, 'PAL': 50.00}
 NTSC_FRAMES_PER_SEC = 59.94
 PAL_FRAMES_PER_SEC = 50.0
 NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC # 16.68335002ms

@@ -11,7 +11,7 @@ import collections
 from fractions import Fraction
 #import cbmcodecs
 import ctsMidi
-from ctsConstants import PITCHES, BASIC_LINE_MAX_C128
+from ctsConstants *
 from ctsBase import Rest
 from ctsChirp import Note
 from ctsMChirp import MChirpSong
@@ -19,6 +19,7 @@ from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 import ctsGenPrg
 
 OCTAVE_BASE = -1
+WHOLE_NOTE = 1152
 
 # These types are similar to standard notes and rests but with voice added
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
@@ -156,7 +157,7 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-def midi_to_C128_BASIC(mchirp_song):
+def midi_to_C128_BASIC(mchirp_song, arch='NTSC'):
     """
     Convert mchirp into a C128 Basic program that plays the song.
     """
@@ -167,7 +168,8 @@ def midi_to_C128_BASIC(mchirp_song):
     result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
-    tempo = (mchirp_song.metadata.bpm * mchirp_song.metadata.time_signature.denom / 4) // 12
+    tempo = mchirp_song.metadata.bpm * WHOLE_NOTE / FRAME_RATE[arch] / 60 / mchirp_song.metadata.time_signature.denom
+    tempo = int(tempo + 0.5)
     result.append('%d tempo %d' % (current_line, tempo))
 
     current_line = 100
