@@ -656,7 +656,7 @@ def convert_to_chirp(channels_time_events, song_name):
         track.name = 'Track %d' % (it + 1)
         track.channel = it
         current_note = None
-        for tick, event in channel_data.items():
+        for tick, event in sorted(channel_data.items()):
             midi_tick = tick_to_miditick(tick)
             if event.note_on:
                 if current_note:
