@@ -4,6 +4,8 @@
 #    pip install recordtype
 #    pip install sortedcontainers
 #
+# Note: this file combines what used to be in src\ctsGTImport.py and sandbox\ctsGTExport.py 
+#
 # TODOs:
 # - test a .sng file import with subtune number > 1
 # - Add instrument file loader to use with channels on exports

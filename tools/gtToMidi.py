@@ -6,7 +6,7 @@
 from os import path
 import toolsPath
 import argparse
-import ctsGTImport
+import ctsGoatTracker
 import ctsMidi
 
 def main():
@@ -22,7 +22,7 @@ def main():
         parser.error(r'Expecting input filename that ends in ".sng"')
     if not path.exists(args.sng_in_file):
         parser.error('Cannot find "%s"' % args.sng_in_file)
-    sng_data = ctsGTImport.import_sng(args.sng_in_file)
+    sng_data = ctsGoatTracker.import_sng(args.sng_in_file)
 
     if args.subtune_number < 1:
         parser.error('subtune_number must be >= 1')
@@ -30,9 +30,9 @@ def main():
     if args.subtune_number > max_subtune_number:
         parser.error('subtune_number must be <= %d' % max_subtune_number)
      
-    channels_time_events = ctsGTImport.convert_to_note_events(sng_data, args.subtune_number - 1)
+    channels_time_events = ctsGoatTracker.convert_to_note_events(sng_data, args.subtune_number - 1)
 
-    chirp_song = ctsGTImport.convert_to_chirp(channels_time_events, sng_data.headers.song_name)
+    chirp_song = ctsGoatTracker.convert_to_chirp(channels_time_events, sng_data.headers.song_name)
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
     #ts = ctsSong.TimeSignature(0, 3, 4)
     #chirp_song.time_signature_changes.insert(0, ts)

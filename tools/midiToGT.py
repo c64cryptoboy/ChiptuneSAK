@@ -7,7 +7,7 @@ from os import path
 import toolsPath
 import argparse
 import ctsChirp
-import ctsGTExport
+import ctsGoatTracker
 import ctsMidi
 
 def main():
@@ -30,7 +30,7 @@ def main():
     #song.quantize_from_note_name("16")
     song.remove_polyphony()
 
-    gt_binary = ctsGTExport.chirp_to_GT(song, args.sng_out_file)
+    gt_binary = ctsGoatTracker.chirp_to_GT(song, args.sng_out_file)
     
     with open(args.sng_out_file, 'wb') as out_file:
         out_file.write(gt_binary)
