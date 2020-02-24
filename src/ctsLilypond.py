@@ -100,6 +100,20 @@ def ottava(note_num, clef, current_ottava):
     return ottava
 
 
+def avg_pitch(track):
+    """
+    Gives the average pitch for a track
+
+        :param track: an MChirpTrack
+        :return: average pitch as MIDI note number
+    """
+    total = sum(n.note_num for measure in track.measures for n in measure.events if isinstance(n, Note))
+    number = sum(1 for measure in track.measures for n in measure.events if isinstance(n, Note))
+    if number == 0:
+        raise ChiptuneSAKContentError("Track %s has no notes" % track.name)
+    return total / number
+
+
 def measure_to_lilypond(measure, ppq):
     """
     Converts contents of a measure into Lilypond text
@@ -206,12 +220,6 @@ def clip_to_lilypond(mchirp_song, measures):
     output.append('}')
     return '\n'.join(output)
 
-def avg_pitch(track):
-    total = sum(n.note_num for measure in track.measures for n in measure.events if isinstance(n, Note))
-    number = sum(1 for measure in track.measures for n in measure.events if isinstance(n, Note))
-    if number == 0:
-        raise ChiptuneSAKContentError("Track %s has no notes" % track.name)
-    return total / number
 
 def song_to_lilypond(mchirp_song, auto_sort=False):
     """
