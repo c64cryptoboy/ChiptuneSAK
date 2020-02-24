@@ -16,7 +16,7 @@ def main():
     parser.add_argument('-x', '--moveticks', type=int, help='move ticks')
     parser.add_argument('-p', '--ppq', type=int, help='set ppq')
     parser.add_argument('-m', '--modulate', type=str, help='modulate by n/d')
-    parser.add_argument('-t', '--transpose', type=int, help='transpose by semitones (> 10x is -x)')
+    parser.add_argument('-t', '--transpose', type=str, help='transpose by semitones (uXX or dXX for up or down XX semitones)')
     quant_group = parser.add_mutually_exclusive_group(required=False)
     quant_group.add_argument('-a', '--quantizeauto', action="store_true", help='Auto-quantize')
     quant_group.add_argument('-q', '--quantizenote', type=str, help='quantize to a note value')
@@ -64,10 +64,10 @@ def main():
         song.modulate(num, denom)
 
     if args.transpose:
-        if args.transpose > 100:
-            transpose = -args.transpose + 100
+        if args.transpose[0] == 'd':
+            transpose = -int(args.transpose[1:])
         else:
-            transpose = args.transpose
+            transpose = int(args.transpose[1:])
         print("transposing by %d" % transpose)
         song.transpose(transpose)
 
