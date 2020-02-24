@@ -30,6 +30,8 @@ def main():
     song = ctsMidi.midi_to_chirp(args.midi_in_file)
     song.remove_control_notes(8)
     song.quantize_from_note_name('16')
+    # TODO: transformMidi.py -q 32 -k Am ..\test\BWV_799.mid ..\test\BWV_799_q.mid
+    #song.quantize_from_note_name('32')    
     song.remove_polyphony()
     ctsC128Basic.trim_note_lengths(song)
     if len(song.metadata.name) == 0:
