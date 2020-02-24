@@ -109,6 +109,8 @@ def measures_to_basic(mchirp_song):
                 if isinstance(e, Note):
                     if not e.tied_to:
                         contents.append(BasicNote(e.start_time, e.note_num, e.duration, v + 1))
+                    else:
+                        contents.append(BasicRest(e.start_time, e.duration, v + 1))
                 elif isinstance(e, Rest):
                     contents.append(BasicRest(e.start_time, e.duration, v + 1))
 
