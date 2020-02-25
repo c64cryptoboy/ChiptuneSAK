@@ -47,6 +47,7 @@ def main():
 
     subprocess.call('lilypond -o %s %s' % (args.out_folder, ly_name), shell=True)
 
+    print("\ndone")
 
 if __name__ == '__main__':
     main()

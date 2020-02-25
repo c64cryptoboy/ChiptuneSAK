@@ -38,5 +38,7 @@ def main():
     #chirp_song.time_signature_changes.insert(0, ts)
     ctsMidi.chirp_to_midi(chirp_song, args.midi_out_file)
 
+    print("\ndone")
+    
 if __name__ == "__main__":
     main()

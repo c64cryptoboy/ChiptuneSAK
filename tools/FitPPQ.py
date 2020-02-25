@@ -107,6 +107,7 @@ def main():
     print("Writing file %s" % args.midi_out_file)
     ctsMidi.chirp_to_midi(song, args.midi_out_file)
 
+    print("\ndone")
 
 if __name__ == '__main__':
     main()
