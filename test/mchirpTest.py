@@ -9,7 +9,7 @@ from ctsChirp import ChirpSong, ChirpTrack
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp('bach_invention_4.mid')
+        self.test_song = ctsMidi.midi_to_chirp('data/bach_invention_4.mid')
         self.test_song.quantize_from_note_name('16')
         self.test_song.remove_polyphony()
         self.test_mchirp_song = MChirpSong(self.test_song)

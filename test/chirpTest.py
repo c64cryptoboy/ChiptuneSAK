@@ -9,7 +9,7 @@ from ctsKey import ChirpKey
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp('twinkle.mid')
+        self.test_song = ctsMidi.midi_to_chirp('data/twinkle.mid')
 
     def test_notes(self):
         """

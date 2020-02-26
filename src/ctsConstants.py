@@ -8,16 +8,29 @@ PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 KEYS = {'major': ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],
         'minor': ['Am', 'Bbm', 'Bm', 'Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m']
         }
+
 DURATIONS = {
-    Fraction(6, 1): 'dotted whole', Fraction(4, 1): 'whole',
+    'US': {
+    Fraction(8, 1): 'double whole', Fraction(6, 1): 'dotted whole', Fraction(4, 1): 'whole',
     Fraction(3, 1): 'dotted half', Fraction(2, 1): 'half', Fraction(4, 3): 'half triplet',
     Fraction(3, 2): 'dotted quarter', Fraction(1, 1): 'quarter', Fraction(3, 4): 'dotted eighth',
     Fraction(2, 3): 'quarter triplet', Fraction(1, 2): 'eighth', Fraction(3, 8): 'dotted sixteenth',
     Fraction(1, 3): 'eighth triplet', Fraction(1, 4): 'sixteenth', Fraction(3, 16): 'dotted thirty-second',
     Fraction(1, 6): 'sixteenth triplet', Fraction(1, 8): 'thirty-second', Fraction(3, 32): 'dotted sixty-fourth',
     Fraction(1, 12): 'thirty-second triplet', Fraction(1, 16): 'sixty-fourth', Fraction(1, 24): 'sixty-fourth triplet'
+    },
+    'UK': {
+    Fraction(8, 1): 'breve', Fraction(6, 1): 'dotted semibreve', Fraction(4, 1): 'semibreve',
+    Fraction(3, 1): 'dotted minim', Fraction(2, 1): 'minim', Fraction(4, 3): 'minim triplet',
+    Fraction(3, 2): 'dotted crochet', Fraction(1, 1): 'crochet', Fraction(3, 4): 'dotted quaver',
+    Fraction(2, 3): 'crochet triplet', Fraction(1, 2): 'quaver', Fraction(3, 8): 'dotted semiquaver',
+    Fraction(1, 3): 'quaver triplet', Fraction(1, 4): 'semiquaver', Fraction(3, 16): 'dotted demisemiquaver',
+    Fraction(1, 6): 'semiquaver triplet', Fraction(1, 8): 'demisemiquaver', Fraction(3, 32): 'dotted hemidemisemiquaver',
+    Fraction(1, 12): 'demisemiquaver triplet', Fraction(1, 16): 'hemidemisemiquaver', Fraction(1, 24): 'hemidemisemiquaver triplet'
+    }
 }
 
+# Duration fractions are defined in terms of quarter notes
 DURATION_STR = {
     '1.': Fraction(6, 1), '1': Fraction(4, 1), '2.': Fraction(3, 1), '2': Fraction(2, 1), '2-3': Fraction(4, 3),
     '4.': Fraction(3, 2), '4': Fraction(1, 1), '8.': Fraction(3, 4), '4-3': Fraction(2, 3),
@@ -46,21 +59,14 @@ BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
 # so a row becomes a 16th note
 
 
-# TODO:  Make this dataclass have no magic numbers.  If it can be derrived, derive it in the constructor
-# consider making this a real class
-# cyclesPerFrame = linesPerFrame * cyclesPerLine
-# refreshRate = cpuCyclesPerSec(NTSC is 1022727) / cyclesPerFrame
-# msPerFrame = 1000 / refreshRate
-
-# TODO: remove defaults and dot clock
 @dataclass(frozen=True)
 class ArchDescription:
-    system_clock: int = 1022727
+    system_clock: int
     frame_rate: float = field(init=False)
     ms_per_frame: float = field(init=False)
-    cycles_per_line: int = 65
-    lines_per_frame: int = 263
-    visible_lines: int = 235
+    cycles_per_line: int
+    lines_per_frame: int
+    visible_lines: int
     blank_lines: int = field(init=False)
 
     def __post_init__(self):
@@ -86,7 +92,3 @@ ARCH = {
                                  visible_lines=234)
 }
 
-NTSC_FRAMES_PER_SEC = 59.94
-PAL_FRAMES_PER_SEC = 50.0
-NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC  # 16.68335002ms
-PAL_MS_PER_FRAME = 1000 / PAL_FRAMES_PER_SEC  # 20ms

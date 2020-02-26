@@ -139,13 +139,13 @@ def quantize_fn(t, qticks):
         return next
 
 
-def duration_to_note_name(duration, ppq):
+def duration_to_note_name(duration, ppq, locale='US'):
     """
     Given a ppq (pulses per quaver) convert a duration to a human readable note length, e.g., 'eighth'
     Works for notes, dotted notes, and triplets down to sixty-fourth notes.
     """
     f = Fraction(duration / ppq).limit_denominator(64)
-    return DURATIONS.get(f, '<unknown>')
+    return DURATIONS[locale.upper()].get(f, '<unknown>')
 
 
 def pitch_to_note_name(note_num, octave_offset=0):

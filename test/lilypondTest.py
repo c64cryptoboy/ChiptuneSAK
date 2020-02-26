@@ -10,8 +10,8 @@ import ctsLilypond
 
 class TestExportLilypond(unittest.TestCase):
     def test_lilypond_(self):
-        midi_file = 'bach_invention_4.mid'
-        known_good_ly_file = 'bach_invention_4_clip_good.ly'
+        midi_file = 'data/bach_invention_4.mid'
+        known_good_ly_file = 'data/bach_invention_4_clip_good.ly'
         known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ly_file)
 
 
@@ -24,7 +24,7 @@ class TestExportLilypond(unittest.TestCase):
         test_ly = ctsLilypond.clip_to_lilypond(m_song, m_song.tracks[0].measures[3:8])
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 
-        with open('test.ly', 'w') as f:
+        with open('data/test.ly', 'w') as f:
             f.write(test_ly)
 
         self.assertEqual(known_good_ly_hash, test_ly_hash)
