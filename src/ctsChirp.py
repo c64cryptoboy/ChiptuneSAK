@@ -99,9 +99,9 @@ class ChirpTrack:
         quantization.  These values are easily overridden.
         """
         tmpNotes = [n.start_time for n in self.notes]
-        self.qticks_notes = find_quantization(self.chirp_song.metadata.ppq, tmpNotes)
+        self.qticks_notes = find_quantization(tmpNotes, self.chirp_song.metadata.ppq)
         tmpNotes = [n.duration for n in self.notes]
-        self.qticks_durations = find_quantization(self.chirp_song.metadata.ppq, tmpNotes)
+        self.qticks_durations = find_duration_quantization(tmpNotes, self.qticks_notes)
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)
@@ -299,9 +299,9 @@ class ChirpSong:
         These values are easily overridden.
         """
         tmp_notes = [n.start_time for t in self.tracks for n in t.notes]
-        self.qticks_notes = find_quantization(self.metadata.ppq, tmp_notes)
+        self.qticks_notes = find_quantization(tmp_notes, self.metadata.ppq)
         tmp_durations = [n.duration for t in self.tracks for n in t.notes]
-        self.qticks_durations = find_duration_quantization(self.metadata.ppq, tmp_durations, self.qticks_notes)
+        self.qticks_durations = find_duration_quantization(tmp_durations, self.qticks_notes)
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)

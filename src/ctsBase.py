@@ -1,12 +1,11 @@
+import re
 import collections
+from dataclasses import dataclass
 from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsKey import ChirpKey
-from dataclasses import dataclass
-import re
 
-note_name_format = re.compile('^[A-G](#|##|b|bb)?[0-7]$')
 
 # Named tuple types for several lists throughout
 TimeSignatureEvent = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
@@ -53,7 +52,7 @@ def objective_error(notes, test_quantization):
     return max(quantization_error(n, test_quantization) for n in notes)
 
 
-def find_quantization(ppq, time_series):
+def find_quantization(time_series, ppq):
     """
     Find the optimal quantization in ticks to use for a given set of times.  The algorithm given
     here is by no means universal or guaranteed, but it usually gives a sensible answer.
@@ -73,7 +72,6 @@ def find_quantization(ppq, time_series):
     because performed music rarely has clean note cutoffs.
     """
     last_err = len(time_series) * ppq
-    n_notes = len(time_series)
     last_q = ppq
     note_value = 4
     while note_value <= 128:  # We have arbitrarily chosen 128th notes as the fastest possible
@@ -105,7 +103,7 @@ def find_quantization(ppq, time_series):
     return 1  # Return a 1 for failed quantization means 1 tick resolution
 
 
-def find_duration_quantization(ppq, durations, qticks_note):
+def find_duration_quantization(durations, qticks_note):
     """
     The duration quantization is determined from the shortest note length.
     The algorithm starts from the estimated quantization for note starts.
@@ -161,15 +159,42 @@ def pitch_to_note_name(note_num, octave_offset=0):
     return "%s%d" % (PITCHES[pitch], octave)
 
 
-# Note names converted to midi pitches can be easily compared for enharmonic matching
-# Examples of enharmonic notes: B3#=C4=D4bb, B3##=C4#=D4b, etc.
+# Regular expression for matching note names
+note_name_format = re.compile('^([A-G])(#|##|b|bb)?([0-7])$')
+
+
 def note_name_to_pitch(note_name, octave_offset=0):
+    """
+    Returns MIDI note number for a named pitch.  C4 = 60
+    Includes processing of enharmonic notes (double sharps or double flats)
+        :param note_name:      A note name as a string, e.g. C#4
+        :param octave_offset:  Octave offset
+        :return:  Midi note number
+    """
     if note_name_format.match(note_name) is None:
         raise ChiptuneSAKValueError('Illegal note name: "%s"' % note_name)
-    # TODO: convert the note name into a midi value
-    
+    m = note_name_format.match(note_name)
+    note_name = m.group(1)
+    accidentals = m.group(2)
+    octave = int(m.group(3)) - octave_offset
+    note_num = PITCHES.index(note_name) + 12 * (octave + 1)
+    if accidentals is not None:
+        note_num += accidentals.count('#')
+        note_num -= accidentals.count('b')
+    return note_num
 
+    
 def decompose_duration(duration, ppq, allowed_durations):
+    """
+    Decomposes a given duration into a sum of allowed durations.
+    This function uses a greedy algorithm, which iteratively finds the largest allowed duration shorter than
+    the remaining duration and subtracts it from the remaining
+        :param duration:           Duration to be decomposed, in ticks.
+        :param ppq:                Ticks per quarter note.
+        :param allowed_durations:  Either a dictionary or a set of allowed durations.  Allowed durations are
+                                   expressed as fractions of a quarter note.
+        :return: List of fractions
+    """
     ret_durations = []
     min_allowed_duration = min(allowed_durations)
     remainder = duration
