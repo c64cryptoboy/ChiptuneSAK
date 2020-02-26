@@ -44,6 +44,14 @@ BASIC_LINE_MAX_C128 = 160 # 4 lines of 40 col
 # 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
 # so a row becomes a 16th note
 
+
+# TODO:  Make this dataclass have no magic numbers.  If it can be derrived, derive it in the constructor
+# consider making this a real class
+# cyclesPerFrame = linesPerFrame * cyclesPerLine
+# refreshRate = cpuCyclesPerSec(NTSC is 1022727) / cyclesPerFrame
+# msPerFrame = 1000 / refreshRate
+
+# TODO: remove defaults and dot clock
 @dataclass
 class ArchDescription:
     frame_rate: float = 59.94
@@ -54,9 +62,9 @@ class ArchDescription:
     system_clock: float = 1.022727
 
 
-ARCH = {'NTSC': ArchDescription(59.94, 65, 263, 63, 8.181816, 1.022727),
+ARCH = {'NTSC': ArchDescription(59.8260895, 65, 263, 63, 8.181816, 1.022727),    # The "new" ntsc 6567R8
         'PAL': ArchDescription(50.00, 63, 312, 112, 7.881984, 0.985248),
-        'NTSC-RA': ArchDescription(59.94, 64, 262, 62, 8.181816, 1.022727),}
+        'NTSC-R56A': ArchDescription(60.99278387, 262, 62, 8.181816, 1.022727),} # The "old" ntsc 6567R56A
 
 NTSC_FRAMES_PER_SEC = 59.94
 PAL_FRAMES_PER_SEC = 50.0

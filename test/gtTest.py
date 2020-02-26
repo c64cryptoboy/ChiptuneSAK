@@ -8,6 +8,7 @@ import testingPath
 import unittest
 import ctsGoatTracker
 import ctsTestingTools
+import ctsBase
 
 
 class TestGoatTrackerFunctions(unittest.TestCase):
@@ -40,7 +41,27 @@ class TestGoatTrackerFunctions(unittest.TestCase):
 
         # TODO: Write parsing tests on channels_time_events
 
-        pass
+        """
+        # Generate ground truth data for this test (comment out later, but keep it around)
+        print("channels = []")
+        for i, channel in enumerate(channels_time_events):
+            channel_note_on_events = []
+            for frame, event in channel.items():
+                if event.note_on:
+                    midi_note_name = ctsBase.pitch_to_note_name(event.note, ctsGoatTracker.GT_OCTAVE_BASE)
+                    channel_note_on_events.append('(%d, "%s")' % (frame, midi_note_name))
+            line = "channels.append((%s))" % (', '.join(channel_note_on_events))
+            print(line)
+        """
+
+    channels = []
+    channels.append(((0, "G4"), (72, "C5"), (144, "E5"), (216, "G#4"), (288, "C#5"), (360, "F5"), (432, "G#4"), \
+        (504, "C#5"), (576, "F5"), (648, "G4"), (720, "C5"), (792, "E5")))
+    channels.append(((0, "E4"), (72, "G4"), (144, "C5"), (216, "F4"), (288, "G#4"), (360, "C#5"), (432, "F4"), \
+        (504, "G#4"), (576, "C#5"), (648, "E4"), (720, "G4"), (792, "C5")))
+    channels.append(((0, "C4"), (72, "E4"), (144, "G4"), (216, "C#4"), (288, "F4"), (360, "G#4"), (432, "C#4"), \
+        (504, "F4"), (576, "G#4"), (648, "C4"), (720, "E4"), (792, "G4")))        
+
 
 if __name__ == '__main__':
     ctsTestingTools.env_to_stdout()

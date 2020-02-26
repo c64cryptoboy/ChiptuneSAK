@@ -323,6 +323,11 @@ def pattern_note_to_midi_note(pattern_note_byte):
     return pattern_note_byte - 72 + (GT_OCTAVE_BASE * 12)
 
 
+# Convert midi note value into pattern note value
+def midi_note_to_pattern_note(midi_note):
+    return midi_note + 72 + (-1 * GT_OCTAVE_BASE * 12)
+
+
 def get_chars(in_bytes, trim_nulls=True):
     result = in_bytes.decode('Latin-1')
     if trim_nulls:
@@ -691,12 +696,6 @@ def pad_or_truncate(to_pad, length):
     if isinstance(to_pad, str):
         to_pad = to_pad.encode('latin-1')
     return to_pad.ljust(length, b'\0')[0:length]
-
-
-# Convert midi note value into pattern note value
-# Note: lowest goat tracker note C0 (0x60) = midi #24, 0x60-24=72
-def midi_note_to_pattern_note(midi_note):
-    return midi_note + 72 + (-1 * GT_OCTAVE_BASE * 12)
 
 
 def row_to_bytes(row):

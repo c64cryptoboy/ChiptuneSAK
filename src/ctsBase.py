@@ -4,6 +4,9 @@ from ctsErrors import *
 from ctsConstants import *
 from ctsKey import ChirpKey
 from dataclasses import dataclass
+import re
+
+note_name_format = re.compile('^[A-G](#|##|b|bb)?[0-7]$')
 
 # Named tuple types for several lists throughout
 TimeSignatureEvent = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
@@ -157,6 +160,14 @@ def pitch_to_note_name(note_num, octave_offset=0):
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave)
 
+
+# Note names converted to midi pitches can be easily compared for enharmonic matching
+# Examples of enharmonic notes: B3#=C4=D4bb, B3##=C4#=D4b, etc.
+def note_name_to_pitch(note_name, octave_offset=0):
+    if note_name_format.match(note_name) is None:
+        raise ChiptuneSAKValueError('Illegal note name: "%s"' % note_name)
+    # TODO: convert the note name into a midi value
+    
 
 def decompose_duration(duration, ppq, allowed_durations):
     ret_durations = []
