@@ -11,7 +11,7 @@ import collections
 from fractions import Fraction
 import ctsMidi
 from ctsConstants import *
-from ctsBase import Rest, decompose_duration
+from ctsBase import Rest, decompose_duration, note_name_to_pitch
 from ctsChirp import Note
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 import ctsGenPrg

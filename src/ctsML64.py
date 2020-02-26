@@ -30,16 +30,7 @@ def pitch_to_ml64_note_name(note_num, ml64_octave_offset=-1):
 
 
 def make_ml64_notes(note_name, duration, ppq):
-    durs = []
-    remainder = duration
-    while remainder > 0:
-        if remainder < min(ml64_durations):
-            raise ChiptuneSAKValueError("Illegal duration: %d (ppq = %d)" % (remainder, ppq))
-        for f in sorted(ml64_durations, reverse=True):
-            if remainder >= f * ppq:
-                durs.append(f)
-                remainder -= f * ppq
-                break
+    durs = decompose_duration(duration, ppq, ml64_durations)
     if note_name == 'r' or note_name == 'c':
         retval = ''.join("%s(%s)" % (note_name, ml64_durations[f]) for f in durs)
     else:

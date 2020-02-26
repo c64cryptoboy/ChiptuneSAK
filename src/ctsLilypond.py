@@ -53,17 +53,7 @@ def make_lp_notes(note_name, duration, ppq):
     """
     if duration <= 0:
         raise ChiptuneSAKValueError("Illegal note duration: %d" % duration)
-    durs = []
-    remainder = duration
-    min_duration = int(min(lp_durations) * ppq)
-    while remainder > 0:
-        if remainder < min_duration:
-            raise ChiptuneSAKValueError("Illegal duration: %d (min allowed = %d)" % (remainder, min_duration))
-        for f in sorted(lp_durations, reverse=True):
-            if remainder >= f * ppq:
-                durs.append(f)
-                remainder -= f * ppq
-                break
+    durs = decompose_duration(duration, ppq, lp_durations)
     if note_name == 'r':
         retval = ' '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
     else:
