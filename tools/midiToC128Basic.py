@@ -11,6 +11,7 @@ from ctsMChirp import MChirpSong
 import ctsC128Basic
 import ctsGenPrg
 
+
 def main():
     parser = argparse.ArgumentParser(description="Convert a midi file into a C128 BASIC program.")
     parser.add_argument('midi_in_file', help='midi filename to import')
@@ -40,9 +41,9 @@ def main():
         song.metadata.name = args.midi_in_file.split(os.sep)[-1].lower()
     mchirp_song = MChirpSong(song)
 
-    instruments = ['piano', 'piano', 'piano']
+    instruments = ('piano', 'piano', 'piano')
     if args.instruments:
-        instruments = [i.lower() for i in args.instruments]
+        instruments = (i.lower() for i in args.instruments)
 
     arch = 'NTSC'
     if args.arch:

@@ -3,7 +3,6 @@ from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsKey import ChirpKey
-from recordtype import recordtype
 from dataclasses import dataclass
 
 # Named tuple types for several lists throughout
@@ -157,6 +156,21 @@ def pitch_to_note_name(note_num, octave_offset=0):
     octave = (note_num // 12) + octave_offset
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave)
+
+
+def decompose_duration(duration, ppq, allowed_durations):
+    ret_durations = []
+    min_allowed_duration = min(allowed_durations)
+    remainder = duration
+    while remainder > 0:
+        if remainder < min_allowed_duration:
+            raise ChiptuneSAKValueError("Illegal note duration %d" % duration)
+        for d in sorted(allowed_durations, reverse=True):
+            if remainder >= d * ppq:
+                ret_durations.append(d)
+                remainder -= d * ppq
+                break
+    return ret_durations
 
 
 def is_triplet(note, ppq):

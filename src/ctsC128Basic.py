@@ -11,9 +11,8 @@ import collections
 from fractions import Fraction
 import ctsMidi
 from ctsConstants import *
-from ctsBase import Rest
+from ctsBase import Rest, decompose_duration
 from ctsChirp import Note
-from ctsMChirp import MChirpSong
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 import ctsGenPrg
 
@@ -75,11 +74,10 @@ def basic_duration_to_name(duration, ppq):
     """
     Gets a note duration name for a given duration.
     """
-    f = Fraction(duration / ppq).limit_denominator(8)
+    f = Fraction(duration/ppq).limit_denominator(16)
     if f not in basic_durations:
-        raise ChiptuneSAKValueError("Illegal note duration for BASIC: %s" % str(f))
+        raise ChiptuneSAKValueError("Illegal note duration %s" % str(f))
     return basic_durations[f]
-
 
 def trim_note_lengths(song):
     """
@@ -107,10 +105,11 @@ def measures_to_basic(mchirp_song):
     last_voice = 0
     last_octave = -10
     last_duration = 0
+    ppq = mchirp_song.metadata.ppq
     for im in range(n_measures):
         contents = []
         # Combine events from all three voices into a single list corresponding to the measure
-        for v in range(len(mchirp_song.tracks)):
+        for v in range(min(3, len(mchirp_song.tracks))):
             m = mchirp_song.tracks[v].measures[im]
             # If the voice doesn't have any notes in the measure, just ignore it.
             note_count = sum(1 for e in m.events if isinstance(e, Note))
@@ -121,11 +120,20 @@ def measures_to_basic(mchirp_song):
             for e in m.events:
                 if isinstance(e, Note):
                     if not e.tied_to:
-                        contents.append(BasicNote(e.start_time, e.note_num, e.duration, v + 1))
+                        start_time = e.start_time
+                        for d in decompose_duration(e.duration, ppq, basic_durations):
+                            contents.append(BasicNote(start_time, e.note_num, d * ppq, v + 1))
+                            start_time += d * ppq
                     else:
-                        contents.append(BasicRest(e.start_time, e.duration, v + 1))
+                        start_time = e.start_time
+                        for d in decompose_duration(e.duration, ppq, basic_durations):
+                            contents.append(BasicRest(start_time, d * ppq, v + 1))
+                            start_time += d * ppq
                 elif isinstance(e, Rest):
-                    contents.append(BasicRest(e.start_time, e.duration, v + 1))
+                    start_time = e.start_time
+                    for d in decompose_duration(e.duration, ppq, basic_durations):
+                        contents.append(BasicRest(start_time, d * ppq, v + 1))
+                        start_time += d * ppq
 
         # Use the sort order to sort all the events in the measure
         contents.sort(key=sort_order)
@@ -169,7 +177,7 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-def midi_to_C128_BASIC(mchirp_song, instrum=['piano', 'piano', 'piano'], arch='NTSC'):
+def midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='NTSC'):
     """
     Convert mchirp into a C128 Basic program that plays the song.
     """
@@ -192,7 +200,7 @@ def midi_to_C128_BASIC(mchirp_song, instrum=['piano', 'piano', 'piano'], arch='N
             tmp_line = tmp_line.replace(" ", "")
             # If the line is still too long...
             if len(tmp_line) >= BASIC_LINE_MAX_C128:
-                raise ChiptuneSAKContentError("C128 BASIC line too long")
+                raise ChiptuneSAKContentError("C128 BASIC line too long: Line %d length %d" % (current_line, len(tmp_line)))
         result.append(tmp_line)
 
         current_line += 10
@@ -255,7 +263,7 @@ def num_to_str_name(num, upper=False):
         offset = ord('A')
     else:
         offset = ord('a')
-    str_name = chr((num//26)+offset) + chr((num%26)+offset)
+    str_name = chr((num // 26)+offset) + chr((num % 26)+offset)
     return str_name
 
 
