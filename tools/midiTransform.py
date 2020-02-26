@@ -40,7 +40,7 @@ def main():
     print('PPQ = %d' % (song.metadata.ppq))
     q_state = "" if song.is_quantized() else "not"
     p_state = "" if song.is_polyphonic() else "not"
-    print("Input midi is %s quantized and %s polyphonic" % (q_state, p_state))
+    print("Input midi is %s quantized and is %s polyphonic" % (q_state, p_state))
 
     if args.removecontrolnotes:
         print("Removing control notes...")
