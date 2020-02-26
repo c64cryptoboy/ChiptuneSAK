@@ -1,4 +1,5 @@
 from fractions import Fraction
+from dataclasses import dataclass
 
 CHIPTUNESAK_VERSION = "0.13"
 
@@ -43,8 +44,21 @@ BASIC_LINE_MAX_C128 = 160 # 4 lines of 40 col
 # 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
 # so a row becomes a 16th note
 
-FRAME_RATE = {'NTSC': 59.94, 'PAL': 50.00}
+@dataclass
+class ArchDescription:
+    frame_rate: float = 59.94
+    cycles_per_line: int = 65
+    raster_lines: int = 263
+    blank_lines: int = 63  # This number is probably wrong
+    dot_clock: float = 8.181816
+    system_clock: float = 1.022727
+
+
+ARCH = {'NTSC': ArchDescription(59.94, 65, 263, 63, 8.181816, 1.022727),
+        'PAL': ArchDescription(50.00, 63, 312, 112, 7.881984, 0.985248),
+        'NTSC-RA': ArchDescription(59.94, 64, 262, 62, 8.181816, 1.022727),}
+
 NTSC_FRAMES_PER_SEC = 59.94
 PAL_FRAMES_PER_SEC = 50.0
-NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC # 16.68335002ms
-PAL_MS_PER_FRAME = 1000 / PAL_FRAMES_PER_SEC # 20ms
+NTSC_MS_PER_FRAME = 1000 / NTSC_FRAMES_PER_SEC  # 16.68335002ms
+PAL_MS_PER_FRAME = 1000 / PAL_FRAMES_PER_SEC  # 20ms

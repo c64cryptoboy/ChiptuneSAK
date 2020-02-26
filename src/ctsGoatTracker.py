@@ -15,7 +15,7 @@ from fractions import Fraction
 from functools import reduce, partial
 from dataclasses import dataclass
 from collections import defaultdict
-from ctsConstants import FRAME_RATE
+from ctsConstants import ARCH
 import ctsChirp
 import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
@@ -713,7 +713,7 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], rate='NTSC'):
+def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -787,7 +787,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], rate='NTSC'):
     # $83-$FF only on current channel (subtract $80 to get actual tempo)
     min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_tick_granularity
     print('Rows per beat = %d' % min_rows_per_beat)
-    jiffies_per_beat = int(FRAME_RATE[rate] / (song.metadata.bpm / 60) + 0.5)  # jiffies per sec / bps
+    jiffies_per_beat = int(ARCH[arch].frame_rate / (song.metadata.bpm / 60) + 0.5)  # jiffies per sec / bps
     print('bpm = %d, jiffies/beat = %d' % (song.metadata.bpm, jiffies_per_beat))
     rows_per_beat = min_rows_per_beat
     jiffies_per_row = jiffies_per_beat // rows_per_beat

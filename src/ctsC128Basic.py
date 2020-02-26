@@ -20,6 +20,19 @@ import ctsGenPrg
 OCTAVE_BASE = -1
 WHOLE_NOTE = 1152
 
+C128_INSTRUMENTS = {
+    'piano': 0,
+    'accordion': 1,
+    'calliope': 2,
+    'drum': 3,
+    'flute': 4,
+    'guitar': 5,
+    'harpsichord': 6,
+    'organ': 7,
+    'trumpet': 8,
+    'xylophone':  9,
+}
+
 # These types are similar to standard notes and rests but with voice added
 BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
 BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voice'])
@@ -156,7 +169,7 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-def midi_to_C128_BASIC(mchirp_song, arch='NTSC'):
+def midi_to_C128_BASIC(mchirp_song, instrum=['piano', 'piano', 'piano'], arch='NTSC'):
     """
     Convert mchirp into a C128 Basic program that plays the song.
     """
@@ -167,7 +180,7 @@ def midi_to_C128_BASIC(mchirp_song, arch='NTSC'):
     result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
-    tempo = mchirp_song.metadata.bpm * WHOLE_NOTE / FRAME_RATE[arch] / 60 / mchirp_song.metadata.time_signature.denom
+    tempo = mchirp_song.metadata.bpm * WHOLE_NOTE / ARCH[arch].frame_rate / 60 / mchirp_song.metadata.time_signature.denom
     tempo = int(tempo + 0.5)
     result.append('%d tempo %d' % (current_line, tempo))
 
@@ -194,7 +207,7 @@ def midi_to_C128_BASIC(mchirp_song, arch='NTSC'):
     ENVELOPE 3,  0,  5,  5,  0,  3           drum
     ENVELOPE 4,  9,  4,  4,  0,  0           flute
     ENVELOPE 5,  0,  9,  2,  1,  1           guitar
-    ENVELOPE 6,  0,  9,  0,  0,  2,  512     harpsicord
+    ENVELOPE 6,  0,  9,  0,  0,  2,  512     harpsichord
     ENVELOPE 7,  0,  9,  9,  0,  2,  2048    organ
     ENVELOPE 8,  8,  9,  4,  1,  2,  512     trumpet
     ENVELOPE 9,  0,  9,  0,  0,  0           xylophone    
@@ -202,8 +215,10 @@ def midi_to_C128_BASIC(mchirp_song, arch='NTSC'):
 
     current_line = 7000  # data might reach line 6740
     # Note: U9 = volume 15
+    volume = 9
     # TODO: For each voice, provide a way to pick (or override) the default envelopes
-    result.append('%d play"u9v1t6v2t0v3t0":rem init instruments' % (current_line))
+    instruments = 'u%dv1t%dv2t%dv3t%d' % (volume, *(C128_INSTRUMENTS[inst] for inst in instrum))
+    result.append('%d play"%s":rem init instruments' % (current_line, instruments))
     current_line += 10
 
     # Command likely out of scope:

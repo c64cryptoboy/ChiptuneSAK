@@ -17,6 +17,8 @@ def main():
     parser.add_argument('basic_out_file', help='filename to export')
     parser.add_argument('-t', '--type', choices=['bas', 'prg'], default='prg',
         help='basic output file type (default: prg)')
+    parser.add_argument('-i', '--instruments', nargs=3, help="instrument names (3 required)")
+    parser.add_argument('-a', '--arch', help="architecture (NTSC or PAL)")
 
     args = parser.parse_args()
 
@@ -38,8 +40,16 @@ def main():
         song.metadata.name = args.midi_in_file.split(os.sep)[-1].lower()
     mchirp_song = MChirpSong(song)
 
+    instruments = ['piano', 'piano', 'piano']
+    if args.instruments:
+        instruments = [i.lower() for i in args.instruments]
+
+    arch = 'NTSC'
+    if args.arch:
+        arch = args.arch
+
     # mchirp -> basic (ascii)
-    program = ctsC128Basic.midi_to_C128_BASIC(mchirp_song)
+    program = ctsC128Basic.midi_to_C128_BASIC(mchirp_song, instruments, arch)
 
     if args.type == 'bas':
         with open(args.basic_out_file, 'w') as out_file:

@@ -55,7 +55,9 @@ def main():
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('-p', '--ppq', type=int, default=960, nargs='?', help='preferred PPQ (default = 960)')
-    parser.add_argument('-m', '--minnote', type=str, default='16', nargs='?', help='minimum interval name (default = 16)')
+    parser.add_argument('-m', '--minnote', type=str, default='16', nargs='?',
+                        help='minimum interval name (default = 16)')
+    parser.add_argument('-s', '--scalefactor', type=float, help='estimated scale factor')
 
     args = parser.parse_args()
 
@@ -67,10 +69,14 @@ def main():
     notes = [n for t in song.tracks for n in t.notes]
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
     f_max = f_min * 8.
-    if f_min < 1.:
-        f_min = 1.
-    if f_max > 10.:
-        f_max = 10.
+    if args.scalefactor:
+        f_min = args.scalefactor * .66
+        f_max = args.scalefactor * 1.5
+    else:
+        if f_min < 1.:
+            f_min = 1.
+        if f_max > 12.:
+            f_max = 12.
     f_step = .01
     offset_est = min(n.start_time for n in notes)
     last_min_e = 1.e9
