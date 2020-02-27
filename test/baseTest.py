@@ -27,3 +27,16 @@ class BaseTestCase(unittest.TestCase):
     def test_duration_names(self):
         self.assertEqual(DURATIONS['US'][DURATION_STR['4.']], 'dotted quarter')
         self.assertEqual(DURATIONS['UK'][DURATION_STR['32']], 'demisemiquaver')
+
+    def test_octave_offsets(self):
+        octave_offset = 0
+        self.assertEqual('G4', pitch_to_note_name(67, octave_offset))
+        self.assertEqual(67, note_name_to_pitch('G4', octave_offset))
+
+        octave_offset = -1  # down one octave
+        self.assertEqual('G3', pitch_to_note_name(67, octave_offset))
+        self.assertEqual(67, note_name_to_pitch('G3', octave_offset))
+
+        octave_offset = 1  # up one octave
+        self.assertEqual('G5', pitch_to_note_name(67, octave_offset))
+        self.assertEqual(67, note_name_to_pitch('G5', octave_offset))
