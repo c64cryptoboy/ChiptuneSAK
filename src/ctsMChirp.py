@@ -6,6 +6,12 @@ import more_itertools as moreit
 
 """ Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
 
+class Triplet:
+    def __init__(self, start_time=0, duration=0, notes=None):
+        self.start_time = start_time
+        self.duration = duration
+        self.content = []
+
 class Measure:
     @staticmethod
     def sort_order(c):
@@ -19,6 +25,8 @@ class Measure:
             Notes and rests
         """
         if isinstance(c, Note):
+            return (c.start_time, 10)
+        elif isinstance(c, Triplet):
             return (c.start_time, 10)
         elif isinstance(c, Rest):
             return (c.start_time, 10)
@@ -57,7 +65,9 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < self.start_time:
             inote += 1
         # Measure number is obtained from the song.
-        self.events.append(MeasureMarker(self.start_time, track.chirp_song.get_measure_beat(self.start_time).measure))
+        measure_number = track.chirp_song.get_measure_beat(self.start_time).measure
+        self.events.append(MeasureMarker(self.start_time, measure_number))
+        ppq = track.chirp_song.metadata.ppq
         end = self.start_time + self.duration
         last_note_end = self.start_time
         if carry:  # Deal with any notes carried over from the previous measure
@@ -79,6 +89,68 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < end:
             n = track.notes[inote]
             gap = n.start_time - last_note_end
+
+            # Begin triplet processing
+            while is_triplet(n, ppq):
+                triplet_duration = 0
+                triplet_start_time = self.start_time
+                m_start = n.start_time - self.start_time
+                beat_type = start_beat_type(m_start, ppq)
+                if beat_type % 3 == 0:
+                    beat_division = beat_type // 3
+                    triplet_start_time = (n.start_time * beat_division // ppq) * ppq // beat_division
+                    remainder = (n.start_time - triplet_start_time)
+                    if gap < remainder:
+                        raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
+                    else:
+                        triplet_duration = n.duration * 3
+                else:
+                    next_note = track.notes[inote + 1]
+                    if next_note.start_time - n.start_time > n.duration * 2:
+                        raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
+                    triplet_start_time = n.start_time
+                    if next_note.duration >= n.duration:
+                        triplet_duration = n.duration * 3
+                    else:
+                        triplet_duration = next_note.duration * 3
+                if triplet_start_time + triplet_duration > end:
+                    raise ChiptuneSAKContentError("Triplets past end of measure in measure %d" % measure_number)
+                # Now find all notes that go in the triplet
+                tp = Triplet(triplet_start_time, triplet_duration)
+                tp_current_time = tp.start_time
+                triplet_note_duration = tp.duration // 3
+                triplet_end_time = tp.start_time + tp.duration
+                tp_last_time = tp.start_time
+                while n is not None and n.start_time < triplet_end_time:
+                    tp_gap = n.start_time - tp_last_time
+                    if tp_gap > 0:
+                        while tp_current_time < n.start_time:
+                            tp.content.append(Rest(tp_current_time, triplet_note_duration))
+                            tp_current_time += triplet_note_duration
+                            tp_last_time = tp_current_time
+                    tp.content.append(n)
+                    tp_current_time += n.duration
+                    tp.last_time = tp_current_time
+                    inote += 1
+                    if inote < n_notes:
+                        n = track.notes[inote]
+                    else:
+                        n = None
+                while tp_current_time < triplet_end_time:
+                    tp.content.append(Rest(tp_current_time, triplet_note_duration))
+                    tp_current_time += triplet_note_duration
+                    tp_last_time = tp_current_time
+                self.events.append(tp)
+                last_note_end = triplet_end_time
+                if n is not None:
+                    gap = n.start_time - triplet_end_time
+                    if n.start_time >= end:
+                        break
+                else:
+                    break
+            if n is None or n.start_time >= end:
+                break
+            # continue normal note processing
             if gap > 0:  # Is there a rest before the note starts?
                 self.events.append(Rest(last_note_end, gap))
                 last_note_end = n.start_time
@@ -226,5 +298,4 @@ class MChirpSong:
                 ks = [e for e in m.events if isinstance(e, KeySignatureEvent)]
                 current_key_signature = ks[-1] if len(ks) > 0 else current_key_signature
         return current_key_signature
-
 

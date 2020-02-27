@@ -58,6 +58,7 @@ def main():
     parser.add_argument('-m', '--minnote', type=str, default='16', nargs='?',
                         help='minimum interval name (default = 16)')
     parser.add_argument('-s', '--scalefactor', type=float, help='estimated scale factor')
+    parser.add_argument('-o', '--offset', type=int, help='estimated offset in original ticks')
 
     args = parser.parse_args()
 
@@ -79,6 +80,8 @@ def main():
             f_max = 12.
     f_step = .01
     offset_est = min(n.start_time for n in notes)
+    if args.offset:
+        offset_est = args.offset
     last_min_e = 1.e9
 
     get_best_f = functools.partial(find_best_f, notes, desired_q)

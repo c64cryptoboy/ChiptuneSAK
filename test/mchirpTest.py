@@ -3,7 +3,7 @@ import copy
 import testingPath
 import unittest
 import ctsMidi
-from ctsMChirp import MChirpSong, MChirpTrack
+from ctsMChirp import MChirpSong, MChirpTrack, Triplet
 from ctsChirp import ChirpSong, ChirpTrack
 
 
@@ -50,3 +50,14 @@ class SongTestCase(unittest.TestCase):
         test_total_notes = sum(1 for t in self.test_song.tracks for n in t.notes)
         chirp_total_notes = sum(1 for t in chirp_song.tracks for n in t.notes)
         self.assertEqual(test_total_notes, chirp_total_notes)
+
+    def test_triplets(self):
+        test_song = ctsMidi.midi_to_chirp('data/tripletTest.mid')
+        estimated_q = test_song.estimate_quantization()
+        test_song.quantize(*estimated_q)
+        test_song.remove_polyphony()
+
+        test_mchirp = MChirpSong(test_song)
+        total_triplets = sum(1 for t in test_mchirp.tracks for m in t.measures
+                             for e in m.events if isinstance(e, Triplet))
+        self.assertEqual(total_triplets, 20)

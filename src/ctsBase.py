@@ -199,7 +199,7 @@ def decompose_duration(duration, ppq, allowed_durations):
     min_allowed_duration = min(allowed_durations)
     remainder = duration
     while remainder > 0:
-        if remainder < min_allowed_duration:
+        if remainder < min_allowed_duration * ppq:
             raise ChiptuneSAKValueError("Illegal note duration %d" % duration)
         for d in sorted(allowed_durations, reverse=True):
             if remainder >= d * ppq:
@@ -220,3 +220,18 @@ def is_triplet(note, ppq):
     if f.denominator % 3 == 0:
         return True
     return False
+
+
+def start_beat_type(time, ppq):
+    """
+    Gets the beat type that would have to be used to make this note an integral number of beats
+    from the start of the measure
+
+        :param time:  Time in ticks from the start of the measure.
+        :param ppq:   ppq for the song
+        :return:      Denominator that would have to be used to make this note an integral number of beats
+                      from the start of the measure.  If the note is a triplet not starting on the beat it
+                      will be a multiple of 3.
+    """
+    f = Fraction(time, ppq).limit_denominator(16)
+    return f.denominator
