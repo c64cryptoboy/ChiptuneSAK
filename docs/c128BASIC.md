@@ -25,8 +25,8 @@ Each voice that is playing a note has a certain amount of duration left.  Once p
 1. Otherwise simultanious notes will sometimes playback in a staggered way at certain tempos, due to "roundoff" error caused by subtracting a tempo that does not evenly divide the remaining duration values 
 2. NTSC has faster playback than PAL
 
-BPM (beats per minute) can be be thought of as time-signature denominators per minute.  So given a BPM, the C128 PLAY TEMPO can be computed as follows:
+BPM (beats per minute) can be be thought of as time-signature denominators per minute.  However, in this library the MIDI standard of QPM (quarter notes per minute) is used.  So given a QPM, the C128 PLAY TEMPO can be computed as follows:
 
 ```
-tempo = bpm / 60 sec per min / time signature denominator * 1152 / frameRateHz
+tempo = qpm / 60 sec per min / 4 * 1152 / frameRateHz
 ```

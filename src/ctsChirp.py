@@ -328,7 +328,7 @@ class ChirpSong:
             self.stats['Duration Deltas'].update(duration_changes)
 
         for i, m in enumerate(self.tempo_changes):
-            self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.bpm)
+            self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.qpm)
         for i, m in enumerate(self.time_signature_changes):
             self.time_signature_changes[i] = TimeSignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
         for i, m in enumerate(self.key_signature_changes):
@@ -447,8 +447,8 @@ class ChirpSong:
             self.key_signature_changes[i] = KeySignatureEvent((t * num) // denom, k)
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
-            t, bpm = tm
-            self.tempo_changes[i] = TempoEvent((t * num) // denom, (bpm * num) // denom)
+            t, qpm = tm
+            self.tempo_changes[i] = TempoEvent((t * num) // denom, (qpm * num) // denom)
         # Now all the rest of the meta messages
         for i, ms in enumerate(self.other):
             t, m = ms
@@ -480,7 +480,7 @@ class ChirpSong:
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
             t = int(round(tm.start_time * scale_factor, 0))
-            self.tempo_changes[i] = TempoEvent(t, tm.bpm)
+            self.tempo_changes[i] = TempoEvent(t, tm.qpm)
         # Now all the rest of the meta messages
         for i, ms in enumerate(self.other):
             t = int(round(ms.start_time * scale_factor, 0))
@@ -511,7 +511,7 @@ class ChirpSong:
         # Next the tempos
         for i, tm in enumerate(self.tempo_changes):
             t = max(tm.start_time + offset_ticks, 0)
-            self.tempo_changes[i] = TempoEvent(t, tm.bpm)
+            self.tempo_changes[i] = TempoEvent(t, tm.qpm)
         # Now all the rest of the meta messages
         for i, ms in enumerate(self.other):
             t = max(ms.start_time + offset_ticks, 0)
@@ -520,13 +520,13 @@ class ChirpSong:
         for i, _ in enumerate(self.tracks):
             self.tracks[i].move_ticks(offset_ticks)
 
-    def set_bpm(self, bpm):
+    def set_qpm(self, qpm):
         """
         Sets the tempo in BPM for the entire song.  Any existing tempo events will be removed.
-            :param bpm:
+            :param qpm:
         """
-        self.metadata.bpm = bpm
-        self.tempo_changes = [TempoEvent(0, bpm)]
+        self.metadata.qpm = qpm
+        self.tempo_changes = [TempoEvent(0, qpm)]
 
     def set_time_signature(self, num, denom):
         """

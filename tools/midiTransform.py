@@ -22,7 +22,7 @@ def main():
     quant_group.add_argument('-q', '--quantizenote', type=str, help='quantize to a note value')
     quant_group.add_argument('-c', '--quantizeticks', type=int, help='quantize to ticks')
     parser.add_argument('-r', '--removepolyphony', action="store_true", help='remove polyphony')
-    parser.add_argument('-b', '--bpm', type=int, help='set bpm')
+    parser.add_argument('-b', '--qpm', type=int, help='set qpm')
     parser.add_argument('-j', '--timesignature', type=str, help='set time signature e.g. 3/4')
     parser.add_argument('-k', '--keysignature', type=str, help='set key signature, e.g. D, F#m')
 
@@ -89,9 +89,9 @@ def main():
         print("Eliminating polyphony...")
         song.remove_polyphony()
 
-    if args.bpm:
-        print("Setting bpm to %d" % args.bpm)
-        song.set_bpm(args.bpm)
+    if args.qpm:
+        print("Setting qpm to %d" % args.qpm)
+        song.set_qpm(args.qpm)
 
     if args.timesignature:
         num, denom = (int(x) for x in args.timesignature.split('/'))
