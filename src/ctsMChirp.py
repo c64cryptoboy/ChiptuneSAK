@@ -4,7 +4,16 @@ from ctsBase import *
 from ctsChirp import Note
 import more_itertools as moreit
 
-""" Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
+""" Definition and methods for ctsMChirp.MChirpSong representation """
+
+
+#  Triplets and measures are unique to MChirp so they are defined here.
+class Triplet:
+    def __init__(self, start_time=0, duration=0, notes=None):
+        self.start_time = start_time
+        self.duration = duration
+        self.content = []
+
 
 class Measure:
     @staticmethod
@@ -19,6 +28,8 @@ class Measure:
             Notes and rests
         """
         if isinstance(c, Note):
+            return (c.start_time, 10)
+        elif isinstance(c, Triplet):
             return (c.start_time, 10)
         elif isinstance(c, Rest):
             return (c.start_time, 10)
@@ -57,7 +68,9 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < self.start_time:
             inote += 1
         # Measure number is obtained from the song.
-        self.events.append(MeasureMarker(self.start_time, track.chirp_song.get_measure_beat(self.start_time).measure))
+        measure_number = track.chirp_song.get_measure_beat(self.start_time).measure
+        self.events.append(MeasureMarker(self.start_time, measure_number))
+        ppq = track.chirp_song.metadata.ppq
         end = self.start_time + self.duration
         last_note_end = self.start_time
         if carry:  # Deal with any notes carried over from the previous measure
@@ -79,6 +92,93 @@ class Measure:
         while inote < n_notes and track.notes[inote].start_time < end:
             n = track.notes[inote]
             gap = n.start_time - last_note_end
+
+            # Begin triplet processing
+            # This is a single-pass triplet algorithm that does not require getting notes out of order.
+            # Assumptions for triplet processing:
+            #  - Neither the first or last note of the triplet is tied to a note outside the triplet
+            #  - Neither of the first two notes of the triplet is faster than the triplet speed
+            #      (e.g. no starting a set of eighth triplets with a pair of sixteenth-note triplets
+            #  - Triplets do not cross note division boundaries finer than the triplet (e.g. no quarter-note
+            #       triplets starting on odd eighth-note boundaries
+            #  - Triplets never span a measure line
+            #
+            #  In the future some or all of these constraints may be relieved
+            #
+            while is_triplet(n, ppq):
+                triplet_duration = 0
+                triplet_start_time = self.start_time
+                m_start = n.start_time - self.start_time
+                beat_type = start_beat_type(m_start, ppq)
+                if beat_type % 3 == 0:  # This happens when the triplet does NOT start on a beat
+                    beat_division = beat_type // 3  # Get the beat size from the offset from the triplet start
+                    # The triplet start time is the nearest beat of the required size
+                    triplet_start_time = (n.start_time * beat_division // ppq) * ppq // beat_division
+                    remainder = (n.start_time - triplet_start_time)
+                    if gap < remainder:  # If there is not enough space for the required rests, barf.
+                        raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
+                    else:
+                        triplet_duration = min(n.duration, remainder) * 3
+                else:  # This happens when the triplet starts on the beat, so this note is the first note of the triplet
+                    if inote >= n_notes - 1:  # Was this note the last note?
+                        raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
+                    next_note = track.notes[inote + 1]  # Get the next note
+                    triplet_start_time = n.start_time
+                    if next_note.start_time - n.start_time > n.duration * 2:  # Next note is not in triplet
+                        triplet_duration = n.duration * 3
+                    elif not is_triplet(next_note, ppq):
+                        raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
+                    else:
+                        triplet_duration = min(next_note.duration, n.duration) * 3  # Choose the shortest of the first 2
+
+                if triplet_start_time + triplet_duration > end:  # Triplet would cross measure boundary
+                    raise ChiptuneSAKContentError("Triplets past end of measure in measure %d" % measure_number)
+
+                # Fill in any rests between the last note and the start of the triplet
+                gap = triplet_start_time - last_note_end
+                if gap > 0:
+                    self.events.append(Rest(last_note_end, gap))
+                    last_note_end = triplet_start_time
+
+                # Now create the triplet and populate with notes
+                tp = Triplet(triplet_start_time, triplet_duration)
+                tp_current_time = tp.start_time
+                triplet_note_duration = tp.duration // 3
+                triplet_end_time = tp.start_time + tp.duration
+                tp_last_time = tp.start_time
+                while n is not None and n.start_time < triplet_end_time:
+                    tp_gap = n.start_time - tp_last_time
+                    if tp_gap > 0:
+                        # Fill in rests within the triplet before the first note
+                        while tp_current_time < n.start_time:
+                            tp.content.append(Rest(tp_current_time, triplet_note_duration))
+                            tp_current_time += triplet_note_duration
+                            tp_last_time = tp_current_time
+                    tp.content.append(n)
+                    tp_current_time += n.duration
+                    tp.last_time = tp_current_time
+                    inote += 1
+                    if inote < n_notes:
+                        n = track.notes[inote]
+                    else:
+                        n = None  # We reached the last note in the song
+                # Fill in rests after the last note
+                while tp_current_time < triplet_end_time:
+                    tp.content.append(Rest(tp_current_time, triplet_note_duration))
+                    tp_current_time += triplet_note_duration
+                    tp_last_time = tp_current_time
+                self.events.append(tp)
+                last_note_end = triplet_end_time
+                if n is not None:
+                    gap = n.start_time - triplet_end_time
+                    if n.start_time >= end:  # Are we at the end of the song?
+                        break
+                else:
+                    break
+            # One more check for the end of the song required
+            if n is None or n.start_time >= end:
+                break
+            # Continue normal note processing
             if gap > 0:  # Is there a rest before the note starts?
                 self.events.append(Rest(last_note_end, gap))
                 last_note_end = n.start_time
@@ -135,7 +235,6 @@ class Measure:
 
     def get_rests(self):
         return [e for e in self.events if isinstance(e, Rest)]
-
 
 
 class MChirpTrack:
@@ -198,7 +297,6 @@ class MChirpSong:
         """
         Trims all note-free measures from the end of the song.
         """
-
         if len(self.tracks) == 0:
             raise ChiptuneSAKContentError("No tracks in song")
         while all(t.measures[-1].count_notes() == 0 for t in self.tracks):
@@ -208,6 +306,11 @@ class MChirpSong:
                     raise ChiptuneSAKContentError("No measures left in track %s" % t.name)
 
     def get_time_signature(self, time_in_ticks):
+        """
+        Finds the active key signature at a given time in the song
+            :param time_in_ticks:
+            :return: The last time signature change event before the given time.
+        """
         current_time_signature = TimeSignatureEvent(0, 4, 4)
         for m in self.tracks[0].measures:
             if m.start_time > time_in_ticks:
@@ -218,6 +321,11 @@ class MChirpSong:
         return current_time_signature
 
     def get_key_signature(self, time_in_ticks):
+        """
+        Finds the active key signature at a given time in the song
+            :param time_in_ticks:
+            :return: The last key signature change event before the given time.
+        """
         current_key_signature = KeySignatureEvent(0, 'C')
         for m in self.tracks[0].measures:
             if m.start_time > time_in_ticks:

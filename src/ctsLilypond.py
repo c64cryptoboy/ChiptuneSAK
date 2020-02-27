@@ -7,7 +7,7 @@ from ctsErrors import *
 from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import ChirpSong, Note
-from ctsMChirp import MChirpSong
+from ctsMChirp import MChirpSong, Triplet
 import ctsMidi
 
 lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
@@ -143,6 +143,17 @@ def measure_to_lilypond(measure, ppq):
             else:
                 measure_contents.append(make_lp_notes('r', e.duration, ppq))
 
+        elif isinstance(e, Triplet):
+            measure_contents.append('\\tuplet 3/2 {')
+            for te in e.content:
+                if isinstance(te, Note):
+                    measure_contents.append(make_lp_notes(lp_pitch_to_note_name(te.note_num, current_pitch_set),
+                                            te.duration * Fraction(3/2), ppq))
+                elif isinstance(te, Rest):
+                    measure_contents.append(make_lp_notes('r', te.duration * Fraction(3 / 2), ppq))
+
+            measure_contents.append('}')
+
         elif isinstance(e, MeasureMarker):
             measure_contents.append('|')
 
@@ -155,8 +166,8 @@ def measure_to_lilypond(measure, ppq):
             if e.key.key_signature != current_key_signature:
                 key_name = e.key.key_name
                 current_pitch_set = lp_pitches[e.key.accidentals()]
-                key_name.replace('#', 'is')
-                key_name.replace('b', 'es')
+                key_name = key_name.replace('#', 'is')
+                key_name = key_name.replace('b', 'es')
                 if e.key.key_signature.type == 'minor':
                     measure_contents.append('\\key %s \\minor' % (key_name.lower()[:-1]))
                 else:
@@ -262,7 +273,8 @@ if __name__ == '__main__':
     in_filename = sys.argv[1]
     song = ctsMidi.midi_to_chirp(in_filename)
     song.remove_control_notes()
-    song.quantize_from_note_name('32')
+    estimated_q = song.estimate_quantization()
+    song.quantize(*estimated_q)
     song.remove_polyphony()
     m_song = MChirpSong(song)
     out = song_to_lilypond(m_song, auto_sort=True)

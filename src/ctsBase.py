@@ -154,7 +154,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave = (note_num // 12) + octave_offset
+    octave = (note_num // 12) + octave_offset - 1
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave)
 
@@ -176,8 +176,8 @@ def note_name_to_pitch(note_name, octave_offset=0):
     m = note_name_format.match(note_name)
     note_name = m.group(1)
     accidentals = m.group(2)
-    octave = int(m.group(3)) - octave_offset
-    note_num = PITCHES.index(note_name) + 12 * (octave + 1)
+    octave = int(m.group(3)) - octave_offset + 1
+    note_num = PITCHES.index(note_name) + 12 * octave
     if accidentals is not None:
         note_num += accidentals.count('#')
         note_num -= accidentals.count('b')
@@ -199,7 +199,7 @@ def decompose_duration(duration, ppq, allowed_durations):
     min_allowed_duration = min(allowed_durations)
     remainder = duration
     while remainder > 0:
-        if remainder < min_allowed_duration:
+        if remainder < min_allowed_duration * ppq:
             raise ChiptuneSAKValueError("Illegal note duration %d" % duration)
         for d in sorted(allowed_durations, reverse=True):
             if remainder >= d * ppq:
@@ -220,3 +220,18 @@ def is_triplet(note, ppq):
     if f.denominator % 3 == 0:
         return True
     return False
+
+
+def start_beat_type(time, ppq):
+    """
+    Gets the beat type that would have to be used to make this note an integral number of beats
+    from the start of the measure
+
+        :param time:  Time in ticks from the start of the measure.
+        :param ppq:   ppq for the song
+        :return:      Denominator that would have to be used to make this note an integral number of beats
+                      from the start of the measure.  If the note is a triplet not starting on the beat it
+                      will be a multiple of 3.
+    """
+    f = Fraction(time, ppq).limit_denominator(16)
+    return f.denominator
