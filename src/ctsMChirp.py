@@ -106,10 +106,12 @@ class Measure:
                         triplet_duration = n.duration * 3
                 else:
                     next_note = track.notes[inote + 1]
-                    if next_note.start_time - n.start_time > n.duration * 2:
-                        raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
                     triplet_start_time = n.start_time
-                    if next_note.duration >= n.duration:
+                    if next_note.start_time - n.start_time > n.duration * 2:
+                        triplet_duration = n.duration * 3
+                    elif not is_triplet(next_note, ppq):
+                        raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
+                    elif next_note.duration >= n.duration:
                         triplet_duration = n.duration * 3
                     else:
                         triplet_duration = next_note.duration * 3
