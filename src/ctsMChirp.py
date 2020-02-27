@@ -107,6 +107,10 @@ class Measure:
                 else:
                     next_note = track.notes[inote + 1]
                     triplet_start_time = n.start_time
+                    gap = triplet_start_time - last_note_end
+                    if gap > 0:
+                        self.events.append(Rest(last_note_end, gap))
+                        last_note_end = triplet_start_time
                     if next_note.start_time - n.start_time > n.duration * 2:
                         triplet_duration = n.duration * 3
                     elif not is_triplet(next_note, ppq):
