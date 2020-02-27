@@ -53,6 +53,7 @@ class TestExportML64(unittest.TestCase):
         test_ml64 = ctsML64.export_chirp_to_ml64(song, format='c')
         test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
 
+
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
 

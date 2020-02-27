@@ -60,4 +60,4 @@ class SongTestCase(unittest.TestCase):
         test_mchirp = MChirpSong(test_song)
         total_triplets = sum(1 for t in test_mchirp.tracks for m in t.measures
                              for e in m.events if isinstance(e, Triplet))
-        self.assertEqual(total_triplets, 20)
+        self.assertEqual(total_triplets, 21)

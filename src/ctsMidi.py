@@ -66,6 +66,8 @@ def midi_track_to_chirp_track(chirp_song, midi_track):
             # Keep a dictionary of all notes that are currently on
             if msg.note not in current_notes_on:
                 current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
+        elif msg.is_meta and msg.type == 'track_name':
+            chirp_track.name = msg.name.strip()
         # Other messages of interest in the track are stored in a separate list as native MIDI messages
         elif msg.is_meta or (msg.type in ChirpTrack.other_message_types):
             chirp_track.other.append(OtherMidiEvent(current_time, msg))
@@ -231,6 +233,7 @@ def chirp_track_to_midi_track(chirp_track):
     """
     midiTrack = mido.MidiTrack()
     events = []
+    events = [mido.MetaMessage('track_name', name=chirp_track.name, time=0)]
     for n in chirp_track.notes:
         # For the sake of sorting, create the midi event with the absolute time (which will be
         # changed to a delta time before returning).
