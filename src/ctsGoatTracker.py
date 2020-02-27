@@ -784,12 +784,12 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     channels_rows[0][0].command = 0x0F  # tempo change command
     # $03-$7F sets tempo on all channels
     # $83-$FF only on current channel (subtract $80 to get actual tempo)
-    min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_tick_granularity
-    print('Rows per beat = %d' % min_rows_per_beat)
-    jiffies_per_beat = int(ARCH[arch].frame_rate / (song.metadata.qpm / 60) + 0.5)  # jiffies per sec / bps
-    print('qpm = %d, jiffies/beat = %d' % (song.metadata.qpm, jiffies_per_beat))
-    rows_per_beat = min_rows_per_beat
-    jiffies_per_row = jiffies_per_beat // rows_per_beat
+    min_rows_per_quarter = song.metadata.ppq  // required_tick_granularity
+    print('Rows per beat = %d' % min_rows_per_quarter)
+    jiffies_per_quarter = int(ARCH[arch].frame_rate / (song.metadata.qpm / 60) + 0.5)  # jiffies per sec / bps
+    print('qpm = %d, jiffies/beat = %d' % (song.metadata.qpm, jiffies_per_quarter))
+    rows_per_quarter = min_rows_per_quarter
+    jiffies_per_row = jiffies_per_quarter // rows_per_quarter
     print("%d jiffies per row" % jiffies_per_row)
 
     #channels_rows[0][0].command_data=0x06 # global tempo of 6 (goat tracker's default)
