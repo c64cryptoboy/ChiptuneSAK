@@ -4,13 +4,16 @@ from ctsBase import *
 from ctsChirp import Note
 import more_itertools as moreit
 
-""" Utility functions for exporting to various formats from the ctsSong.ChirpSong representation """
+""" Definition and methods for ctsMChirp.MChirpSong representation """
 
+
+#  Triplets and measures are unique to MChirp so they are defined here.
 class Triplet:
     def __init__(self, start_time=0, duration=0, notes=None):
         self.start_time = start_time
         self.duration = duration
         self.content = []
+
 
 class Measure:
     @staticmethod
@@ -91,6 +94,16 @@ class Measure:
             gap = n.start_time - last_note_end
 
             # Begin triplet processing
+            # Assumptions for triplet processing:
+            #  - Neither the first or last note of the triplet is tied to a note outside the triplet
+            #  - Neither of the first two notes of the triplet is faster than the triplet speed
+            #      (e.g. no starting a set of eighth triplets with a pair of sixteenth-note triplets
+            #  - Triplets do not cross note division boundaries finer than the triplet (e.g. no quarter-note
+            #       triplets starting on odd eighth-note boundaries
+            #  - Triplets never span a measure line
+            #
+            #  In the future some or all of these constraints may be relieved
+            #
             while is_triplet(n, ppq):
                 triplet_duration = 0
                 triplet_start_time = self.start_time
@@ -103,24 +116,23 @@ class Measure:
                     if gap < remainder:
                         raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
                     else:
-                        triplet_duration = n.duration * 3
+                        triplet_duration = min(n.duration, remainder) * 3
                 else:
                     next_note = track.notes[inote + 1]
                     triplet_start_time = n.start_time
-                    gap = triplet_start_time - last_note_end
-                    if gap > 0:
-                        self.events.append(Rest(last_note_end, gap))
-                        last_note_end = triplet_start_time
                     if next_note.start_time - n.start_time > n.duration * 2:
                         triplet_duration = n.duration * 3
                     elif not is_triplet(next_note, ppq):
                         raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
-                    elif next_note.duration >= n.duration:
-                        triplet_duration = n.duration * 3
                     else:
-                        triplet_duration = next_note.duration * 3
+                        triplet_duration = min(next_note.duration, n.duration) * 3
                 if triplet_start_time + triplet_duration > end:
                     raise ChiptuneSAKContentError("Triplets past end of measure in measure %d" % measure_number)
+                # Fill in any rests between the last note and the start of the triplet
+                gap = triplet_start_time - last_note_end
+                if gap > 0:
+                    self.events.append(Rest(last_note_end, gap))
+                    last_note_end = triplet_start_time
                 # Now find all notes that go in the triplet
                 tp = Triplet(triplet_start_time, triplet_duration)
                 tp_current_time = tp.start_time
@@ -156,7 +168,7 @@ class Measure:
                     break
             if n is None or n.start_time >= end:
                 break
-            # continue normal note processing
+            # Continue normal note processing
             if gap > 0:  # Is there a rest before the note starts?
                 self.events.append(Rest(last_note_end, gap))
                 last_note_end = n.start_time
@@ -213,7 +225,6 @@ class Measure:
 
     def get_rests(self):
         return [e for e in self.events if isinstance(e, Rest)]
-
 
 
 class MChirpTrack:
