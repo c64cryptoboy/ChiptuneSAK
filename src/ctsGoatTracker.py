@@ -738,8 +738,8 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     print("song time signature denominator = %d" % song.metadata.time_signature.denom)
     min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_tick_granularity
     print("minimum rows per beat = %d" % min_rows_per_beat)
-    print("available bpms for jiffy = %.2lf per sec:" % jiffy)
-    print('\n'.join("%.1lf bpm" % (jiffy / (n * min_rows_per_beat) * 60.) for n in range(1, 20)))
+    print("available qpms for jiffy = %.2lf per sec:" % jiffy)
+    print('\n'.join("%.1lf qpm" % (jiffy / (n * min_rows_per_beat) * 60.) for n in range(1, 20)))
 
     # This is now a real number to convert between unitless midi ticks and unitless GT ticks
     # The complication is that you can multiply the min_rows_per_note by an integer to give better
@@ -747,7 +747,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     midi_to_tick = partial(midi_to_gt_tick, offset=0, factor=song.metadata.ppq // min_rows_per_note)
 
     # Logic that can help with assigning a tempo to the GT rows:
-    jiffies_per_beat= int(jiffy / (song.metadata.bpm / 60)) # jiffies per sec / bps
+    jiffies_per_beat= int(jiffy / (song.metadata.qpm / 60)) # jiffies per sec / bps
     rows_per_beat = min_rows_per_beat
     jiffies_per_row = jiffies_per_beat / rows_per_beat 
     """
@@ -784,12 +784,12 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     channels_rows[0][0].command = 0x0F  # tempo change command
     # $03-$7F sets tempo on all channels
     # $83-$FF only on current channel (subtract $80 to get actual tempo)
-    min_rows_per_beat = song.metadata.ppq * 4 // song.metadata.time_signature.denom // required_tick_granularity
-    print('Rows per beat = %d' % min_rows_per_beat)
-    jiffies_per_beat = int(ARCH[arch].frame_rate / (song.metadata.bpm / 60) + 0.5)  # jiffies per sec / bps
-    print('bpm = %d, jiffies/beat = %d' % (song.metadata.bpm, jiffies_per_beat))
-    rows_per_beat = min_rows_per_beat
-    jiffies_per_row = jiffies_per_beat // rows_per_beat
+    min_rows_per_quarter = song.metadata.ppq  // required_tick_granularity
+    print('Rows per beat = %d' % min_rows_per_quarter)
+    jiffies_per_quarter = int(ARCH[arch].frame_rate / (song.metadata.qpm / 60) + 0.5)  # jiffies per sec / bps
+    print('qpm = %d, jiffies/beat = %d' % (song.metadata.qpm, jiffies_per_quarter))
+    rows_per_quarter = min_rows_per_quarter
+    jiffies_per_row = jiffies_per_quarter // rows_per_quarter
     print("%d jiffies per row" % jiffies_per_row)
 
     #channels_rows[0][0].command_data=0x06 # global tempo of 6 (goat tracker's default)

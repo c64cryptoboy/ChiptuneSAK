@@ -3,7 +3,7 @@
 <score-partwise version="3.0">
  <work>
   <work-title>Happy Birthday
-(multiply meter numerator, bpm, and notes by 3/2,
+(multiply meter numerator, qpm, and notes by 3/2,
 removes triplets but has same perceived tempo)</work-title>
  </work>
  <identification>
@@ -73,7 +73,7 @@ removes triplets but has same perceived tempo)</work-title>
  </defaults>
  <credit page="1">
   <credit-words default-x="616" default-y="181" font-family="Times New Roman" font-style="normal" font-size="22.0128" font-weight="normal" justify="center" valign="middle">Happy Birthday
-(multiply meter numerator, bpm, and notes by 3/2,
+(multiply meter numerator, qpm, and notes by 3/2,
 removes triplets but has same perceived tempo)</credit-words>
  </credit>
  <part-list>

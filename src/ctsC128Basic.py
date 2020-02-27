@@ -2,7 +2,10 @@
 # returns ascii representation of the program
 #
 # TODOs:
-# - Don't hardcode the tempo
+# - Figure out tempo calculation bug
+# -- the BWV_799 (without the metric modulation to get rid of 32nd notes) gets a super slow tempo of 2
+#    using the calculation in here.  bpm is 60, denominator is 8, so yup.
+#    The piece is 1:36 long in sibelius/midi, in BASIC, the closest is tempo 6, which takes 1:38
 
 import sys
 import os
@@ -188,7 +191,7 @@ def midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='N
     result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
-    tempo = mchirp_song.metadata.bpm * WHOLE_NOTE / ARCH[arch].frame_rate / 60 / mchirp_song.metadata.time_signature.denom
+    tempo = mchirp_song.metadata.qpm * WHOLE_NOTE / ARCH[arch].frame_rate / 60 / 4
     tempo = int(tempo + 0.5)
     result.append('%d tempo %d' % (current_line, tempo))
 

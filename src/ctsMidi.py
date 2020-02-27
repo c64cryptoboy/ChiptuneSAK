@@ -191,7 +191,7 @@ def get_meta(chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
     chirp_song.metadata.time_signature = chirp_song.time_signature_changes[0]
     if len(chirp_song.tempo_changes) == 0 or chirp_song.tempo_changes[0].start_time != 0:
         chirp_song.tempo_changes.insert(0, TempoEvent(0, int(mido.tempo2bpm(500000))))
-    chirp_song.metadata.bpm = chirp_song.tempo_changes[0].bpm
+    chirp_song.metadata.qpm = chirp_song.tempo_changes[0].qpm
 
     return chirp_song
 
@@ -276,7 +276,7 @@ def meta_to_midi_track(chirp_song):
         events.append(mido.MetaMessage('time_signature', numerator=numerator, denominator=denominator, time=t))
     #  Put the tempo changes into the track.
     for t, tempo in chirp_song.tempo_changes:
-        events.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(tempo), time=t))
+        events.append(mido.MetaMessage('set_tempo', tempo=mido.qpm2tempo(tempo), time=t))
     # Put any other meta-messages that were assign to the song as a whole into the track.
     for t, msg in chirp_song.other:
         msg.time = t

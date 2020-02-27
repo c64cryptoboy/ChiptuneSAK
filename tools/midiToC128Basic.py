@@ -1,7 +1,8 @@
 # Convert midi .mid file into Commodore 128 BASIC .bas (ascii text) or .prg (native) files
 #
 # TODOs:
-# - command line to pick (or modify) default envelopes for the voices
+# - have prg or bas type also decided by output filename
+
 
 import os
 import toolsPath

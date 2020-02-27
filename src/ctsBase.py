@@ -10,7 +10,7 @@ from ctsKey import ChirpKey
 # Named tuple types for several lists throughout
 TimeSignatureEvent = collections.namedtuple('TimeSignature', ['start_time', 'num', 'denom'])
 KeySignatureEvent = collections.namedtuple('KeySignature', ['start_time', 'key'])
-TempoEvent = collections.namedtuple('Tempo', ['start_time', 'bpm'])
+TempoEvent = collections.namedtuple('Tempo', ['start_time', 'qpm'])
 OtherMidiEvent = collections.namedtuple('OtherMidi', ['start_time', 'msg'])
 ProgramEvent = collections.namedtuple('Program', ['start_time', 'program'])
 Beat = collections.namedtuple('Beat', ['start_time', 'measure', 'beat'])
@@ -26,7 +26,7 @@ class SongMetadata:
     copyright: str = ''
     time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)
     key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C'))
-    bpm: int = 112
+    qpm: int = 112
 
 
 # --------------------------------------------------------------------------------------

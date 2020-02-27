@@ -221,7 +221,7 @@ class Measure:
         for tm in track.chirp_song.tempo_changes:
             if self.start_time <= tm.start_time < end:
                 # Tempo changes can happen anywhere in the measure
-                self.events.append(TempoEvent(tm.start_time, tm.bpm))
+                self.events.append(TempoEvent(tm.start_time, tm.qpm))
 
         self.events = sorted(self.events, key=self.sort_order)
 
