@@ -2,7 +2,10 @@
 # returns ascii representation of the program
 #
 # TODOs:
-# - Don't hardcode the tempo
+# - Figure out tempo calculation bug
+# -- the BWV_799 (without the metric modulation to get rid of 32nd notes) gets a super slow tempo of 2
+#    using the calculation in here.  bpm is 60, denominator is 8, so yup.
+#    The piece is 1:36 long in sibelius/midi, in BASIC, the closest is tempo 6, which takes 1:38
 
 import sys
 import os
