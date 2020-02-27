@@ -154,7 +154,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave = (note_num // 12) + octave_offset
+    octave = (note_num // 12) + octave_offset - 1
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave)
 
@@ -176,8 +176,8 @@ def note_name_to_pitch(note_name, octave_offset=0):
     m = note_name_format.match(note_name)
     note_name = m.group(1)
     accidentals = m.group(2)
-    octave = int(m.group(3)) - octave_offset
-    note_num = PITCHES.index(note_name) + 12 * (octave + 1)
+    octave = int(m.group(3)) - octave_offset + 1
+    note_num = PITCHES.index(note_name) + 12 * octave
     if accidentals is not None:
         note_num += accidentals.count('#')
         note_num -= accidentals.count('b')
