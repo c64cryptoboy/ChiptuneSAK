@@ -79,24 +79,33 @@ class ArchDescription:
         super().__setattr__('ms_per_frame', 1000. / self.frame_rate)
         super().__setattr__('blank_lines', self.lines_per_frame - self.visible_lines)
 
+
 # TODO:
 # http://www.antimon.org/dl/c64/code/stable.txt
 # https://www.lemon64.com/forum/viewtopic.php?t=36751
-# - NTSC VIC-20 system_clock = 1022727, cycles_per_line=65, lines_per_frame=261
+# - NTSC VIC-20 system_clock = 1022727, cycles_per_line=65, lines_per_frame=261   vertical blank 0 through 27
 # - PAL VIC-20  system_clock = 1108405, cycles_per_line=71, lines_per_frame=312
 # - NTSC/PAL C128 (defaults to 1Mhz mode) is same as C64 NTSC/PAL
+
 ARCH = {
     'NTSC': ArchDescription(system_clock=1022727,  # The "new" NTSC 6567R8
                             cycles_per_line=65,
                             lines_per_frame=263,
                             visible_lines=235),
-    'PAL': ArchDescription(system_clock=985248,
+    'PAL': ArchDescription(system_clock=985248,   # 6569 chip
                            cycles_per_line=63,
                            lines_per_frame=312,
                            visible_lines=284),
     'NTSC-R56A': ArchDescription(system_clock=1022727,  # The "old" NTSC 6567R56A
                                  cycles_per_line=64,
                                  lines_per_frame=262,
-                                 visible_lines=234)
+                                 visible_lines=234),
+    'NTSC-VIC20': ArchDescription(system_clock=1022727,   # 6560-101 chip
+                                  cycles_per_line=65,
+                                  lines_per_frame=261,
+                                  visible_lines=235),
+    'PAL-VIC20': ArchDescription(system_clock=1108405,   # 6561-101 chip
+                                 cycles_per_line=71,
+                                 lines_per_frame=312,
+                                 visible_lines=284),
 }
-

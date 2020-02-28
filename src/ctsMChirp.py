@@ -7,14 +7,6 @@ import more_itertools as moreit
 """ Definition and methods for ctsMChirp.MChirpSong representation """
 
 
-#  Triplets and measures are unique to MChirp so they are defined here.
-class Triplet:
-    def __init__(self, start_time=0, duration=0, notes=None):
-        self.start_time = start_time
-        self.duration = duration
-        self.content = []
-
-
 class Measure:
     @staticmethod
     def sort_order(c):
