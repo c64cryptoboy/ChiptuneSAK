@@ -12,7 +12,7 @@ from  ctsBase import note_name_to_pitch
 class TestGoatTrackerFunctions(unittest.TestCase):
     def test_sng_parsing(self):
         # TODO: I'm fighting environment again...
-        sng_in_file = 'test/data/gtTestData.sng'
+        sng_in_file = 'data/gtTestData.sng'
         #sng_in_file = 'data/gtTestData.sng'
 
         # parse all subtunes

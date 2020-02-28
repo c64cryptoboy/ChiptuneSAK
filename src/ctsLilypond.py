@@ -7,7 +7,7 @@ from ctsErrors import *
 from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import ChirpSong, Note
-from ctsMChirp import MChirpSong, Triplet
+from ctsMChirp import MChirpSong
 import ctsMidi
 
 lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
@@ -24,7 +24,7 @@ current_pitch_set = lp_pitches['sharps']
 current_clef = 'treble'
 current_ottava = 0
 
-def lp_pitch_to_note_name(note_num, pitches, octave_offset=4):
+def lp_pitch_to_note_name(note_num, pitches, octave_offset=3):
     """
     Gets the Lilypond note name for a given pitch.
         :param note_num:       MIDI note number
@@ -34,7 +34,7 @@ def lp_pitch_to_note_name(note_num, pitches, octave_offset=4):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = (note_num // 12) - octave_offset
+    octave_num = ((note_num - C0_MIDI_NUM) // 12) - octave_offset
     if octave_num >= 0:
         octave = "'" * octave_num
     else:
@@ -274,8 +274,10 @@ if __name__ == '__main__':
     song = ctsMidi.midi_to_chirp(in_filename)
     song.remove_control_notes()
     estimated_q = song.estimate_quantization()
+    print(estimated_q)
     song.quantize(*estimated_q)
     song.remove_polyphony()
+    # ctsMidi.chirp_to_midi(song, '../test/data/tripletTest_q.mid')
     m_song = MChirpSong(song)
     out = song_to_lilypond(m_song, auto_sort=True)
     os.chdir('../test/temp')

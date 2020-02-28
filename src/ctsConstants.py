@@ -14,22 +14,25 @@ KEYS = {'major': ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B
 
 DURATIONS = {
     'US': {
-    Fraction(8, 1): 'double whole', Fraction(6, 1): 'dotted whole', Fraction(4, 1): 'whole',
-    Fraction(3, 1): 'dotted half', Fraction(2, 1): 'half', Fraction(4, 3): 'half triplet',
-    Fraction(3, 2): 'dotted quarter', Fraction(1, 1): 'quarter', Fraction(3, 4): 'dotted eighth',
-    Fraction(2, 3): 'quarter triplet', Fraction(1, 2): 'eighth', Fraction(3, 8): 'dotted sixteenth',
-    Fraction(1, 3): 'eighth triplet', Fraction(1, 4): 'sixteenth', Fraction(3, 16): 'dotted thirty-second',
-    Fraction(1, 6): 'sixteenth triplet', Fraction(1, 8): 'thirty-second', Fraction(3, 32): 'dotted sixty-fourth',
-    Fraction(1, 12): 'thirty-second triplet', Fraction(1, 16): 'sixty-fourth', Fraction(1, 24): 'sixty-fourth triplet'
+        Fraction(8, 1): 'double whole', Fraction(6, 1): 'dotted whole', Fraction(4, 1): 'whole',
+        Fraction(3, 1): 'dotted half', Fraction(2, 1): 'half', Fraction(4, 3): 'half triplet',
+        Fraction(3, 2): 'dotted quarter', Fraction(1, 1): 'quarter', Fraction(3, 4): 'dotted eighth',
+        Fraction(2, 3): 'quarter triplet', Fraction(1, 2): 'eighth', Fraction(3, 8): 'dotted sixteenth',
+        Fraction(1, 3): 'eighth triplet', Fraction(1, 4): 'sixteenth',
+        Fraction(3, 16): 'dotted thirty-second',  Fraction(1, 6): 'sixteenth triplet',
+        Fraction(1, 8): 'thirty-second', Fraction(3, 32): 'dotted sixty-fourth',
+        Fraction(1, 12): 'thirty-second triplet', Fraction(1, 16): 'sixty-fourth',
+        Fraction(1, 24): 'sixty-fourth triplet'
     },
     'UK': {
-    Fraction(8, 1): 'breve', Fraction(6, 1): 'dotted semibreve', Fraction(4, 1): 'semibreve',
-    Fraction(3, 1): 'dotted minim', Fraction(2, 1): 'minim', Fraction(4, 3): 'minim triplet',
-    Fraction(3, 2): 'dotted crochet', Fraction(1, 1): 'crochet', Fraction(3, 4): 'dotted quaver',
-    Fraction(2, 3): 'crochet triplet', Fraction(1, 2): 'quaver', Fraction(3, 8): 'dotted semiquaver',
-    Fraction(1, 3): 'quaver triplet', Fraction(1, 4): 'semiquaver', Fraction(3, 16): 'dotted demisemiquaver',
-    Fraction(1, 6): 'semiquaver triplet', Fraction(1, 8): 'demisemiquaver', Fraction(3, 32): 'dotted hemidemisemiquaver',
-    Fraction(1, 12): 'demisemiquaver triplet', Fraction(1, 16): 'hemidemisemiquaver', Fraction(1, 24): 'hemidemisemiquaver triplet'
+        Fraction(8, 1): 'breve', Fraction(6, 1): 'dotted semibreve', Fraction(4, 1): 'semibreve',
+        Fraction(3, 1): 'dotted minim', Fraction(2, 1): 'minim', Fraction(4, 3): 'minim triplet',
+        Fraction(3, 2): 'dotted crochet', Fraction(1, 1): 'crochet', Fraction(3, 4): 'dotted quaver',
+        Fraction(2, 3): 'crochet triplet', Fraction(1, 2): 'quaver', Fraction(3, 8): 'dotted semiquaver',
+        Fraction(1, 3): 'quaver triplet', Fraction(1, 4): 'semiquaver', Fraction(3, 16): 'dotted demisemiquaver',
+        Fraction(1, 6): 'semiquaver triplet', Fraction(1, 8): 'demisemiquaver',
+        Fraction(3, 32): 'dotted hemidemisemiquaver', Fraction(1, 12): 'demisemiquaver triplet',
+        Fraction(1, 16): 'hemidemisemiquaver', Fraction(1, 24): 'hemidemisemiquaver triplet'
     }
 }
 
@@ -103,7 +106,7 @@ ARCH = {
     'NTSC-VIC20': ArchDescription(system_clock=1022727,   # 6560-101 chip
                                   cycles_per_line=65,
                                   lines_per_frame=261,
-                                  visible_lines=235),
+                                  visible_lines=233),
     'PAL-VIC20': ArchDescription(system_clock=1108405,   # 6561-101 chip
                                  cycles_per_line=71,
                                  lines_per_frame=312,

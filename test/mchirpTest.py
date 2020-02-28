@@ -3,7 +3,8 @@ import copy
 import testingPath
 import unittest
 import ctsMidi
-from ctsMChirp import MChirpSong, MChirpTrack, Triplet
+from ctsBase import *
+from ctsMChirp import MChirpSong, MChirpTrack
 from ctsChirp import ChirpSong, ChirpTrack
 
 
@@ -62,5 +63,5 @@ class SongTestCase(unittest.TestCase):
                              for e in m.events if isinstance(e, Triplet))
         self.assertEqual(total_triplets, 21)
 
-        #  tmp_song = ChirpSong(test_mchirp)
-        # ctsMidi.chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')
+        #tmp_song = ChirpSong(test_mchirp)
+        #ctsMidi.chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')

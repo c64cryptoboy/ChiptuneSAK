@@ -66,40 +66,36 @@ class ChirpTrack:
         Imports an  MChirpTrack
             :param mchirp_track:
         """
+        def _anneal_notes(notes):
+            ret_val = []
+            current_note = None
+            for n in notes:
+                if current_note is not None:
+                    assert(n.tied_to)
+                    assert(n.start_time == current_note.start_time + current_note.duration)
+                    current_note.duration += n.duration
+                    if n.tied_from:
+                        current_note.tied_from = n.tied_from
+                    else:
+                        ret_val.append(current_note)
+                        current_note = None
+                else:
+                    if n.tied_from:
+                        continued_note = copy.copy(n)
+                    else:
+                        ret_val.append(n)
+            return ret_val
+
         self.name = mchirp_track.name
         self.channel = mchirp_track.channel
-        continued_note = None
-        for m in mchirp_track.measures:
-            for e in m.events:
-                if isinstance(e, Note):
-                    continued_note = self._append_note(e, continued_note)
-                elif isinstance(e, Rest):
-                    continued_note = None
-                elif isinstance(e, Triplet):
-                    for n in e.content:
-                        if isinstance(n, Note):
-                            continued_note = self._append_note(n, continued_note)
-                        elif isinstance(n, Rest):
-                            continued_note = None
-                elif isinstance(e, OtherMidiEvent):
-                    self.other.append(e)
+        temp_notes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Note)]
+        temp_triplets = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Triplet)]
+        temp_notes.extend([e for tp in temp_triplets for e in tp.content if isinstance(e, Note)])
+        self.other = [e for m in mchirp_track.measures for e in m.events if isinstance(e, OtherMidiEvent)]
+        temp_notes.sort(key=lambda n: n.start_time)
+        self.notes = _anneal_notes(temp_notes)
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         self.other.sort(key=lambda n: n.start_time)
-
-    def _append_note(self, n, continued_note):
-        if continued_note is not None:
-            continued_note.duration += n.duration
-            if not n.tied_from:
-                self.notes.append(continued_note)
-                continued_note = None
-        else:
-            new_note = Note(n.start_time, n.note_num, n.duration, n.velocity)
-            if n.tied_from:
-                continued_note = copy.copy(new_note)
-            else:
-                self.notes.append(new_note)
-                continued_note = None
-        return continued_note
 
     def estimate_quantization(self):
         """ 

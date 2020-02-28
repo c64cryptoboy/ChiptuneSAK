@@ -24,7 +24,7 @@ def pitch_to_ml64_note_name(note_num, ml64_octave_offset=0):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = (note_num // 12) + ml64_octave_offset - 1
+    octave_num = ((note_num - C0_MIDI_NUM) // 12) + ml64_octave_offset
     pitch = note_num % 12
     return "%s%d" % (PITCHES[pitch], octave_num)
 

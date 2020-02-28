@@ -159,6 +159,7 @@ class Measure:
                     tp.content.append(Rest(tp_current_time, triplet_note_duration))
                     tp_current_time += triplet_note_duration
                     tp_last_time = tp_current_time
+                assert(sum(e.duration for e in tp.content) == tp.duration)
                 self.events.append(tp)
                 last_note_end = triplet_end_time
                 if n is not None:
