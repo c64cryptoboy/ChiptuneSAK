@@ -6,9 +6,12 @@ The Commodore 128's BASIC 7.0 has commands for playing music.
 TODO: Write quick overview
 
 ## chiptunesSAK handles the tedium for you
-TODO: Write about how the original documentation only did a two voice example, full of errors.
+What makes using the PLAY command so crazy difficult to program is that you have to order the voices' notes and rests in a particular way to get the expected rythmic playback.  When note durations overlap between voices, the shorter duration notes must be declared after the longer notes in which they "nest".  This become difficult to do manually for 3-part music.
 
-TODO: Include a picture of a single measure of the Bach test data that shows how complicated it can be to establish the play order of the notes correctly
+Here's an example from a measure from test/data/BWV_799.mid (a Bach 3-part invention):
+![note order image](bwv799measure42.png)
+
+In a PLAY command, the notes and rests must be ordered as shown, or else the rhythm will playback incorrectly (however, 8 and 9 can be swapped without consequence).  Fortunately, chiptunesSAK does this for you.
 
 ## How tempo is calculated
 
