@@ -15,7 +15,7 @@ from fractions import Fraction
 from functools import reduce, partial
 from dataclasses import dataclass
 from collections import defaultdict
-from ctsConstants import ARCH
+from ctsConstants import ARCH, C0_MIDI_NUM
 import ctsChirp
 import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
@@ -26,7 +26,6 @@ DEFAULT_TEMPO = 6
 # GoatTracker constants
 # TODO: All of these need to be moved into a combined gt importer and exporter
 GT_FILE_HEADER = b'GTS5'
-GT_OCTAVE_BASE = -1  # -1 means that in goattracker, middle C (261.63 Hz / note 60) is "C4" 
 GT_MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
                               # "song" means a collection of independently-playable subtunes
 GT_MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte
@@ -318,14 +317,14 @@ class GtChannelState:
 
 
 # Convert pattern note byte value into midi note value
-# Note: lowest goat tracker note C0 (0x60) = midi #24, 0x60-24=72
-def pattern_note_to_midi_note(pattern_note_byte):
-    return pattern_note_byte - 72 + (GT_OCTAVE_BASE * 12)
+# Note: lowest goat tracker note C0 (0x60)
+def pattern_note_to_midi_note(pattern_note_byte, octave_offset = 0):
+    return pattern_note_byte - (0x60 - C0_MIDI_NUM) + (octave_offset * 12)
 
 
 # Convert midi note value into pattern note value
-def midi_note_to_pattern_note(midi_note):
-    return midi_note + 72 + (-1 * GT_OCTAVE_BASE * 12)
+def midi_note_to_pattern_note(midi_note, octave_offset = 0):
+    return midi_note + (0x60 - C0_MIDI_NUM) + (-1 * octave_offset * 12)
 
 
 def get_chars(in_bytes, trim_nulls=True):

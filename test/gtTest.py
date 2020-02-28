@@ -14,8 +14,8 @@ import ctsBase
 class TestGoatTrackerFunctions(unittest.TestCase):
     def test_sng_parsing(self):
         # TODO: I'm fighting environment again...
-        sng_in_file = 'data/gtTestData.sng'
-        #sng_in_file = 'gtTestData.sng'
+        sng_in_file = 'test/data/gtTestData.sng'
+        #sng_in_file = 'data/gtTestData.sng'
 
         # parse all subtunes
         sng_data = ctsGoatTracker.import_sng(sng_in_file)
@@ -48,7 +48,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
             channel_note_on_events = []
             for frame, event in channel.items():
                 if event.note_on:
-                    midi_note_name = ctsBase.pitch_to_note_name(event.note, ctsGoatTracker.GT_OCTAVE_BASE)
+                    midi_note_name = ctsBase.pitch_to_note_name(event.note)
                     channel_note_on_events.append('(%d, "%s")' % (frame, midi_note_name))
             line = "channels.append((%s))" % (', '.join(channel_note_on_events))
             print(line)
@@ -62,7 +62,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     channels.append(((0, "C4"), (72, "E4"), (144, "G4"), (216, "C#4"), (288, "F4"), (360, "G#4"), (432, "C#4"), \
         (504, "F4"), (576, "G#4"), (648, "C4"), (720, "E4"), (792, "G4")))        
 
-
 if __name__ == '__main__':
-    ctsTestingTools.env_to_stdout()
+    #ctsTestingTools.env_to_stdout()
     unittest.main()
