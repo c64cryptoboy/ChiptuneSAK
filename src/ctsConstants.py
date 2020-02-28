@@ -3,6 +3,9 @@ from dataclasses import dataclass, field
 
 CHIPTUNESAK_VERSION = "0.13"
 
+C0_MIDI_NUM = 12
+C4_MIDI_NUM = 60
+
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 KEYS = {'major': ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'],

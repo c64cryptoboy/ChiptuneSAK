@@ -2,10 +2,7 @@
 # returns ascii representation of the program
 #
 # TODOs:
-# - Figure out tempo calculation bug
-# -- the BWV_799 (without the metric modulation to get rid of 32nd notes) gets a super slow tempo of 2
-#    using the calculation in here.  bpm is 60, denominator is 8, so yup.
-#    The piece is 1:36 long in sibelius/midi, in BASIC, the closest is tempo 6, which takes 1:38
+# - 
 
 import sys
 import os
@@ -19,7 +16,6 @@ from ctsChirp import Note
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 import ctsGenPrg
 
-OCTAVE_BASE = -1
 WHOLE_NOTE = 1152
 
 C128_INSTRUMENTS = {
@@ -60,7 +56,7 @@ def sort_order(c):
         return (c.start_time, -c.duration, c.voice)
 
 
-def basic_pitch_to_note_name(note_num, octave_offset=OCTAVE_BASE):
+def basic_pitch_to_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
     """
