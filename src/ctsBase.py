@@ -28,6 +28,12 @@ class SongMetadata:
     key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C'))
     qpm: int = 112
 
+class Triplet:
+    def __init__(self, start_time=0, duration=0, notes=None):
+        self.start_time = start_time
+        self.duration = duration
+        self.content = []
+
 
 # --------------------------------------------------------------------------------------
 #

@@ -72,22 +72,34 @@ class ChirpTrack:
         for m in mchirp_track.measures:
             for e in m.events:
                 if isinstance(e, Note):
-                    if continued_note is not None:
-                        continued_note.duration += e.duration
-                        if not e.tied_from:
-                            self.notes.append(continued_note)
-                            continued_note = None
-                    else:
-                        new_note = Note(e.start_time, e.note_num, e.duration, e.velocity)
-                        if e.tied_from:
-                            continued_note = copy.copy(new_note)
-                        else:
-                            self.notes.append(new_note)
+                    continued_note = self._append_note(e, continued_note)
+                elif isinstance(e, Rest):
+                    continued_note = None
+                elif isinstance(e, Triplet):
+                    for n in e.content:
+                        if isinstance(n, Note):
+                            continued_note = self._append_note(n, continued_note)
+                        elif isinstance(n, Rest):
                             continued_note = None
                 elif isinstance(e, OtherMidiEvent):
                     self.other.append(e)
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         self.other.sort(key=lambda n: n.start_time)
+
+    def _append_note(self, n, continued_note):
+        if continued_note is not None:
+            continued_note.duration += n.duration
+            if not n.tied_from:
+                self.notes.append(continued_note)
+                continued_note = None
+        else:
+            new_note = Note(n.start_time, n.note_num, n.duration, n.velocity)
+            if n.tied_from:
+                continued_note = copy.copy(new_note)
+            else:
+                self.notes.append(new_note)
+                continued_note = None
+        return continued_note
 
     def estimate_quantization(self):
         """ 

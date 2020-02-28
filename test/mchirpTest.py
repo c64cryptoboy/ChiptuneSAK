@@ -61,3 +61,6 @@ class SongTestCase(unittest.TestCase):
         total_triplets = sum(1 for t in test_mchirp.tracks for m in t.measures
                              for e in m.events if isinstance(e, Triplet))
         self.assertEqual(total_triplets, 21)
+
+        #  tmp_song = ChirpSong(test_mchirp)
+        # ctsMidi.chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')
