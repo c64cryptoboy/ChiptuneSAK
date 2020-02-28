@@ -65,7 +65,7 @@ class Measure:
         ppq = track.chirp_song.metadata.ppq
         end = self.start_time + self.duration
         last_note_end = self.start_time
-        if carry:  # Deal with any notes carried over from the previous measure
+        if carry is not None:  # Deal with any notes carried over from the previous measure
             carry.tied_to = True
             carry.start_time = self.start_time
             carry_end = self.start_time + carry.duration
@@ -80,114 +80,117 @@ class Measure:
                 last_note_end = self.start_time + carry.duration
                 carry = None
 
-        # Now iterate over the notes that begin during this measure
-        while inote < n_notes and track.notes[inote].start_time < end:
-            n = track.notes[inote]
-            gap = n.start_time - last_note_end
+        if carry is None:
+            # Now iterate over the notes that begin during this measure
+            while inote < n_notes and track.notes[inote].start_time < end:
+                n = track.notes[inote]
+                gap = n.start_time - last_note_end
 
-            # Begin triplet processing
-            # This is a single-pass triplet algorithm that does not require getting notes out of order.
-            # Assumptions for triplet processing:
-            #  - Neither the first or last note of the triplet is tied to a note outside the triplet
-            #  - Neither of the first two notes of the triplet is faster than the triplet speed
-            #      (e.g. no starting a set of eighth triplets with a pair of sixteenth-note triplets
-            #  - Triplets do not cross note division boundaries finer than the triplet (e.g. no quarter-note
-            #       triplets starting on odd eighth-note boundaries
-            #  - Triplets never span a measure line
-            #
-            #  In the future some or all of these constraints may be relieved
-            #
-            while is_triplet(n, ppq):
-                triplet_duration = 0
-                triplet_start_time = self.start_time
-                m_start = n.start_time - self.start_time
-                beat_type = start_beat_type(m_start, ppq)
-                if beat_type % 3 == 0:  # This happens when the triplet does NOT start on a beat
-                    beat_division = beat_type // 3  # Get the beat size from the offset from the triplet start
-                    # The triplet start time is the nearest beat of the required size
-                    triplet_start_time = (n.start_time * beat_division // ppq) * ppq // beat_division
-                    remainder = (n.start_time - triplet_start_time)
-                    if gap < remainder:  # If there is not enough space for the required rests, barf.
-                        raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
+                # Begin triplet processing
+                # This is a single-pass triplet algorithm that does not require getting notes out of order.
+                # Assumptions for triplet processing:
+                #  - Neither the first or last note of the triplet is tied to a note outside the triplet
+                #  - Neither of the first two notes of the triplet is faster than the triplet speed
+                #      (e.g. no starting a set of eighth triplets with a pair of sixteenth-note triplets
+                #  - Triplets do not cross note division boundaries finer than the triplet (e.g. no quarter-note
+                #       triplets starting on odd eighth-note boundaries
+                #  - Triplets never span a measure line
+                #
+                #  In the future some or all of these constraints may be relieved
+                #
+                while is_triplet(n, ppq):
+                    triplet_duration = 0
+                    triplet_start_time = self.start_time
+                    m_start = n.start_time - self.start_time
+                    beat_type = start_beat_type(m_start, ppq)
+                    if beat_type % 3 == 0:  # This happens when the triplet does NOT start on a beat
+                        beat_division = beat_type // 3  # Get the beat size from the offset from the triplet start
+                        # The triplet start time is the nearest beat of the required size
+                        triplet_start_time = (n.start_time * beat_division // ppq) * ppq // beat_division
+                        remainder = (n.start_time - triplet_start_time)
+                        if gap < remainder:  # If there is not enough space for the required rests, barf.
+                            raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
+                        else:
+                            triplet_duration = min(n.duration, remainder) * 3
+                    else:  # This happens when the triplet starts on the beat, so this note is the first note of the triplet
+                        if inote >= n_notes - 1:  # Was this note the last note?
+                            raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
+                        next_note = track.notes[inote + 1]  # Get the next note
+                        triplet_start_time = n.start_time
+                        if next_note.start_time - n.start_time > n.duration * 2:  # Next note is not in triplet
+                            triplet_duration = n.duration * 3
+                        elif not is_triplet(next_note, ppq):
+                            raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
+                        else:
+                            triplet_duration = min(next_note.duration, n.duration) * 3  # Choose the shortest of the first 2
+
+                    if triplet_start_time + triplet_duration > end:  # Triplet would cross measure boundary
+                        raise ChiptuneSAKContentError("Triplets past end of measure in measure %d" % measure_number)
+
+                    # Fill in any rests between the last note and the start of the triplet
+                    gap = triplet_start_time - last_note_end
+                    if gap > 0:
+                        self.events.append(Rest(last_note_end, gap))
+                        last_note_end = triplet_start_time
+
+                    # Now create the triplet and populate with notes
+                    tp = Triplet(triplet_start_time, triplet_duration)
+                    tp_current_time = tp.start_time
+                    triplet_note_duration = tp.duration // 3
+                    triplet_end_time = tp.start_time + tp.duration
+                    tp_last_time = tp.start_time
+                    while n is not None and n.start_time < triplet_end_time:
+                        tp_gap = n.start_time - tp_last_time
+                        if tp_gap > 0:
+                            # Fill in rests within the triplet before the first note
+                            while tp_current_time < n.start_time:
+                                tp.content.append(Rest(tp_current_time, triplet_note_duration))
+                                tp_current_time += triplet_note_duration
+                                tp_last_time = tp_current_time
+                        tp.content.append(n)
+                        tp_current_time += n.duration
+                        tp.last_time = tp_current_time
+                        inote += 1
+                        if inote < n_notes:
+                            n = track.notes[inote]
+                        else:
+                            n = None  # We reached the last note in the song
+                    # Fill in rests after the last note
+                    while tp_current_time < triplet_end_time:
+                        tp.content.append(Rest(tp_current_time, triplet_note_duration))
+                        tp_current_time += triplet_note_duration
+                        tp_last_time = tp_current_time
+                    assert(sum(e.duration for e in tp.content) == tp.duration)
+                    self.events.append(tp)
+                    last_note_end = triplet_end_time
+                    if n is not None:
+                        gap = n.start_time - triplet_end_time
+                        if n.start_time >= end:  # Are we at the end of the measure?
+                            carry = None
+                            break
                     else:
-                        triplet_duration = min(n.duration, remainder) * 3
-                else:  # This happens when the triplet starts on the beat, so this note is the first note of the triplet
-                    if inote >= n_notes - 1:  # Was this note the last note?
-                        raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
-                    next_note = track.notes[inote + 1]  # Get the next note
-                    triplet_start_time = n.start_time
-                    if next_note.start_time - n.start_time > n.duration * 2:  # Next note is not in triplet
-                        triplet_duration = n.duration * 3
-                    elif not is_triplet(next_note, ppq):
-                        raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
-                    else:
-                        triplet_duration = min(next_note.duration, n.duration) * 3  # Choose the shortest of the first 2
-
-                if triplet_start_time + triplet_duration > end:  # Triplet would cross measure boundary
-                    raise ChiptuneSAKContentError("Triplets past end of measure in measure %d" % measure_number)
-
-                # Fill in any rests between the last note and the start of the triplet
-                gap = triplet_start_time - last_note_end
-                if gap > 0:
-                    self.events.append(Rest(last_note_end, gap))
-                    last_note_end = triplet_start_time
-
-                # Now create the triplet and populate with notes
-                tp = Triplet(triplet_start_time, triplet_duration)
-                tp_current_time = tp.start_time
-                triplet_note_duration = tp.duration // 3
-                triplet_end_time = tp.start_time + tp.duration
-                tp_last_time = tp.start_time
-                while n is not None and n.start_time < triplet_end_time:
-                    tp_gap = n.start_time - tp_last_time
-                    if tp_gap > 0:
-                        # Fill in rests within the triplet before the first note
-                        while tp_current_time < n.start_time:
-                            tp.content.append(Rest(tp_current_time, triplet_note_duration))
-                            tp_current_time += triplet_note_duration
-                            tp_last_time = tp_current_time
-                    tp.content.append(n)
-                    tp_current_time += n.duration
-                    tp.last_time = tp_current_time
-                    inote += 1
-                    if inote < n_notes:
-                        n = track.notes[inote]
-                    else:
-                        n = None  # We reached the last note in the song
-                # Fill in rests after the last note
-                while tp_current_time < triplet_end_time:
-                    tp.content.append(Rest(tp_current_time, triplet_note_duration))
-                    tp_current_time += triplet_note_duration
-                    tp_last_time = tp_current_time
-                assert(sum(e.duration for e in tp.content) == tp.duration)
-                self.events.append(tp)
-                last_note_end = triplet_end_time
-                if n is not None:
-                    gap = n.start_time - triplet_end_time
-                    if n.start_time >= end:  # Are we at the end of the song?
                         break
-                else:
+                # One more check for the end of the song/measure required
+                if n is None or n.start_time >= end:
+                    carry = None
                     break
-            # One more check for the end of the song required
-            if n is None or n.start_time >= end:
-                break
-            # Continue normal note processing
-            if gap > 0:  # Is there a rest before the note starts?
-                self.events.append(Rest(last_note_end, gap))
-                last_note_end = n.start_time
-            note_end = n.start_time + n.duration  # Time that this note ends
-            if note_end <= end:  # Note fits within the current measure
-                self.events.append(n)
-                last_note_end = note_end
-            else:
-                carry = copy.copy(n)  # Make a copy of the note to use for the carry
-                duration = end - n.start_time
-                n.duration = duration  # truncate the note to the end of the measure
-                n.tied_from = True  # And mark it as tied to the next note
-                self.events.append(n)
-                last_note_end = end
-                carry.duration -= duration  # Det the length of the carried note to the remaining time
-            inote += 1  # Move to the next note
+                # Continue normal note processing
+                if gap > 0:  # Is there a rest before the note starts?
+                    self.events.append(Rest(last_note_end, gap))
+                    last_note_end = n.start_time
+                note_end = n.start_time + n.duration  # Time that this note ends
+                if note_end <= end:  # Note fits within the current measure
+                    self.events.append(n)
+                    last_note_end = note_end
+                else:
+                    carry = copy.copy(n)  # Make a copy of the note to use for the carry
+                    duration = end - n.start_time
+                    n.duration = duration  # truncate the note to the end of the measure
+                    n.tied_from = True  # And mark it as tied to the next note
+                    self.events.append(n)
+                    last_note_end = end
+                    carry.duration -= duration  # Det the length of the carried note to the remaining time
+                inote += 1  # Move to the next note
 
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?

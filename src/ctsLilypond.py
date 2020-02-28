@@ -24,7 +24,7 @@ current_pitch_set = lp_pitches['sharps']
 current_clef = 'treble'
 current_ottava = 0
 
-def lp_pitch_to_note_name(note_num, pitches, octave_offset=3):
+def lp_pitch_to_note_name(note_num, pitches, octave_offset=-3):
     """
     Gets the Lilypond note name for a given pitch.
         :param note_num:       MIDI note number
@@ -34,7 +34,7 @@ def lp_pitch_to_note_name(note_num, pitches, octave_offset=3):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = ((note_num - C0_MIDI_NUM) // 12) - octave_offset
+    octave_num = ((note_num - C0_MIDI_NUM) // 12) + octave_offset
     if octave_num >= 0:
         octave = "'" * octave_num
     else:
