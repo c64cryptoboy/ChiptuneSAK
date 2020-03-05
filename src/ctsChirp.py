@@ -180,22 +180,34 @@ class ChirpTrack:
         return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
 
     def is_quantized(self):
-        if self.qticks_notes < 4 or self.qticks_durations < 4:
+        """
+        Returns whether the current track is quantized or not.  Since a quantization of 1 is equivalent to no
+        quantization, a track quantized to tick will return False.
+
+            :return: True if the track is quantized.
+        """
+        if self.qticks_notes < 2 or self.qticks_durations < 2:
             return False
         return all(n.start_time % self.qticks_notes == 0
                    and n.duration % self.qticks_durations == 0
                    for n in self.notes)
 
-    def remove_control_notes(self, control_max=8):
+    def remove_keyswitches(self, ks_max=8):
         """
-        Removes all MIDI notes with values less than or equal to control_max.
-        Some MIDI devices and applications use these extremely low notes to
-        convey patch change or other information, so removing them (especially 
+        Removes all MIDI notes with values less than or equal to ks_max.    Some MIDI devices and applications use
+        these extremely low notes to convey patch change or other information, so removing them (especially if
         you don't want polyphony) is a good idea.
+
+            :param ks_max: maximum note number for keyswitches in the track (often 8)
         """
-        self.notes = [n for n in self.notes if n.note_num > control_max]
+        self.notes = [n for n in self.notes if n.note_num > ks_max]
 
     def transpose(self, semitones):
+        """
+        Transposes track in-place by semitones, which can be positive (transpose up) or negative (transpose down)
+
+            :param semitones:  Number of semitones to transpose
+        """
         for i, n in enumerate(self.notes):
             new_note_num = n.note_num + semitones
             if 0 <= new_note_num <= 127:
@@ -207,6 +219,9 @@ class ChirpTrack:
     def modulate(self, num, denom):
         """
         Modulates this track metrically by a factor of num / denom
+
+            :param num:   Numerator of modulation
+            :param denom: Denominator of modulation
         """
         # Change the start times of all the "other" events
         for i, (t, m) in enumerate(self.other):
@@ -239,6 +254,7 @@ class ChirpTrack:
         """
         Moves all the events in this track by offset_ticks.  Any events that would have a time in ticks less than 0 are
         set to time zero.
+
             :param offset_ticks:
         """
         for i, (t, m) in enumerate(self.other):
@@ -286,6 +302,7 @@ class ChirpSong:
     def import_mchirp_song(self, mchirp_song):
         """
         Imports an MChirpSong
+
             :param mchirp_song:
         """
         for t in mchirp_song.tracks:
@@ -368,6 +385,43 @@ class ChirpSong:
             qticks //= 3
         self.quantize(qticks, qticks)
 
+    def explode_polyphony(self, i_track):
+        """
+        'Explodes' a single track into multi-track polyphony.  The new tracks replace the old track in the
+        song's list of tracks, so later tracks may be pushed to higher indexes.
+
+            :param i_track:  index of the track for the song
+        """
+        def _get_available_tracks(note, current_notes):
+            ret = []
+            for it, n in enumerate(current_notes):
+                if note.start_time >= n.start_time + n.duration:
+                    ret.append(it)
+            ret.sort(key=lambda n:
+                (-current_notes[n].note_num))
+            return ret
+        old_track = self.tracks.pop(i_track)
+        old_track.notes.sort(key= lambda n: (n.start_time, -n.note_num))
+        new_tracks = [ChirpTrack(self)]
+        n_tracks = 1
+        current_notes = [Note(0, 0, 0, 0)]
+        for note in old_track.notes:
+            possible = _get_available_tracks(note, current_notes)
+            if len(possible) == 0:
+                new_tracks.append(ChirpTrack(self))
+                new_tracks[-1].notes.append(note)
+                current_notes.append(note)
+            else:
+                it = possible[0]
+                new_tracks[it].notes.append(note)
+                current_notes[it] = note
+        for i in range(n_tracks):
+            new_tracks[i].other = copy.deepcopy(old_track.other)
+            new_tracks[i].channel = old_track.channel
+            new_tracks[i].name = old_track.name + 's%d' % i
+        for t in new_tracks[::-1]:
+            self.tracks.insert(i_track, t)
+
     def remove_polyphony(self):
         """
         Eliminate polyphony from all tracks.
@@ -396,15 +450,15 @@ class ChirpSong:
         """
         return all(t.is_quantized() for t in self.tracks)
 
-    def remove_control_notes(self, control_max=8):
+    def remove_keyswitches(self, ks_max=8):
         """
         Some MIDI programs use extremely low notes as a signaling mechanism.
-        This method removes notes with pitch <= control_max from all tracks.
+        This method removes notes with pitch <= ks_max from all tracks.
 
-            :param control_max:  Maximum note number for the control notes
+            :param ks_max:  Maximum note number for the control notes
         """
         for t in self.tracks:
-            t.remove_control_notes(control_max)
+            t.remove_keyswitches(ks_max)
 
     def transpose(self, semitones, minimize_accidentals=True):
         """

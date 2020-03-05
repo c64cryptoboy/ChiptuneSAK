@@ -181,7 +181,7 @@ if __name__ == '__main__':
     print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
     print("Original:", "quantized" if in_song.is_quantized() else 'non quantized')
 
-    in_song.remove_control_notes()
+    in_song.remove_keyswitches()
     # in_song.modulate(3, 2)
     # in_song.quantize(in_song.metadata.ppq // 4,
     #                  in_song.metadata.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)

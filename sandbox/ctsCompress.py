@@ -126,7 +126,7 @@ def find_best_compression(song, repeats, pattern_definition_overhead, pattern_de
 if __name__ == '__main__':
     in_song = ctsChirp.ChirpSong(sys.argv[1])
 
-    in_song.remove_control_notes()
+    in_song.remove_keyswitches()
     q = in_song.estimate_quantization()
     print(q)
     in_song.quantize()  # Automatically quantize

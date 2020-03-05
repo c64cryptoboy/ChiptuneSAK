@@ -235,8 +235,6 @@ def song_to_lilypond(mchirp_song, auto_sort=False):
     global current_pitch_set, current_clef, current_ottava
     global current_key_signature, current_time_signature
     # Set these to the default, so that they will change on the first measure.
-    current_time_signature = TimeSignatureEvent(0, 4, 4)
-    current_key_signature = ChirpKey('C').key_signature
     current_pitch_set = lp_pitches['sharps']  # default is sharps
     output = []
     output.append('\\version "2.18.2"')
@@ -251,6 +249,8 @@ def song_to_lilypond(mchirp_song, auto_sort=False):
         tracks = sorted([t for t in mchirp_song.tracks], key=avg_pitch, reverse=True)
     output.append('\\new StaffGroup <<')
     for it, t in enumerate(tracks):
+        current_time_signature = TimeSignatureEvent(0, 4, 4)
+        current_key_signature = ChirpKey('C').key_signature
         measures = copy.copy(t.measures)
         track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)),
                        max(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)))
@@ -272,7 +272,7 @@ if __name__ == '__main__':
     import subprocess
     in_filename = sys.argv[1]
     song = ctsMidi.midi_to_chirp(in_filename)
-    song.remove_control_notes()
+    song.remove_keyswitches()
     estimated_q = song.estimate_quantization()
     print(estimated_q)
     song.quantize(*estimated_q)

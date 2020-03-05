@@ -32,7 +32,7 @@ def main():
     # midi -> mchirp
     # TODO: Remove hardcoding in this process
     song = ctsMidi.midi_to_chirp(args.midi_in_file)
-    song.remove_control_notes(8)
+    song.remove_keyswitches(8)
     song.quantize_from_note_name('16')
     # TODO: transformMidi.py -q 32 -k Am ..\test\BWV_799.mid ..\test\BWV_799_q.mid
     #song.quantize_from_note_name('32')    

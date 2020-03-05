@@ -44,7 +44,7 @@ def main():
 
     if args.removecontrolnotes:
         print("Removing control notes...")
-        song.remove_control_notes()
+        song.remove_keyswitches()
 
     if args.scaleticks:
         print("Scaling by %lf" % args.scaleticks)

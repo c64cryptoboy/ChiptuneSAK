@@ -28,7 +28,7 @@ def main():
     print("Reading %s" % args.midi_in_file)
     chirp_song = ctsMidi.midi_to_chirp(args.midi_in_file)
     print("Removing control notes...")
-    chirp_song.remove_control_notes()
+    chirp_song.remove_keyswitches()
     print("Quantizing...")
     qticks_n, qticks_d = chirp_song.estimate_quantization()
     print(qticks_n, qticks_d)
