@@ -9,7 +9,7 @@ import more_itertools as moreit
 
 class Measure:
     @staticmethod
-    def sort_order(c):
+    def _sort_order(c):
         """
         Sort function for measure contents.
         Items are sorted by time and then, for equal times, in this order:
@@ -219,7 +219,7 @@ class Measure:
                 # Tempo changes can happen anywhere in the measure
                 self.events.append(TempoEvent(tm.start_time, tm.qpm))
 
-        self.events = sorted(self.events, key=self.sort_order)
+        self.events = sorted(self.events, key=self._sort_order)
 
         return carry
 
