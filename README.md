@@ -35,9 +35,9 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * Quantizing of note onset and duration
 * Arbitrary metric modulation with support for music with varying meters
 * Transpose score
+* Separate ("explode") polyphony into separate voices
 
 #### ChIRp processing: under development
-* Separate ("explode") polyphony into separate voices
 * Music compression
    * For Trackers: compute patterns, including compression opportunities based on transposition and tempo
    * For measure-based systems
@@ -60,6 +60,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * [ABC](http://abcnotation.com/wiki/abc:standard:v2.1) Notation: Human-readable music format.  Used to allow user-submitted music in online games including Starbound, Lord of the Rings Online, and Shroud of the Avatar
 * jellybiscuits Music Box Composer format
 * [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (targeting dual and triple SID, as SID-Wizard only supports midi->single SID)
+* A [Rob Hubbard engine](https://www.1xn.org/text/C64/rob_hubbards_music.txt)
 * RobTracker v1.11 (publicly released Dec 25th. 2019)
 
 ## Recent milestones
