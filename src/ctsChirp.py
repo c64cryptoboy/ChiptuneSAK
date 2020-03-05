@@ -7,13 +7,10 @@
 #    pip install mido
 #
 
-import sys
 import copy
 import bisect
 import more_itertools as moreit
 from ctsErrors import *
-from ctsConstants import *
-from ctsKey import ChirpKey
 from ctsBase import *
 
 class Note:
@@ -59,7 +56,11 @@ class ChirpTrack:
         self.qticks_notes = chirp_song.qticks_notes  # Inherit quantization from song
         self.qticks_durations = chirp_song.qticks_durations  # inherit quantization from song
         if mchirp_track is not None:
-            self.import_mchirp_track(mchirp_track)
+            tmp = str(type(mchirp_track))
+            if tmp != "<class 'ctsMChirp.MChirpTrack'>":
+                raise ChiptuneSAKTypeError("ChirpTrack init can only import MChirpTrack objects")
+            else:
+                self.import_mchirp_track(mchirp_track)
 
     def import_mchirp_track(self, mchirp_track):
         """
@@ -177,6 +178,11 @@ class ChirpTrack:
         return (deleted, truncated)
 
     def is_polyphonic(self):
+        """
+        Returns whether the track is polyphonic; if any notes overlap it is.
+
+            :return: True if track is polyphonic.
+        """
         return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
 
     def is_quantized(self):
@@ -280,7 +286,11 @@ class ChirpSong:
     def __init__(self, mchirp_song=None):
         self.reset_all()
         if mchirp_song is not None:
-            self.import_mchirp_song(mchirp_song)
+            tmp = str(type(mchirp_song))
+            if tmp != "<class 'ctsMChirp.MChirpSong'>":
+                raise ChiptuneSAKTypeError("ChirpSong init can only import MChirpSong objects")
+            else:
+                self.import_mchirp_song(mchirp_song)
 
     def reset_all(self):
         """ 

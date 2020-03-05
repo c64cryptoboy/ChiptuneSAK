@@ -237,7 +237,11 @@ class MChirpTrack:
     def __init__(self, mchirp_song, chirp_track=None):
         self.mchirp_song = mchirp_song
         if chirp_track is not None:
-            self.import_chirp_track(chirp_track)
+            tmp = str(type(chirp_track))
+            if tmp != "<class 'ctsChirp.ChirpTrack'>":
+                raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
+            else:
+                self.import_chirp_track(chirp_track)
 
     def import_chirp_track(self, chirp_track):
         """
@@ -271,7 +275,11 @@ class MChirpSong:
         self.name = ''
         self.stats = {}
         if chirp_song is not None:
-            self.import_chirp_song(chirp_song)
+            tmp = str(type(chirp_song))
+            if tmp != "<class 'ctsChirp.ChirpSong'>":
+                raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
+            else:
+                self.import_chirp_song(chirp_song)
 
     def import_chirp_song(self, chirp_song):
         """
