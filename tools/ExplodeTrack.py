@@ -26,11 +26,13 @@ def main():
         print("Exploding track number %d" % args.tracknumber)
         song.explode_polyphony(args.tracknumber - 1)
     elif args.trackname:
-        print("Exploding track %s" % args.trackname)
-        for i, t in enumerate(song.tracks):
-            if t == args.trackname:
-                song.explode_polyphony(i)
-                break
+        it = next((it for it, t in enumerate(song.tracks) if t.name == args.trackname), None)
+        if it is None:
+            print("Track %s not found" % args.trackname)
+            exit(1)
+        else:
+            print("Exploding track %s" % song.tracks[it].name)
+            song.explode_polyphony(it)
     else:
         print("No track specified")
         exit(1)

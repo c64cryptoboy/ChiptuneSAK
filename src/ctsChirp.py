@@ -415,10 +415,10 @@ class ChirpSong:
                 it = possible[0]
                 new_tracks[it].notes.append(note)
                 current_notes[it] = note
-        for i in range(n_tracks):
+        for i, t in enumerate(new_tracks):
             new_tracks[i].other = copy.deepcopy(old_track.other)
             new_tracks[i].channel = old_track.channel
-            new_tracks[i].name = old_track.name + 's%d' % i
+            new_tracks[i].name = old_track.name + ' s%d' % i
         for t in new_tracks[::-1]:
             self.tracks.insert(i_track, t)
 
