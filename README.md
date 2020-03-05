@@ -1,9 +1,9 @@
 [comment]: # (Note: for now, can't link to image unless authenticated to private repo)
-![logo](https://github.com/c64cryptoboy/chiptune-sak/blob/master/res/logoSmall.png)
-# chiptune-sak
-chiptune-sak (swiss army knife) is a generalized pipeline for processing music and targeting various constrained playback environments.
+![logo](https://github.com/c64cryptoboy/ChiptuneSAK/blob/master/res/logoSmall.png)
+# ChiptuneSAK
+ChiptuneSAK (swiss army knife) is a generalized pipeline for processing music and targeting various constrained playback environments.
 
-It imports from many music formats and converts them to a common representation chirp (**CH**iptune-sak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.  
+It imports from many music formats and converts them to a common representation chirp (**CH**iptunesak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.  
 
 ## Background:
 Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we know nothing about the status of the game, so please don't ask).  Recently, Youd/Knapp/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
@@ -34,14 +34,16 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ### ChIRp processing / transformations
 * Quantizing of note onset and duration
 * Arbitrary metric modulation with support for music with varying meters
-* Music compression (compute patterns for trackers, including compression opportunities based on transposition and tempo)
- 
-#### ChIRp processing: under development
 * Transpose score
-* Separate polyphony (currently separates different channels in same track, needs to be generalized)
+
+#### ChIRp processing: under development
+* Separate ("explode") polyphony into separate voices
+* Music compression
+   * For Trackers: compute patterns, including compression opportunities based on transposition and tempo
+   * For measure-based systems
  
 #### ChIRp processing: proposed
-* Measure-aware music compression
+*
   
 ### Music exporters
 * MIDI
@@ -51,7 +53,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
  
 #### Exporters: Under development
 
-* GoatTracker 2 (working, except for automatic compressed pattern creation)
+* GoatTracker 2 (working, except for automatic compressed pattern creation, and 2SID)
   
 #### Exporters: Proposed
 * Markus's yet-unnamed Dr. Cat-derrived 3-SID C64 player
@@ -65,10 +67,12 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * Exported some Betrayal at Krondor (MS-DOS, 1993) midi capture to pdf sheet music, goat tracker, and Commodore 128 BASIC program
 
 ## Requirements/Building
-* Python 3.7+
+* [Python 3.7+](https://www.python.org/downloads/)
 * pip install
    * numpy
    * matplotlib
    * more_itertools
    * recordtype
    * sortedcontainers
+   * py65
+ * [Lilypond](https://lilypond.org/download.html)
