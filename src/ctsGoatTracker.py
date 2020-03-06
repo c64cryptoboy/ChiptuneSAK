@@ -82,7 +82,7 @@ PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
 PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
 
 # TimeEntry instances are values where key is tick
-# Over time, might add other commands to this as well (funktempo, Portamento, etc.)
+# Over time, might add other commands to this as well (Portamento, etc.)
 @dataclass
 class TimeEntry:
     note: int = None
@@ -205,7 +205,6 @@ class GtChannelState:
             $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
             """
             # From experiments:
-            # - funktempo is basically swing tempo
             # - empirically, the higher voice number seems to win ties on simultaneous speed changes
             # - $80-$81 will recall the funktempo for just that channel
             # - $02 and $82 are possible speeds under certain constraints, but not going to support
@@ -230,6 +229,35 @@ class GtChannelState:
                 self.local_tempo_update = row.command_data - 0x80
                 self.curr_tempo = self.local_tempo_update         
 
+        # TODO:  SUPPORT FUNKTEMPO! (needed for Hasse's test data)
+        #
+        # Notes on funktempo (all this logic gleaned from reading through gplay.c)
+        # 
+        # Funktempo allows switching between two tempos on alternating pattern rows, to achieve
+        # a "swing" or more organic feel.
+        # - for non-multispeed songs, it defaults to 9 and 6 
+        # 
+        # The funktempo command is $E followed by an index to a single row in the speed table
+        # - The left/right values in the speedtable row contain the two (alternating) tempo values
+        # - Under the covers (in gplay.c), the array funktable[2] holds the two tempos
+        #    - e.g., command E04 points to speedtable at index 4.  If the speedtable row contains
+        #      01:09 06, then the alternating tempos are 9 and 6.  For a 4x-multispeed, these
+        #      would need to be set instead to 01:24 18
+        # - The command applies to all channels (3 or 6 for stereo) and all channels are set to
+        #   tempo 0
+        # 
+        # The tempo command is $F, and "tempos" $00 and $01 change all channels to the tempo that's
+        # been previously set in funktable[0] or funktable[1] respectively, and every subsequent
+        # row will alternate between the [0] and [1] entries of the funktable.  In otherwords,
+        # you can choose which half of the funktempo to start with.
+        # - Values $80 and $81 are like $00 and $01, but apply funktempo to just the current channel
+        #    -- Q: Unclear when comparing documentation to source if $02 and $82 are officially supported
+        #       values for the tempo command.  Going to throw an exception for now.
+        # - Since the $E command sets all tempos to 0 (see above), it will always start with
+        #   funktable[0]'s tempo (set by the left-side entry in the speed table).  But $F can choose
+        #   to start with the (previously-set) first or second value in the funktempo pair.
+
+
         # TODO: Possibly handle some of the (below) commands in the future?
         """ from docs:
         Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
@@ -241,12 +269,7 @@ class GtChannelState:
         target note)
         
         Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-        copied to the timing mark location, which is playeraddress+$3F.
-    
-        Command EXY: Funktempo. XY is an index to the speedtable, tempo will alternate
-        between left side value and right side value on subsequent pattern
-        steps. Sets the funktempo active on all channels, but you can use
-        the next command to override this per-channel.
+        copied to the timing mark location, which is playeraddress+$3F.    
         """
 
         # Number of ticks for a row is based on tempo.  This can be overwritten by another
