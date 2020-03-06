@@ -10,7 +10,6 @@
 import copy
 import bisect
 import more_itertools as moreit
-from ctsErrors import *
 from ctsBase import *
 
 class Note:

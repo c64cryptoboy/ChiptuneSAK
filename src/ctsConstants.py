@@ -5,6 +5,7 @@ CHIPTUNESAK_VERSION = "0.13"
 
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
+BIG_NUMBER = 0xFFFFFFFF
 
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 

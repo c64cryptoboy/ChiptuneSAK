@@ -1,5 +1,4 @@
 import copy
-from ctsErrors import *
 from ctsBase import *
 from ctsChirp import Note
 import more_itertools as moreit
@@ -272,7 +271,6 @@ class MChirpTrack:
 class MChirpSong:
     def __init__(self, chirp_song=None):
         self.tracks = []
-        self.name = ''
         self.stats = {}
         if chirp_song is not None:
             tmp = str(type(chirp_song))
