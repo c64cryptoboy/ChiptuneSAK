@@ -25,6 +25,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 
 #### Importers: under development
 * ML64: Human-readable music format for [Unknown Realm](https://www.kickstarter.com/projects/stirringdragongames/unknown-realm-an-8bit-rpg-for-pc-and-commodore-64) music contributions from those supporting at the "bard tier"
+* [GoatTracker 2 Stereo](https://sourceforge.net/projects/goattracker2/files/GoatTracker%202%20Stereo/) (2SID)
 
 #### Importers: proposed
 * Subset of [MusicXML](https://www.musicxml.com/for-developers/): A digital sheet music interchange format
@@ -53,7 +54,8 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
  
 #### Exporters: Under development
 
-* GoatTracker 2 (working, except for automatic compressed pattern creation, and 2SID)
+* GoatTracker 2 (working, except for automatic compressed pattern creation)
+* GoatTracker 2 Stereo (2SID)
   
 #### Exporters: Proposed
 * Markus's yet-unnamed Dr. Cat-derrived 3-SID C64 player
