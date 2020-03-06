@@ -17,7 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description="Convert a midi file into a C128 BASIC program.")
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('basic_out_file', help='filename to export')
-    parser.add_argument('-t', '--type', choices=['bas', 'prg'], default='prg',
+    parser.add_argument('-t', '--type', choices=['bas', 'prg'],
         help='basic output file type (default: prg)')
     parser.add_argument('-i', '--instruments', nargs=3, help="instrument names (3 required)")
     parser.add_argument('-a', '--arch', help="architecture (NTSC or PAL)")
@@ -52,6 +52,13 @@ def main():
 
     # mchirp -> basic (ascii)
     program = ctsC128Basic.midi_to_C128_BASIC(mchirp_song, instruments, arch)
+
+    # if -t flag not used, look at output filename extension
+    if args.type is None:
+        if args.basic_out_file.lower().endswith('.bas'):
+            args.type = 'bas'
+        else:
+            args.type = 'prg'
 
     if args.type == 'bas':
         with open(args.basic_out_file, 'w') as out_file:

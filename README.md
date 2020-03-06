@@ -25,6 +25,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 
 #### Importers: under development
 * ML64: Human-readable music format for [Unknown Realm](https://www.kickstarter.com/projects/stirringdragongames/unknown-realm-an-8bit-rpg-for-pc-and-commodore-64) music contributions from those supporting at the "bard tier"
+* [GoatTracker 2 Stereo](https://sourceforge.net/projects/goattracker2/files/GoatTracker%202%20Stereo/) (2SID)
 
 #### Importers: proposed
 * Subset of [MusicXML](https://www.musicxml.com/for-developers/): A digital sheet music interchange format
@@ -35,9 +36,9 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * Quantizing of note onset and duration
 * Arbitrary metric modulation with support for music with varying meters
 * Transpose score
+* Separate ("explode") polyphony into separate voices
 
 #### ChIRp processing: under development
-* Separate ("explode") polyphony into separate voices
 * Music compression
    * For Trackers: compute patterns, including compression opportunities based on transposition and tempo
    * For measure-based systems
@@ -53,13 +54,15 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
  
 #### Exporters: Under development
 
-* GoatTracker 2 (working, except for automatic compressed pattern creation, and 2SID)
+* GoatTracker 2 (working, except for automatic compressed pattern creation)
+* GoatTracker 2 Stereo (2SID)
   
 #### Exporters: Proposed
 * Markus's yet-unnamed Dr. Cat-derrived 3-SID C64 player
 * [ABC](http://abcnotation.com/wiki/abc:standard:v2.1) Notation: Human-readable music format.  Used to allow user-submitted music in online games including Starbound, Lord of the Rings Online, and Shroud of the Avatar
 * jellybiscuits Music Box Composer format
 * [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (targeting dual and triple SID, as SID-Wizard only supports midi->single SID)
+* A [Rob Hubbard engine](https://www.1xn.org/text/C64/rob_hubbards_music.txt)
 * RobTracker v1.11 (publicly released Dec 25th. 2019)
 
 ## Recent milestones
