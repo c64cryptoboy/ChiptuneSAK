@@ -26,12 +26,16 @@ DEFAULT_TEMPO = 6
 # GoatTracker constants
 # TODO: All of these need to be moved into a combined gt importer and exporter
 GT_FILE_HEADER = b'GTS5'
+
+# All these MAXes are the same for goattracker 2 (1SID) and goattracker 2 stereo (2SID)
+# (Note: MAXes vary in the SID-Wizard 1SID, 2SID, and 3SID engines)
 GT_MAX_SUBTUNES_PER_SONG = 32 # Each subtune gets its own orderlist of patterns
                               # "song" means a collection of independently-playable subtunes
 GT_MAX_ELM_PER_ORDERLIST = 255 # at minimum, it must contain the endmark and following byte
 GT_MAX_INSTR_PER_SONG = 63
 GT_MAX_PATTERNS_PER_SONG = 208 # patterns can be shared across channels and subtunes
 GT_MAX_ROWS_PER_PATTERN = 128 # and min rows (not including end marker) is 1
+
 GT_REST = 0xBD # A rest in goattracker means NOP, not rest
 GT_KEY_OFF = 0xBE
 GT_KEY_ON = 0xBF
@@ -78,7 +82,7 @@ PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
 PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
 
 # TimeEntry instances are values where key is tick
-# Over time, might add other commands to this as well (funktempo, Portamento, etc.)
+# Over time, might add other commands to this as well (Portamento, etc.)
 @dataclass
 class TimeEntry:
     note: int = None
@@ -88,13 +92,14 @@ class TimeEntry:
 class GTSong:
     def __init__(self):
         self.headers = GtHeader()
+        self.num_channels = 3 # 6 for "stereo"  
         self.subtune_orderlists =  [[[],[],[]]] # [subtune][channel_index0-2][orderlist_byte_index]
         self.instruments = [] # list of GtInstrument instances
         self.wave_table = GtTable()
         self.pulse_table = GtTable()
         self.filter_table = GtTable()
         self.speed_table = GtTable()
-        self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances        
+        self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances
 
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
@@ -200,7 +205,6 @@ class GtChannelState:
             $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
             """
             # From experiments:
-            # - funktempo is basically swing tempo
             # - empirically, the higher voice number seems to win ties on simultaneous speed changes
             # - $80-$81 will recall the funktempo for just that channel
             # - $02 and $82 are possible speeds under certain constraints, but not going to support
@@ -211,7 +215,7 @@ class GtChannelState:
 
             # Change tempo for all channels
             #   From looking at the gt source code (at least for the goat tracker gui's gplay.c)
-            #   when a CMD_SETTEMPO happens (for one or for all three channels), the tempos immediately
+            #   when a CMD_SETTEMPO happens (for one or for all three/six channels), the tempos immediately
             #   change, but the ticks remaining on each channel's current row (in progress) is left alone --
             #   another detail that would have been nice to have had in the documentation.
             if 0x03 <= row.command_data <= 0x7F:
@@ -225,6 +229,35 @@ class GtChannelState:
                 self.local_tempo_update = row.command_data - 0x80
                 self.curr_tempo = self.local_tempo_update         
 
+        # TODO:  SUPPORT FUNKTEMPO! (needed for Hasse's test data)
+        #
+        # Notes on funktempo (all this logic gleaned from reading through gplay.c)
+        # 
+        # Funktempo allows switching between two tempos on alternating pattern rows, to achieve
+        # a "swing" or more organic feel.
+        # - for non-multispeed songs, it defaults to 9 and 6 
+        # 
+        # The funktempo command is $E followed by an index to a single row in the speed table
+        # - The left/right values in the speedtable row contain the two (alternating) tempo values
+        # - Under the covers (in gplay.c), the array funktable[2] holds the two tempos
+        #    - e.g., command E04 points to speedtable at index 4.  If the speedtable row contains
+        #      01:09 06, then the alternating tempos are 9 and 6.  For a 4x-multispeed, these
+        #      would need to be set instead to 01:24 18
+        # - The command applies to all channels (3 or 6 for stereo) and all channels are set to
+        #   tempo 0
+        # 
+        # The tempo command is $F, and "tempos" $00 and $01 change all channels to the tempo that's
+        # been previously set in funktable[0] or funktable[1] respectively, and every subsequent
+        # row will alternate between the [0] and [1] entries of the funktable.  In otherwords,
+        # you can choose which half of the funktempo to start with.
+        # - Values $80 and $81 are like $00 and $01, but apply funktempo to just the current channel
+        #    -- Q: Unclear when comparing documentation to source if $02 and $82 are officially supported
+        #       values for the tempo command.  Going to throw an exception for now.
+        # - Since the $E command sets all tempos to 0 (see above), it will always start with
+        #   funktable[0]'s tempo (set by the left-side entry in the speed table).  But $F can choose
+        #   to start with the (previously-set) first or second value in the funktempo pair.
+
+
         # TODO: Possibly handle some of the (below) commands in the future?
         """ from docs:
         Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
@@ -236,12 +269,7 @@ class GtChannelState:
         target note)
         
         Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-        copied to the timing mark location, which is playeraddress+$3F.
-    
-        Command EXY: Funktempo. XY is an index to the speedtable, tempo will alternate
-        between left side value and right side value on subsequent pattern
-        steps. Sets the funktempo active on all channels, but you can use
-        the next command to override this per-channel.
+        copied to the timing mark location, which is playeraddress+$3F.    
         """
 
         # Number of ticks for a row is based on tempo.  This can be overwritten by another
@@ -362,6 +390,23 @@ def get_table(an_index, file_bytes):
     return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
 
 
+# If a 3-channel orderlist is found, returns the byte after the end, else return -1
+def has_3_channel_orderlist(file_index, sng_bytes):
+    for i in range(3):
+        index_of_ff = sng_bytes[file_index]
+        if sng_bytes[file_index + index_of_ff] != 0xff:
+            return -1
+        file_index += index_of_ff + 2
+    return file_index
+
+
+# Returns true if a 6-channel orderlist is found, evidence that this is a goattracker stereo sng file
+def is_2sid(index_at_start_of_orderlist, sng_bytes):
+    file_index = has_3_channel_orderlist(index_at_start_of_orderlist, sng_bytes)
+    assert file_index != -1, "Error: could not parse orderlist"
+    return has_3_channel_orderlist(file_index, sng_bytes) != -1
+
+
 # Parse a goat tracker .sng file and put it into a GTSong instance
 def import_sng(gt_filename):
     with open(gt_filename, 'rb') as f:
@@ -386,6 +431,7 @@ def import_sng(gt_filename):
     
     # print("\nDebug: %s" % header)
 
+    # Note, this documentation snippet (below) doesn't account for stereo sid:
     """ From goattracker documentation:
     6.1.2 ChirpSong orderlists
     ---------------------
@@ -403,14 +449,17 @@ def import_sng(gt_filename):
                     the restart position
     """
 
+    if is_2sid(file_index, sng_bytes): # check if this is a "stereo" sid
+        a_song.num_channels = 6
+
     subtune_orderlists = []
     for subtune_index in range(header.num_subtunes):
-        order_list_triple = []
-        for i in range(3):
+        channels_order_list = []
+        for i in range(a_song.num_channels):
             channel_order_list = get_order_list(file_index, sng_bytes)
             file_index += len(channel_order_list) + 1
-            order_list_triple.append(channel_order_list)
-        subtune_orderlists.append(order_list_triple)
+            channels_order_list.append(channel_order_list)
+        subtune_orderlists.append(channels_order_list)
     a_song.subtune_orderlists = subtune_orderlists
     
     # print("\nDebug: %s" % subtune_orderlists)
@@ -524,7 +573,7 @@ def import_sng(gt_filename):
             file_index += 4
             a_pattern.append(a_row)
         patterns.append(a_pattern)
-        # print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
+        #print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
         #    (pattern_num, len(a_pattern), a_pattern))
 
     a_song.patterns = patterns
@@ -533,12 +582,13 @@ def import_sng(gt_filename):
     return a_song
 
 
-# Convert the orderlist and patterns into three channels of note on/off events in time (ticks)
+# Convert the orderlist and patterns into three (or six) channels of note on/off events in time (ticks)
 def convert_to_note_events(sng_data, subtune_num):
     # init state holders for each channel
     GtChannelState.set_song(sng_data)
-    channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for i in range(3)]
-    channels_time_events = [defaultdict(TimeEntry) for i in range(3)]
+    channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for \
+        i in range(sng_data.num_channels)]
+    channels_time_events = [defaultdict(TimeEntry) for i in range(sng_data.num_channels)]
 
     global_tick = -1
     while not all(cs.restarted for cs in channels_state):
@@ -547,7 +597,7 @@ def convert_to_note_events(sng_data, subtune_num):
         # and ~16.7‬ms on NTSC.
         # For a multispeed of 2, there would be two music updates per frame.
         # For our purposes, the multispeed multiplier doesn't matter, since ticks in
-        # our music intermediate format (as well as in midi are unitless (not tied to ms
+        # our music intermediate format (as well as in midi) are unitless (not tied to ms
         # or frames).
         global_tick += 1
         global_tempo_change = None
@@ -582,7 +632,7 @@ def convert_to_note_events(sng_data, subtune_num):
             elif channel_state.global_tempo_update is not None:
                 global_tempo_change = channel_state.global_tempo_update
 
-        # By this point, we've passed through all three channels for this particular tick
+        # By this point, we've passed through all channels for this particular tick
         # If more than one channel made a tempo change, the global tempo change on the highest
         # voice/channel number wins (based on testing in gt)
         if global_tempo_change is not None:
@@ -614,15 +664,16 @@ def convert_to_note_events(sng_data, subtune_num):
     return channels_time_events
 
 
-def note_time_data_str(channels_time_events):
-    max_tick = max(max(channels_time_events[i].keys()) for i in range(3))
-    # max_tick = min(max_tick, 500) # for testing
+# DEBUG output
+def note_time_data_str(num_channels, channels_time_events):
+    max_tick = max(max(channels_time_events[i].keys()) for i in range(num_channels))
+    #max_tick = min(max_tick, 500) # for testing
 
     ret_val = []
     for tick in range(max_tick+1):
-        if any(tick in channels_time_events[ch] for ch in range(3)):
+        if any(tick in channels_time_events[ch] for ch in range(num_channels)):
             output = "%d: " % tick
-            for i in range(3):
+            for i in range(num_channels):
                 if tick in channels_time_events[i]:
                     output += "V%d N%s On?%s, " % (i, channels_time_events[i][tick].note, channels_time_events[i][tick].note_on)
                 else:
@@ -631,7 +682,8 @@ def note_time_data_str(channels_time_events):
     return '\n'.join(ret_val)
 
 
-def convert_to_chirp(channels_time_events, song_name):
+
+def convert_to_chirp(num_channels, channels_time_events, song_name):
     def tick_to_midi(tick, offset=0, factor=1):
         return (tick - offset) * factor
 
@@ -639,17 +691,17 @@ def convert_to_chirp(channels_time_events, song_name):
     song.metadata.ppq = 960
     song.name = song_name
 
-    # print_note_time_data(channels_time_events)
-    all_ticks = sorted(set(int(t) for i in range(3) for t in channels_time_events[i].keys()))
-    note_ticks = sorted([t for t in all_ticks
-                         if any(channels_time_events[ch].get(t, None)
-                         and (channels_time_events[ch][t].note_on is not None) for ch in range(3))])
+    #print(note_time_data_str(num_channels, channels_time_events))
+    all_ticks = sorted(set(int(t) for i in range(num_channels) for t in channels_time_events[i].keys()))
+    note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
+                    and (channels_time_events[ch][t].note_on is not None) for ch in range(num_channels))])
     notes_offset = note_ticks[0]
-    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))  # Using only first 100 notes
+    # TODO: Should the two "100"s be parameterized?
+    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))
     if ticks_per_note < 3:  # no decent gcd for this data
         ticks_per_note = 6
     notes_per_minute = 60 * 60 / ticks_per_note
-    tmp = notes_per_minute // 100  # TODO: Fix this magic number to make it sensible
+    tmp = notes_per_minute // 100
     tempo = int(notes_per_minute // tmp)
     tick_factor = int(song.metadata.ppq // tempo * tmp)
 
@@ -712,9 +764,14 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
+def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='NTSC'):
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
+
+    if is_stereo:
+        num_channels = 6
+    else:
+        num_channels = 3
 
     if not song.is_quantized():
         raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to GT")
@@ -756,7 +813,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     # TODO: This simple transformation will need to be changed when it's time
     #       to incorporate music compression, mid-tune tempo changes, etc.
     DEFAULT_INSTRUMENT = 1
-    channels_rows = [defaultdict(GtPatternRow) for i in range(3)]
+    channels_rows = [defaultdict(GtPatternRow) for i in range(num_channels)]
     for i, track in enumerate(export_tracks):
         channel_row = channels_rows[i]
         for note in track.notes:
@@ -837,17 +894,17 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     END_WITH_REPEAT = False # This doesn't imply that all tracks will restart at the same time...
 
     if not END_WITH_REPEAT:
-        # create a new empty pattern for all three channels to loop on forever
+        # create a new empty pattern for all channels to loop on forever
         # and add to the end of each orderlist
         loop_pattern = bytearray()
         loop_pattern += row_to_bytes(GtPatternRow(note_data=GT_KEY_OFF))
         loop_pattern += row_to_bytes(PATTERN_END_ROW)
         patterns.append(loop_pattern)
         loop_pattern_num = len(patterns)-1
-        for i in range(3):
+        for i in range(num_channels):
             orderlists[i].append(loop_pattern_num)
 
-    for i in range(3):
+    for i in range(num_channels):
         orderlists[i].append(GT_OL_RST) # patterns end with restart indicator
         if END_WITH_REPEAT:
             orderlists[i].append(0) # index of start of channel order list 
@@ -864,7 +921,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1, 2, 3], arch='NTSC'):
     gt_binary.append(0x01) # number of subtunes
 
     # append orderlists to gt binary
-    for i in range(3):
+    for i in range(num_channels):
         gt_binary.append(len(orderlists[i])-1) # orderlist length minus 1
         gt_binary += bytes(orderlists[i])
 
