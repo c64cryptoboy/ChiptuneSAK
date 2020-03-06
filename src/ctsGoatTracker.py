@@ -524,7 +524,7 @@ def import_sng(gt_filename):
             file_index += 4
             a_pattern.append(a_row)
         patterns.append(a_pattern)
-        #print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
+        # print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
         #    (pattern_num, len(a_pattern), a_pattern))
 
     a_song.patterns = patterns
@@ -616,7 +616,7 @@ def convert_to_note_events(sng_data, subtune_num):
 
 def note_time_data_str(channels_time_events):
     max_tick = max(max(channels_time_events[i].keys()) for i in range(3))
-    #max_tick = min(max_tick, 500) # for testing
+    # max_tick = min(max_tick, 500) # for testing
 
     ret_val = []
     for tick in range(max_tick+1):
@@ -641,14 +641,15 @@ def convert_to_chirp(channels_time_events, song_name):
 
     # print_note_time_data(channels_time_events)
     all_ticks = sorted(set(int(t) for i in range(3) for t in channels_time_events[i].keys()))
-    note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
-                                                 and (channels_time_events[ch][t].note_on is not None) for ch in range(3))])
+    note_ticks = sorted([t for t in all_ticks
+                         if any(channels_time_events[ch].get(t, None)
+                         and (channels_time_events[ch][t].note_on is not None) for ch in range(3))])
     notes_offset = note_ticks[0]
-    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))
+    ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))  # Using only first 100 notes
     if ticks_per_note < 3:  # no decent gcd for this data
         ticks_per_note = 6
     notes_per_minute = 60 * 60 / ticks_per_note
-    tmp = notes_per_minute // 100
+    tmp = notes_per_minute // 100  # TODO: Fix this magic number to make it sensible
     tempo = int(notes_per_minute // tmp)
     tick_factor = int(song.metadata.ppq // tempo * tmp)
 

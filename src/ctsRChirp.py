@@ -7,17 +7,16 @@ class RChirpRow:
     """
     The basic RChirp row
     """
-    note_num: int = 0
-    instrument: int = 0
-    gate_on: bool = False
-    gate_off: bool = False
+    note_num: int = 0       # MIDI note number
+    instrument: int = None  # Instrument number; none means no change
+    gate: bool = None       # Gate on/off tri-value True/False/None
+    jiffies: int = 1        # Jiffies to process this row (until next row)
 
 
 class RChirpOrderList:
     """
     An order list made up of a set of patterns
     """
-
     def __init__(self, patterns=None):
         self.patterns = []
         if patterns is not None:
@@ -28,7 +27,6 @@ class RChirpPattern:
     """
     A pattern made up of a set of rows
     """
-
     def __init__(self, rows):
         self.rows = collections.defaultdict(RChirpRow)
         row_times = sorted(rows)
@@ -52,6 +50,12 @@ class RChirpVoice:
             else:
                 self.import_chirp_track(chirp_track)
 
+    def _find_closest_row_after(self, row):
+        for r in sorted(self.rows):
+            if r >= row:
+                return r
+        return r
+
     def import_chirp_track(self, chirp_track):
         """
         Imports a Chirp track into a raw RChirpVoice object.  No compression or conversion to patterns
@@ -64,39 +68,26 @@ class RChirpVoice:
         if chirp_track.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to generate RChirp.")
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_update = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq * 60) \
+        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq * 60) \
                             / self.rchirp_song.update_freq
+        jiffies_per_row = chirp_track.qticks_notes / ticks_per_jiffy
+        ticks_per_row = ticks_per_jiffy * jiffies_per_row
 
         # Insert the notes into the voice
         for n in chirp_track.notes:
-            su = n.start_time / ticks_per_update
-            self.rows[su].note_num = n.note_num
-            self.rows[su].gate_on = True
-            self.rows[su].gate_off = False  # If the gate were turned off, delete that since new note starts
-            eu = (n.start_time + n.duration) / ticks_per_update
-            self.rows[eu].gate_off = True
+            n_row = n.start_time // ticks_per_row
+            self.rows[n_row].note_num = n.note_num
+            self.rows[n_row].gate = True
+            self.rows[n_row].jiffies = jiffies_per_row
+            e_row = (n.start_time + n.duration) / ticks_per_row
+            self.rows[e_row].gate = False
 
-        # Now find the program changes; make a list with a default at the beginning and another default at the end
-        program_changes = [ProgramEvent(0, 0)]
-        for p in [m for m in chirp_track.other if m.msg.type == 'program_change']:
-            program_changes.append(ProgramEvent(p.start_time, p.msg.program))
-            program_changes.sort(key=lambda p: p.start_time)
-            program_changes.append(ProgramEvent(BIG_NUMBER, p[-1].program))  # Happens a long time from now
+        program_changes = [ProgramEvent(e.start_time, e.program) for e in chirp_track.other
+                           if e.msg.type == 'program_change']
 
-        ip, current_program, next_program_tick = 0, 0, 0
-        while program_changes[ip].start_time <= 0:  # Consume all the program changes that occur at tick 0
-            current_program = int(program_changes[ip].program)
-            next_program_tick = program_changes[ip + 1].start_time
-            ip += 1
-
-        for r in sorted(self.rows):
-            tick = r * ticks_per_update
-            if tick >= next_program_tick:
-                while program_changes[ip] <= tick:
-                    current_program = int(program_changes[ip].program)
-                    next_program_tick = program_changes[ip + 1].start_time
-                    ip += 1
-            self.rows[r].instrument = current_program
+        for p in sorted(program_changes):
+            n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
+            self.rows[n_row].instrument = int(p.program)
 
 
 class RChirpSong:
