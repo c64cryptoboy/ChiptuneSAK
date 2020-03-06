@@ -32,7 +32,7 @@ def main():
      
     channels_time_events = ctsGoatTracker.convert_to_note_events(sng_data, args.subtune_number - 1)
 
-    chirp_song = ctsGoatTracker.convert_to_chirp(channels_time_events, sng_data.headers.song_name)
+    chirp_song = ctsGoatTracker.convert_to_chirp(sng_data.num_channels, channels_time_events, sng_data.headers.song_name)
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
     #ts = ctsSong.TimeSignature(0, 3, 4)
     #chirp_song.time_signature_changes.insert(0, ts)
