@@ -9,6 +9,7 @@ import argparse
 import ctsChirp
 import ctsGoatTracker
 import ctsMidi
+from ctsErrors import ChiptuneSAKValueError
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a midi file into a GoatTracker2 sng file.")
@@ -30,7 +31,13 @@ def main():
     #song.quantize_from_note_name("16")
     song.remove_polyphony()
 
-    gt_binary = ctsGoatTracker.chirp_to_GT(song, args.sng_out_file)
+    if len(song.tracks) > 6:
+        raise ChiptuneSAKValueError("Error: GoatTracker doesn't support more than 6 channels")
+    tracks_to_include = list(range(1,len(song.tracks)+1))
+
+    is_stereo = len(song.tracks) > 3
+
+    gt_binary = ctsGoatTracker.chirp_to_GT(song, args.sng_out_file, tracks_to_include, is_stereo)
     
     with open(args.sng_out_file, 'wb') as out_file:
         out_file.write(gt_binary)
