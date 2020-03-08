@@ -268,7 +268,7 @@ class ChirpTrack:
         # Change all the note start times and durations
         for i, n in enumerate(self.notes):
             n.start_time = max(n.start_time + offset_ticks, 0)
-            self.notes[i] = n
+            self.notes[i] = copy.copy(n)
 
     def __str__(self):
         ret_val = "Track: %s (channel %d)\n" % (self.name, self.channel)

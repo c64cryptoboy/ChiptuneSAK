@@ -13,7 +13,7 @@ def main():
     parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('-z', '--removecontrolnotes', action="store_true", help='remove control notes')
     parser.add_argument('-s', '--scaleticks', type=float, help='scale ticks')
-    parser.add_argument('-x', '--moveticks', type=int, help='move ticks')
+    parser.add_argument('-x', '--moveticks', type=str, help='move ticks lXXXX for left and rXXXX for right')
     parser.add_argument('-p', '--ppq', type=int, help='set ppq')
     parser.add_argument('-m', '--modulate', type=str, help='modulate by n/d')
     parser.add_argument('-t', '--transpose', type=str, help='transpose by semitones (uXX or dXX for up or down XX semitones)')
@@ -51,8 +51,15 @@ def main():
         song.scale_ticks(args.scaleticks)
 
     if args.moveticks:
-        print("Moving by %lf" % args.moveticks)
-        song.move_ticks(-args.moveticks)
+        move = args.moveticks
+        if move[0] == 'l':
+            v = -int(move[1:])
+        elif move[0].isdigit():
+            v = int(move)
+        else:
+            v = int(move[1:])
+        print("Moving by %d" % v)
+        song.move_ticks(v)
 
     if args.ppq:
         print("setting ppq to %d" % args.ppq)

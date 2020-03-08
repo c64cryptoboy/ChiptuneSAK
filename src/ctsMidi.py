@@ -215,7 +215,7 @@ def split_midi_zero_into_tracks(midi_song):
             last_times[0] = current_time
             tracks[0].append(msg)
         # All other messages get assigned to tracks based on their channel.
-        else:
+        elif msg.type != 'sysex':
             ch = msg.channel + 1
             msg.time = current_time - last_times[ch]
             last_times[ch] = current_time
