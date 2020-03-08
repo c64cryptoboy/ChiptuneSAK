@@ -10,7 +10,6 @@
 #
 # TODOs:
 # - Add instrument file loader to use with channels on exports
-# - get rid of the set_song function, but move the sneaky tempo set condition someplace else
 
 from os import path
 import sys
@@ -111,13 +110,9 @@ class GTSong:
 
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
-    # These class-side variables are used for shared state across the 3 or 6 channelstate instances
-    # TODO: This is a bad approach if there's going to be channelstate instances from different
-    #       songs existing at the same time.   
-    
-    __init_tempo_override = None
-
-    # The two funktable entries are shared by all channels using a funktempo
+    # The two funktable entries are shared by all channels using a funktempo, so we have it as a
+    # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
+    # to and processing different songs at the same time (seems unlikely).
     # TODO: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
     funktable = [9,6] # funktable starting values (based on gplay.c)
 
@@ -139,28 +134,9 @@ class GtChannelState:
         self.channel_orderlist = channel_orderlist # just this channel's orderlist from the subtune
         self.curr_funktable_index = None # None = no funk tempos, 0 or 1 indicates current funktable index
 
-        if GtChannelState.__init_tempo_override is None:
-            self.curr_tempo = DEFAULT_TEMPO
-        else:
-            self.curr_tempo = GtChannelState.__init_tempo_override
+        # position atop first pattern in orderlist for channel
+        self.__inc_orderlist_to_next_pattern()
 
-        self.__inc_orderlist_to_next_pattern() # position atop first pattern in orderlist for channel
-
-
-    # TODO: Kill this class-side method (not needed anymore), but preserve the tempo logic therein
-    @classmethod
-    def set_song(cls, song):
-        """ from docs:
-        For very optimized songdata & player you can refrain from using any pattern
-        commands and rely on the instruments' step-programming. Even in this case, you
-        can set song startup default tempo with the Attack/Decay parameter of the last
-        instrument (63/0x3F), if you otherwise leave this instrument unused.
-        """
-        # Handle the sneaky default global tempo (NOTE: THIS CODE IS UNTESTED)
-        if len(song.instruments) == GT_MAX_INSTR_PER_SONG:
-            ad = song.instruments[GT_MAX_INSTR_PER_SONG-1].attack_decay
-            if 0x03 <= ad <= 0x7F:
-                __init_tempo_override = ad
 
     # Advance channel/voice by a tick.  This will either:
     # 1) decrement a row's remaining ticks by one, or
@@ -624,12 +600,28 @@ def import_sng(gt_filename):
 
 # Convert the orderlist and patterns into three (or six) channels of note on/off events in time (ticks)
 def convert_to_note_events(sng_data, subtune_num):
-    # init state holders for each channel
+    # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
     channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for \
         i in range(sng_data.num_channels)]
     channels_time_events = [defaultdict(TimeEntry) for i in range(sng_data.num_channels)]
 
+    # Handle the rarely-used sneaky default global tempo setting
+    """ from docs:
+    For very optimized songdata & player you can refrain from using any pattern
+    commands and rely on the instruments' step-programming. Even in this case, you
+    can set song startup default tempo with the Attack/Decay parameter of the last
+    instrument (63/0x3F), if you otherwise leave this instrument unused.
+    """
+    # TODO: This code block is untested
+    if len(sng_data.instruments) == GT_MAX_INSTR_PER_SONG:
+        ad = sng_data.instruments[GT_MAX_INSTR_PER_SONG-1].attack_decay
+        if 0x03 <= ad <= 0x7F:
+            for cs in channels_state:
+                cs.curr_tempo = ad
+
     global_tick = -1
+    # Step through each tick.  For each tick, evaluate the state of each channel.
+    # Continue until all channels have hit the end of their respective orderlists
     while not all(cs.restarted for cs in channels_state):
         # When not using multispeed, tempo = ticks per row = screen refreshes per row.
         # 'Ticks' on C64 are also 'frames' or 'jiffies'.  Each tick in PAL is around 20ms,
@@ -766,7 +758,10 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
     song.name = song_name
 
     # output csv debugging info
-    #print(note_time_data_str(num_channels, channels_time_events))
+    csv = note_time_data_str(num_channels, channels_time_events)
+    #print(csv)
+    with open('debug.csv', 'w') as out_file:
+        out_file.write(csv)
 
     all_ticks = sorted(set(int(t) for i in range(num_channels) for t in channels_time_events[i].keys()))
     note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
