@@ -7,10 +7,11 @@ class RChirpRow:
     """
     The basic RChirp row
     """
+    jiffy_num: int = 0      # jiffy num since time 0
     note_num: int = 0       # MIDI note number
     instrument: int = None  # Instrument number; none means no change
     gate: bool = None       # Gate on/off tri-value True/False/None
-    jiffies: int = 1        # Jiffies to process this row (until next row)
+    jiffy_len: int = 1        # Jiffies to process this row (until next row)
 
 
 class RChirpOrderList:
