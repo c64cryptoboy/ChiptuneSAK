@@ -926,7 +926,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
     # Convert the sparse representation into separate patterns (of bytes)
     EXPORT_PATTERN_LEN = 64 # index 0 to len-1 for data, index len for 0xFF pattern end mark
     patterns = [] # can be shared across all channels
-    orderlists = [[],[],[]] # one for each channel
+    orderlists = [[] for _ in range(len(tracknums))] # Note: this is bad: [[]] * len(tracknums)
     curr_pattern_num = 0
     for i, channel_rows in enumerate(channels_rows):
         pattern_row_index = 0
