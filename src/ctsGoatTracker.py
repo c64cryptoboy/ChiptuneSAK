@@ -10,6 +10,8 @@
 #
 # TODOs:
 # - Add instrument file loader to use with channels on exports
+# - recode gt->sparse timestamp columns->chirp as gt->columns with jiffy duration->rchirp->chirp
+# - recode chirp->gt as chirp->rchirp and rchirp->gt
 
 from os import path
 import sys
@@ -26,11 +28,10 @@ import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
     ChiptuneSAKContentError, ChiptuneSAKPolyphonyError
 
-GT_DEFAULT_TEMPO = 6
-
 # GoatTracker constants
-# TODO: All of these need to be moved into a combined gt importer and exporter
 GT_FILE_HEADER = b'GTS5'
+GT_DEFAULT_TEMPO = 6
+GT_DEFAULT_FUNKTEMPOS = [9,6] # default alternating tempos, from gplay.c
 
 # All these MAXes are the same for goattracker 2 (1SID) and goattracker 2 stereo (2SID)
 # (Note: MAXes vary in the SID-Wizard 1SID, 2SID, and 3SID engines)
@@ -49,12 +50,11 @@ GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF # order list restart marker
 GT_PAT_END = 0xFF # pattern end
 
-@dataclass
-class GtPatternRow:
-    note_data: int = GT_REST
-    inst_num: int = 0
-    command: int = 0
-    command_data: int = 0
+#
+#
+# Code to parse goattracker and goattracker stereo files
+#
+#
 
 @dataclass
 class GtHeader:
@@ -63,12 +63,6 @@ class GtHeader:
     author_name: str = ''
     copyright: str = ''
     num_subtunes: int = 0
-
-@dataclass
-class GtTable:
-    row_cnt: int = 0
-    left_col: bytes = b''
-    right_col: bytes = b''
 
 @dataclass
 class GtInstrument:
@@ -84,17 +78,11 @@ class GtInstrument:
     hard_restart_1st_frame_wave: int = 0x09
     inst_name: str = ''
 
-PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
-
-PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
-
-# TimeEntry instances are values where key is tick
-# Over time, might add other commands to this as well (Portamento, etc.)
 @dataclass
-class TimeEntry:
-    note: int = None
-    note_on: bool = None
-    tempo: int = None
+class GtTable:
+    row_cnt: int = 0
+    left_col: bytes = b''
+    right_col: bytes = b''
 
 class GTSong:
     def __init__(self):
@@ -108,13 +96,280 @@ class GTSong:
         self.speed_table = GtTable()
         self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances
 
+
+# Convert pattern note byte value into midi note value
+# Note: lowest goat tracker note C0 (0x60)
+def pattern_note_to_midi_note(pattern_note_byte, octave_offset = 0):
+    return pattern_note_byte - (0x60 - C0_MIDI_NUM) + (octave_offset * 12)
+
+
+# Convert midi note value into pattern note value
+def midi_note_to_pattern_note(midi_note, octave_offset = 0):
+    return midi_note + (0x60 - C0_MIDI_NUM) + (-1 * octave_offset * 12)
+
+
+def get_chars(in_bytes, trim_nulls=True):
+    result = in_bytes.decode('Latin-1')
+    if trim_nulls:
+        result = result.strip('\0')  # no interpretation, preserve encoding
+    return result
+
+
+def get_order_list(an_index, file_bytes):
+    # Note: orderlist length byte is length -1
+    #    e.g. orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
+    #    length-1 (06), followed by 7 bytes
+    length = file_bytes[an_index] + 1  # add one for restart
+    an_index += 1
+
+    orderlist = file_bytes[an_index:an_index + length]
+    an_index += length
+    # check that next-to-last byte is $FF
+    assert file_bytes[an_index - 2] == 255, "Error: Did not find expected $FF RST endmark in channel's orderlist"
+
+    return orderlist
+
+
+# Parse the wave, pulse, filter, or speed table
+def get_table(an_index, file_bytes):
+    rows = file_bytes[an_index]
+    # no point in checking rows > GT_MAX_TABLE_LEN, since GT_MAX_TABLE_LEN is a $FF (max byte val)
+    an_index += 1
+
+    left_entries = file_bytes[an_index:an_index + rows]
+    an_index += rows
+
+    right_entries = file_bytes[an_index:an_index + rows]
+
+    return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
+
+
+# If a 3-channel orderlist is found, returns the byte after the end, else return -1
+def has_3_channel_orderlist(file_index, sng_bytes):
+    for i in range(3):
+        index_of_ff = sng_bytes[file_index]
+        if sng_bytes[file_index + index_of_ff] != 0xff:
+            return -1
+        file_index += index_of_ff + 2
+    return file_index
+
+
+# Returns true if a 6-channel orderlist is found, evidence that this is a goattracker stereo sng file
+def is_2sid(index_at_start_of_orderlist, sng_bytes):
+    file_index = has_3_channel_orderlist(index_at_start_of_orderlist, sng_bytes)
+    assert file_index != -1, "Error: could not parse orderlist"
+    return has_3_channel_orderlist(file_index, sng_bytes) != -1
+
+
+# Parse a goat tracker .sng file and put it into a GTSong instance
+def import_sng(gt_filename):
+    with open(gt_filename, 'rb') as f:
+        sng_bytes = f.read()
+
+    a_song = GTSong()
+
+    header = GtHeader()
+
+    header.id = sng_bytes[0:4]
+    assert header.id == GT_FILE_HEADER, "Error: Did not find magic header used by goattracker sng files"
+
+    header.song_name = get_chars(sng_bytes[4:36])
+    header.author_name = get_chars(sng_bytes[36:68])
+    header.copyright = get_chars(sng_bytes[68:100])
+    header.num_subtunes = sng_bytes[100]
+
+    assert header.num_subtunes <= GT_MAX_SUBTUNES_PER_SONG, 'Error:  too many subtunes'
+
+    file_index = 101
+    a_song.headers = header
+    
+    # print("\nDebug: %s" % header)
+
+    # Note, this documentation snippet (below) doesn't account for stereo sid:
+    """ From goattracker documentation:
+    6.1.2 ChirpSong orderlists
+    ---------------------
+    The orderlist structure repeats first for channels 1,2,3 of first subtune,
+    then for channels 1,2,3 of second subtune etc., until all subtunes
+    have been gone thru.
+
+    Offset  Size    Description
+    +0      byte    Length of this channel's orderlist n, not counting restart pos.
+    +1      n+1     The orderlist data:
+                    Values $00-$CF are pattern numbers
+                    Values $D0-$DF are repeat commands
+                    Values $E0-$FE are transpose commands
+                    Value $FF is the RST endmark, followed by a byte that indicates
+                    the restart position
+    """
+
+    if is_2sid(file_index, sng_bytes): # check if this is a "stereo" sid
+        a_song.num_channels = 6
+
+    subtune_orderlists = []
+    for subtune_index in range(header.num_subtunes):
+        channels_order_list = []
+        for i in range(a_song.num_channels):
+            channel_order_list = get_order_list(file_index, sng_bytes)
+            file_index += len(channel_order_list) + 1
+            channels_order_list.append(channel_order_list)
+        subtune_orderlists.append(channels_order_list)
+    a_song.subtune_orderlists = subtune_orderlists
+    
+    # print("\nDebug: %s" % subtune_orderlists)
+
+    """ From goattracker documentation:
+    6.1.3 Instruments
+    -----------------
+    Offset  Size    Description
+    +0      byte    Amount of instruments n
+
+    Then, this structure repeats n times for each instrument. Instrument 0 (the
+    empty instrument) is not stored.
+
+    Offset  Size    Description
+    +0      byte    Attack/Decay
+    +1      byte    Sustain/Release
+    +2      byte    Wavepointer
+    +3      byte    Pulsepointer
+    +4      byte    Filterpointer
+    +5      byte    Vibrato param. (speedtable pointer)
+    +6      byte    Vibraro delay
+    +7      byte    Gateoff timer
+    +8      byte    Hard restart/1st frame waveform
+    +9      16      Instrument name
+    """
+
+    instruments = []
+    instruments.append(GtInstrument())  # start with empty instrument number 0
+
+    nonzero_inst_count = sng_bytes[file_index]
+    file_index += 1
+
+    for i in range(nonzero_inst_count):
+        an_instrument = GtInstrument(attack_decay=sng_bytes[file_index], sustain_release=sng_bytes[file_index + 1],
+                                     wave_ptr=sng_bytes[file_index + 2], pulse_ptr=sng_bytes[file_index + 3],
+                                     filter_ptr=sng_bytes[file_index + 4],
+                                     vib_speedtable_ptr=sng_bytes[file_index + 5], vib_delay=sng_bytes[file_index + 6],
+                                     gateoff_timer=sng_bytes[file_index + 7],
+                                     hard_restart_1st_frame_wave=sng_bytes[file_index + 8])
+        file_index += 9
+
+        an_instrument.inst_num = i + 1
+        an_instrument.inst_name = get_chars(sng_bytes[file_index:file_index + 16])
+        file_index += 16
+
+        instruments.append(an_instrument)
+    a_song.instruments = instruments
+
+    # print("\nDebug: %s" % instruments)
+
+    """ From goattracker documentation:
+    6.1.4 Tables
+    ------------
+    This structure repeats for each of the 4 tables (wavetable, pulsetable,
+    filtertable, speedtable).
+
+    Offset  Size    Description
+    +0      byte    Amount n of rows in the table
+    +1      n       Left side of the table
+    +1+n    n       Right side of the table
+    """
+
+    tables = []
+    for i in range(4):
+        a_table = get_table(file_index, sng_bytes)
+        tables.append(a_table)
+        file_index += a_table.row_cnt * 2 + 1
+
+    # print("\nDebug: %s" % tables)
+    (a_song.wave_table, a_song.pulse_table, a_song.filter_table, a_song.speed_table) = tables
+
+    """ From goattracker documentation:
+    6.1.5 Patterns header
+    ---------------------
+    Offset  Size    Description
+    +0      byte    Number of patterns n
+    
+    6.1.6 Patterns
+    --------------
+    Repeat n times, starting from pattern number 0.
+
+    Offset  Size    Description
+    +0      byte    Length of pattern in rows m
+    +1      m*4     Groups of 4 bytes for each row of the pattern:
+                    1st byte: Notenumber
+                              Values $60-$BC are the notes C-0 - G#7
+                              Value $BD is rest
+                              Value $BE is keyoff
+                              Value $BF is keyon
+                              Value $FF is pattern end
+                    2nd byte: Instrument number ($00-$3F)
+                    3rd byte: Command ($00-$0F)
+                    4th byte: Command databyte
+    """
+
+    num_patterns = sng_bytes[file_index]
+    file_index += 1
+    patterns = []
+
+    for pattern_num in range(num_patterns):
+        a_pattern = []
+        num_rows = sng_bytes[file_index]
+        assert num_rows <= GT_MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
+        file_index += 1
+        for row_num in range(num_rows):
+            a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
+                                 command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
+            assert (0x60 <= a_row.note_data < 0xBF) or a_row.note_data == GT_PAT_END, "Error: unexpected note data value"
+            assert a_row.inst_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
+            assert a_row.command <= 0x0F, "Error: command number out of range"                     
+            file_index += 4
+            a_pattern.append(a_row)
+        patterns.append(a_pattern)
+        #print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
+        #    (pattern_num, len(a_pattern), a_pattern))
+
+    a_song.patterns = patterns
+
+    assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
+    return a_song
+
+
+#
+#
+# Code to convert parsed gt file into events in time
+#
+#
+
+@dataclass
+class GtPatternRow:
+    note_data: int = GT_REST
+    inst_num: int = 0
+    command: int = 0
+    command_data: int = 0
+
+PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
+
+PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
+
+
+# TimeEntry are values, keys will be jiffy # (since time 0)
+# Over time, might add other commands to this as well (Portamento, etc.)
+@dataclass
+class TimeEntry:
+    note: int = None
+    note_on: bool = None # True/False/None
+    tempo: int = None
+
+
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
     # The two funktable entries are shared by all channels using a funktempo, so we have it as a
     # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
     # to and processing different songs at the same time (seems unlikely).
     # TODO: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
-    funktable = [9,6] # funktable starting values (based on gplay.c)
+    funktable = GT_DEFAULT_FUNKTEMPOS 
 
     def __init__(self, voice_num, channel_orderlist):
         self.voice_num = voice_num
@@ -360,245 +615,6 @@ class GtChannelState:
             raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
 
 
-# Convert pattern note byte value into midi note value
-# Note: lowest goat tracker note C0 (0x60)
-def pattern_note_to_midi_note(pattern_note_byte, octave_offset = 0):
-    return pattern_note_byte - (0x60 - C0_MIDI_NUM) + (octave_offset * 12)
-
-
-# Convert midi note value into pattern note value
-def midi_note_to_pattern_note(midi_note, octave_offset = 0):
-    return midi_note + (0x60 - C0_MIDI_NUM) + (-1 * octave_offset * 12)
-
-
-def get_chars(in_bytes, trim_nulls=True):
-    result = in_bytes.decode('Latin-1')
-    if trim_nulls:
-        result = result.strip('\0')  # no interpretation, preserve encoding
-    return result
-
-
-def get_order_list(an_index, file_bytes):
-    # Note: orderlist length byte is length -1
-    #    e.g. orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
-    #    length-1 (06), followed by 7 bytes
-    length = file_bytes[an_index] + 1  # add one for restart
-    an_index += 1
-
-    orderlist = file_bytes[an_index:an_index + length]
-    an_index += length
-    # check that next-to-last byte is $FF
-    assert file_bytes[an_index - 2] == 255, "Error: Did not find expected $FF RST endmark in channel's orderlist"
-
-    return orderlist
-
-
-# Parse the wave, pulse, filter, or speed table
-def get_table(an_index, file_bytes):
-    rows = file_bytes[an_index]
-    # no point in checking rows > GT_MAX_TABLE_LEN, since GT_MAX_TABLE_LEN is a $FF (max byte val)
-    an_index += 1
-
-    left_entries = file_bytes[an_index:an_index + rows]
-    an_index += rows
-
-    right_entries = file_bytes[an_index:an_index + rows]
-
-    return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
-
-
-# If a 3-channel orderlist is found, returns the byte after the end, else return -1
-def has_3_channel_orderlist(file_index, sng_bytes):
-    for i in range(3):
-        index_of_ff = sng_bytes[file_index]
-        if sng_bytes[file_index + index_of_ff] != 0xff:
-            return -1
-        file_index += index_of_ff + 2
-    return file_index
-
-
-# Returns true if a 6-channel orderlist is found, evidence that this is a goattracker stereo sng file
-def is_2sid(index_at_start_of_orderlist, sng_bytes):
-    file_index = has_3_channel_orderlist(index_at_start_of_orderlist, sng_bytes)
-    assert file_index != -1, "Error: could not parse orderlist"
-    return has_3_channel_orderlist(file_index, sng_bytes) != -1
-
-
-# Parse a goat tracker .sng file and put it into a GTSong instance
-def import_sng(gt_filename):
-    with open(gt_filename, 'rb') as f:
-        sng_bytes = f.read()
-
-    a_song = GTSong()
-
-    header = GtHeader()
-
-    header.id = sng_bytes[0:4]
-    assert header.id == GT_FILE_HEADER, "Error: Did not find magic header used by goattracker sng files"
-
-    header.song_name = get_chars(sng_bytes[4:36])
-    header.author_name = get_chars(sng_bytes[36:68])
-    header.copyright = get_chars(sng_bytes[68:100])
-    header.num_subtunes = sng_bytes[100]
-
-    assert header.num_subtunes <= GT_MAX_SUBTUNES_PER_SONG, 'Error:  too many subtunes'
-
-    file_index = 101
-    a_song.headers = header
-    
-    # print("\nDebug: %s" % header)
-
-    # Note, this documentation snippet (below) doesn't account for stereo sid:
-    """ From goattracker documentation:
-    6.1.2 ChirpSong orderlists
-    ---------------------
-    The orderlist structure repeats first for channels 1,2,3 of first subtune,
-    then for channels 1,2,3 of second subtune etc., until all subtunes
-    have been gone thru.
-
-    Offset  Size    Description
-    +0      byte    Length of this channel's orderlist n, not counting restart pos.
-    +1      n+1     The orderlist data:
-                    Values $00-$CF are pattern numbers
-                    Values $D0-$DF are repeat commands
-                    Values $E0-$FE are transpose commands
-                    Value $FF is the RST endmark, followed by a byte that indicates
-                    the restart position
-    """
-
-    if is_2sid(file_index, sng_bytes): # check if this is a "stereo" sid
-        a_song.num_channels = 6
-
-    subtune_orderlists = []
-    for subtune_index in range(header.num_subtunes):
-        channels_order_list = []
-        for i in range(a_song.num_channels):
-            channel_order_list = get_order_list(file_index, sng_bytes)
-            file_index += len(channel_order_list) + 1
-            channels_order_list.append(channel_order_list)
-        subtune_orderlists.append(channels_order_list)
-    a_song.subtune_orderlists = subtune_orderlists
-    
-    # print("\nDebug: %s" % subtune_orderlists)
-
-    """ From goattracker documentation:
-    6.1.3 Instruments
-    -----------------
-    Offset  Size    Description
-    +0      byte    Amount of instruments n
-
-    Then, this structure repeats n times for each instrument. Instrument 0 (the
-    empty instrument) is not stored.
-
-    Offset  Size    Description
-    +0      byte    Attack/Decay
-    +1      byte    Sustain/Release
-    +2      byte    Wavepointer
-    +3      byte    Pulsepointer
-    +4      byte    Filterpointer
-    +5      byte    Vibrato param. (speedtable pointer)
-    +6      byte    Vibraro delay
-    +7      byte    Gateoff timer
-    +8      byte    Hard restart/1st frame waveform
-    +9      16      Instrument name
-    """
-
-    instruments = []
-    instruments.append(GtInstrument())  # start with empty instrument number 0
-
-    nonzero_inst_count = sng_bytes[file_index]
-    file_index += 1
-
-    for i in range(nonzero_inst_count):
-        an_instrument = GtInstrument(attack_decay=sng_bytes[file_index], sustain_release=sng_bytes[file_index + 1],
-                                     wave_ptr=sng_bytes[file_index + 2], pulse_ptr=sng_bytes[file_index + 3],
-                                     filter_ptr=sng_bytes[file_index + 4],
-                                     vib_speedtable_ptr=sng_bytes[file_index + 5], vib_delay=sng_bytes[file_index + 6],
-                                     gateoff_timer=sng_bytes[file_index + 7],
-                                     hard_restart_1st_frame_wave=sng_bytes[file_index + 8])
-        file_index += 9
-
-        an_instrument.inst_num = i + 1
-        an_instrument.inst_name = get_chars(sng_bytes[file_index:file_index + 16])
-        file_index += 16
-
-        instruments.append(an_instrument)
-    a_song.instruments = instruments
-
-    # print("\nDebug: %s" % instruments)
-
-    """ From goattracker documentation:
-    6.1.4 Tables
-    ------------
-    This structure repeats for each of the 4 tables (wavetable, pulsetable,
-    filtertable, speedtable).
-
-    Offset  Size    Description
-    +0      byte    Amount n of rows in the table
-    +1      n       Left side of the table
-    +1+n    n       Right side of the table
-    """
-
-    tables = []
-    for i in range(4):
-        a_table = get_table(file_index, sng_bytes)
-        tables.append(a_table)
-        file_index += a_table.row_cnt * 2 + 1
-
-    # print("\nDebug: %s" % tables)
-    (a_song.wave_table, a_song.pulse_table, a_song.filter_table, a_song.speed_table) = tables
-
-    """ From goattracker documentation:
-    6.1.5 Patterns header
-    ---------------------
-    Offset  Size    Description
-    +0      byte    Number of patterns n
-    
-    6.1.6 Patterns
-    --------------
-    Repeat n times, starting from pattern number 0.
-
-    Offset  Size    Description
-    +0      byte    Length of pattern in rows m
-    +1      m*4     Groups of 4 bytes for each row of the pattern:
-                    1st byte: Notenumber
-                              Values $60-$BC are the notes C-0 - G#7
-                              Value $BD is rest
-                              Value $BE is keyoff
-                              Value $BF is keyon
-                              Value $FF is pattern end
-                    2nd byte: Instrument number ($00-$3F)
-                    3rd byte: Command ($00-$0F)
-                    4th byte: Command databyte
-    """
-
-    num_patterns = sng_bytes[file_index]
-    file_index += 1
-    patterns = []
-
-    for pattern_num in range(num_patterns):
-        a_pattern = []
-        num_rows = sng_bytes[file_index]
-        assert num_rows <= GT_MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
-        file_index += 1
-        for row_num in range(num_rows):
-            a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
-                                 command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
-            assert (0x60 <= a_row.note_data < 0xBF) or a_row.note_data == GT_PAT_END, "Error: unexpected note data value"
-            assert a_row.inst_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
-            assert a_row.command <= 0x0F, "Error: command number out of range"                     
-            file_index += 4
-            a_pattern.append(a_row)
-        patterns.append(a_pattern)
-        #print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
-        #    (pattern_num, len(a_pattern), a_pattern))
-
-    a_song.patterns = patterns
-
-    assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
-    return a_song
-
-
 # Convert the orderlist and patterns into three (or six) channels of note on/off events in time (ticks)
 def convert_to_note_events(sng_data, subtune_num):
     # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
@@ -713,6 +729,13 @@ def convert_to_note_events(sng_data, subtune_num):
     return channels_time_events
 
 
+#
+#
+# Code to convert events in time into chirp
+#
+#
+
+
 # Create CVS debug output
 def note_time_data_str(num_channels, channels_time_events):
     max_tick = max(max(channels_time_events[i].keys()) for i in range(num_channels))
@@ -762,7 +785,8 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
     csv = note_time_data_str(num_channels, channels_time_events)
     #print(csv)
     with open('debug.csv', 'w') as out_file:
-        out_file.write(csv)
+        #out_file.write(csv)
+        pass
 
     all_ticks = sorted(set(int(t) for i in range(num_channels) for t in channels_time_events[i].keys()))
     note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
@@ -815,6 +839,13 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
     return song
 
 
+#
+#
+# Code to convert chirp to goattracker file
+#
+#
+
+
 # A Procrustean bed for GT text fields.  Can accept a string or bytes.
 def pad_or_truncate(to_pad, length):
     if isinstance(to_pad, str):
@@ -836,7 +867,9 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='NTSC'):
+def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
+    arch='NTSC', end_with_repeat = False):
+
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -962,10 +995,8 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
     # As far as I can tell, people create an infinite loop at the end when they don't want a song to
     # repeat, so that's what this code can do.
 
-    # TODO: Setting this boolean should be an optional command line flag
-    END_WITH_REPEAT = False # This doesn't imply that all tracks will restart at the same time...
-
-    if not END_WITH_REPEAT:
+    # end_with_repeat == False in no way implies that all tracks will restart at the same time...
+    if not end_with_repeat:
         # create a new empty pattern for all channels to loop on forever
         # and add to the end of each orderlist
         loop_pattern = bytearray()
@@ -978,7 +1009,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
 
     for i in range(num_channels):
         orderlists[i].append(GT_OL_RST) # patterns end with restart indicator
-        if END_WITH_REPEAT:
+        if end_with_repeat:
             orderlists[i].append(0) # index of start of channel order list 
         else:
             orderlists[i].append(len(orderlists[i])-2) # index of the empty loop pattern
@@ -1023,6 +1054,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
         gt_binary += pattern
 
     return gt_binary
+
 
 if __name__ == "__main__":
     pass
