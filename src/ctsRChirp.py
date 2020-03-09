@@ -31,7 +31,7 @@ class RChirpPattern:
     """
 
     def __init__(self, rows):
-        self.rows = collections.defaultdict(RChirpRow)
+        self.rows = []
         row_times = sorted(rows)
         base_time = min(sorted(rows))
         for update in row_times:
@@ -57,7 +57,7 @@ class RChirpVoice:
         for r in sorted(self.rows):
             if r >= row:
                 return r
-        return r
+        return max(self.rows)
 
     def import_chirp_track(self, chirp_track):
         """
@@ -75,22 +75,23 @@ class RChirpVoice:
                             / self.rchirp_song.update_freq
         jiffies_per_row = chirp_track.qticks_notes / ticks_per_jiffy
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
+        tmp_rows = collections.defaultdict(RChirpRow)
 
         # Insert the notes into the voice
         for n in chirp_track.notes:
             n_row = n.start_time // ticks_per_row
-            self.rows[n_row].note_num = n.note_num
-            self.rows[n_row].gate = True
-            self.rows[n_row].jiffies = jiffies_per_row
+            tmp_rows[n_row].note_num = n.note_num
+            tmp_rows[n_row].gate = True
+            tmp_rows[n_row].jiffy_len = jiffies_per_row
             e_row = (n.start_time + n.duration) / ticks_per_row
-            self.rows[e_row].gate = False
+            tmp_rows[e_row].gate = False
 
         program_changes = [ProgramEvent(e.start_time, e.program) for e in chirp_track.other
                            if e.msg.type == 'program_change']
 
         for p in sorted(program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            self.rows[n_row].instrument = int(p.program)
+            tmp_rows[n_row].instrument = int(p.program)
 
 
 class RChirpSong:
@@ -115,7 +116,7 @@ class RChirpSong:
         """
         Imports a ChirpSong
 
-            :param song: A ctsChirp.ChirpSong song
+            :param chirp_song: A ctsChirp.ChirpSong song
         """
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")

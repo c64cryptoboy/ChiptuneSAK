@@ -278,7 +278,7 @@ class ChirpTrack:
 class ChirpSong:
     """
     This class represents a song. It stores notes in an intermediate representation that
-    approximates traditional music notationh (as pitch-duration).  It also stores other 
+    approximates traditional music notation (as pitch-duration).  It also stores other
     information, such as time signatures and tempi, in a similar way.
     """
 
