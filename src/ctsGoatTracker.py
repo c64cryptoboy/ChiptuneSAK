@@ -26,7 +26,7 @@ import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
     ChiptuneSAKContentError, ChiptuneSAKPolyphonyError
 
-DEFAULT_TEMPO = 6
+GT_DEFAULT_TEMPO = 6
 
 # GoatTracker constants
 # TODO: All of these need to be moved into a combined gt importer and exporter
@@ -133,6 +133,7 @@ class GtChannelState:
         self.restarted = False # channel has encountered restart one or more times
         self.channel_orderlist = channel_orderlist # just this channel's orderlist from the subtune
         self.curr_funktable_index = None # None = no funk tempos, 0 or 1 indicates current funktable index
+        self.curr_tempo = GT_DEFAULT_TEMPO
 
         # position atop first pattern in orderlist for channel
         self.__inc_orderlist_to_next_pattern()
