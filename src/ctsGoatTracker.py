@@ -10,6 +10,8 @@
 #
 # TODOs:
 # - Add instrument file loader to use with channels on exports
+# - recode gt->sparse timestamp columns->chirp as gt->columns with jiffy duration->rchirp->chirp
+# - recode chirp->gt as chirp->rchirp and rchirp->gt
 
 from os import path
 import sys
@@ -26,11 +28,10 @@ import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
     ChiptuneSAKContentError, ChiptuneSAKPolyphonyError
 
-DEFAULT_TEMPO = 6
-
 # GoatTracker constants
-# TODO: All of these need to be moved into a combined gt importer and exporter
 GT_FILE_HEADER = b'GTS5'
+GT_DEFAULT_TEMPO = 6
+GT_DEFAULT_FUNKTEMPOS = [9,6] # default alternating tempos, from gplay.c
 
 # All these MAXes are the same for goattracker 2 (1SID) and goattracker 2 stereo (2SID)
 # (Note: MAXes vary in the SID-Wizard 1SID, 2SID, and 3SID engines)
@@ -49,12 +50,11 @@ GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF # order list restart marker
 GT_PAT_END = 0xFF # pattern end
 
-@dataclass
-class GtPatternRow:
-    note_data: int = GT_REST
-    inst_num: int = 0
-    command: int = 0
-    command_data: int = 0
+#
+#
+# Code to parse goattracker and goattracker stereo files
+#
+#
 
 @dataclass
 class GtHeader:
@@ -63,12 +63,6 @@ class GtHeader:
     author_name: str = ''
     copyright: str = ''
     num_subtunes: int = 0
-
-@dataclass
-class GtTable:
-    row_cnt: int = 0
-    left_col: bytes = b''
-    right_col: bytes = b''
 
 @dataclass
 class GtInstrument:
@@ -84,17 +78,11 @@ class GtInstrument:
     hard_restart_1st_frame_wave: int = 0x09
     inst_name: str = ''
 
-PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
-
-PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
-
-# TimeEntry instances are values where key is tick
-# Over time, might add other commands to this as well (Portamento, etc.)
 @dataclass
-class TimeEntry:
-    note: int = None
-    note_on: bool = None
-    tempo: int = None
+class GtTable:
+    row_cnt: int = 0
+    left_col: bytes = b''
+    right_col: bytes = b''
 
 class GTSong:
     def __init__(self):
@@ -107,256 +95,6 @@ class GTSong:
         self.filter_table = GtTable()
         self.speed_table = GtTable()
         self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances
-
-# Used when "running" the channels to convert them to note on/off events in time
-class GtChannelState:
-    # The two funktable entries are shared by all channels using a funktempo, so we have it as a
-    # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
-    # to and processing different songs at the same time (seems unlikely).
-    # TODO: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
-    funktable = [9,6] # funktable starting values (based on gplay.c)
-
-    def __init__(self, voice_num, channel_orderlist):
-        self.voice_num = voice_num
-        self.orderlist_index = -1 # -1 = bootstrapping value only, None = stuck in loop with no patterns
-        self.row_index = -1 # -1 = bootstrapping value only
-        self.pat_remaining_plays = 1 # default is to play a pattern once
-        self.row_ticks_left = 1 # required value when bootstrapping
-        self.first_tick_of_row = False
-        self.curr_transposition = 0
-        self.curr_note = None # converted to midi note number
-        self.row_has_note = False # if True, curr_note is immediately set
-        self.row_has_key_on = False # gate bit mask on, reasserting last played note (found in self.curr_note)
-        self.row_has_key_off = False # gate bit mask off
-        self.local_tempo_update = None
-        self.global_tempo_update = None
-        self.restarted = False # channel has encountered restart one or more times
-        self.channel_orderlist = channel_orderlist # just this channel's orderlist from the subtune
-        self.curr_funktable_index = None # None = no funk tempos, 0 or 1 indicates current funktable index
-
-        # position atop first pattern in orderlist for channel
-        self.__inc_orderlist_to_next_pattern()
-
-
-    # Advance channel/voice by a tick.  This will either:
-    # 1) decrement a row's remaining ticks by one, or
-    # 2) if the row's jiffies are spent, return the next row (if any)
-    # Returns None if not returning a new row
-    def next_tick(self, a_song):
-        self.first_tick_of_row = False
-
-        # If stuck in an orderlist loop that doesn't contain a pattern, then there's nothing to do
-        if self.orderlist_index is None:
-            return None
-
-        self.row_ticks_left -= 1 # decrement ticks remaining in this row
-        assert self.row_ticks_left >=0, "Error: Can't have negative tick values"
-
-        # if not advancing to a new row (0 ticks left), then we're done here
-        if self.row_ticks_left > 0:
-            return None
-        
-        new_row_duration = None
-        self.inc_to_next_row(a_song.patterns) # finished last pattern row, advance to the next
-        # get the current row in the current pattern from this channel's orderlist
-        row = copy.deepcopy(a_song.patterns[self.channel_orderlist[self.orderlist_index]][self.row_index])
-
-        # If row contains a note, transpose if necessary (0 = no transform)
-        if 0x60 <= row.note_data <= 0xBC: # range $60 (C0) to $BC (G#7)
-            note = row.note_data + self.curr_transposition
-            assert note >= 0x60, "Error: transpose dropped note below midi C0"
-            # According to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
-            #    that can be entered in the GT GUI, to create a B7
-            assert note <= 0xBF, "Error: transpose raised note above midi B7"
-            self.curr_note = pattern_note_to_midi_note(note)
-            self.row_has_note = True
-
-        # GT_REST ($BD/189, gt display "..."):  A note continues through rest rows.  Rest does not mean
-        # what it would in sheet music.  For our purposes, we're ignoring it
-
-        # GT_KEY_OFF ($BE/190, gt display "---"): Unsets the gate bit mask.  This starts the release phase
-        # of the ADSR.
-        # Going to ignore any effects gateoff timer and hardrestart values might have on perceived note end
-        if row.note_data == GT_KEY_OFF:
-            if self.curr_note is not None:
-                self.row_has_key_off = True
-
-        # GT_KEY_ON ($BF/191, gt display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
-        # If no prior note has been started, then nothing will happen.  If a note is playing,
-        # nothing will happen (to the note, to the instrument, etc.).  If a note was turned off,
-        # this will restart it, but will not restart the instrument.
-        if row.note_data == GT_KEY_ON:
-            if self.curr_note is not None:
-                self.row_has_key_on = True
-            
-        # Notes on funktempo (all this logic gleaned from reading through gplay.c)
-        # 
-        # Funktempo allows switching between two tempos on alternating pattern rows, to achieve
-        # a "swing" or more organic feel.
-        # - for non-multispeed songs, it defaults to 9 and 6 
-        # 
-        # The funktempo command is $E followed by an index to a single row in the speed table
-        # - The left/right values in the speedtable row contain the two (alternating) tempo values
-        # - Under the covers (in gplay.c), the array funktable[2] holds the two tempos
-        #    - e.g., command E04 points to speedtable at index 4.  If the speedtable row contains
-        #      01:09 06, then the alternating tempos are 9 and 6.  For a 4x-multispeed, these
-        #      would need to be set instead to 01:24 18
-        #    - the two values in funktable[] are global to all participating channels
-        # - The command applies to all channels (3 or 6 for stereo) and all channels are set to
-        #   tempo 0
-        # 
-        # The tempo command is $F, and "tempos" $00 and $01 change all channels to the tempo that's
-        # been previously set in funktable[0] or funktable[1] respectively, and every subsequent
-        # row will alternate between the [0] and [1] entries of the funktable.  In otherwords,
-        # you can choose which half of the funktempo to start with.
-        # - Values $80 and $81 are like $00 and $01, but apply funktempo to just the current channel
-        # - Since the $E command sets all tempos to 0 (see above), it will always start with
-        #   funktable[0]'s tempo (set by the left-side entry in the speed table).  But $F can choose
-        #   to start with the (previously-set) first or second value in the funktempo pair.
-
-        if row.command == 0x0E: # funktempo command
-            speed_table_index = row.command_data
-            if speed_table_index > a_song.speed_table.row_cnt:
-                raise ChiptuneSAKContentError("Error: speed table index %d too big for table of size %d" \
-                    % (speed_table_index, a_song.speed_table.row_cnt))
-
-            # look up the two funk tempos in the speed table and set the channel-shared funktable
-            speed_table_index -= 1 # convert to zero-indexing
-            GtChannelState.funktable[0] = a_song.speed_table.left_col[speed_table_index]
-            GtChannelState.funktable[1] = a_song.speed_table.right_col[speed_table_index]
-
-            new_row_duration = GtChannelState.funktable[0]
-
-            # Record global funktempo change
-            self.global_tempo_update = 0 # 0 will later become the tempo in funktable entry 0
-        elif row.command == 0x0F: # tempo change
-            """
-            From docs:
-            Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
-            $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
-            """
-            # Note: The higher voice number seems to win ties on simultaneous speed changes
-
-            assert row.command_data not in [0x02, 0x82] \
-                , "TODO: Don't know how to support tempo change with value %d" % (row.command_data)     
-
-            new_row_duration = row.command_data & 127 # don't care if it's global or local
-            if new_row_duration < 2:
-                new_row_duration = GtChannelState.funktable[new_row_duration]
-
-            # Record global tempo change
-            #   From looking at the gt source code (at least for the goat tracker gui's gplay.c)
-            #   when a CMD_SETTEMPO happens (for one or for all three/six channels), the tempos immediately
-            #   change, but the ticks remaining on each channel's current row (in progress) is left alone --
-            #   another detail that would have been nice to have had in the documentation.
-            if 0x03 <= row.command_data <= 0x7F:
-                self.global_tempo_update = row.command_data
-            
-            # Record tempo change for just the given channel
-            if 0x83 <= row.command_data <= 0xFF:
-                self.local_tempo_update = row.command_data - 0x80    
-
-            # Record global funktempo change (funktable tempo entry 0 or 1)
-            if 0x00 <= row.command_data <= 0x01:
-                self.global_tempo_update = row.command_data
-
-            # Record funktempo change for just the given channel (funktable tempo entry 0 or 1)
-            if 0x80 <= row.command_data <= 0x81:
-                self.global_tempo_update = row.command_data  - 0x80
-        else:
-            # given no tempo command on this row (0x0E or 0x0F), if we're in funktempo mode, time to alternate
-            # our funktempo
-            if self.curr_funktable_index is not None:
-                self.curr_funktable_index ^= 1
-                self.local_tempo_update = self.curr_funktable_index
-                new_row_duration = GtChannelState.funktable[self.curr_funktable_index]
-
-        # init duration of this row
-        # (if it hasn't started to count down, a row's init duration can get overwritten by
-        # another channel's global temp setting, performed later in this code)
-        if new_row_duration is not None:
-            self.row_ticks_left = new_row_duration
-        else:
-            self.row_ticks_left = self.curr_tempo
-
-        # TODO: Possibly handle some of the (below) commands in the future?
-        """ from docs:
-        Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
-    
-        Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the speedtable.
-    
-        Command 3XY: Toneportamento. Raise or lower pitch until target note has been reached. XY is an index
-        to a 16-bit speed value in the speedtable, or $00 for "tie-note" effect (move pitch instantly to
-        target note)
-        
-        Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-        copied to the timing mark location, which is playeraddress+$3F.    
-        """
-
-        return row
-
-
-    # Advance to next row in pattern.  If pattern end, then go to row 0 of next pattern in orderlist
-    def inc_to_next_row(self, patterns):
-        self.row_index += 1 # init val is -1
-        self.row_has_note = self.row_has_key_on = self.row_has_key_off = False 
-        self.local_tempo_update = self.global_tempo_update = None
-        self.first_tick_of_row = True
-        row = patterns[self.channel_orderlist[self.orderlist_index]][self.row_index]
-        if row == PATTERN_END_ROW:
-            self.pat_remaining_plays -= 1
-            assert self.pat_remaining_plays >= 0, "Error: cannot have a negative number of remaining plays for a pattern"
-            self.row_index = 0 # all patterns are guaranteed to start with at least one meaningful (not end mark) row
-            if self.pat_remaining_plays == 0: # all done with this pattern, moving on
-                self.__inc_orderlist_to_next_pattern()
-
-
-    def __inc_orderlist_to_next_pattern(self):
-        self.pat_remaining_plays = 1 # patterns default to one playthrough unless otherwise specified
-        while(True):
-            self.orderlist_index += 1 # bootstraps at -1
-            a_byte = self.channel_orderlist[self.orderlist_index]
-
-            # parse transpose
-            # Transpose is in half steps.  Transposes changes are absolute, not additive.
-            #   If transpose combined with repeat, transpose must come before a repeat
-            #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
-            #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
-            #     I'm assuming byte 224 is never used in orderlists
-            assert a_byte != 0xE0, "TODO: I don't believe byte E0 should occur in the orderlist"          
-            if 0xE1 <= a_byte <= 0xFE:  # F0 = +0 = no transposition
-                self.curr_transposition = a_byte - 0xF0  # transpose range is -15 to +14
-                continue
-
-            # parse repeat
-            # Repeat values 1 to 16.  In tracker, instead of R0..RF, it's R1..RF,R0
-            #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
-            # Note:  Repeat n really means repeat n-1, so it's actually "number of times to play"
-            #    So R1 (repeat 1) is essentially a NOP
-            if 0xD0 <= a_byte <= 0xDF:
-                self.pat_remaining_plays = a_byte - 0xCF
-                continue
-
-            # parse RST (restart)
-            if a_byte == GT_OL_RST:  # RST ($FF)
-                self.restarted = True
-
-                start_index = self.channel_orderlist[self.orderlist_index+1] # byte following RST is orderlist restart index
-                end_index = self.orderlist_index # byte containing RST
-                self.orderlist_index = self.channel_orderlist[self.orderlist_index+1] # perform orderlist "goto" jump
-                # check if there's at least one pattern between the restart location and the RST
-                if sum(1 for p in self.channel_orderlist[start_index:end_index] if p < GT_MAX_PATTERNS_PER_SONG) == 0:
-                    self.orderlist_index = None
-                    break # no pattern to ultimately end up on, so we're done
-                # continue loop, just in case we land on a repeat or transpose that needs resolving
-                self.orderlist_index -= 1 #"undo" +1 at start of loop
-                continue 
-
-            # parse pattern
-            if a_byte < GT_MAX_PATTERNS_PER_SONG: # if it's a pattern
-                break # found one, done parsing
-
-            raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
 
 
 # Convert pattern note byte value into midi note value
@@ -598,6 +336,285 @@ def import_sng(gt_filename):
     return a_song
 
 
+#
+#
+# Code to convert parsed gt file into events in time
+#
+#
+
+@dataclass
+class GtPatternRow:
+    note_data: int = GT_REST
+    inst_num: int = 0
+    command: int = 0
+    command_data: int = 0
+
+PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
+
+PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
+
+
+# TimeEntry are values, keys will be jiffy # (since time 0)
+# Over time, might add other commands to this as well (Portamento, etc.)
+@dataclass
+class TimeEntry:
+    note: int = None
+    note_on: bool = None # True/False/None
+    tempo: int = None
+
+
+# Used when "running" the channels to convert them to note on/off events in time
+class GtChannelState:
+    # The two funktable entries are shared by all channels using a funktempo, so we have it as a
+    # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
+    # to and processing different songs at the same time (seems unlikely).
+    # TODO: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
+    funktable = GT_DEFAULT_FUNKTEMPOS 
+
+    def __init__(self, voice_num, channel_orderlist):
+        self.voice_num = voice_num
+        self.orderlist_index = -1 # -1 = bootstrapping value only, None = stuck in loop with no patterns
+        self.row_index = -1 # -1 = bootstrapping value only
+        self.pat_remaining_plays = 1 # default is to play a pattern once
+        self.row_ticks_left = 1 # required value when bootstrapping
+        self.first_tick_of_row = False
+        self.curr_transposition = 0
+        self.curr_note = None # converted to midi note number
+        self.row_has_note = False # if True, curr_note is immediately set
+        self.row_has_key_on = False # gate bit mask on, reasserting last played note (found in self.curr_note)
+        self.row_has_key_off = False # gate bit mask off
+        self.local_tempo_update = None
+        self.global_tempo_update = None
+        self.restarted = False # channel has encountered restart one or more times
+        self.channel_orderlist = channel_orderlist # just this channel's orderlist from the subtune
+        self.curr_funktable_index = None # None = no funk tempos, 0 or 1 indicates current funktable index
+        self.curr_tempo = GT_DEFAULT_TEMPO
+
+        # position atop first pattern in orderlist for channel
+        self.__inc_orderlist_to_next_pattern()
+
+
+    # Advance channel/voice by a tick.  This will either:
+    # 1) decrement a row's remaining ticks by one, or
+    # 2) if the row's jiffies are spent, return the next row (if any)
+    # Returns None if not returning a new row
+    def next_tick(self, a_song):
+        self.first_tick_of_row = False
+
+        # If stuck in an orderlist loop that doesn't contain a pattern, then there's nothing to do
+        if self.orderlist_index is None:
+            return None
+
+        self.row_ticks_left -= 1 # decrement ticks remaining in this row
+        assert self.row_ticks_left >=0, "Error: Can't have negative tick values"
+
+        # if not advancing to a new row (0 ticks left), then we're done here
+        if self.row_ticks_left > 0:
+            return None
+        
+        new_row_duration = None
+        self.inc_to_next_row(a_song.patterns) # finished last pattern row, advance to the next
+        # get the current row in the current pattern from this channel's orderlist
+        row = copy.deepcopy(a_song.patterns[self.channel_orderlist[self.orderlist_index]][self.row_index])
+
+        # If row contains a note, transpose if necessary (0 = no transform)
+        if 0x60 <= row.note_data <= 0xBC: # range $60 (C0) to $BC (G#7)
+            note = row.note_data + self.curr_transposition
+            assert note >= 0x60, "Error: transpose dropped note below midi C0"
+            # According to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
+            #    that can be entered in the GT GUI, to create a B7
+            assert note <= 0xBF, "Error: transpose raised note above midi B7"
+            self.curr_note = pattern_note_to_midi_note(note)
+            self.row_has_note = True
+
+        # GT_REST ($BD/189, gt display "..."):  A note continues through rest rows.  Rest does not mean
+        # what it would in sheet music.  For our purposes, we're ignoring it
+
+        # GT_KEY_OFF ($BE/190, gt display "---"): Unsets the gate bit mask.  This starts the release phase
+        # of the ADSR.
+        # Going to ignore any effects gateoff timer and hardrestart values might have on perceived note end
+        if row.note_data == GT_KEY_OFF:
+            if self.curr_note is not None:
+                self.row_has_key_off = True
+
+        # GT_KEY_ON ($BF/191, gt display "+++"): Sets the gate bit mask (ANDed with data from the wavetable).
+        # If no prior note has been started, then nothing will happen.  If a note is playing,
+        # nothing will happen (to the note, to the instrument, etc.).  If a note was turned off,
+        # this will restart it, but will not restart the instrument.
+        if row.note_data == GT_KEY_ON:
+            if self.curr_note is not None:
+                self.row_has_key_on = True
+            
+        # Notes on funktempo (all this logic gleaned from reading through gplay.c)
+        # 
+        # Funktempo allows switching between two tempos on alternating pattern rows, to achieve
+        # a "swing" or more organic feel.
+        # - for non-multispeed songs, it defaults to 9 and 6 
+        # 
+        # The funktempo command is $E followed by an index to a single row in the speed table
+        # - The left/right values in the speedtable row contain the two (alternating) tempo values
+        # - Under the covers (in gplay.c), the array funktable[2] holds the two tempos
+        #    - e.g., command E04 points to speedtable at index 4.  If the speedtable row contains
+        #      01:09 06, then the alternating tempos are 9 and 6.  For a 4x-multispeed, these
+        #      would need to be set instead to 01:24 18
+        #    - the two values in funktable[] are global to all participating channels
+        # - The command applies to all channels (3 or 6 for stereo) and all channels are set to
+        #   tempo 0
+        # 
+        # The tempo command is $F, and "tempos" $00 and $01 change all channels to the tempo that's
+        # been previously set in funktable[0] or funktable[1] respectively, and every subsequent
+        # row will alternate between the [0] and [1] entries of the funktable.  In otherwords,
+        # you can choose which half of the funktempo to start with.
+        # - Values $80 and $81 are like $00 and $01, but apply funktempo to just the current channel
+        # - Since the $E command sets all tempos to 0 (see above), it will always start with
+        #   funktable[0]'s tempo (set by the left-side entry in the speed table).  But $F can choose
+        #   to start with the (previously-set) first or second value in the funktempo pair.
+
+        if row.command == 0x0E: # funktempo command
+            speed_table_index = row.command_data
+            if speed_table_index > a_song.speed_table.row_cnt:
+                raise ChiptuneSAKContentError("Error: speed table index %d too big for table of size %d" \
+                    % (speed_table_index, a_song.speed_table.row_cnt))
+
+            # look up the two funk tempos in the speed table and set the channel-shared funktable
+            speed_table_index -= 1 # convert to zero-indexing
+            GtChannelState.funktable[0] = a_song.speed_table.left_col[speed_table_index]
+            GtChannelState.funktable[1] = a_song.speed_table.right_col[speed_table_index]
+
+            new_row_duration = GtChannelState.funktable[0]
+
+            # Record global funktempo change
+            self.global_tempo_update = 0 # 0 will later become the tempo in funktable entry 0
+        elif row.command == 0x0F: # tempo change
+            """
+            From docs:
+            Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
+            $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
+            """
+            # Note: The higher voice number seems to win ties on simultaneous speed changes
+
+            assert row.command_data not in [0x02, 0x82] \
+                , "TODO: Don't know how to support tempo change with value %d" % (row.command_data)     
+
+            new_row_duration = row.command_data & 127 # don't care if it's global or local
+            if new_row_duration < 2:
+                new_row_duration = GtChannelState.funktable[new_row_duration]
+
+            # Record global tempo change
+            #   From looking at the gt source code (at least for the goat tracker gui's gplay.c)
+            #   when a CMD_SETTEMPO happens (for one or for all three/six channels), the tempos immediately
+            #   change, but the ticks remaining on each channel's current row (in progress) is left alone --
+            #   another detail that would have been nice to have had in the documentation.
+            if 0x03 <= row.command_data <= 0x7F:
+                self.global_tempo_update = row.command_data
+            
+            # Record tempo change for just the given channel
+            if 0x83 <= row.command_data <= 0xFF:
+                self.local_tempo_update = row.command_data - 0x80    
+
+            # Record global funktempo change (funktable tempo entry 0 or 1)
+            if 0x00 <= row.command_data <= 0x01:
+                self.global_tempo_update = row.command_data
+
+            # Record funktempo change for just the given channel (funktable tempo entry 0 or 1)
+            if 0x80 <= row.command_data <= 0x81:
+                self.global_tempo_update = row.command_data  - 0x80
+        else:
+            # given no tempo command on this row (0x0E or 0x0F), if we're in funktempo mode, time to alternate
+            # our funktempo
+            if self.curr_funktable_index is not None:
+                self.curr_funktable_index ^= 1
+                self.local_tempo_update = self.curr_funktable_index
+                new_row_duration = GtChannelState.funktable[self.curr_funktable_index]
+
+        # init duration of this row
+        # (if it hasn't started to count down, a row's init duration can get overwritten by
+        # another channel's global temp setting, performed later in this code)
+        if new_row_duration is not None:
+            self.row_ticks_left = new_row_duration
+        else:
+            self.row_ticks_left = self.curr_tempo
+
+        # TODO: Possibly handle some of the (below) commands in the future?
+        """ from docs:
+        Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
+    
+        Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the speedtable.
+    
+        Command 3XY: Toneportamento. Raise or lower pitch until target note has been reached. XY is an index
+        to a 16-bit speed value in the speedtable, or $00 for "tie-note" effect (move pitch instantly to
+        target note)
+        
+        Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
+        copied to the timing mark location, which is playeraddress+$3F.    
+        """
+
+        return row
+
+
+    # Advance to next row in pattern.  If pattern end, then go to row 0 of next pattern in orderlist
+    def inc_to_next_row(self, patterns):
+        self.row_index += 1 # init val is -1
+        self.row_has_note = self.row_has_key_on = self.row_has_key_off = False 
+        self.local_tempo_update = self.global_tempo_update = None
+        self.first_tick_of_row = True
+        row = patterns[self.channel_orderlist[self.orderlist_index]][self.row_index]
+        if row == PATTERN_END_ROW:
+            self.pat_remaining_plays -= 1
+            assert self.pat_remaining_plays >= 0, "Error: cannot have a negative number of remaining plays for a pattern"
+            self.row_index = 0 # all patterns are guaranteed to start with at least one meaningful (not end mark) row
+            if self.pat_remaining_plays == 0: # all done with this pattern, moving on
+                self.__inc_orderlist_to_next_pattern()
+
+
+    def __inc_orderlist_to_next_pattern(self):
+        self.pat_remaining_plays = 1 # patterns default to one playthrough unless otherwise specified
+        while(True):
+            self.orderlist_index += 1 # bootstraps at -1
+            a_byte = self.channel_orderlist[self.orderlist_index]
+
+            # parse transpose
+            # Transpose is in half steps.  Transposes changes are absolute, not additive.
+            #   If transpose combined with repeat, transpose must come before a repeat
+            #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
+            #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
+            #     I'm assuming byte 224 is never used in orderlists
+            assert a_byte != 0xE0, "TODO: I don't believe byte E0 should occur in the orderlist"          
+            if 0xE1 <= a_byte <= 0xFE:  # F0 = +0 = no transposition
+                self.curr_transposition = a_byte - 0xF0  # transpose range is -15 to +14
+                continue
+
+            # parse repeat
+            # Repeat values 1 to 16.  In tracker, instead of R0..RF, it's R1..RF,R0
+            #   i.e., 'R0'=223=16reps, 'RF'=222=15 reps, 'R1'=208=1rep
+            # Note:  Repeat n really means repeat n-1, so it's actually "number of times to play"
+            #    So R1 (repeat 1) is essentially a NOP
+            if 0xD0 <= a_byte <= 0xDF:
+                self.pat_remaining_plays = a_byte - 0xCF
+                continue
+
+            # parse RST (restart)
+            if a_byte == GT_OL_RST:  # RST ($FF)
+                self.restarted = True
+
+                start_index = self.channel_orderlist[self.orderlist_index+1] # byte following RST is orderlist restart index
+                end_index = self.orderlist_index # byte containing RST
+                self.orderlist_index = self.channel_orderlist[self.orderlist_index+1] # perform orderlist "goto" jump
+                # check if there's at least one pattern between the restart location and the RST
+                if sum(1 for p in self.channel_orderlist[start_index:end_index] if p < GT_MAX_PATTERNS_PER_SONG) == 0:
+                    self.orderlist_index = None
+                    break # no pattern to ultimately end up on, so we're done
+                # continue loop, just in case we land on a repeat or transpose that needs resolving
+                self.orderlist_index -= 1 #"undo" +1 at start of loop
+                continue 
+
+            # parse pattern
+            if a_byte < GT_MAX_PATTERNS_PER_SONG: # if it's a pattern
+                break # found one, done parsing
+
+            raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
+
+
 # Convert the orderlist and patterns into three (or six) channels of note on/off events in time (ticks)
 def convert_to_note_events(sng_data, subtune_num):
     # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
@@ -712,6 +729,13 @@ def convert_to_note_events(sng_data, subtune_num):
     return channels_time_events
 
 
+#
+#
+# Code to convert events in time into chirp
+#
+#
+
+
 # Create CVS debug output
 def note_time_data_str(num_channels, channels_time_events):
     max_tick = max(max(channels_time_events[i].keys()) for i in range(num_channels))
@@ -761,7 +785,8 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
     csv = note_time_data_str(num_channels, channels_time_events)
     #print(csv)
     with open('debug.csv', 'w') as out_file:
-        out_file.write(csv)
+        #out_file.write(csv)
+        pass
 
     all_ticks = sorted(set(int(t) for i in range(num_channels) for t in channels_time_events[i].keys()))
     note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 
@@ -814,6 +839,13 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
     return song
 
 
+#
+#
+# Code to convert chirp to goattracker file
+#
+#
+
+
 # A Procrustean bed for GT text fields.  Can accept a string or bytes.
 def pad_or_truncate(to_pad, length):
     if isinstance(to_pad, str):
@@ -835,7 +867,9 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='NTSC'):
+def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
+    arch='NTSC', end_with_repeat = False):
+
     def midi_to_gt_tick(midi_ticks, offset, factor):
         return midi_ticks // factor + offset
 
@@ -961,10 +995,8 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
     # As far as I can tell, people create an infinite loop at the end when they don't want a song to
     # repeat, so that's what this code can do.
 
-    # TODO: Setting this boolean should be an optional command line flag
-    END_WITH_REPEAT = False # This doesn't imply that all tracks will restart at the same time...
-
-    if not END_WITH_REPEAT:
+    # end_with_repeat == False in no way implies that all tracks will restart at the same time...
+    if not end_with_repeat:
         # create a new empty pattern for all channels to loop on forever
         # and add to the end of each orderlist
         loop_pattern = bytearray()
@@ -977,7 +1009,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
 
     for i in range(num_channels):
         orderlists[i].append(GT_OL_RST) # patterns end with restart indicator
-        if END_WITH_REPEAT:
+        if end_with_repeat:
             orderlists[i].append(0) # index of start of channel order list 
         else:
             orderlists[i].append(len(orderlists[i])-2) # index of the empty loop pattern
@@ -1022,6 +1054,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, arch='
         gt_binary += pattern
 
     return gt_binary
+
 
 if __name__ == "__main__":
     pass
