@@ -1,0 +1,49 @@
+import sys
+import toolsPath
+import argparse
+from os import path
+import ctsMidi
+
+def main():
+    parser = argparse.ArgumentParser(description="Perform operations on individual tracks of MIDI files.",
+                                     epilog="Operations are performed in the order given in this help.")
+    parser.add_argument('midi_in_file', help='midi filename to import')
+    parser.add_argument('midi_out_file', help='midi filename to export')
+    parser.add_argument('track', type=str, help='Track either number (starting with 1) or name')
+    quant_group = parser.add_mutually_exclusive_group(required=False)
+    quant_group.add_argument('-a', '--quantizeauto', action="store_true", help='Auto-quantize')
+    quant_group.add_argument('-q', '--quantizenote', type=str, help='quantize to a note value')
+    quant_group.add_argument('-c', '--quantizeticks', type=int, help='quantize to ticks')
+    parser.add_argument('-m', '--merge', type=int, help='merge track (max num ticks to merge)')
+
+    args = parser.parse_args()
+
+    if not (args.midi_in_file.lower().endswith(r'.mid') or args.midi_in_file.lower().endswith(r'.midi')):
+        parser.error('Expecting input filename that ends in ".mid"')
+    if not path.exists(args.midi_in_file):
+        parser.error('Cannot find "%s"' % args.midi_in_file)
+
+    song = ctsMidi.midi_to_chirp(args.midi_in_file)
+
+    track = None
+    if all(t.isdigit() for t in args.track):
+        track = song.tracks[int(args.track) - 1]
+    else:
+        for t in song.tracks:
+            if t.name == args.track:
+                track = t
+        if track is None:
+            print('Track %s not found. Available tracks:')
+            for t in song.tracks:
+                print(t.name)
+            parser.error('No track named %s found.' % args.track)
+
+    if args.merge:
+        track.merge_notes(args.merge)
+
+    print("Exporting to MIDI...")
+    ctsMidi.chirp_to_midi(song, args.midi_out_file)
+
+
+if __name__ == '__main__':
+    main()

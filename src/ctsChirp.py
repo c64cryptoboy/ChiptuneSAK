@@ -150,6 +150,27 @@ class ChirpTrack:
         # Return the statistics about changes
         return (note_start_changes, duration_changes)
 
+    def merge_notes(self, max_merge_length_ticks):
+        merged = 0
+        ret_notes = []
+        last = self.notes[0]
+        for n in self.notes[1:]:
+            if n.start_time == last.start_time + last.duration \
+                    and n.note_num == last.note_num \
+                    and n.duration <= max_merge_length_ticks:
+                last.duration += n.duration
+                merged += 1
+                continue
+            else:
+                ret_notes.append(last)
+            last = n
+        ret_notes.append(last)
+        self.notes = ret_notes
+        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+        print('Merged %d notes' % merged)
+        return merged
+
+
     def remove_polyphony(self):
         """
         This function eliminates polyphony, so that in each channel there is only one note
