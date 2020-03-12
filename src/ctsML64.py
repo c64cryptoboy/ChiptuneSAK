@@ -44,6 +44,7 @@ def ml64_sort_order(c):
     """
     Sort function for measure contents.
     Items are sorted by time and then, for equal times, in this order:
+
         Patch Change
         Tempo
         Notes and rests

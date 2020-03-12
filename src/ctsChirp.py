@@ -556,7 +556,9 @@ class ChirpSong:
         """
         Scales the ticks for all events in the song.  Multiplies the time for each event by scale_factor.
         This method also changes the ppq by the scale factor.
+
             :param scale_factor: Floating-point scale factor to multiply all events.
+
         """
         self.metadata.ppq = int(round(self.metadata.ppq * scale_factor, 0))
         # First adjust the time signatures
@@ -588,7 +590,9 @@ class ChirpSong:
         """
         Moves all notes in the song a given number of ticks.  Adds the offset to the current tick for every event.
         If the resulting event has a negative starting time in ticks, it is set to 0.
+
             :param offset_ticks:  Offset in ticks
+
         """
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
