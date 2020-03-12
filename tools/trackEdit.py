@@ -15,6 +15,9 @@ def main():
     quant_group.add_argument('-q', '--quantizenote', type=str, help='quantize to a note value')
     quant_group.add_argument('-c', '--quantizeticks', type=int, help='quantize to ticks')
     parser.add_argument('-m', '--merge', type=int, help='merge track (max num ticks to merge)')
+    short_note_group = parser.add_mutually_exclusive_group(required=False)
+    short_note_group.add_argument('-r', '--removeshort', type=int, help='remove notes <= tick value')
+    short_note_group.add_argument('-l', '--setminnotelen', type=int, help='set the minimum note length to tick value, possibly consuming portion of following note')
 
     args = parser.parse_args()
 
@@ -37,6 +40,12 @@ def main():
             for t in song.tracks:
                 print(t.name)
             parser.error('No track named %s found.' % args.track)
+
+    if args.removeshort:
+        track.remove_short_notes(args.removeshort)
+
+    if args.setminnotelen:
+        track.set_minimum_note_len(args.setminnotelen)
 
     if args.merge:
         track.merge_notes(args.merge)
