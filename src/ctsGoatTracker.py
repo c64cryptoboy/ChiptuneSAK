@@ -339,8 +339,10 @@ def import_sng(gt_filename):
 #
 #
 # Code to convert parsed gt file into events in time
+# 
 #
-#
+
+
 
 @dataclass
 class GtPatternRow:
@@ -731,6 +733,13 @@ def convert_to_note_events(sng_data, subtune_num):
 
 #
 #
+# TODO: Code to convert parsed gt file into rchirp
+# 
+#
+
+
+#
+#
 # Code to convert events in time into chirp
 #
 #
@@ -841,10 +850,19 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
 
 #
 #
+# Code to convert rchirp into chirp
+#
+#
+
+
+#
+#
 # Code to convert chirp to goattracker file
 #
 #
 
+
+TRUNCATE_IF_TOO_BIG = True 
 
 # A Procrustean bed for GT text fields.  Can accept a string or bytes.
 def pad_or_truncate(to_pad, length):
@@ -958,35 +976,48 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
     channels_rows[0][0].command_data=jiffies_per_row # global tempo of 6 (goat tracker's default)
 
     # Convert the sparse representation into separate patterns (of bytes)
-    EXPORT_PATTERN_LEN = 64 # index 0 to len-1 for data, index len for 0xFF pattern end mark
+    EXPORT_PATTERN_LEN = 126 # index 0 to len-1 for data, index len for 0xFF pattern end mark
     patterns = [] # can be shared across all channels
     orderlists = [[] for _ in range(len(tracknums))] # Note: this is bad: [[]] * len(tracknums)
     curr_pattern_num = 0
-    for i, channel_rows in enumerate(channels_rows):
+    too_many_patterns = False
+
+    # for each channel, get its rows, and create patterns, adding them to the 
+    # channel's orderlist
+    for i, channel_rows in enumerate(channels_rows):       
         pattern_row_index = 0
-        pattern = bytearray()
+        pattern = bytearray() # create a new, empty pattern
         max_row = max(channel_rows)
         for j in range(max_row+1): # iterate across row num span (inclusive)
-            if j in channel_rows:
+            if j in channel_rows: # if something there...
                 pattern += row_to_bytes(channel_rows[j])
             else:
                 pattern += row_to_bytes(PATTERN_EMPTY_ROW)
             pattern_row_index += 1
-            if pattern_row_index == EXPORT_PATTERN_LEN:
-                pattern += row_to_bytes(PATTERN_END_ROW)
+            if pattern_row_index == EXPORT_PATTERN_LEN: # if pattern is full
+                pattern += row_to_bytes(PATTERN_END_ROW) # finish with end row marker
                 patterns.append(pattern)
-                orderlists[i].append(curr_pattern_num)
+                orderlists[i].append(curr_pattern_num) # append to orderlist for this channel
                 curr_pattern_num += 1
+                if curr_pattern_num >= GT_MAX_PATTERNS_PER_SONG:
+                    too_many_patterns = True
+                    break
                 pattern = bytearray()
                 pattern_row_index = 0
+        if too_many_patterns:
+            break
         if len(pattern) > 0: # if there's a final partially-filled pattern, add it
-             pattern += row_to_bytes(PATTERN_END_ROW)
-             patterns.append(pattern)
-             orderlists[i].append(curr_pattern_num)
-             curr_pattern_num += 1
-    if curr_pattern_num >= GT_MAX_PATTERNS_PER_SONG:
+            pattern += row_to_bytes(PATTERN_END_ROW)
+            patterns.append(pattern)
+            orderlists[i].append(curr_pattern_num)
+            curr_pattern_num += 1
+            if curr_pattern_num >= GT_MAX_PATTERNS_PER_SONG:
+                too_many_patterns = True
+    if too_many_patterns and not TRUNCATE_IF_TOO_BIG:
         raise ChiptuneSAKContentError("Error: More than %d goattracker patterns created"
-             % GT_MAX_PATTERNS_PER_SONG)
+            % GT_MAX_PATTERNS_PER_SONG)
+    else:
+        print("Warning: too much note data, truncating patterns...")
     
 
     # Usually, songs repeat.  Each channel's orderlist ends with RST00, which means restart at the
@@ -996,7 +1027,7 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
     # repeat, so that's what this code can do.
 
     # end_with_repeat == False in no way implies that all tracks will restart at the same time...
-    if not end_with_repeat:
+    if not end_with_repeat and not too_many_patterns:
         # create a new empty pattern for all channels to loop on forever
         # and add to the end of each orderlist
         loop_pattern = bytearray()
@@ -1054,6 +1085,13 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
         gt_binary += pattern
 
     return gt_binary
+
+
+#
+#
+# TODO: Code to convert rchirp to goattracker file
+#
+#
 
 
 if __name__ == "__main__":
