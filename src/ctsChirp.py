@@ -150,7 +150,30 @@ class ChirpTrack:
         # Return the statistics about changes
         return (note_start_changes, duration_changes)
 
+    def quantize_long(self, qticks):
+        """
+        Quantizes only notes longer than 3/4 qticks; quantizes both start time and duration.  This function
+        is useful for quantization that also preserves some ornaments, such as grace notes.
+
+            :param qticks: Quantization for notes and durations
+            :return:
+        """
+        min_length = qticks * 3 // 4
+        for i, n in enumerate(self.notes):
+            if n.duration >= min_length:
+                n.start_time = quantize_fn(n.start_time, qticks)
+                n.duration = quantize_fn(n.duration, qticks)
+                self.notes[i] = n
+        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+
+
     def merge_notes(self, max_merge_length_ticks):
+        """
+        Merges immediately adjacent notes if they are short and have the same note number.
+
+            :param max_merge_length_ticks: Length of the longest note to merge, in ticks
+            :return: number of notes merged
+        """
         merged = 0
         ret_notes = []
         last = self.notes[0]
@@ -167,9 +190,55 @@ class ChirpTrack:
         ret_notes.append(last)
         self.notes = ret_notes
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
-        print('Merged %d notes' % merged)
         return merged
 
+    def remove_short_notes(self, max_duration_ticks):
+        """
+        Removes notes shorter than max_duration_ticks from the track.
+
+            :param max_duration_ticks:
+            :return: number of notes deleted.
+        """
+        deleted = 0
+        ret_notes = []
+        for n in self.notes:
+            if n.duration < max_duration_ticks:
+                deleted += 1
+            else:
+                ret_notes.append(n)
+        self.notes = ret_notes
+        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+        return deleted
+
+    def set_min_note_len(self, min_len_ticks):
+        """
+        Sets the minimum note length for the track.  Notes shorter than min_len_ticks will be lengthened
+        and any notes that overlap will have their start times adjusted to allow the new longer note.
+
+            :param min_len_ticks: Minimum note length
+            :return: tuple of (number of notes extended, number of notes with start adjusted)
+        """
+        extended = 0
+        trimmed = 0
+        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
+        for i, n in enumerate(self.notes):
+            if 0 < n.duration <= min_len_ticks:
+                n.duration = min_len_ticks
+                self.notes[i] = n
+                last_end = n.start_time + n.duration
+                extended += 1
+                j = i + 1
+                while j < len(self.notes):
+                    if self.notes[j].start_time < last_end:
+                        self.notes[j].start_time = last_end
+                        self.notes[j].duration -= last_end - self.notes[j].start_time
+                        trimmed += 1
+                        j += 1
+                    else:
+                        break
+        self.notes = [n for n in self.notes if n.duration > 0]
+        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
+        return (extended, trimmed)
 
     def remove_polyphony(self):
         """
@@ -415,6 +484,15 @@ class ChirpSong:
             qticks //= 3
         self.quantize(qticks, qticks)
 
+    def is_quantized(self):
+        """
+        Has the song been quantized?  This requires that all the tracks have been quantized with their
+        current qticks_notes and qticks_durations values.
+
+            :return:  Boolean True if all tracks in the song are quantized
+        """
+        return all(t.is_quantized() for t in self.tracks)
+
     def explode_polyphony(self, i_track):
         """
         'Explodes' a single track into multi-track polyphony.  The new tracks replace the old track in the
@@ -470,15 +548,6 @@ class ChirpSong:
             :return: Boolean True if any track in the song is polyphonic
         """
         return any(t.is_polyphonic() for t in self.tracks)
-
-    def is_quantized(self):
-        """
-        Has the song been quantized?  This requires that all the tracks have been quantized with their
-        current qticks_notes and qticks_durations values.
-
-            :return:  Boolean True if all tracks in the song are quantized
-        """
-        return all(t.is_quantized() for t in self.tracks)
 
     def remove_keyswitches(self, ks_max=8):
         """
