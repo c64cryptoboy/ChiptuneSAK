@@ -1,44 +1,16 @@
-
+=======================================
 ChiptuneSAK documentation
 =======================================
 
 .. toctree::
+   :caption: Table of Contents
    :maxdepth: 2
-   :caption: Contents:
 
-Introduction
-=======================================
+   Introduction
+   MusicConcepts
+   Classes
 
-Classes
-=======================================
-
-
-
-Chirp
------
-
-.. autoclass:: ctsChirp.ChirpTrack
-    :members:
-
-.. autoclass:: ctsChirp.ChirpSong
-    :members:
-
-MChirp
-------
-
-.. autoclass:: ctsMChirp.MChirpTrack
-    :members:
-
-.. autoclass:: ctsMChirp.MChirpSong
-    :members:
-
-RChirp
-------
-
-.. automodule:: ctsML64
-    :members:
-
-
+==================
 Indices and tables
 ==================
 
