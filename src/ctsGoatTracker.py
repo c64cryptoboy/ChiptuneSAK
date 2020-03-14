@@ -24,9 +24,11 @@ from dataclasses import dataclass
 from collections import defaultdict
 from ctsConstants import ARCH, C0_MIDI_NUM
 import ctsChirp
+import ctsRChirp
 import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
     ChiptuneSAKContentError, ChiptuneSAKPolyphonyError
+
 
 # GoatTracker constants
 GT_FILE_HEADER = b'GTS5'
@@ -65,6 +67,13 @@ class GtHeader:
     num_subtunes: int = 0
 
 @dataclass
+class GtPatternRow:
+    note_data: int = GT_REST
+    inst_num: int = 0
+    command: int = 0
+    command_data: int = 0
+
+@dataclass
 class GtInstrument:
     inst_num: int = 0
     attack_decay: int = 0
@@ -96,6 +105,8 @@ class GTSong:
         self.speed_table = GtTable()
         self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances
 
+    def is_stereo(self):
+        return self.num_channels >= 4
 
 # Convert pattern note byte value into midi note value
 # Note: lowest goat tracker note C0 (0x60)
@@ -343,19 +354,6 @@ def import_sng(gt_filename):
 #
 
 
-
-@dataclass
-class GtPatternRow:
-    note_data: int = GT_REST
-    inst_num: int = 0
-    command: int = 0
-    command_data: int = 0
-
-PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
-
-PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
-
-
 # TimeEntry are values, keys will be jiffy # (since time 0)
 # Over time, might add other commands to this as well (Portamento, etc.)
 @dataclass
@@ -364,6 +362,7 @@ class TimeEntry:
     note_on: bool = None # True/False/None
     tempo: int = None
 
+PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
 
 # Used when "running" the channels to convert them to note on/off events in time
 class GtChannelState:
@@ -617,6 +616,8 @@ class GtChannelState:
             raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
 
 
+# TODO: Delete convert_to_note_events() once the rchirp conversion is finished
+
 # Convert the orderlist and patterns into three (or six) channels of note on/off events in time (ticks)
 def convert_to_note_events(sng_data, subtune_num):
     # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
@@ -733,9 +734,134 @@ def convert_to_note_events(sng_data, subtune_num):
 
 #
 #
-# TODO: Code to convert parsed gt file into rchirp
+# Code to convert parsed gt file into rchirp
 # 
 #
+
+# Convert the parsed orderlist and patterns into rchirp
+def convert_parsed_gt_to_rchirp(sng_data, subtune_num):
+    # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
+    channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for \
+        i in range(sng_data.num_channels)]
+
+    rchirp_song = ctsRChirp.RChirpSong()
+    # This is instead of channels_time_events (TODO: delete this comment later)
+    rchirp_song.voices = [ctsRChirp.RChirpVoice(rchirp_song) for i in range(sng_data.num_channels)]
+
+    # TODO: Later, make track assignment to SID groupings not hardcoded
+    if sng_data.is_stereo:
+        rchirp_song.voice_groups = [(1,2,3),(4,5,6)]
+    else:
+        rchirp_song.voice_groups = [(1,2,3)]        
+
+    # Handle the rarely-used sneaky default global tempo setting
+    """ from docs:
+    For very optimized songdata & player you can refrain from using any pattern
+    commands and rely on the instruments' step-programming. Even in this case, you
+    can set song startup default tempo with the Attack/Decay parameter of the last
+    instrument (63/0x3F), if you otherwise leave this instrument unused.
+    """
+    # TODO: This code block is untested
+    if len(sng_data.instruments) == GT_MAX_INSTR_PER_SONG:
+        ad = sng_data.instruments[GT_MAX_INSTR_PER_SONG-1].attack_decay
+        if 0x03 <= ad <= 0x7F:
+            for cs in channels_state:
+                cs.curr_tempo = ad
+
+    global_tick = -1
+    # Step through each tick.  For each tick, evaluate the state of each channel.
+    # Continue until all channels have hit the end of their respective orderlists
+    while not all(cs.restarted for cs in channels_state):
+        # When not using multispeed, tempo = ticks per row = screen refreshes per row.
+        # 'Ticks' on C64 are also 'frames' or 'jiffies'.  Each tick in PAL is around 20ms,
+        # and ~16.7‬ms on NTSC.
+        # (in contrast, for a multispeed of 2, there would be two music updates per frame)
+        global_tick += 1
+        global_tempo_change = None
+
+        for i, cs in enumerate(channels_state):
+            # Either reduce time left on this row, or get the next new goattracker data row
+            gt_row = cs.next_tick(sng_data)
+            if gt_row is None:  # if we didn't advance to a new row...
+                continue
+
+            rc_row = ctsRChirp.RChirpRow()
+            rc_row.jiffy_num = global_tick
+            rc_row.jiffy_len = cs.curr_tempo
+
+            # KeyOff (only recorded if there's a curr_note defined)
+            if cs.row_has_key_off:
+                rc_row.note_num = cs.curr_note
+                rc_row.gate = False
+
+            # KeyOn (only recorded if there's a curr_note defined)
+            if cs.row_has_key_on:
+                rc_row.note_num = cs.curr_note
+                rc_row.gate = True
+
+            # if note_data is an actual note, then cs.curr_note has been updated
+            elif cs.row_has_note:
+                rc_row.note_num = cs.curr_note
+                rc_row.gate = True     
+
+            # process tempo changes
+            # Note: local_tempo_update and global_tempo_update init to None when new row fetched
+            if cs.local_tempo_update is not None:
+                # Apply local (single channel) tempo change
+                if cs.local_tempo_update >= 2:
+                    cs.curr_funktable_index = None
+                    cs.curr_tempo = cs.local_tempo_update
+                else: # it's an index to a funktable tempo
+                    cs.curr_funktable_index = cs.local_tempo_update
+                    # convert into a normal tempo change
+                    cs.curr_tempo = GtChannelState.funktable[cs.curr_funktable_index]
+                rc_row.jiffy_len = cs.curr_tempo
+            
+            # this channel signals a global tempo change that will affect all the channels
+            # once out of this per-channel loop
+            elif cs.global_tempo_update is not None:
+                global_tempo_change = cs.global_tempo_update
+
+            rchirp_song.voices[i].append_row(rc_row)
+
+        # By this point, we've passed through all channels for this particular tick
+        # If more than one channel made a tempo change, the global tempo change on the highest
+        # voice/channel number wins (consistent with goattracker behavior)
+        if global_tempo_change is not None:
+            for j, cs in enumerate(channels_state):  # Time to apply the global changes:
+                if global_tempo_change >= 2:
+                    cs.curr_funktable_index = None  # funk tempo mode off
+                    new_tempo = global_tempo_change
+                else: # it's an index to a funktable tempo
+                    cs.curr_funktable_index = global_tempo_change # stateful funky tracking
+                    # convert into a normal tempo change
+                    new_tempo = GtChannelState.funktable[cs.curr_funktable_index]
+
+                current_rc_row = rchirp_song.voices[j].get_last_row()
+
+                # If row state is in progress, leave its remaining ticks alone.
+                # But if it's the very start of a new row, then override with the new global tempo
+                if cs.first_tick_of_row:
+                    cs.row_ticks_left = new_tempo
+                    current_rc_row.jiffy_len = new_tempo
+
+                cs.curr_tempo = new_tempo
+
+    # Create note offs once all channels have hit their orderlist restart one or more times
+    #    Ok, cheesy hack here.  The loop above repeats until all tracks have had a chance to restart, but it
+    #    allows each voice to load in one row after that point.  Taking advantage of that, we modify that
+    #    row with note off events, looking backwards to previous rows to see what the last note was to use
+    #    in the note off events.
+    for i, cs in enumerate(channels_state):
+        rows = rchirp_song.voices[i].rows
+        reversed_index = list(reversed(list(rows.keys())))
+        for seek_index in reversed_index[1:]: # skip largest row num, and work backwards
+            if rows[seek_index].note_num is not None:
+                rows[reversed_index[0]].note_num = rows[seek_index].note_num
+                rows[reversed_index[0]].gate = False # gate off
+                break
+
+    return rchirp_song
 
 
 #
@@ -861,6 +987,7 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
 #
 #
 
+PATTERN_EMPTY_ROW = GtPatternRow(note_data = GT_REST)
 
 TRUNCATE_IF_TOO_BIG = True 
 

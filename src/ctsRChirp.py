@@ -1,18 +1,20 @@
 import copy
 from ctsBase import *
 
-
 @dataclass
 class RChirpRow:
     """
     The basic RChirp row
     """
+    row_num: int = 0        # rchirp row number
     jiffy_num: int = 0      # jiffy num since time 0
-    note_num: int = 0       # MIDI note number
+    note_num: int = None    # MIDI note number;None means no note asserted
     instrument: int = None  # Instrument number; none means no change
-    gate: bool = None       # Gate on/off tri-value True/False/None
-    jiffy_len: int = 1        # Jiffies to process this row (until next row)
+    gate: bool = None       # Gate on/off tri-value True/False/None; None means no gate change
+    jiffy_len: int = 1      # Jiffies to process this row (until next row)
 
+    def __gt__(self, rchirp_row):
+        return self.row_num > rchirp_row.row_num
 
 class RChirpOrderList:
     """
@@ -42,7 +44,7 @@ class RChirpVoice:
     """
     The representation of a single voice; contains rows
     """
-
+    
     def __init__(self, rchirp_song, chirp_track=None):
         self.rchirp_song = rchirp_song
         self.rows = collections.defaultdict(RChirpRow)
@@ -52,6 +54,32 @@ class RChirpVoice:
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
                 self.import_chirp_track(chirp_track)
+
+    # Helper method for when treating rchirp like a list of contiguous rows,
+    # instead of a sparse dictonary of rows
+    def append_row(self, rchirp_row):
+        insert_row = copy.deepcopy(rchirp_row)
+        insert_row.row_num = self.get_next_row_num()
+        self.rows[insert_row.row_num] = insert_row
+
+    def get_last_row(self):
+        if len(self.rows) == 0:
+            return None
+        return self.rows[max(self.rows, key=self.rows.get)]
+
+    def get_next_row_num(self):
+        if len(self.rows) == 0:
+            return 0
+        return max(self.rows) + 1
+
+    # Returns False if voice contains a sparse row representation
+    def is_contiguous(self):
+        curr_jiffy=0
+        for row_num in sorted(self.rows):
+            if self.rows[row_num].jiffy_num != curr_jiffy:
+                return False
+            curr_jiffy += self.rows[row_num].jiffy_len
+        return True
 
     def _find_closest_row_after(self, row):
         for r in sorted(self.rows):
@@ -104,8 +132,10 @@ class RChirpSong:
         self.voices = []
         self.voice_groups = []
         self.stats = {}
-        self.metadata = copy.deepcopy(chirp_song.metadata)
+        self.metadata = None
+
         if chirp_song is not None:
+            self.metadata = copy.deepcopy(chirp_song.metadata)
             tmp = str(type(chirp_song))
             if tmp != "<class 'ctsChirp.ChirpSong'>":
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
@@ -126,3 +156,11 @@ class RChirpSong:
             self.voices.append(RChirpVoice(self, t))
         self.metadata = copy.deepcopy(chirp_song.metadata)
         self.other = copy.deepcopy(chirp_song.other)
+
+    def is_contiguous(self):
+        for voice in self.voices:
+            if not voice.is_contiguous():
+                return False
+        return True
+
+    
