@@ -1,3 +1,9 @@
+# cstRChirp.py
+#
+# RChirp is a row-based verison of chirp, useful for export from and to trackers,
+# and other jiffy-based music players.
+# Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
+
 import copy
 from ctsBase import *
 
@@ -6,12 +12,12 @@ class RChirpRow:
     """
     The basic RChirp row
     """
-    row_num: int = 0        # rchirp row number
-    jiffy_num: int = 0      # jiffy num since time 0
-    note_num: int = None    # MIDI note number;None means no note asserted
-    instrument: int = None  # Instrument number; none means no change
+    row_num: int = None     # rchirp row number
+    jiffy_num: int = None   # jiffy num since time 0
+    note_num: int = None    # MIDI note number; None means no note asserted
+    instrument: int = None  # Instrument number; None means no change
     gate: bool = None       # Gate on/off tri-value True/False/None; None means no gate change
-    jiffy_len: int = 1      # Jiffies to process this row (until next row)
+    jiffy_len: int = None   # Jiffies to process this row (until next row)
 
     def __gt__(self, rchirp_row):
         return self.row_num > rchirp_row.row_num
@@ -55,6 +61,12 @@ class RChirpVoice:
             else:
                 self.import_chirp_track(chirp_track)
 
+    # Rows are indexed by row num.  Returns rows indexed by jiffy number instead.
+    def get_jiffy_indexed_rows(self):
+        return_val = {v.jiffy_num:v for k,v in self.rows.items()}
+        return_val = collections.defaultdict(RChirpRow, return_val)
+        return return_val
+
     # Helper method for when treating rchirp like a list of contiguous rows,
     # instead of a sparse dictonary of rows
     def append_row(self, rchirp_row):
@@ -80,6 +92,26 @@ class RChirpVoice:
                 return False
             curr_jiffy += self.rows[row_num].jiffy_len
         return True
+
+    def integrity_check(self):
+        row_nums = []
+        jiffy_nums = []
+        for k, row in self.rows.items():
+            assert k == row.row_num, "Error: RChirpVoice has a row number that doesn't match its row number index"
+            assert row.row_num is not None, "Error: RChirpRow row cannot have row_num = None"
+            assert row.row_num >=0, "Error: RChirpRow row cannot have a negative row_num"            
+            assert row.jiffy_num is not None, "Error: RChirpRow row cannot have jiffy_num = None"
+            assert row.jiffy_num >=0, "Error: RChirpRow row cannot have a negative jiffy_num"
+            if row.note_num is not None:
+                assert row.note_num >=0, "Error: RChirpRow row cannot have a negative note_num"
+            if row.instrument is not None:    
+                assert row.instrument >=0, "Error: RChirpRow row cannot have a negative instrument"
+            assert row.jiffy_len is not None, "Error: RChirpRow row cannot have jiffy_len = None"
+            assert row.jiffy_len >=0, "Error: RChirpRow row cannot have a negative jiffy_len"
+            row_nums.append(row.row_num)
+            jiffy_nums.append(row.jiffy_num)
+        assert len(row_nums) == len(set(row_nums)), "Error: RChirpVoice row numbers must be unique"
+        assert len(jiffy_nums) == len(set(jiffy_nums)), "Error: RChirpVoice rows' jiffy_nums must be unique"
 
     def _find_closest_row_after(self, row):
         for r in sorted(self.rows):
@@ -163,4 +195,64 @@ class RChirpSong:
                 return False
         return True
 
-    
+    def integrity_check(self):
+        for voice in self.voices:
+            voice.integrity_check()
+
+    def get_jiffy_indexed_voices(self):
+        return_val = []
+        for voice in self.voices:
+            return_val.append(voice.get_jiffy_indexed_rows())
+        return return_val
+
+    @staticmethod    
+    def __str_with_null_handling(a_value):
+        if a_value is None:
+            return ''
+        return str(a_value)
+
+    # Create CVS debug output
+    def note_time_data_str(self):
+        num_channels = len(self.voices)
+        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(num_channels))
+
+        channels_time_events = self.get_jiffy_indexed_voices()
+
+        csv_header = []
+        csv_header.append("jiffy")
+        for i in range(num_channels):
+            csv_header.append("v%d row #" % (i+1))
+            csv_header.append("v%d note" % (i+1))
+            csv_header.append("v%d on/off/none" % (i+1))
+            csv_header.append("v%d tempo update" % (i+1))
+ 
+        csv_rows = []
+        prev_tempo = [-1] * num_channels
+        for tick in range(max_tick+1):
+            # if any channel has a entry at this tick, create a row for all channels
+            if any(tick in channels_time_events[i] for i in range(num_channels)):
+                a_csv_row = []
+                a_csv_row.append("%d" % tick)
+                for i in range(num_channels):
+                    if tick in channels_time_events[i]:
+                        event = channels_time_events[i][tick]
+                        a_csv_row.append("%s" % event.row_num)
+                        a_csv_row.append("%s" % RChirpSong.__str_with_null_handling(event.note_num))
+                        a_csv_row.append("%s" % RChirpSong.__str_with_null_handling(event.gate))
+                        if event.jiffy_len != prev_tempo[i]:
+                            tempo_update = event.jiffy_len
+                        else:
+                            tempo_update = ''
+                        a_csv_row.append("%s" % str(tempo_update))
+                    else:
+                        a_csv_row.append("")
+                        a_csv_row.append("")
+                        a_csv_row.append("")
+                        a_csv_row.append("")
+                csv_rows.append(','.join(a_csv_row))
+        spreadsheet = '\n'.join(csv_rows)
+        spreadsheet = ','.join(csv_header) + '\n' + spreadsheet
+   
+        return spreadsheet
+
+ 

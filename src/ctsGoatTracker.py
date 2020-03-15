@@ -861,6 +861,10 @@ def convert_parsed_gt_to_rchirp(sng_data, subtune_num):
                 rows[reversed_index[0]].gate = False # gate off
                 break
 
+    # Might as well make use of our test cases here
+    rchirp_song.integrity_check() # Will throw assertions if there's problems    
+    assert rchirp_song.is_contiguous(), "Error: rchirp representation should not be sparse"
+
     return rchirp_song
 
 
@@ -874,7 +878,6 @@ def convert_parsed_gt_to_rchirp(sng_data, subtune_num):
 # Create CVS debug output
 def note_time_data_str(num_channels, channels_time_events):
     max_tick = max(max(channels_time_events[i].keys()) for i in range(num_channels))
-    #max_tick = min(max_tick, 500) # for testing
 
     csv_header = []
     csv_header.append("jiffy")
@@ -915,13 +918,6 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
     song = ctsChirp.ChirpSong()
     song.metadata.ppq = 960
     song.name = song_name
-
-    # output csv debugging info
-    csv = note_time_data_str(num_channels, channels_time_events)
-    #print(csv)
-    with open('debug.csv', 'w') as out_file:
-        #out_file.write(csv)
-        pass
 
     all_ticks = sorted(set(int(t) for i in range(num_channels) for t in channels_time_events[i].keys()))
     note_ticks = sorted([t for t in all_ticks if any(channels_time_events[ch].get(t, None) 

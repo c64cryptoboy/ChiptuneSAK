@@ -32,8 +32,11 @@ def main():
      
     #channels_time_events = ctsGoatTracker.convert_to_note_events(sng_data, args.subtune_number - 1)
     rchirp_song = ctsGoatTracker.convert_parsed_gt_to_rchirp(sng_data, args.subtune_number - 1)
-    assert rchirp_song.is_contiguous(), "Error: rchirp representation should not be sparse"
- 
+
+    cvs_filename = '%s.csv' % (args.sng_in_file.split('.')[0])
+    with open(cvs_filename, 'w') as out_file:
+        out_file.write(rchirp_song.note_time_data_str())
+    
     exit("work in progress, so early exit")
 
     #chirp_song = ctsGoatTracker.convert_to_chirp(sng_data.num_channels, channels_time_events, sng_data.headers.song_name)
