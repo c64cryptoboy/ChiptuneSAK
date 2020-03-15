@@ -3,6 +3,10 @@
 # RChirp is a row-based verison of chirp, useful for export from and to trackers,
 # and other jiffy-based music players.
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
+#
+# TODO:
+# - test Knapp's chirp->rchirp functionality
+# - write rchirp->chirp converter
 
 import copy
 from ctsBase import *
@@ -61,31 +65,63 @@ class RChirpVoice:
             else:
                 self.import_chirp_track(chirp_track)
 
-    # Rows are indexed by row num.  Returns rows indexed by jiffy number instead.
     def get_jiffy_indexed_rows(self):
+        """ 
+        Returns rows indexed by jiffy number
+
+        A voice holds onto a dictionary of rows keyed by row number.  This method returns
+        a dictionary of rows keyed by jiffy number. 
+
+        Returns:
+            defaultdict: A dictionary of rows keyed by jiffy number
+        """        
         return_val = {v.jiffy_num:v for k,v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
 
-    # Helper method for when treating rchirp like a list of contiguous rows,
-    # instead of a sparse dictonary of rows
     def append_row(self, rchirp_row):
+        """
+        Appends a row to the voice's collection of rows
+
+        This is a helper method for treating rchirp like a list of contiguous rows,
+        instead of a sparse dictonary of rows
+
+        Parameters:
+           rchirp_row (RChirpRow): A row to "append"
+        """
         insert_row = copy.deepcopy(rchirp_row)
         insert_row.row_num = self.get_next_row_num()
         self.rows[insert_row.row_num] = insert_row
 
     def get_last_row(self):
+        """
+        Returns the row with the largest jiffy number (latest in time)
+
+        Returns:
+            RChirpRow: row with latest jiffy number
+        """
         if len(self.rows) == 0:
             return None
         return self.rows[max(self.rows, key=self.rows.get)]
 
     def get_next_row_num(self):
+        """
+        Returns one greater than the largest row number held onto by the voice
+
+        Returns:
+            int: largest row number + 1
+        """
         if len(self.rows) == 0:
             return 0
         return max(self.rows) + 1
 
-    # Returns False if voice contains a sparse row representation
     def is_contiguous(self):
+        """
+            Determines if the voices rows are contiguous, without gaps in time
+
+            Returns:
+                boolean: True if rows are contiguous, False if not
+        """
         curr_jiffy=0
         for row_num in sorted(self.rows):
             if self.rows[row_num].jiffy_num != curr_jiffy:
@@ -94,6 +130,12 @@ class RChirpVoice:
         return True
 
     def integrity_check(self):
+        """
+            Finds problems with a voice's row data
+
+            Raises:
+                AssertionError
+        """
         row_nums = []
         jiffy_nums = []
         for k, row in self.rows.items():
@@ -190,16 +232,35 @@ class RChirpSong:
         self.other = copy.deepcopy(chirp_song.other)
 
     def is_contiguous(self):
+        """
+            Determines if the voices' rows are contiguous, without gaps in time
+
+            Returns:
+                boolean: True if rows are contiguous, False if not
+        """
         for voice in self.voices:
             if not voice.is_contiguous():
                 return False
         return True
 
     def integrity_check(self):
+        """
+            Finds problems with voices' row data
+
+            Raises:
+                AssertionError
+        """        
         for voice in self.voices:
             voice.integrity_check()
 
     def get_jiffy_indexed_voices(self):
+        """ 
+        Returns a list of rows for each voice in a list.  Rows indexed by jiffy number.
+
+        Returns:
+            list: A list of lists
+        """  
+
         return_val = []
         for voice in self.voices:
             return_val.append(voice.get_jiffy_indexed_rows())
@@ -213,6 +274,12 @@ class RChirpSong:
 
     # Create CVS debug output
     def note_time_data_str(self):
+        """ 
+        Returns a comma-separated value list representation of the rchirp data
+
+        Returns:
+            str: CSV string
+        """         
         num_channels = len(self.voices)
         max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(num_channels))
 

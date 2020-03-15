@@ -172,8 +172,18 @@ def is_2sid(index_at_start_of_orderlist, sng_bytes):
     return has_3_channel_orderlist(file_index, sng_bytes) != -1
 
 
-# Parse a goat tracker .sng file and put it into a GTSong instance
 def import_sng(gt_filename):
+    """ 
+    Parse a goat tracker .sng file and put it into a GTSong instance
+  
+    Supports 1SID and 2SID (stereo) goattracker .sng files 
+  
+    Parameters: 
+       gt_filename (string): Filename for input .sng file
+  
+    Returns: 
+       GTSong: A GTSong instance holding the parsed goattracker file
+    """
     with open(gt_filename, 'rb') as f:
         sng_bytes = f.read()
 
@@ -194,25 +204,21 @@ def import_sng(gt_filename):
     file_index = 101
     a_song.headers = header
     
-    # print("\nDebug: %s" % header)
-
-    # Note, this documentation snippet (below) doesn't account for stereo sid:
-    """ From goattracker documentation:
-    6.1.2 ChirpSong orderlists
-    ---------------------
-    The orderlist structure repeats first for channels 1,2,3 of first subtune,
-    then for channels 1,2,3 of second subtune etc., until all subtunes
-    have been gone thru.
-
-    Offset  Size    Description
-    +0      byte    Length of this channel's orderlist n, not counting restart pos.
-    +1      n+1     The orderlist data:
-                    Values $00-$CF are pattern numbers
-                    Values $D0-$DF are repeat commands
-                    Values $E0-$FE are transpose commands
-                    Value $FF is the RST endmark, followed by a byte that indicates
-                    the restart position
-    """
+    # From goattracker documentation: (note: doesn't account for stereo sid)
+    #    6.1.2 ChirpSong orderlists
+    #    ---------------------
+    #    The orderlist structure repeats first for channels 1,2,3 of first subtune,
+    #    then for channels 1,2,3 of second subtune etc., until all subtunes
+    #    have been gone thru.
+    #
+    #    Offset  Size    Description
+    #    +0      byte    Length of this channel's orderlist n, not counting restart pos.
+    #    +1      n+1     The orderlist data:
+    #                    Values $00-$CF are pattern numbers
+    #                    Values $D0-$DF are repeat commands
+    #                    Values $E0-$FE are transpose commands
+    #                    Value $FF is the RST endmark, followed by a byte that indicates
+    #                    the restart position
 
     if is_2sid(file_index, sng_bytes): # check if this is a "stereo" sid
         a_song.num_channels = 6
@@ -227,29 +233,26 @@ def import_sng(gt_filename):
         subtune_orderlists.append(channels_order_list)
     a_song.subtune_orderlists = subtune_orderlists
     
-    # print("\nDebug: %s" % subtune_orderlists)
-
-    """ From goattracker documentation:
-    6.1.3 Instruments
-    -----------------
-    Offset  Size    Description
-    +0      byte    Amount of instruments n
-
-    Then, this structure repeats n times for each instrument. Instrument 0 (the
-    empty instrument) is not stored.
-
-    Offset  Size    Description
-    +0      byte    Attack/Decay
-    +1      byte    Sustain/Release
-    +2      byte    Wavepointer
-    +3      byte    Pulsepointer
-    +4      byte    Filterpointer
-    +5      byte    Vibrato param. (speedtable pointer)
-    +6      byte    Vibraro delay
-    +7      byte    Gateoff timer
-    +8      byte    Hard restart/1st frame waveform
-    +9      16      Instrument name
-    """
+    # From goattracker documentation:
+    #    6.1.3 Instruments
+    #    -----------------
+    #    Offset  Size    Description
+    #    +0      byte    Amount of instruments n
+    #
+    #    Then, this structure repeats n times for each instrument. Instrument 0 (the
+    #    empty instrument) is not stored.
+    #
+    #    Offset  Size    Description
+    #    +0      byte    Attack/Decay
+    #    +1      byte    Sustain/Release
+    #    +2      byte    Wavepointer
+    #    +3      byte    Pulsepointer
+    #    +4      byte    Filterpointer
+    #    +5      byte    Vibrato param. (speedtable pointer)
+    #    +6      byte    Vibraro delay
+    #    +7      byte    Gateoff timer
+    #    +8      byte    Hard restart/1st frame waveform
+    #    +9      16      Instrument name
 
     instruments = []
     instruments.append(GtInstrument())  # start with empty instrument number 0
@@ -273,19 +276,16 @@ def import_sng(gt_filename):
         instruments.append(an_instrument)
     a_song.instruments = instruments
 
-    # print("\nDebug: %s" % instruments)
-
-    """ From goattracker documentation:
-    6.1.4 Tables
-    ------------
-    This structure repeats for each of the 4 tables (wavetable, pulsetable,
-    filtertable, speedtable).
-
-    Offset  Size    Description
-    +0      byte    Amount n of rows in the table
-    +1      n       Left side of the table
-    +1+n    n       Right side of the table
-    """
+    # From goattracker documentation:
+    #    6.1.4 Tables
+    #    ------------
+    #    This structure repeats for each of the 4 tables (wavetable, pulsetable,
+    #    filtertable, speedtable).
+    #
+    #    Offset  Size    Description
+    #    +0      byte    Amount n of rows in the table
+    #    +1      n       Left side of the table
+    #    +1+n    n       Right side of the table
 
     tables = []
     for i in range(4):
@@ -293,32 +293,30 @@ def import_sng(gt_filename):
         tables.append(a_table)
         file_index += a_table.row_cnt * 2 + 1
 
-    # print("\nDebug: %s" % tables)
     (a_song.wave_table, a_song.pulse_table, a_song.filter_table, a_song.speed_table) = tables
 
-    """ From goattracker documentation:
-    6.1.5 Patterns header
-    ---------------------
-    Offset  Size    Description
-    +0      byte    Number of patterns n
-    
-    6.1.6 Patterns
-    --------------
-    Repeat n times, starting from pattern number 0.
-
-    Offset  Size    Description
-    +0      byte    Length of pattern in rows m
-    +1      m*4     Groups of 4 bytes for each row of the pattern:
-                    1st byte: Notenumber
-                              Values $60-$BC are the notes C-0 - G#7
-                              Value $BD is rest
-                              Value $BE is keyoff
-                              Value $BF is keyon
-                              Value $FF is pattern end
-                    2nd byte: Instrument number ($00-$3F)
-                    3rd byte: Command ($00-$0F)
-                    4th byte: Command databyte
-    """
+    # From goattracker documentation:
+    #    6.1.5 Patterns header
+    #    ---------------------
+    #    Offset  Size    Description
+    #    +0      byte    Number of patterns n
+    #
+    #    6.1.6 Patterns
+    #    --------------
+    #    Repeat n times, starting from pattern number 0.
+    #
+    #    Offset  Size    Description
+    #    +0      byte    Length of pattern in rows m
+    #    +1      m*4     Groups of 4 bytes for each row of the pattern:
+    #                    1st byte: Notenumber
+    #                              Values $60-$BC are the notes C-0 - G#7
+    #                              Value $BD is rest
+    #                              Value $BE is keyoff
+    #                              Value $BF is keyon
+    #                              Value $FF is pattern end
+    #                    2nd byte: Instrument number ($00-$3F)
+    #                    3rd byte: Command ($00-$0F)
+    #                    4th byte: Command databyte
 
     num_patterns = sng_bytes[file_index]
     file_index += 1
@@ -338,8 +336,6 @@ def import_sng(gt_filename):
             file_index += 4
             a_pattern.append(a_row)
         patterns.append(a_pattern)
-        #print("\nDebug: pattern num: %d, pattern rows: %d, content: %s" %
-        #    (pattern_num, len(a_pattern), a_pattern))
 
     a_song.patterns = patterns
 
@@ -487,11 +483,10 @@ class GtChannelState:
             # Record global funktempo change
             self.global_tempo_update = 0 # 0 will later become the tempo in funktable entry 0
         elif row.command == 0x0F: # tempo change
-            """
-            From docs:
-            Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
-            $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
-            """
+            # From docs:
+            #    Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
+            #    $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
+
             # Note: The higher voice number seems to win ties on simultaneous speed changes
 
             assert row.command_data not in [0x02, 0x82] \
@@ -537,18 +532,17 @@ class GtChannelState:
             self.row_ticks_left = self.curr_tempo
 
         # TODO: Possibly handle some of the (below) commands in the future?
-        """ from docs:
-        Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
-    
-        Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the speedtable.
-    
-        Command 3XY: Toneportamento. Raise or lower pitch until target note has been reached. XY is an index
-        to a 16-bit speed value in the speedtable, or $00 for "tie-note" effect (move pitch instantly to
-        target note)
-        
-        Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-        copied to the timing mark location, which is playeraddress+$3F.    
-        """
+        # from docs:
+        #    Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
+        #
+        #    Command 2XY: Portamento down. XY is an index to a 16-bit speed value in the speedtable.
+        #
+        #    Command 3XY: Toneportamento. Raise or lower pitch until target note has been reached. XY is an index
+        #    to a 16-bit speed value in the speedtable, or $00 for "tie-note" effect (move pitch instantly to
+        #    target note)
+        #
+        #    Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
+        #    copied to the timing mark location, which is playeraddress+$3F.    
 
         return row
 
@@ -578,8 +572,8 @@ class GtChannelState:
             # Transpose is in half steps.  Transposes changes are absolute, not additive.
             #   If transpose combined with repeat, transpose must come before a repeat
             #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
-            #     Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
-            #     I'm assuming byte 224 is never used in orderlists
+            #   Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
+            #   I'm assuming byte 224 is never used in orderlists
             assert a_byte != 0xE0, "TODO: I don't believe byte E0 should occur in the orderlist"          
             if 0xE1 <= a_byte <= 0xFE:  # F0 = +0 = no transposition
                 self.curr_transposition = a_byte - 0xF0  # transpose range is -15 to +14
@@ -626,12 +620,12 @@ def convert_to_note_events(sng_data, subtune_num):
     channels_time_events = [defaultdict(TimeEntry) for i in range(sng_data.num_channels)]
 
     # Handle the rarely-used sneaky default global tempo setting
-    """ from docs:
-    For very optimized songdata & player you can refrain from using any pattern
-    commands and rely on the instruments' step-programming. Even in this case, you
-    can set song startup default tempo with the Attack/Decay parameter of the last
-    instrument (63/0x3F), if you otherwise leave this instrument unused.
-    """
+    # from docs:
+    #    For very optimized songdata & player you can refrain from using any pattern
+    #    commands and rely on the instruments' step-programming. Even in this case, you
+    #    can set song startup default tempo with the Attack/Decay parameter of the last
+    #    instrument (63/0x3F), if you otherwise leave this instrument unused.
+
     # TODO: This code block is untested
     if len(sng_data.instruments) == GT_MAX_INSTR_PER_SONG:
         ad = sng_data.instruments[GT_MAX_INSTR_PER_SONG-1].attack_decay
@@ -738,8 +732,17 @@ def convert_to_note_events(sng_data, subtune_num):
 # 
 #
 
-# Convert the parsed orderlist and patterns into rchirp
-def convert_parsed_gt_to_rchirp(sng_data, subtune_num):
+def convert_parsed_gt_to_rchirp(sng_data, subtune_num = 0):
+    """ 
+    Convert the parsed orderlist and patterns into rchirp 
+  
+    Parameters: 
+       sng_data (GTSong): Parsed goattracker file
+       subtune_num (int): The subtune number to convert to rchirp (default 0)
+
+    Returns: 
+       RChirpSong: rchirp song instance
+    """    
     # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
     channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for \
         i in range(sng_data.num_channels)]
@@ -755,12 +758,12 @@ def convert_parsed_gt_to_rchirp(sng_data, subtune_num):
         rchirp_song.voice_groups = [(1,2,3)]        
 
     # Handle the rarely-used sneaky default global tempo setting
-    """ from docs:
-    For very optimized songdata & player you can refrain from using any pattern
-    commands and rely on the instruments' step-programming. Even in this case, you
-    can set song startup default tempo with the Attack/Decay parameter of the last
-    instrument (63/0x3F), if you otherwise leave this instrument unused.
-    """
+    # from docs:
+    #    For very optimized songdata & player you can refrain from using any pattern
+    #    commands and rely on the instruments' step-programming. Even in this case, you
+    #    can set song startup default tempo with the Attack/Decay parameter of the last
+    #    instrument (63/0x3F), if you otherwise leave this instrument unused.
+
     # TODO: This code block is untested
     if len(sng_data.instruments) == GT_MAX_INSTR_PER_SONG:
         ad = sng_data.instruments[GT_MAX_INSTR_PER_SONG-1].attack_decay
@@ -871,6 +874,7 @@ def convert_parsed_gt_to_rchirp(sng_data, subtune_num):
 #
 #
 # Code to convert events in time into chirp
+# TODO: This code section will be ultimately deleted.  rchirp->chirp used instead, and living in ctsRChirp.py
 #
 #
 
@@ -972,14 +976,8 @@ def convert_to_chirp(num_channels, channels_time_events, song_name):
 
 #
 #
-# Code to convert rchirp into chirp
-#
-#
-
-
-#
-#
 # Code to convert chirp to goattracker file
+# TODO: This will be replaced with code to convert rchirp to goattracker file
 #
 #
 
