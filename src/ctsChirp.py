@@ -11,7 +11,7 @@ import copy
 import bisect
 import more_itertools as moreit
 from ctsBase import *
-from constants import DEFAULT_MIDI_PPQN
+from ctsConstants import DEFAULT_MIDI_PPQN
 
 class Note:
     """

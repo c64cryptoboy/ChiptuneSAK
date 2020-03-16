@@ -6,10 +6,10 @@
 #
 # TODO:
 # - test Knapp's chirp->rchirp functionality
-# - write rchirp->chirp converter
+# - create proper docstrings on class defs (methods already done)
 
 import copy
-from functools import reduce, partial
+from functools import reduce
 import math
 import ctsChirp
 from ctsBase import *
@@ -67,18 +67,19 @@ class RChirpVoice:
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
-                self.import_chirp_track(chirp_track)
+                self.import_chirp_track(chirp_track)     
 
     def get_jiffy_indexed_rows(self):
-        """ 
+        """
         Returns rows indexed by jiffy number
 
         A voice holds onto a dictionary of rows keyed by row number.  This method returns
         a dictionary of rows keyed by jiffy number. 
 
-        Returns:
-            defaultdict: A dictionary of rows keyed by jiffy number
-        """        
+        :return: A dictionary of rows keyed by jiffy number
+        :rtype: defaultdict
+        """
+
         return_val = {v.jiffy_num:v for k,v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
@@ -89,21 +90,22 @@ class RChirpVoice:
 
         This is a helper method for treating rchirp like a list of contiguous rows,
         instead of a sparse dictonary of rows
-
-        Parameters:
-           rchirp_row (RChirpRow): A row to "append"
+        
+        :param rchirp_row: A row to "append"
+        :type rchirp_row: RChirpRow
         """
         insert_row = copy.deepcopy(rchirp_row)
         insert_row.row_num = self.get_next_row_num()
         self.rows[insert_row.row_num] = insert_row
-
+    
     def get_last_row(self):
         """
         Returns the row with the largest jiffy number (latest in time)
+        
+        :return: row with latest jiffy number
+        :rtype: RChirpRow
+        """ 
 
-        Returns:
-            RChirpRow: row with latest jiffy number
-        """
         if len(self.rows) == 0:
             return None
         return self.rows[max(self.rows, key=self.rows.get)]
@@ -111,9 +113,9 @@ class RChirpVoice:
     def get_next_row_num(self):
         """
         Returns one greater than the largest row number held onto by the voice
-
-        Returns:
-            int: largest row number + 1
+        
+        :return: largest row number + 1
+        :rtype: int
         """
         if len(self.rows) == 0:
             return 0
@@ -121,10 +123,10 @@ class RChirpVoice:
 
     def is_contiguous(self):
         """
-            Determines if the voices rows are contiguous, without gaps in time
-
-            Returns:
-                boolean: True if rows are contiguous, False if not
+        Determines if the voices rows are contiguous, without gaps in time
+        
+        :return: True if rows are contiguous, False if not
+        :rtype: boolean
         """
         curr_jiffy=0
         for row_num in sorted(self.rows):
@@ -135,10 +137,9 @@ class RChirpVoice:
 
     def integrity_check(self):
         """
-            Finds problems with a voice's row data
+        Finds problems with a voice's row data
 
-            Raises:
-                AssertionError
+        :raises AssertionError: Various integrity failure assertions possible
         """
         row_nums = []
         jiffy_nums = []
@@ -168,9 +169,12 @@ class RChirpVoice:
     def import_chirp_track(self, chirp_track):
         """
         Imports a Chirp track into a raw RChirpVoice object.  No compression or conversion to patterns
-           and orderlists performed
-
-            :param chirp_track: A ctsChirpTrack object; the track must be non-polyphonic and quantized.
+           and orderlists performed.  Track must be non-polyphonic and quantized.
+        
+        :param chirp_track: A chirp track
+        :type chirp_track: ctsChirp.ChirpTrack
+        :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
+        :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
         if not chirp_track.is_quantized():
             raise ChiptuneSAKQuantizationError("Track must be quantized to generate RChirp.")
@@ -221,13 +225,22 @@ class RChirpSong:
                 self.import_chirp_song(chirp_song)
     
     def voice_count(self):
+        """
+        Returns the number of voices (aka channels) in the rchirp song
+        
+        :return: number of voices
+        :rtype: int
+        """
         return len(self.voices)
 
     def import_chirp_song(self, chirp_song):
         """
         Imports a ChirpSong
-
-            :param chirp_song: A ctsChirp.ChirpSong song
+        
+        :param chirp_song: A chirp song
+        :type chirp_song: ctsChirp.ChirpSong
+        :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
+        :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")
@@ -241,9 +254,9 @@ class RChirpSong:
     def is_contiguous(self):
         """
             Determines if the voices' rows are contiguous, without gaps in time
-
-            Returns:
-                boolean: True if rows are contiguous, False if not
+        
+        :return: True if rows are contiguous, False if not
+        :rtype: boolean
         """
         for voice in self.voices:
             if not voice.is_contiguous():
@@ -254,19 +267,19 @@ class RChirpSong:
         """
             Finds problems with voices' row data
 
-            Raises:
-                AssertionError
-        """        
+        :raises AssertionError: Various integrity failure assertions possible
+        """    
         for voice in self.voices:
             voice.integrity_check()
 
-    def get_jiffy_indexed_voices(self):
-        """ 
-        Returns a list of rows for each voice in a list.  Rows indexed by jiffy number.
 
-        Returns:
-            list: A list of lists
-        """  
+    def get_jiffy_indexed_voices(self):
+        """
+        Returns a list of lists, where many voices hold onto many rows.  Rows indexed by jiffy number.
+        
+        :return: a list of lists (voices->rows)
+        :rtype: list
+        """
 
         return_val = []
         for voice in self.voices:
@@ -281,12 +294,12 @@ class RChirpSong:
 
     # Create CVS debug output
     def note_time_data_str(self):
-        """ 
+        """
         Returns a comma-separated value list representation of the rchirp data
-
-        Returns:
-            str: CSV string
-        """         
+        
+        :return: CSV string
+        :rtype: str
+        """
         max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count()))
 
         channels_time_events = self.get_jiffy_indexed_voices()
@@ -329,17 +342,14 @@ class RChirpSong:
         return spreadsheet
 
     def convert_to_chirp(self, song_name = 'TODO: GET FROM METADATA INSTEAD'):
-        """ 
+        """
         Convert rchirp song to chirp
-
-        This conversion is lossy TODO: details here
-
-        Returns:
-            ChirpSong: chirp conversion
-        """  
-        def tick_to_midi(tick, offset=0, factor=1):
-            return (tick - offset) * factor
-
+        
+        :param song_name: Name of song.  TODO: Get this from metadata instead below?
+        :type song_name: str, optional
+        :return: chirp conversion
+        :rtype: ChirpSong
+        """
         song = ctsChirp.ChirpSong()
         song.metadata.ppq = DEFAULT_MIDI_PPQN
         song.name = song_name
@@ -358,8 +368,6 @@ class RChirpSong:
         tempo = int(notes_per_minute // tmp)
         tick_factor = int(song.metadata.ppq // tempo * tmp)
 
-        tick_to_miditick = partial(tick_to_midi, offset=notes_offset, factor=tick_factor)
-
         midi_tick = 0
         for it, channel_data in enumerate(channels_time_events):
             track = ctsChirp.ChirpTrack(song)
@@ -367,7 +375,7 @@ class RChirpSong:
             track.channel = it
             current_note = None
             for tick in sorted(channel_data):
-                midi_tick = tick_to_miditick(tick)
+                midi_tick = (tick - notes_offset) * tick_factor
                 event = channel_data[tick]
                 if event.gate:
                     if current_note:
