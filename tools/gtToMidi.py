@@ -30,22 +30,21 @@ def main():
     if args.subtune_number > max_subtune_number:
         parser.error('subtune_number must be <= %d' % max_subtune_number)
      
-    #channels_time_events = ctsGoatTracker.convert_to_note_events(sng_data, args.subtune_number - 1)
     rchirp_song = ctsGoatTracker.convert_parsed_gt_to_rchirp(sng_data, args.subtune_number - 1)
 
+    """
     cvs_filename = '%s.csv' % (args.sng_in_file.split('.')[0])
     with open(cvs_filename, 'w') as out_file:
         out_file.write(rchirp_song.note_time_data_str())
-    
-    exit("work in progress, so early exit")
+    """
 
     #chirp_song = ctsGoatTracker.convert_to_chirp(sng_data.num_channels, channels_time_events, sng_data.headers.song_name)
-    
+    chirp_song = rchirp_song.convert_to_chirp()
+
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
-    #ts = ctsSong.TimeSignature(0, 3, 4)
-    #chirp_song.time_signature_changes.insert(0, ts)
+    # chirp_song.time_signature_changes.insert(0, ctsSong.TimeSignature(0, 3, 4))
     
-    #ctsMidi.chirp_to_midi(chirp_song, args.midi_out_file)
+    ctsMidi.chirp_to_midi(chirp_song, args.midi_out_file)
 
     print("\ndone")
     

@@ -9,6 +9,9 @@
 # - write rchirp->chirp converter
 
 import copy
+from functools import reduce, partial
+import math
+import ctsChirp
 from ctsBase import *
 
 @dataclass
@@ -215,6 +218,9 @@ class RChirpSong:
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
             else:
                 self.import_chirp_song(chirp_song)
+    
+    def voice_count(self):
+        return len(self.voices)
 
     def import_chirp_song(self, chirp_song):
         """
@@ -280,27 +286,26 @@ class RChirpSong:
         Returns:
             str: CSV string
         """         
-        num_channels = len(self.voices)
-        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(num_channels))
+        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count()))
 
         channels_time_events = self.get_jiffy_indexed_voices()
 
         csv_header = []
         csv_header.append("jiffy")
-        for i in range(num_channels):
+        for i in range(self.voice_count()):
             csv_header.append("v%d row #" % (i+1))
             csv_header.append("v%d note" % (i+1))
             csv_header.append("v%d on/off/none" % (i+1))
             csv_header.append("v%d tempo update" % (i+1))
  
         csv_rows = []
-        prev_tempo = [-1] * num_channels
+        prev_tempo = [-1] * self.voice_count()
         for tick in range(max_tick+1):
             # if any channel has a entry at this tick, create a row for all channels
-            if any(tick in channels_time_events[i] for i in range(num_channels)):
+            if any(tick in channels_time_events[i] for i in range(self.voice_count())):
                 a_csv_row = []
                 a_csv_row.append("%d" % tick)
-                for i in range(num_channels):
+                for i in range(self.voice_count()):
                     if tick in channels_time_events[i]:
                         event = channels_time_events[i][tick]
                         a_csv_row.append("%s" % event.row_num)
@@ -322,4 +327,71 @@ class RChirpSong:
    
         return spreadsheet
 
- 
+    def convert_to_chirp(self, song_name = 'TODO: GET FROM METADATA INSTEAD'):
+        """ 
+        Convert rchirp song to chirp
+
+        This conversion is lossy TODO: details here
+
+        Returns:
+            ChirpSong: chirp conversion
+        """  
+        def tick_to_midi(tick, offset=0, factor=1):
+            return (tick - offset) * factor
+
+        song = ctsChirp.ChirpSong()
+        # TODO: These 960 value is all over the code base; put it in ctsConstants.py
+        song.metadata.ppq = 960
+        song.name = song_name
+
+        channels_time_events = self.get_jiffy_indexed_voices()
+        all_ticks = sorted(set(int(t) for i in range(self.voice_count()) for t in channels_time_events[i].keys()))
+        note_ticks = sorted([t for t in all_ticks if any(channels_time_events[i].get(t, None) 
+                        and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count()))])
+        notes_offset = note_ticks[0]
+        # TODO: Should the two "100"s be parameterized?
+        ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))
+        if ticks_per_note < 3:  # no decent gcd for this data
+            ticks_per_note = 6
+        notes_per_minute = 60 * 60 / ticks_per_note
+        tmp = notes_per_minute // 100
+        tempo = int(notes_per_minute // tmp)
+        tick_factor = int(song.metadata.ppq // tempo * tmp)
+
+        tick_to_miditick = partial(tick_to_midi, offset=notes_offset, factor=tick_factor)
+
+        midi_tick = 0
+        for it, channel_data in enumerate(channels_time_events):
+            track = ctsChirp.ChirpTrack(song)
+            track.name = 'Track %d' % (it + 1)
+            track.channel = it
+            current_note = None
+            for tick in sorted(channel_data):
+                midi_tick = tick_to_miditick(tick)
+                event = channel_data[tick]
+                if event.gate:
+                    if current_note:
+                        new_note = ctsChirp.Note(
+                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                        )
+                        if new_note.duration > 0:
+                            track.notes.append(new_note)
+                    current_note = ctsChirp.Note(midi_tick, event.note_num, 1)
+                elif event.gate is False:
+                    if current_note:
+                        new_note = ctsChirp.Note(
+                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                        )
+                        if new_note.duration > 0:
+                            track.notes.append(new_note)
+                    current_note = None
+            if current_note:
+                new_note = ctsChirp.Note(
+                    current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                )
+                if new_note.duration > 0:
+                    track.notes.append(new_note)
+            song.tracks.append(track)
+
+        return song
+
