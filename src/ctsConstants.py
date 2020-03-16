@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 
 CHIPTUNESAK_VERSION = "0.13"
 
+DEFAULT_MIDI_PPQN = 960
+
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
 BIG_NUMBER = 0xFFFFFFFF

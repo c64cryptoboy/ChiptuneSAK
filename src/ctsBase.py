@@ -20,7 +20,7 @@ MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_
 
 @dataclass
 class SongMetadata:
-    ppq: int = 960
+    ppq: int = DEFAULT_MIDI_PPQN
     name: str = ''
     composer: str = ''
     copyright: str = ''

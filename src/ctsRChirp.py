@@ -13,6 +13,7 @@ from functools import reduce, partial
 import math
 import ctsChirp
 from ctsBase import *
+from ctsConstants import DEFAULT_MIDI_PPQN
 
 @dataclass
 class RChirpRow:
@@ -340,8 +341,7 @@ class RChirpSong:
             return (tick - offset) * factor
 
         song = ctsChirp.ChirpSong()
-        # TODO: These 960 value is all over the code base; put it in ctsConstants.py
-        song.metadata.ppq = 960
+        song.metadata.ppq = DEFAULT_MIDI_PPQN
         song.name = song_name
 
         channels_time_events = self.get_jiffy_indexed_voices()

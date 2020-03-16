@@ -3,7 +3,7 @@ import argparse
 import functools
 import toolsPath
 from ctsBase import *
-from ctsConstants import DURATION_STR
+from ctsConstants import DURATION_STR, DEFAULT_MIDI_PPQN
 import ctsMidi
 
 """ This module contains an algorithm to estimate offset and scale factors for MIDI songs that do not have
@@ -54,7 +54,8 @@ def main():
     parser = argparse.ArgumentParser(description="Fit best PPQ value for MIDI files.")
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
-    parser.add_argument('-p', '--ppq', type=int, default=960, nargs='?', help='preferred PPQ (default = 960)')
+    parser.add_argument('-p', '--ppq', type=int, default=DEFAULT_MIDI_PPQN, nargs='?', \
+        help='preferred PPQ (default = DEFAULT_MIDI_PPQN)')
     parser.add_argument('-m', '--minnote', type=str, default='16', nargs='?',
                         help='minimum interval name (default = 16)')
     parser.add_argument('-s', '--scalefactor', type=float, help='estimated scale factor')

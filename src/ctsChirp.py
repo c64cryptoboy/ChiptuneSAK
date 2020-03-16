@@ -11,6 +11,7 @@ import copy
 import bisect
 import more_itertools as moreit
 from ctsBase import *
+from constants import DEFAULT_MIDI_PPQN
 
 class Note:
     """
@@ -386,7 +387,7 @@ class ChirpSong:
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = 960  # Pulses (ticks) per quarter note. Default is 960, which is commonly used.
+        self.metadata.ppq = DEFAULT_MIDI_PPQN  # Pulses (ticks) per quarter note. Default is 960, which is commonly used.
         self.qticks_notes = self.metadata.ppq  # Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  # Quantization for note durations, in ticks
         self.tracks = []  # List of ChirpTrack tracks
