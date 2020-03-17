@@ -25,5 +25,5 @@ MChirp
 RChirp
 ------
 
-.. automodule:: ctsML64
+.. automodule:: ctsRChirp
     :members:

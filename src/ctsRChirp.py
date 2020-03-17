@@ -15,6 +15,7 @@ import ctsChirp
 from ctsBase import *
 from ctsConstants import DEFAULT_MIDI_PPQN
 
+
 @dataclass
 class RChirpRow:
     """
@@ -30,11 +31,11 @@ class RChirpRow:
     def __gt__(self, rchirp_row):
         return self.row_num > rchirp_row.row_num
 
+
 class RChirpOrderList:
     """
     An order list made up of a set of patterns
     """
-
     def __init__(self, patterns=None):
         self.patterns = []
         if patterns is not None:
@@ -45,7 +46,6 @@ class RChirpPattern:
     """
     A pattern made up of a set of rows
     """
-
     def __init__(self, rows):
         self.rows = []
         row_times = sorted(rows)
@@ -58,7 +58,6 @@ class RChirpVoice:
     """
     The representation of a single voice; contains rows
     """
-    
     def __init__(self, rchirp_song, chirp_track=None):
         self.rchirp_song = rchirp_song
         self.rows = collections.defaultdict(RChirpRow)
@@ -80,7 +79,7 @@ class RChirpVoice:
         :rtype: defaultdict
         """
 
-        return_val = {v.jiffy_num:v for k,v in self.rows.items()}
+        return_val = {v.jiffy_num: v for k, v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
 
@@ -89,7 +88,7 @@ class RChirpVoice:
         Appends a row to the voice's collection of rows
 
         This is a helper method for treating rchirp like a list of contiguous rows,
-        instead of a sparse dictonary of rows
+        instead of a sparse dictionary of rows
         
         :param rchirp_row: A row to "append"
         :type rchirp_row: RChirpRow
@@ -128,7 +127,7 @@ class RChirpVoice:
         :return: True if rows are contiguous, False if not
         :rtype: boolean
         """
-        curr_jiffy=0
+        curr_jiffy = 0
         for row_num in sorted(self.rows):
             if self.rows[row_num].jiffy_num != curr_jiffy:
                 return False
@@ -139,6 +138,7 @@ class RChirpVoice:
         """
         Finds problems with a voice's row data
 
+        :return: True if all integrity checks pass
         :raises AssertionError: Various integrity failure assertions possible
         """
         row_nums = []
@@ -146,19 +146,20 @@ class RChirpVoice:
         for k, row in self.rows.items():
             assert k == row.row_num, "Error: RChirpVoice has a row number that doesn't match its row number index"
             assert row.row_num is not None, "Error: RChirpRow row cannot have row_num = None"
-            assert row.row_num >=0, "Error: RChirpRow row cannot have a negative row_num"            
+            assert row.row_num >= 0, "Error: RChirpRow row cannot have a negative row_num"
             assert row.jiffy_num is not None, "Error: RChirpRow row cannot have jiffy_num = None"
-            assert row.jiffy_num >=0, "Error: RChirpRow row cannot have a negative jiffy_num"
+            assert row.jiffy_num >= 0, "Error: RChirpRow row cannot have a negative jiffy_num"
             if row.note_num is not None:
-                assert row.note_num >=0, "Error: RChirpRow row cannot have a negative note_num"
+                assert row.note_num >= 0, "Error: RChirpRow row cannot have a negative note_num"
             if row.instrument is not None:    
-                assert row.instrument >=0, "Error: RChirpRow row cannot have a negative instrument"
+                assert row.instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
             assert row.jiffy_len is not None, "Error: RChirpRow row cannot have jiffy_len = None"
-            assert row.jiffy_len >=0, "Error: RChirpRow row cannot have a negative jiffy_len"
+            assert row.jiffy_len >= 0, "Error: RChirpRow row cannot have a negative jiffy_len"
             row_nums.append(row.row_num)
             jiffy_nums.append(row.jiffy_num)
         assert len(row_nums) == len(set(row_nums)), "Error: RChirpVoice row numbers must be unique"
         assert len(jiffy_nums) == len(set(jiffy_nums)), "Error: RChirpVoice rows' jiffy_nums must be unique"
+        return True
 
     def _find_closest_row_after(self, row):
         for r in sorted(self.rows):
@@ -208,7 +209,6 @@ class RChirpSong:
     """
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
-
     def __init__(self, chirp_song=None):
         self.update_freq = ARCH['NTSC'].frame_rate
         self.voices = []
@@ -253,25 +253,21 @@ class RChirpSong:
 
     def is_contiguous(self):
         """
-            Determines if the voices' rows are contiguous, without gaps in time
+        Determines if the voices' rows are contiguous, without gaps in time
         
         :return: True if rows are contiguous, False if not
         :rtype: boolean
         """
-        for voice in self.voices:
-            if not voice.is_contiguous():
-                return False
-        return True
+        return all(voice.is_contiguous() for voice in self.voices)
 
     def integrity_check(self):
         """
-            Finds problems with voices' row data
+        Finds problems with voices' row data
 
+        :return: True if integrity checks pass for all voices
         :raises AssertionError: Various integrity failure assertions possible
         """    
-        for voice in self.voices:
-            voice.integrity_check()
-
+        return all(voice.integrity_check() for voice in self.voices)
 
     def get_jiffy_indexed_voices(self):
         """
@@ -280,11 +276,7 @@ class RChirpSong:
         :return: a list of lists (voices->rows)
         :rtype: list
         """
-
-        return_val = []
-        for voice in self.voices:
-            return_val.append(voice.get_jiffy_indexed_rows())
-        return return_val
+        return [voice.get_jiffy_indexed_rows() for voice in self.voices]
 
     @staticmethod    
     def __str_with_null_handling(a_value):
@@ -341,7 +333,7 @@ class RChirpSong:
    
         return spreadsheet
 
-    def convert_to_chirp(self, song_name = 'TODO: GET FROM METADATA INSTEAD'):
+    def convert_to_chirp(self, song_name='TODO: GET FROM METADATA INSTEAD'):
         """
         Convert rchirp song to chirp
         

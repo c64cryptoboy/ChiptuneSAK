@@ -8,7 +8,11 @@ ChiptuneSAK documentation
 
    Introduction
    MusicConcepts
+   chirp
+   sheetmusic
+   c128BASIC
    Classes
+
 
 ==================
 Indices and tables
