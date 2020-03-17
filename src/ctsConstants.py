@@ -68,7 +68,8 @@ BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
 # so a row becomes a 16th note
 
 
-@dataclass(frozen=True)
+
+@dataclass()
 class ArchDescription:
     system_clock: int
     frame_rate: float = field(init=False)
@@ -80,32 +81,28 @@ class ArchDescription:
 
     def __post_init__(self):
         # Since we have made the object frozen, we can't just assign to the variables so we do it via a backdoor
-        super().__setattr__('cycles_per_frame', self.lines_per_frame * self.cycles_per_line)
-        super().__setattr__('frame_rate', self.system_clock / self.cycles_per_frame)
-        super().__setattr__('ms_per_frame', 1000. / self.frame_rate)
-        super().__setattr__('blank_lines', self.lines_per_frame - self.visible_lines)
+        self.cycles_per_frame = self.lines_per_frame * self.cycles_per_line
+        self.frame_rate = self.system_clock / self.cycles_per_frame
+        self.ms_per_frame = 1000. / self.frame_rate
+        self.blank_lines = self.lines_per_frame - self.visible_lines
 
-
-# TODO:
-# http://www.antimon.org/dl/c64/code/stable.txt
-# https://www.lemon64.com/forum/viewtopic.php?t=36751
-# - NTSC VIC-20 system_clock = 1022727, cycles_per_line=65, lines_per_frame=261   vertical blank 0 through 27
-# - PAL VIC-20  system_clock = 1108405, cycles_per_line=71, lines_per_frame=312
-# - NTSC/PAL C128 (defaults to 1Mhz mode) is same as C64 NTSC/PAL
 
 ARCH = {
+    # NTSC C64 and C128 (1Mhz mode)
     'NTSC': ArchDescription(system_clock=1022727,  # The "new" NTSC 6567R8
                             cycles_per_line=65,
                             lines_per_frame=263,
                             visible_lines=235),
-    'PAL': ArchDescription(system_clock=985248,   # 6569 chip
-                           cycles_per_line=63,
-                           lines_per_frame=312,
-                           visible_lines=284),
+    # Old NTSC C64 and C128 (1Mhz mode)                       
     'NTSC-R56A': ArchDescription(system_clock=1022727,  # The "old" NTSC 6567R56A
                                  cycles_per_line=64,
                                  lines_per_frame=262,
                                  visible_lines=234),
+    # PAL C64 and C128 (1Mhz mode)
+    'PAL': ArchDescription(system_clock=985248,   # 6569 chip
+                           cycles_per_line=63,
+                           lines_per_frame=312,
+                           visible_lines=284),
     'NTSC-VIC20': ArchDescription(system_clock=1022727,   # 6560-101 chip
                                   cycles_per_line=65,
                                   lines_per_frame=261,
