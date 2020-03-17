@@ -1,3 +1,6 @@
+# Constants for ChiptuneSAK
+#
+
 from fractions import Fraction
 from dataclasses import dataclass, field
 
@@ -49,25 +52,12 @@ DURATION_STR = {
 }
 
 # Commodore Constants:
-
-BASIC_START_C64 = 2049  # $0801
+BASIC_START_C64 = 2049   # $0801
 BASIC_START_C128 = 7169  # $1C01
 
-BASIC_LINE_MAX_C64 = 80  # 2 lines of 40 col
+BASIC_LINE_MAX_C64 = 80    # 2 lines of 40 col
 BASIC_LINE_MAX_VIC20 = 88  # 4 lines of 22 col
 BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
-
-
-# A traditional PAL tracker reasoning anchor point between temporally-unitless rows
-# and BPM is that 6 frames per row (a fast speed) is easily tied to 125 BPM.
-# This forms the basis of many PAL tracker defaults, and is used when giving simple
-# concrete examples of computing tempos.
-# Details: 6 frames per row * PAL 20msPerFrame = 0.12 sec per row
-# that's 1/0.12 = x=8.333333 rows per sec, so 60 seconds / 0.12 sec per row = 500 rows per min
-# 500 rows per min / 125 BPM = 4 rows per quarter note in 4/4
-# so a row becomes a 16th note
-
-
 
 @dataclass()
 class ArchDescription:
@@ -80,12 +70,10 @@ class ArchDescription:
     blank_lines: int = field(init=False)
 
     def __post_init__(self):
-        # Since we have made the object frozen, we can't just assign to the variables so we do it via a backdoor
         self.cycles_per_frame = self.lines_per_frame * self.cycles_per_line
         self.frame_rate = self.system_clock / self.cycles_per_frame
         self.ms_per_frame = 1000. / self.frame_rate
         self.blank_lines = self.lines_per_frame - self.visible_lines
-
 
 ARCH = {
     # NTSC C64 and C128 (1Mhz mode)

@@ -10,8 +10,7 @@
 #
 # TODOs:
 # - Add instrument file loader to use with channels on exports
-# - recode gt->sparse timestamp columns->chirp as gt->columns with jiffy duration->rchirp->chirp
-# - recode chirp->gt as chirp->rchirp and rchirp->gt
+# - code rchirp -> gt file
 
 from os import path
 import sys
@@ -19,7 +18,7 @@ import argparse
 import copy
 import math
 from fractions import Fraction
-from functools import reduce, partial
+from functools import reduce
 from dataclasses import dataclass
 from collections import defaultdict
 from ctsConstants import ARCH, C0_MIDI_NUM
