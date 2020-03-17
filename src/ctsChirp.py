@@ -512,7 +512,7 @@ class ChirpSong:
                 (-current_notes[n].note_num))
             return ret
         old_track = self.tracks.pop(i_track)
-        old_track.notes.sort(key= lambda n: (n.start_time, -n.note_num))
+        old_track.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         new_tracks = [ChirpTrack(self)]
         n_tracks = 1
         current_notes = [Note(0, 0, 0, 0)]
@@ -621,8 +621,8 @@ class ChirpSong:
         for i, _ in enumerate(self.tracks):
             self.tracks[i].modulate(num, denom)
         # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
-        self.qticks_notes = (self.qticks_notes * n) // d
-        self.qticks_durations = (self.qticks_durations * n) // d
+        self.qticks_notes = (self.qticks_notes * num) // denom
+        self.qticks_durations = (self.qticks_durations * num) // denom
 
     def scale_ticks(self, scale_factor):
         """

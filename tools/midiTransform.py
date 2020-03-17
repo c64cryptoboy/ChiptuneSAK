@@ -11,7 +11,8 @@ def main():
                                      epilog="Operations are performed in the order given in this help.")
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
-    parser.add_argument('-z', '--removecontrolnotes', action="store_true", help='remove control notes')
+    parser.add_argument('-n', '--name', type=str, help='set name of song')
+    parser.add_argument('-z', '--removekeyswitchnotes', action="store_true", help='remove keyswitch notes')
     parser.add_argument('-s', '--scaleticks', type=float, help='scale ticks')
     parser.add_argument('-x', '--moveticks', type=str, help='move ticks lXXXX for left and rXXXX for right')
     parser.add_argument('-p', '--ppq', type=int, help='set ppq')
@@ -41,6 +42,10 @@ def main():
     q_state = "" if song.is_quantized() else "not"
     p_state = "" if song.is_polyphonic() else "not"
     print("Input midi is %s quantized and is %s polyphonic" % (q_state, p_state))
+
+    if args.name:
+        print("Renaming song to %s" % args.name)
+        song.metadata.name = args.name
 
     if args.removecontrolnotes:
         print("Removing control notes...")
@@ -114,7 +119,7 @@ def main():
     p_state = "" if song.is_polyphonic() else "not"
     print("Output ChirpSong is %s quantized and %s polyphonic" % (q_state, p_state))
 
-    print('\n'.join("%24s %s" % (s, str(v)) for s, v in song.stats.items()))
+    # print('\n'.join("%24s %s" % (s, str(v)) for s, v in song.stats.items()))
 
     print("Exporting to MIDI...")
     ctsMidi.chirp_to_midi(song, args.midi_out_file)
