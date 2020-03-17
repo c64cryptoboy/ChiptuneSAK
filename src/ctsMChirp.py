@@ -40,8 +40,8 @@ class Measure:
     def __init__(self, start_time, duration):
         """
         Creation for Measure object.  Populating the measure with events is a separate method populate()
-            :param start_time:  Start time of the measure, in MIDI ticks
-            :param duration:    Duration of the measure, in MIDI ticks
+        :param start_time:  Start time of the measure, in MIDI ticks
+        :param duration:    Duration of the measure, in MIDI ticks
         """
         self.start_time = start_time
         self.duration = duration
@@ -50,9 +50,9 @@ class Measure:
     def populate(self, track, carry=None):
         """
         Populates a single measure with notes, rests, and other events.
-            :param track: Track from which events are to be imported
-            :param carry: If last note in previous measure is continued in this measure, the note with remainining time
-            :return: Carry note, if last note is to be carried into the next measure.
+        :param track: Track from which events are to be imported
+        :param carry: If last note in previous measure is continued in this measure, the note with remainining time
+        :return: Carry note, if last note is to be carried into the next measure.
         """
         n_notes = len(track.notes)
         inote = 0
@@ -246,8 +246,8 @@ class MChirpTrack:
         """
         Converts a track into measures, each of which is a sorted list of notes and other events
 
-            :param track: A ctsSongTrack that has been quantized and had polyphony removed
-            :return:      List of Measure objects corresponding to the measures
+        :param track: A ctsSongTrack that has been quantized and had polyphony removed
+        :return:      List of Measure objects corresponding to the measures
         """
         if not chirp_track.is_quantized():
             raise ChiptuneSAKQuantizationError("Track must be quantized to populate measures.")
@@ -282,8 +282,7 @@ class MChirpSong:
     def import_chirp_song(self, chirp_song):
         """
         Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
-
-            :param song: A ctsChirp.ChirpSong song
+        :param song: A ctsChirp.ChirpSong song
         """
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized before populating measures.")
@@ -310,8 +309,8 @@ class MChirpSong:
     def get_time_signature(self, time_in_ticks):
         """
         Finds the active key signature at a given time in the song
-            :param time_in_ticks:
-            :return: The last time signature change event before the given time.
+        :param time_in_ticks:
+        :return: The last time signature change event before the given time.
         """
         current_time_signature = TimeSignatureEvent(0, 4, 4)
         for m in self.tracks[0].measures:
@@ -325,8 +324,8 @@ class MChirpSong:
     def get_key_signature(self, time_in_ticks):
         """
         Finds the active key signature at a given time in the song
-            :param time_in_ticks:
-            :return: The last key signature change event before the given time.
+        :param time_in_ticks:
+        :return: The last key signature change event before the given time.
         """
         current_key_signature = KeySignatureEvent(0, 'C')
         for m in self.tracks[0].measures:
