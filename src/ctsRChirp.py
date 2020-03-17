@@ -21,12 +21,12 @@ class RChirpRow:
     """
     The basic RChirp row
     """
-    row_num: int = None     # rchirp row number
-    jiffy_num: int = None   # jiffy num since time 0
-    note_num: int = None    # MIDI note number; None means no note asserted
-    instrument: int = None  # Instrument number; None means no change
-    gate: bool = None       # Gate on/off tri-value True/False/None; None means no gate change
-    jiffy_len: int = None   # Jiffies to process this row (until next row)
+    row_num: int = None     #: rchirp row number
+    jiffy_num: int = None   #: jiffy num since time 0
+    note_num: int = None    #: MIDI note number; None means no note asserted
+    instrument: int = None  #: Instrument number; None means no change
+    gate: bool = None       #: Gate on/off tri-value True/False/None; None means no gate change
+    jiffy_len: int = None   #: Jiffies to process this row (until next row)
 
     def __gt__(self, rchirp_row):
         return self.row_num > rchirp_row.row_num

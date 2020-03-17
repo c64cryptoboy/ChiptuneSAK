@@ -7,8 +7,20 @@ Classes
 Chirp
 -----
 
+Note
+++++
+
+.. autoclass:: ctsChirp.Note
+    :members:
+
+ChirpTrack
+++++++++++
+
 .. autoclass:: ctsChirp.ChirpTrack
     :members:
+
+ChirpSong
++++++++++
 
 .. autoclass:: ctsChirp.ChirpSong
     :members:
@@ -16,8 +28,20 @@ Chirp
 MChirp
 ------
 
+Measure
++++++++
+
+.. autoclass:: ctsMChirp.Measure
+    :members:
+
+MChirpTrack
++++++++++++
+
 .. autoclass:: ctsMChirp.MChirpTrack
     :members:
+
+MChirpSong
+++++++++++
 
 .. autoclass:: ctsMChirp.MChirpSong
     :members:
@@ -25,5 +49,20 @@ MChirp
 RChirp
 ------
 
-.. automodule:: ctsRChirp
+RChirpRow
++++++++++
+
+.. autoclass:: ctsRChirp.RChirpRow
+    :members:
+
+RChirpVoice
++++++++++++
+
+.. autoclass:: ctsRChirp.RChirpVoice
+    :members:
+
+RChirpSong
+++++++++++
+
+.. autoclass:: ctsRChirp.RChirpSong
     :members:

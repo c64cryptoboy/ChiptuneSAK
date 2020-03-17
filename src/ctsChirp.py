@@ -13,6 +13,7 @@ import more_itertools as moreit
 from ctsBase import *
 from ctsConstants import DEFAULT_MIDI_PPQN
 
+
 class Note:
     """
     This class represents a note in human-friendly form:  as a note with a start time, a duration, and
@@ -20,12 +21,12 @@ class Note:
     """
 
     def __init__(self, start, note, duration, velocity=100, tied_from=False, tied_to=False):
-        self.note_num = note  # MIDI note number
-        self.start_time = start  # In ticks since tick 0
-        self.duration = duration  # In ticks
-        self.velocity = velocity  # MIDI velocity 0-127
-        self.tied_from = tied_from  # Is the next note tied from this note?
-        self.tied_to = tied_to  # Is this note ties from the previous note?
+        self.note_num = note        #: MIDI note number
+        self.start_time = start     #: In ticks since tick 0
+        self.duration = duration    #: In ticks
+        self.velocity = velocity    #: MIDI velocity 0-127
+        self.tied_from = tied_from  #: Is the next note tied from this note?
+        self.tied_to = tied_to      #: Is this note ties from the previous note?
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
@@ -48,13 +49,13 @@ class ChirpTrack:
     other_message_types = ['program_change', 'pitchwheel', 'control_change']
 
     def __init__(self, chirp_song, mchirp_track=None):
-        self.chirp_song = chirp_song  # Parent song
-        self.name = 'none'  # Track name
-        self.channel = 0  # This track's midi channel.  Each track should have notes from only one channel.
-        self.notes = []  # The notes in the track
-        self.other = []  # Other events in the track (includes voice changes and pitchwheel)
-        self.qticks_notes = chirp_song.qticks_notes  # Inherit quantization from song
-        self.qticks_durations = chirp_song.qticks_durations  # inherit quantization from song
+        self.chirp_song = chirp_song  #: Parent song
+        self.name = 'none'  #: Track name
+        self.channel = 0  #: This track's midi channel.  Each track should have notes from only one channel.
+        self.notes = []  #: The notes in the track
+        self.other = []  #: Other events in the track (includes voice changes and pitchwheel)
+        self.qticks_notes = chirp_song.qticks_notes  #: Inherit quantization from song
+        self.qticks_durations = chirp_song.qticks_durations  #: Inherit quantization from song
         if mchirp_track is not None:
             tmp = str(type(mchirp_track))
             if tmp != "<class 'ctsMChirp.MChirpTrack'>":
@@ -67,6 +68,7 @@ class ChirpTrack:
         Imports an  MChirpTrack
 
         :param mchirp_track:
+        :type mchirp_track: MChirpTrack
         """
         def _anneal_notes(notes):
             ret_val = []
@@ -118,9 +120,16 @@ class ChirpTrack:
 
     def quantize(self, qticks_notes=None, qticks_durations=None):
         """
-        This method applies quantization to both note start times and note durations.  If you 
+        This method applies quantization to both note start times and note durations.  If you
         want either to remain unquantized, simply specify either qticks parameter to be 1, so
         that it will quantize to the nearest tick (i.e. leave everything unchanged)
+
+        :param qticks_notes: Resolution of note starts in ticks
+        :type qticks_notes: int
+        :param qticks_durations: Resolution of note durations in ticks.  Also length of shortest note.
+        :type qticks_durations: int
+        :return: tuple of note start changes and note duration changes
+        :rtype: tuple
         """
         note_start_changes = []
         duration_changes = []
@@ -158,6 +167,7 @@ class ChirpTrack:
         is useful for quantization that also preserves some ornaments, such as grace notes.
 
         :param qticks: Quantization for notes and durations
+        :type qticks: int
         :return:
         """
         min_length = qticks * 3 // 4
@@ -174,7 +184,9 @@ class ChirpTrack:
         Merges immediately adjacent notes if they are short and have the same note number.
 
         :param max_merge_length_ticks: Length of the longest note to merge, in ticks
+        :type max_merge_length_ticks: int
         :return: number of notes merged
+        :rtype: int
         """
         merged = 0
         ret_notes = []
@@ -196,11 +208,13 @@ class ChirpTrack:
 
     def remove_short_notes(self, max_duration_ticks):
         """
-        Removes notes shorter than max_duration_ticks from the track.
+         Removes notes shorter than max_duration_ticks from the track.
 
-        :param max_duration_ticks:
-        :return: number of notes deleted.
-        """
+        :param max_duration_ticks: maximum duration of notes to remove, in ticks
+        :type max_duration_ticks: int
+        :return: Number of notes deleted
+        :rtype: int
+       """
         deleted = 0
         ret_notes = []
         for n in self.notes:
@@ -218,7 +232,9 @@ class ChirpTrack:
         and any notes that overlap will have their start times adjusted to allow the new longer note.
 
         :param min_len_ticks: Minimum note length
+        :type min_len_ticks: int
         :return: tuple of (number of notes extended, number of notes with start adjusted)
+        :rtype: tuple (int, int)
         """
         extended = 0
         trimmed = 0
@@ -247,6 +263,9 @@ class ChirpTrack:
         This function eliminates polyphony, so that in each channel there is only one note
         active at a time. If a chord is struck all at the same time, it will retain the highest
         note.
+
+        :return: (deleted, truncated)
+        :rtype: (int, int)
         """
         deleted = 0
         truncated = 0
@@ -273,6 +292,7 @@ class ChirpTrack:
         Returns whether the track is polyphonic; if any notes overlap it is.
 
         :return: True if track is polyphonic.
+        :rtype: bool
         """
         return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
 
@@ -282,6 +302,7 @@ class ChirpTrack:
         quantization, a track quantized to tick will return False.
 
         :return: True if the track is quantized.
+        :rtype: bool
         """
         if self.qticks_notes < 2 or self.qticks_durations < 2:
             return False
@@ -291,11 +312,12 @@ class ChirpTrack:
 
     def remove_keyswitches(self, ks_max=8):
         """
-        Removes all MIDI notes with values less than or equal to ks_max.    Some MIDI devices and applications use
+        Removes all MIDI notes with values less than or equal to ks_max. Some MIDI devices and applications use
         these extremely low notes to convey patch change or other information, so removing them (especially if
-        you don't want polyphony) is a good idea.
+        you do not want polyphony) is a good idea.
 
         :param ks_max: maximum note number for keyswitches in the track (often 8)
+        :type ks_max: int
         """
         self.notes = [n for n in self.notes if n.note_num > ks_max]
 
@@ -389,17 +411,17 @@ class ChirpSong:
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = DEFAULT_MIDI_PPQN  # Pulses (ticks) per quarter note. Default is 960, which is commonly used.
-        self.qticks_notes = self.metadata.ppq  # Quantization for note starts, in ticks
-        self.qticks_durations = self.metadata.ppq  # Quantization for note durations, in ticks
-        self.tracks = []  # List of ChirpTrack tracks
-        self.other = []  # List of all meta events that apply to the song as a whole
-        self.midi_meta_tracks = []  # list of all the midi tracks that only contain metadata
-        self.midi_note_tracks = []  # list of all the tracks that contain notes
-        self.time_signature_changes = []  # List of time signature changes
-        self.key_signature_changes = []  # List of key signature changes
-        self.tempo_changes = []  # List of tempo changes
-        self.stats = {}  # Statistics about the song
+        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960, which is commonly used.
+        self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
+        self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
+        self.tracks = []  #: List of ChirpTrack tracks
+        self.other = []  #: List of all meta events that apply to the song as a whole
+        self.midi_meta_tracks = []  #: list of all the midi tracks that only contain metadata
+        self.midi_note_tracks = []  #: list of all the tracks that contain notes
+        self.time_signature_changes = []  #: List of time signature changes
+        self.key_signature_changes = []  #: List of key signature changes
+        self.tempo_changes = []  #: List of tempo changes
+        self.stats = {}  #: Statistics about the song
 
     def import_mchirp_song(self, mchirp_song):
         """
@@ -549,6 +571,7 @@ class ChirpSong:
         Is the song polyphonic?  Returns true if ANY of the tracks contains polyphony of any kind.
 
         :return: Boolean True if any track in the song is polyphonic
+        :rtype: boolean
         """
         return any(t.is_polyphonic() for t in self.tracks)
 
@@ -558,6 +581,7 @@ class ChirpSong:
         This method removes notes with pitch <= ks_max from all tracks.
 
         :param ks_max:  Maximum note number for the control notes
+        :type ks_max: int
         """
         for t in self.tracks:
             t.remove_keyswitches(ks_max)
@@ -565,7 +589,8 @@ class ChirpSong:
     def transpose(self, semitones, minimize_accidentals=True):
         """
         Transposes the song by semitones
-            :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
+        :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
+        :type semitones: int
         """
         # First, transpose key signatures
         for ik, ks in enumerate(self.key_signature_changes):
@@ -587,7 +612,9 @@ class ChirpSong:
         identical to the original.
 
         :param num:    Numerator of metric modulation
+        :type num: int
         :param denom:  Denominator of metric modulation
+        :type denom: int
         """
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
@@ -630,6 +657,7 @@ class ChirpSong:
         This method also changes the ppq by the scale factor.
 
         :param scale_factor: Floating-point scale factor to multiply all events.
+        :type scale_factor: float
         """
         self.metadata.ppq = int(round(self.metadata.ppq * scale_factor, 0))
         # First adjust the time signatures
@@ -663,7 +691,7 @@ class ChirpSong:
         If the resulting event has a negative starting time in ticks, it is set to 0.
 
         :param offset_ticks:  Offset in ticks
-
+        :type offset_ticks: int
         """
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
@@ -690,8 +718,8 @@ class ChirpSong:
     def set_qpm(self, qpm):
         """
         Sets the tempo in BPM for the entire song.  Any existing tempo events will be removed.
-
-        :param qpm:
+        :param qpm: quarter-notes per minute tempo
+        :type qpm: int
         """
         self.metadata.qpm = qpm
         self.tempo_changes = [TempoEvent(0, qpm)]
@@ -701,7 +729,9 @@ class ChirpSong:
         Sets the time signature for the entire song.  Any existing time signature changes will be removed.
 
         :param num:
+        :type num:
         :param denom:
+        :type num:
         """
         self.time_signature_changes = [TimeSignatureEvent(0, num, denom)]
 
@@ -709,7 +739,8 @@ class ChirpSong:
         """
         Sets the key signature for the entire song.  Any existing key signatures and changes will be removed.
 
-        :param key:
+        :param key: Key signature.  String such as 'A#' or 'Abm'
+        :type key: str
         """
         self.key_signature_changes = [KeySignatureEvent(0, ChirpKey(new_key))]
 
@@ -718,6 +749,7 @@ class ChirpSong:
         Finds the end time of the last note in the song.
 
         :return: Time (in ticks) of the end of the last note in the song.
+        :rtype: int
         """
         return max(n.start_time + n.duration for t in self.tracks for n in t.notes)
 
@@ -725,7 +757,8 @@ class ChirpSong:
         """
         Returns the starting time for measures in the song.  Calculated using time_signature_changes.
 
-        :return: List of measure starting time in MIDI ticks
+        :return: List of measure starting times in MIDI ticks
+        :rtype: list
         """
         return [m.start_time for m in self.measures_and_beats() if m.beat == 1]
 
@@ -734,6 +767,7 @@ class ChirpSong:
         Returns the positions of all measures and beats in the song.  Calculated using time_signature_changes.
 
         :return: List of MeasureBeat objects for each beat of the song.
+        :rtype: list
         """
         measures = []
         max_time = self.end_time()
@@ -768,7 +802,9 @@ class ChirpSong:
         interpreted as the time being during the measure and beat returned.
 
         :param time_in_ticks:  Time during the song, in MIDI ticks
+        :type time_in_ticks: int
         :return:  MeasureBeat object with the current measure and beat
+        :rtype: MeasureBeat
         """
         measure_beats = self.measures_and_beats()
         # Make a list of start times from the list of measure-beat times.
@@ -783,7 +819,9 @@ class ChirpSong:
         Get the active time signature at a given time (in ticks) during the song.
 
         :param time_in_ticks:  Time during the song, in MIDI ticks
-        :return:               Active key signature at the time
+        :type time_in_ticks: int
+        :return: Active time signature at the time
+        :rtype: TimeSignatureChange
         """
         itime = 0
         if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
@@ -798,7 +836,9 @@ class ChirpSong:
         Get the active key signature at a given time (in ticks) during the song.
 
         :param time_in_ticks: Time during the song, in MIDI ticks
-        :return:    Key signature active at the time
+        :type time_in_ticks: int
+        :return: Key signature active at the time
+        :rtype: KeySignatureChange
         """
         ikey = 0
         if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
