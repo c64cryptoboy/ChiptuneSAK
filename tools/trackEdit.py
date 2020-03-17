@@ -10,6 +10,7 @@ def main():
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('track', type=str, help='Track either number (starting with 1) or name')
+    parser.add_argument('-n', '--name', type=str, help='Set track name')
     quant_group = parser.add_mutually_exclusive_group(required=False)
     quant_group.add_argument('-a', '--quantizeauto', action="store_true", help='Auto-quantize')
     quant_group.add_argument('-q', '--quantizenote', type=str, help='quantize to a note value')
@@ -18,7 +19,10 @@ def main():
     parser.add_argument('-m', '--merge', type=int, help='merge track (max num ticks to merge)')
     short_note_group = parser.add_mutually_exclusive_group(required=False)
     short_note_group.add_argument('-r', '--removeshort', type=int, help='remove notes <= tick value')
-    short_note_group.add_argument('-l', '--setminnotelen', type=int, help='set the minimum note length to tick value, possibly consuming portion of following note')
+    short_note_group.add_argument('-l', '--setminnotelen', type=int, help='set the minimum note length to tick value,'
+                                                                          ' possibly consuming portion of '
+                                                                          'following note')
+
 
     args = parser.parse_args()
 
@@ -42,6 +46,9 @@ def main():
             for t in song.tracks:
                 print(t.name)
             parser.error('No track named %s found.' % args.track)
+
+    if args.name:
+        track.name = args.name
 
     if args.quantizelongticks:
         print("Quantizing long notes to %d" % args.quantizelongticks)
