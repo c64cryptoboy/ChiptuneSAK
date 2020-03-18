@@ -16,7 +16,9 @@ Example 1:  Midi to Lilypond Sheet Music clip
 *********************************************
 
 You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *ctsLilypond.clip_to_lilypond()* to create the Lilypond source for the clip.
+
 ::    
+
     song = ctsMidi.midi_to_chirp('bach_invention_4.mid')
     song.quantize_from_note_name('16')  # Quantize to sixteenth notes
     song.remove_polyphony()
@@ -26,7 +28,9 @@ You'll need to write your own script to perform this workflow.  In your code, re
         f.write(ly)
           
 Then execute the Lilypond command:
+
 :: 
+
     lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 --png bach.ly
      
 The result will be `bach.png` that looks like this:
@@ -44,11 +48,15 @@ Assume we're going to make sheet music to go along with a C64 lowering, so we'll
 **TODO**
 
 We then use the FitPPQ.py script to estimate the actual note lengths and adjust them to have a ppq of 960.  From the tools directory, run:
+
 ::
+
     FitPPQ.py ..\test\Betrayal_orig.mid ..\test\betrayal_q.mid
 
 This should generate the following output:
+
 ::
+
     Reading file ..\test\betrayal_q.mid
     Finding initial parameters...
     Refining...
@@ -58,12 +66,15 @@ This should generate the following output:
 It is a good idea to do a sanity check on the output file, as the algorithm in FitPPQ occasionally fails.  (We are working on this issue but it's not guaranteed to work for every file.)
 
 Now quantize the output midi file to 16th notes.  This writes over the existing midi file with a quantized version:
+
 ::
+
     TransformMidi.py -q 16 -r ..\test\betrayal_q.mid ..\test\betrayal_q.mid
  
 Then output will look something like this:
 
 ::
+
     638 notes
     PPQ = 960
     Input midi is not quantized and  polyphonic
@@ -84,13 +95,17 @@ Then output will look something like this:
     Exporting to MIDI...
 
 Now that the file is quantized, it can be made into a pdf:
+
 ::
+
     midiToLilypond.py -a ..\test\betrayal_q.mid ..\test`
   
 Note that you **must** have lilypond in your path for that script to work.    
  
 The output should look something like this:
+
 ::   
+
     Reading ..\test\betrayal_q.mid
     Removing control notes...
     Quantizing...
