@@ -36,6 +36,7 @@ class Note:
         return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" \
                % (self.note_num, self.start_time, self.duration, self.velocity, self.tied_from, self.tied_to)
 
+
 class ChirpTrack:
     """
     This class represents a track (or a voice) from a song.  It is basically a list of Notes with some
@@ -218,7 +219,7 @@ class ChirpTrack:
         deleted = 0
         ret_notes = []
         for n in self.notes:
-            if n.duration < max_duration_ticks:
+            if n.duration <= max_duration_ticks:
                 deleted += 1
             else:
                 ret_notes.append(n)
@@ -240,7 +241,7 @@ class ChirpTrack:
         trimmed = 0
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
         for i, n in enumerate(self.notes):
-            if 0 < n.duration <= min_len_ticks:
+            if 0 < n.duration < min_len_ticks:
                 n.duration = min_len_ticks
                 self.notes[i] = n
                 last_end = n.start_time + n.duration
@@ -248,13 +249,14 @@ class ChirpTrack:
                 j = i + 1
                 while j < len(self.notes):
                     if self.notes[j].start_time < last_end:
+                        tmp_end = self.notes[j].start_time + self.notes[j].duration
                         self.notes[j].start_time = last_end
-                        self.notes[j].duration -= last_end - self.notes[j].start_time
+                        self.notes[j].duration = tmp_end - self.notes[j].start_time
                         trimmed += 1
                         j += 1
                     else:
                         break
-        self.notes = [n for n in self.notes if n.duration > 0]
+        self.notes = [n for n in self.notes if n.duration >= min_len_ticks]
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
         return (extended, trimmed)
 
@@ -428,6 +430,7 @@ class ChirpSong:
         Imports an MChirpSong
 
         :param mchirp_song:
+        :type mchirp_song: MChirpSong
         """
         for t in mchirp_song.tracks:
             self.tracks.append(ChirpTrack(self, t))
@@ -462,7 +465,9 @@ class ChirpSong:
         of 1 tick).
 
         :param qticks_notes:     Quantization for note starts, in MIDI ticks
+        :type qticks_notes: int
         :param qticks_durations: Quantization for note durations, in MIDI ticks
+        :type qticks_durations: int
         """
 
         self.stats['Note Start Deltas'] = collections.Counter()
@@ -492,8 +497,11 @@ class ChirpSong:
         values for dotted_allowed and triplets_allowed will be overridden.
 
         :param min_note_duration_string:  Quantization note value
+        :type min_note_duration_string: str
         :param dotted_allowed:  If true, dotted notes are allowed
+        :type dotted_allowed: bool
         :param triplets_allowed:  If true, triplets (of the specified quantization) are allowed
+        :type triplets_allowed: bool
         """
 
         if '.' in min_note_duration_string:
@@ -524,6 +532,7 @@ class ChirpSong:
         song's list of tracks, so later tracks may be pushed to higher indexes.
 
         :param i_track:  index of the track for the song
+        :type i_track: int
         """
         def _get_available_tracks(note, current_notes):
             ret = []

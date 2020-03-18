@@ -6,10 +6,12 @@ import ctsMidi
 import ctsChirp
 from ctsKey import ChirpKey
 
+SONG_TEST_SONG = 'data/twinkle.mid'
+TRACK_TEST_SONG = 'data/BWV_799.mid'
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp('data/twinkle.mid')
+        self.test_song = ctsMidi.midi_to_chirp(SONG_TEST_SONG)
 
     def test_notes(self):
         """
@@ -83,3 +85,43 @@ class SongTestCase(unittest.TestCase):
         test_key_offset = test_song_transposed.metadata.key_signature.key.key_signature.offset
 
         self.assertTrue((test_key_offset - orig_key_offset) % 12 == test_transpose % 12)
+
+
+class TrackTestCase(unittest.TestCase):
+    def setUp(self):
+        self.test_song = ctsMidi.midi_to_chirp(TRACK_TEST_SONG)
+
+    def test_quantization(self):
+        for i in range(len(self.test_song.tracks)):
+            with self.subTest(i=i):
+                qticks = self.test_song.tracks[1].estimate_quantization()
+                self.assertEqual(qticks, (120, 120))
+
+    def test_remove_short(self):
+        tmp_song = copy.deepcopy(self.test_song)
+
+        test_duration = 120
+
+        tmp_song.quantize(test_duration, test_duration)
+        total_notes = sum(len(t.notes) for t in tmp_song.tracks)
+        short_notes = sum(1 for t in tmp_song.tracks for n in t.notes if n.duration <= test_duration)
+        for t in tmp_song.tracks:
+            t.remove_short_notes(test_duration)
+
+        total_notes_test = sum(len(t.notes) for t in tmp_song.tracks)
+        self.assertEqual(total_notes_test + short_notes, total_notes)
+
+    def test_set_min_note_length(self):
+        tmp_song = copy.deepcopy(self.test_song)
+
+        test_duration = 120
+
+        tmp_song.quantize(test_duration, test_duration)
+        total_notes = sum(len(t.notes) for t in tmp_song.tracks)
+        short_notes = sum(1 for t in tmp_song.tracks for n in t.notes if n.duration <= test_duration)
+        for t in tmp_song.tracks:
+            t.set_min_note_len(test_duration * 2)
+
+        total_notes_test = sum(len(t.notes) for t in tmp_song.tracks)
+        expected_lost = short_notes // 2 #  In this piece, the short notes come in pairs
+        self.assertEqual(total_notes_test + expected_lost, total_notes)
