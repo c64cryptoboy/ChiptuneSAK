@@ -20,19 +20,19 @@ MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_
 
 @dataclass
 class SongMetadata:
-    ppq: int = DEFAULT_MIDI_PPQN
-    name: str = ''
-    composer: str = ''
-    copyright: str = ''
-    time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)
-    key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C'))
-    qpm: int = 112
+    ppq: int = DEFAULT_MIDI_PPQN    #: PPQ = Pulses Per Quarter = ticks/quarter note
+    name: str = ''                  #: Song name
+    composer: str = ''              #: Composer
+    copyright: str = ''             #: Copyright statement
+    time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)       #: Starting time signature
+    key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C')) #: Starting key signature
+    qpm: int = 112                  #: Tmpo in Quarter Notes per Minute (QPM)
 
 class Triplet:
     def __init__(self, start_time=0, duration=0, notes=None):
-        self.start_time = start_time
-        self.duration = duration
-        self.content = []
+        self.start_time = start_time    #: Start time for the triplet as a whole
+        self.duration = duration        #: Duration for the entire triplet
+        self.content = []               #: The notes that go inside the triplet
 
 
 # --------------------------------------------------------------------------------------
@@ -43,7 +43,13 @@ class Triplet:
 
 def quantization_error(t_ticks, q_ticks):
     """
-    Calculated the error, in ticks, for the given time for a quantization of q ticks.
+    Calculate the error, in ticks, for the given time for a quantization of q ticks.
+    :param t_ticks:
+    :type t_ticks:
+    :param q_ticks:
+    :type q_ticks:
+    :return:
+    :rtype:
     """
     j = t_ticks // q_ticks
     return int(min(abs(t_ticks - q_ticks * j), abs(t_ticks - q_ticks * (j + 1))))
@@ -54,6 +60,12 @@ def objective_error(notes, test_quantization):
     This is the objective function for getting the error for the entire set of notes for a
     given quantization in ticks.  The function used here could be a sum, RMS, or other
     statistic, but empirical tests indicate that the max used here works well and is robust.
+    :param notes:
+    :type notes:
+    :param test_quantization:
+    :type test_quantization:
+    :return:
+    :rtype:
     """
     return max(quantization_error(n, test_quantization) for n in notes)
 
@@ -76,6 +88,13 @@ def find_quantization(time_series, ppq):
 
     The algorithm does not seem to work as well for note durations as it does for note starts, probably
     because performed music rarely has clean note cutoffs.
+
+    :param time_series:
+    :type time_series:
+    :param ppq:
+    :type ppq:
+    :return:
+    :rtype:
     """
     last_err = len(time_series) * ppq
     last_q = ppq
@@ -113,6 +132,12 @@ def find_duration_quantization(durations, qticks_note):
     """
     The duration quantization is determined from the shortest note length.
     The algorithm starts from the estimated quantization for note starts.
+    :param durations:
+    :type durations:
+    :param qticks_note:
+    :type qticks_note:
+    :return:
+    :rtype:
     """
     min_length = min(durations)
     if not (min_length > 0):
@@ -134,6 +159,12 @@ def find_duration_quantization(durations, qticks_note):
 def quantize_fn(t, qticks):
     """
     This function quantizes a time to a certain number of ticks.
+    :param t:
+    :type t:
+    :param qticks:
+    :type qticks:
+    :return:
+    :rtype:
     """
     current = t // qticks
     next = current + 1
@@ -149,6 +180,14 @@ def duration_to_note_name(duration, ppq, locale='US'):
     """
     Given a ppq (pulses per quaver) convert a duration to a human readable note length, e.g., 'eighth'
     Works for notes, dotted notes, and triplets down to sixty-fourth notes.
+    :param duration:
+    :type duration:
+    :param ppq:
+    :type ppq:
+    :param locale:
+    :type locale:
+    :return:
+    :rtype:
     """
     f = Fraction(duration / ppq).limit_denominator(64)
     return DURATIONS[locale.upper()].get(f, '<unknown>')
@@ -157,6 +196,12 @@ def duration_to_note_name(duration, ppq, locale='US'):
 def pitch_to_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
+    :param note_num:
+    :type note_num:
+    :param octave_offset:
+    :type octave_offset:
+    :return:
+    :rtype:
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
@@ -173,9 +218,13 @@ def note_name_to_pitch(note_name, octave_offset=0):
     """
     Returns MIDI note number for a named pitch.  C4 = 60
     Includes processing of enharmonic notes (double sharps or double flats)
-        :param note_name:      A note name as a string, e.g. C#4
-        :param octave_offset:  Octave offset
-        :return:  Midi note number
+
+    :param note_name: A note name as a string, e.g. C#4
+    :type note_name: str
+    :param octave_offset: Octave offset
+    :type octave_offset: int
+    :return: Midi note number
+    :rtype: int
     """
     if note_name_format.match(note_name) is None:
         raise ChiptuneSAKValueError('Illegal note name: "%s"' % note_name)
@@ -195,11 +244,15 @@ def decompose_duration(duration, ppq, allowed_durations):
     Decomposes a given duration into a sum of allowed durations.
     This function uses a greedy algorithm, which iteratively finds the largest allowed duration shorter than
     the remaining duration and subtracts it from the remaining
-        :param duration:           Duration to be decomposed, in ticks.
-        :param ppq:                Ticks per quarter note.
-        :param allowed_durations:  Either a dictionary or a set of allowed durations.  Allowed durations are
-                                   expressed as fractions of a quarter note.
-        :return: List of fractions
+    :param duration:           Duration to be decomposed, in ticks.
+    :type duration:            int
+    :param ppq:                Ticks per quarter note.
+    :type ppq:                 int
+    :param allowed_durations:  Dictionary of allowed durations.  Allowed durations are expressed as fractions
+                               of a quarter note.
+    :type allowed_durations:   dictionary (or set) of allowed durations, as fractions of a quarter note
+    :return:                   List of fractions
+    :rtype:                    list
     """
     ret_durations = []
     min_allowed_duration = min(allowed_durations)
@@ -218,9 +271,12 @@ def decompose_duration(duration, ppq, allowed_durations):
 def is_triplet(note, ppq):
     """
     Determine if note is a triplet
-        :param note:
-        :param ppq:
-        :return:
+    :param note:  note
+    :type note:   ctsChirp.Note
+    :param ppq:   ppq
+    :type ppq:    int
+    :return:      True of the note is a triplet type
+    :rtype:       bool
     """
     f = Fraction(note.duration/ppq).limit_denominator(16)
     if f.denominator % 3 == 0:
@@ -232,12 +288,14 @@ def start_beat_type(time, ppq):
     """
     Gets the beat type that would have to be used to make this note an integral number of beats
     from the start of the measure
-
-        :param time:  Time in ticks from the start of the measure.
-        :param ppq:   ppq for the song
-        :return:      Denominator that would have to be used to make this note an integral number of beats
-                      from the start of the measure.  If the note is a triplet not starting on the beat it
-                      will be a multiple of 3.
+    :param time:  Time in ticks from the start of the measure.
+    :type time:   int
+    :param ppq:   ppq for the song
+    :type ppq:    int
+    :return:      Denominator that would have to be used to make this note an integral number of beats
+                  from the start of the measure.  If the note is a triplet not starting on the beat it
+                  will be a multiple of 3.
+    :rtype:       int
     """
     f = Fraction(time, ppq).limit_denominator(16)
     return f.denominator
