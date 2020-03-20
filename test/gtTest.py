@@ -13,9 +13,12 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     
     #@unittest.skip("GT import testing not working now...")
     
-    def test_sng_parsing(self):
+    def test_sng_to_rchirp_to_sng(self):
+
+        # First, test sng -> rchirp
+
         # TODO: I'm fighting environment again...
-        #sng_in_file = 'test/data/gtTestData.sng'
+        # sng_in_file = 'test/data/gtTestData.sng'
         sng_in_file = 'data/gtTestData.sng'
 
         # parse all subtunes
@@ -67,6 +70,13 @@ class TestGoatTrackerFunctions(unittest.TestCase):
                 self.assertIsNotNone(rchirp_row) # Make sure there's an actual entry at that expected jiffy
                 actual_note = ctsBase.pitch_to_note_name(rchirp_row.note_num) # do enharmonic comparison              
                 self.assertEqual(actual_note, expected_note)
+
+        # Second, test rchirp -> sng        
+#        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_binary(rchirp_song, arch='NTSC', \
+#            end_with_repeat = False, compress = False, pattern_len = 126)
+
+        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_file('test/data/deleteme.sng', \
+            rchirp_song, arch='NTSC', end_with_repeat = False, compress = False, pattern_len = 126)
 
 if __name__ == '__main__':
     #ctsTestingTools.env_to_stdout()

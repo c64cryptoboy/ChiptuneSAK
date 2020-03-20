@@ -21,12 +21,13 @@ class RChirpRow:
     """
     The basic RChirp row
     """
-    row_num: int = None     #: rchirp row number
-    jiffy_num: int = None   #: jiffy num since time 0
-    note_num: int = None    #: MIDI note number; None means no note asserted
-    instrument: int = None  #: Instrument number; None means no change
-    gate: bool = None       #: Gate on/off tri-value True/False/None; None means no gate change
-    jiffy_len: int = None   #: Jiffies to process this row (until next row)
+    row_num: int = None           #: rchirp row number
+    jiffy_num: int = None         #: jiffy num since time 0
+    note_num: int = None          #: MIDI note number; None means no note asserted
+    new_instrument: int = None    #: Instrument number; None means no change
+    gate: bool = None             #: Gate on/off tri-value True/False/None; None means no gate change
+    jiffy_len: int = None         #: Jiffies to process this row (until next row)
+    new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
     def __gt__(self, rchirp_row):
         return self.row_num > rchirp_row.row_num
@@ -151,8 +152,8 @@ class RChirpVoice:
             assert row.jiffy_num >= 0, "Error: RChirpRow row cannot have a negative jiffy_num"
             if row.note_num is not None:
                 assert row.note_num >= 0, "Error: RChirpRow row cannot have a negative note_num"
-            if row.instrument is not None:    
-                assert row.instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
+            if row.new_instrument is not None:    
+                assert row.new_instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
             assert row.jiffy_len is not None, "Error: RChirpRow row cannot have jiffy_len = None"
             assert row.jiffy_len >= 0, "Error: RChirpRow row cannot have a negative jiffy_len"
             row_nums.append(row.row_num)
@@ -202,7 +203,7 @@ class RChirpVoice:
 
         for p in sorted(program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            tmp_rows[n_row].instrument = int(p.program)
+            tmp_rows[n_row].new_instrument = int(p.program)
 
 
 class RChirpSong:
@@ -214,9 +215,10 @@ class RChirpSong:
         self.voices = []
         self.voice_groups = []
         self.stats = {}
-        self.metadata = None
 
-        if chirp_song is not None:
+        if chirp_song is None:
+            self.metadata = SongMetadata()
+        else:
             self.metadata = copy.deepcopy(chirp_song.metadata)
             tmp = str(type(chirp_song))
             if tmp != "<class 'ctsChirp.ChirpSong'>":
