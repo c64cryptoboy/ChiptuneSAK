@@ -38,7 +38,8 @@ class RChirpOrderList:
     An order list made up of a set of patterns
     """
     def __init__(self, patterns=None):
-        self.patterns = []
+        self.patterns = []  #: List of RChirpPattern instances
+
         if patterns is not None:
             self.patterns = copy.copy(patterns)
 
@@ -48,9 +49,10 @@ class RChirpPattern:
     A pattern made up of a set of rows
     """
     def __init__(self, rows):
-        self.rows = []
-        row_times = sorted(rows)
-        base_time = min(sorted(rows))
+        self.rows = []                  #: List of RChirpRow instances
+        row_times = sorted(rows)        #: sorted list of row frame numbers
+        base_time = min(sorted(rows))   #: the smallest row frame number
+
         for update in row_times:
             self.rows[update - base_time] = copy.copy(rows[update])
 
@@ -60,8 +62,9 @@ class RChirpVoice:
     The representation of a single voice; contains rows
     """
     def __init__(self, rchirp_song, chirp_track=None):
-        self.rchirp_song = rchirp_song
-        self.rows = collections.defaultdict(RChirpRow)
+        self.rchirp_song = rchirp_song                  #: The song this voice belongs to
+        self.rows = collections.defaultdict(RChirpRow)  #: dictionary: K:row num, V: RChirpRow instance
+
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
@@ -211,10 +214,11 @@ class RChirpSong:
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
     def __init__(self, chirp_song=None):
-        self.update_freq = ARCH['NTSC'].frame_rate
-        self.voices = []
-        self.voice_groups = []
-        self.stats = {}
+        self.update_freq = ARCH['NTSC'].frame_rate  #: update frequency expressed as frame rate
+        self.voices = []                            #: list of RChirpVoice instances
+        self.voice_groups = []                      #: voice groupings for lowering to multiple chips
+        self.stats = {}                             #: TODO: ???
+        self.metadata = None                        #: Song metadata (author, copyright, etc.)
 
         if chirp_song is None:
             self.metadata = SongMetadata()

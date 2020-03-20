@@ -18,7 +18,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         # First, test sng -> rchirp
 
         # TODO: I'm fighting environment again...
-        # sng_in_file = 'test/data/gtTestData.sng'
+        #sng_in_file = 'test/data/gtTestData.sng'
         sng_in_file = 'data/gtTestData.sng'
 
         # parse all subtunes
@@ -76,7 +76,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
 #            end_with_repeat = False, compress = False, pattern_len = 126)
 
         gt_binary = ctsGoatTracker.convert_rchirp_to_gt_file('test/data/deleteme.sng', \
-            rchirp_song, arch='NTSC', end_with_repeat = False, compress = False, pattern_len = 126)
+            rchirp_song, end_with_repeat = False, compress = False, pattern_len = 126)
 
 if __name__ == '__main__':
     #ctsTestingTools.env_to_stdout()

@@ -1,16 +1,11 @@
 # Code to import and export goattracker .sng files (both regular and stereo)
 # 
 # Notes:
-# - Multispeed updates the music multiple times per frame.  This means different things in
-#   different trackers.  In SID-Wizard, only the tables (waveform, pulse, and filter) are
-#   affected, but the onset of new notes only happens on frame boundaries.  In GoatTracker,
-#   the entire engine is driven faster, requiring speedtable values (e.g. tempos) and
-#   gateoff timers to be multiplied by the multispeed factor.
-#   This code ignores multispeed (for now)
+# - This code ignores multispeed (for now)
 #
 # TODOs:
 # - Add instrument file loader to use with channels on exports
-# - code rchirp -> gt file
+# - Lots of misc TODOs in the code below
 
 from os import path
 import sys
@@ -50,6 +45,7 @@ GT_KEY_OFF = 0xBE
 GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF # order list restart marker
 GT_PAT_END = 0xFF # pattern end
+GT_TEMPO_CHNG_CMD = 0x0F
 
 #
 #
@@ -93,19 +89,29 @@ class GtTable:
     right_col: bytes = b''
 
 class GTSong:
+    """
+    Contains parsed .sng data.
+    """
     def __init__(self):
-        self.headers = GtHeader()
-        self.num_channels = 3 # 6 for "stereo"  
-        self.subtune_orderlists =  [[[],[],[]]] # [subtune][channel_index0-2][orderlist_byte_index]
-        self.instruments = [] # list of GtInstrument instances
-        self.wave_table = GtTable()
-        self.pulse_table = GtTable()
-        self.filter_table = GtTable()
-        self.speed_table = GtTable()
-        self.patterns = [[]] # list of patterns, each of which is an list of GtPatternRow instances
+        self.headers = GtHeader()               #: goattracker file headers 
+        self.num_channels = 3                   #: 3 or 6 voices  
+        self.subtune_orderlists = [[[],[],[]]]  #: Nested lists: Subtunes->channels->orderlist
+        self.instruments = []                   #: list of GtInstrument instances
+        self.wave_table = GtTable()             #: wave table
+        self.pulse_table = GtTable()            #: pulse table
+        self.filter_table = GtTable()           #: filter table
+        self.speed_table = GtTable()            #: speed table
+        self.patterns = [[]]                    #: Nested lists: patterns->GtPatternRow instances
 
     def is_stereo(self):
+        """
+        Determines if this is stereo GoatTracker
+        
+        :return: True if stereo, False if not
+        :rtype: boolean
+        """
         return self.num_channels >= 4
+
 
 # Convert pattern note byte value into midi note value
 # Note: lowest goat tracker note C0 (0x60)
@@ -172,17 +178,15 @@ def is_2sid(index_at_start_of_orderlist, sng_bytes):
 
 
 def import_sng(gt_filename):
-    """ 
-    Parse a goat tracker .sng file and put it into a GTSong instance
-  
-    Supports 1SID and 2SID (stereo) goattracker .sng files 
-  
-    Parameters: 
-       gt_filename (string): Filename for input .sng file
-  
-    Returns: 
-       GTSong: A GTSong instance holding the parsed goattracker file
     """
+    Parse a goat tracker '.sng' file and put it into a GTSong instance.  Supports 1SID and 2SID (stereo) goattracker '.sng' files.
+    
+    :param gt_filename:  Filename for input .sng file
+    :type gt_filename: string
+    :return: A GTSong instance holding the parsed goattracker file
+    :rtype: GTSong
+    """
+
     with open(gt_filename, 'rb') as f:
         sng_bytes = f.read()
 
@@ -329,7 +333,8 @@ def import_sng(gt_filename):
         for row_num in range(num_rows):
             a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
                                  command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
-            assert (0x60 <= a_row.note_data < 0xBF) or a_row.note_data == GT_PAT_END, "Error: unexpected note data value"
+            assert (0x60 <= a_row.note_data < 0xBF) or a_row.note_data == GT_PAT_END, \
+                "Error: unexpected note data value"
             assert a_row.inst_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
             assert a_row.command <= 0x0F, "Error: command number out of range"                     
             file_index += 4
@@ -348,14 +353,6 @@ def import_sng(gt_filename):
 # 
 #
 
-
-# TimeEntry are values, keys will be jiffy # (since time 0)
-# Over time, might add other commands to this as well (Portamento, etc.)
-@dataclass
-class TimeEntry:
-    note: int = None
-    note_on: bool = None # True/False/None
-    tempo: int = None
 
 PATTERN_END_ROW = GtPatternRow(note_data = GT_PAT_END)
 
@@ -481,7 +478,7 @@ class GtChannelState:
 
             # Record global funktempo change
             self.global_tempo_update = 0 # 0 will later become the tempo in funktable entry 0
-        elif row.command == 0x0F: # tempo change
+        elif row.command == GT_TEMPO_CHNG_CMD: 
             # From docs:
             #    Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
             #    $80 to get actual tempo). Tempos $00-$01 recall the funktempo values set by EXY command.
@@ -610,16 +607,17 @@ class GtChannelState:
 
 
 def convert_parsed_gt_to_rchirp(sng_data, subtune_num = 0):
-    """ 
-    Convert the parsed orderlist and patterns into rchirp 
-  
-    Parameters: 
-       sng_data (GTSong): Parsed goattracker file
-       subtune_num (int): The subtune number to convert to rchirp (default 0)
+    """
+    Convert the parsed goattracker file into rchirp 
+    
+    :param sng_data: Parsed goattracker file
+    :type sng_data: GTSong
+    :param subtune_num: The subtune number to convert to rchirp, defaults to 0
+    :type subtune_num: int, optional
+    :return: rchirp song instance
+    :rtype: RChirpSong
+    """
 
-    Returns: 
-       RChirpSong: rchirp song instance
-    """    
     # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
     channels_state = [GtChannelState(i+1, sng_data.subtune_orderlists[subtune_num][i]) for \
         i in range(sng_data.num_channels)]
@@ -995,18 +993,40 @@ def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
     return gt_binary
 """
 
-def convert_rchirp_to_gt_file(filename, rchirp_song, arch='NTSC', end_with_repeat = False, \
-    compress = False, pattern_len = 126):
-    # TODO: Validate filename, etc.
-    binary = convert_rchirp_to_gt_binary(rchirp_song, arch, end_with_repeat, compress, pattern_len)
+def convert_rchirp_to_gt_file(filename, rchirp_song, end_with_repeat = False, compress = False, \
+    pattern_len = 126):
+    """
+    Convert rchirp into a goattracker .sng file.
+    
+    :param filename: Output path and filename
+    :type filename: string
+    :param rchirp_song: The rchirp song to convert
+    :type rchirp_song: RChirpSong
+    :param end_with_repeat: True if song should repeat when finished, defaults to False
+    :type end_with_repeat: bool, optional
+    :param compress: True if to create reusable patterns, defaults to False
+    :type compress: bool, optional
+    :param pattern_len: Maximum pattern lengths to create
+    :type pattern_len: int, optional
+    """
+    binary = convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat, compress, pattern_len)
     with open(filename, 'wb') as out_file:
         out_file.write(binary)
 
 
-# pattern_len: # index 0 to len-1 for data, index len for 0xFF pattern end mark
-
-def convert_rchirp_to_gt_binary(rchirp_song, arch='NTSC', end_with_repeat = False, \
-    compress = False, pattern_len = 126):
+def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress = False, pattern_len = 126):
+    """
+    Convert rchirp into a goattracker .sng binary.
+    
+    :param rchirp_song: The rchirp song to convert
+    :type rchirp_song: RChirpSong
+    :param end_with_repeat: True if song should repeat when finished, defaults to False
+    :type end_with_repeat: bool, optional
+    :param compress: True if to create reusable patterns, defaults to False
+    :type compress: bool, optional
+    :param pattern_len: Maximum pattern lengths to create
+    :type pattern_len: int, optional
+    """
 
     is_stereo = len(rchirp_song.voices) >= 4
     if len(rchirp_song.voices) > 6:
@@ -1056,7 +1076,7 @@ def convert_rchirp_to_gt_binary(rchirp_song, arch='NTSC', end_with_repeat = Fals
                         # goattracker asserts the instrument with every note
                         gt_row.inst_num = prev_instrument
                     if rchirp_row.new_jiffy_tempo is not None:
-                        gt_row.command = 0x0F
+                        gt_row.command = GT_TEMPO_CHNG_CMD
                         # insert local channel tempo change
                         gt_row.command_data = rchirp_row.new_jiffy_tempo + 0x80
                     pattern += row_to_bytes(gt_row)
@@ -1064,6 +1084,7 @@ def convert_rchirp_to_gt_binary(rchirp_song, arch='NTSC', end_with_repeat = Fals
                     pattern += row_to_bytes(PATTERN_EMPTY_ROW)
 
                 pattern_row_index += 1
+                # pattern_len notes: index 0 to len-1 for data, index len for 0xFF pattern end mark
                 if pattern_row_index == pattern_len: # if pattern is full
                     pattern += row_to_bytes(PATTERN_END_ROW) # finish with end row marker
                     patterns.append(pattern)

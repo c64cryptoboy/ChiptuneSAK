@@ -46,11 +46,21 @@ ChiptuneSAK preserves tempo across various transformations and music formats.  L
 * a 3/8 meter with metronome mark "eighth note = 120" becomes QPM = 60
 * a 6/8 meter with metronome mark "dotted quarter = 40" becomes QPM = 60
 
+Tempo in Trackers
+#################
+
 BPM and rows
 ************
+
 In reasoning about tracker tempos, a common mental anchor point between rows and BPM is that 6 frames per row is around 125BPM on a PAL machine.  This forms the basis of many trackers' default tempo choice of 6 frames per row.
 
 In this case, 6 frames per row * a PAL C64's 20ms per frame = 0.12 seconds per row.  That's 1/0.12 or 8.333333 rows per sec, so 60 seconds / 0.12 sec per row = 500 rows per minute.  500 rows per min / 125 BPM = 4 rows per quarter note in 4/4, which means a single row becomes a 16th note.
+
+Multispeed
+**********
+
+Instead of a single music player update per frame, "multispeed" allows multiple player updates per frame.  This means different things in different trackers.  In SID-Wizard, only the tables (waveform, pulse, and filter) are affected, but the onset of new notes only happens on frame boundaries.  In GoatTracker, the entire engine is driven faster, requiring speedtable values (e.g. tempos) and gateoff timers to be multiplied by the multispeed factor.
+Currently, ctsGoatTracker.py does not implement multispeed handling.
 
 Octave designations
 ###################
