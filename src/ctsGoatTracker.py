@@ -23,6 +23,10 @@ import ctsMidi
 from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
     ChiptuneSAKContentError, ChiptuneSAKPolyphonyError
 
+# Generalized instrument handling when creating new goattracker binaries is not supported yet.
+# So this constant is used so it's easy to look through the code to see where hardcoded assumptions
+# are being made.
+DEFAULT_INSTRUMENT = 1
 
 # GoatTracker constants
 GT_FILE_HEADER = b'GTS5'
@@ -744,12 +748,21 @@ def convert_parsed_gt_to_rchirp(sng_data, subtune_num = 0):
     # unrolling a global funk tempo.
     for voice in rchirp_song.voices:
         prev_tempo = -1
-        for rchirp_row in voice.rows.values():
+        for rchirp_row in voice.get_sorted_rows():
             if rchirp_row.jiffy_len != prev_tempo:
                 rchirp_row.new_jiffy_tempo = rchirp_row.jiffy_len
                 prev_tempo = rchirp_row.jiffy_len
 
-    # Might as well make use of our test cases here
+    # TODO: There is not yet generalized handling for instruments when creating output goattracker
+    # binaries.  This code will just stub in a default instrument for each voice on that voice's
+    # first note (if any).
+    for voice in rchirp_song.voices:
+        for rchirp_row in voice.get_sorted_rows():
+            if rchirp_row.note_num is not None and rchirp_row.new_instrument is None:
+                rchirp_row.new_instrument = DEFAULT_INSTRUMENT
+                break
+
+    # Before returning the rchirp song, might as well make use of our test cases here
     rchirp_song.integrity_check() # Will throw assertions if there's problems    
     assert rchirp_song.is_contiguous(), "Error: rchirp representation should not be sparse"
 
@@ -789,6 +802,7 @@ def instrument_to_bytes(instrument):
 """
 # TODO: This is the old chirp->gt method.  Once the ctsRChirp.py's chirp->rchirp is tested,
 #       then all of this commented-out code can be deleted
+
 def chirp_to_GT(song, out_filename, tracknums=[1,2,3], is_stereo = False, \
     arch='NTSC', end_with_repeat = False, compress = False, pattern_len = 126):
 
@@ -1061,20 +1075,28 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
             # sorted rchirp_rows dict keys, but since rchirp is allowed to be sparse
             # we're being careful here to insert an empty row for missing row num keys
             for j in range(max_row+1):
+
+                # Convert each rchirp_row into the gt_row (used for binary gt row representation)
                 if j in rchirp_rows:
-                    # Convert the rchirp_row into the gt_row (used for binary gt row representation)
                     rchirp_row = rchirp_rows[j]
                     gt_row = GtPatternRow()
-                    # TODO: Pay attention to gate on/off/None
-                    if rchirp_row.gate:
+
+                    if rchirp_row.gate: # if starting a note
                         gt_row.note_data=midi_note_to_pattern_note(rchirp_row.note_num)
-                    if rchirp_row.new_instrument is not None:
-                        gt_row.inst_num = rchirp_row.new_instrument
-                        prev_instrument = rchirp_row.new_instrument
-                    else:
-                        # unlike SID-Wizard which only asserts instrument changes,
-                        # goattracker asserts the instrument with every note
-                        gt_row.inst_num = prev_instrument
+
+                        # only bother to populate instrument if there's a new note
+                        if rchirp_row.new_instrument is not None:
+                            gt_row.inst_num = rchirp_row.new_instrument
+                            prev_instrument = rchirp_row.new_instrument
+                        else:
+                            # unlike SID-Wizard which only asserts instrument changes (on any row),
+                            # goattracker asserts the current instrument with every note
+                            # (goattracker can assert instrument without note, but that's a NOP)
+                            gt_row.inst_num = prev_instrument
+
+                    elif rchirp_row.gate is False: # if ending a note ('false' check because tri-state)
+                        gt_row.note_data = GT_KEY_OFF
+
                     if rchirp_row.new_jiffy_tempo is not None:
                         gt_row.command = GT_TEMPO_CHNG_CMD
                         # insert local channel tempo change
@@ -1157,15 +1179,19 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
     # This requires setting ADSR, and a wavetable position of 01.
     # Then a wavetable with the entires 01:11 00, and 02:FF 00 
     gt_binary.append(0x01) # number of instruments (not counting NOP instrument 0)
-    gt_binary += instrument_to_bytes(GtInstrument(inst_num=1, attack_decay=0x22, sustain_release=0xFA,
-        wave_ptr=0x01, inst_name='simple triangle'))
+    gt_binary += instrument_to_bytes(GtInstrument(inst_num=DEFAULT_INSTRUMENT, \
+        attack_decay=0x22, sustain_release=0xFA, wave_ptr=0x01, inst_name='simple triangle'))
     # TODO: In the future, more instruments appended here (in instrument number order)
-    
+
     # append tables
+    # TODO: Currently hardcoded: tables for DEFAULT_INSTRUMENT:
     gt_binary.append(0x02) # wavetable with two row entries
     gt_binary += bytes([0x11, 0xFF, 0x00, 0x00]) # simple triangle instrument waveform
+
     gt_binary.append(0x00) # length 0 pulsetable
+
     gt_binary.append(0x00) # length 0 filtertable
+
     gt_binary.append(0x00) # length 0 speedtable
 
     # append patterns

@@ -29,10 +29,9 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         """
         # Generate expected output data for this test (comment out later, but keep it around)
         print("expected_channels = []")
-        for channel in rchirp_song.voices:
-            channel = channel.rows
+        for voice in rchirp_song.voices:
             channel_note_on_events = []
-            for rchirp_row in channel.values():
+            for rchirp_row in voice.get_sorted_rows():
                 if rchirp_row.gate:
                     midi_note_name = ctsBase.pitch_to_note_name(rchirp_row.note_num)
                     channel_note_on_events.append('(%d, "%s")' % (rchirp_row.jiffy_num, midi_note_name))
@@ -71,12 +70,13 @@ class TestGoatTrackerFunctions(unittest.TestCase):
                 actual_note = ctsBase.pitch_to_note_name(rchirp_row.note_num) # do enharmonic comparison              
                 self.assertEqual(actual_note, expected_note)
 
-        # Second, test rchirp -> sng        
-#        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_binary(rchirp_song, arch='NTSC', \
-#            end_with_repeat = False, compress = False, pattern_len = 126)
+        #ctsGoatTracker.convert_rchirp_to_gt_file('test/data/deleteme.sng', \
+        #    rchirp_song, end_with_repeat = False, compress = False, pattern_len = 126)
 
-        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_file('test/data/deleteme.sng', \
-            rchirp_song, end_with_repeat = False, compress = False, pattern_len = 126)
+        # Second, test rchirp -> sng        
+        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_binary(rchirp_song, \
+            end_with_repeat = False, compress = False, pattern_len = 126)
+
 
 if __name__ == '__main__':
     #ctsTestingTools.env_to_stdout()
