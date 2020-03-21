@@ -181,19 +181,31 @@ def is_2sid(index_at_start_of_orderlist, sng_bytes):
     return has_3_channel_orderlist(file_index, sng_bytes) != -1
 
 
-def import_sng(gt_filename):
+
+def import_sng_file(gt_filename):
     """
     Parse a goat tracker '.sng' file and put it into a GTSong instance.  Supports 1SID and 2SID (stereo) goattracker '.sng' files.
     
-    :param gt_filename:  Filename for input .sng file
+    :param gt_filename: Filename for input .sng file
     :type gt_filename: string
     :return: A GTSong instance holding the parsed goattracker file
     :rtype: GTSong
     """
-
     with open(gt_filename, 'rb') as f:
         sng_bytes = f.read()
 
+    return import_sng_binary(sng_bytes)
+
+
+def import_sng_binary(sng_bytes):
+    """
+    Parse a goat tracker '.sng' binary and put it into a GTSong instance.  Supports 1SID and 2SID (stereo) goattracker '.sng' file binaries.
+    
+    :param sng_bytes: Binary contents of a sng file
+    :type sng_bytes: bytes
+    :return: A GTSong instance holding the parsed goattracker file
+    :rtype: GTSong
+    """
     a_song = GTSong()
 
     header = GtHeader()
