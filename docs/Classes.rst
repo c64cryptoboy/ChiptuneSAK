@@ -66,13 +66,3 @@ RChirpSong
 
 .. autoclass:: ctsRChirp.RChirpSong
     :members:
-
-GoatTracker
------------
-
-GTSong
-++++++
-
-.. autoclass:: ctsGoatTracker.GTSong
-    :members:
-
