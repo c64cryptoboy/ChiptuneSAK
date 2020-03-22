@@ -6,26 +6,28 @@
 import testingPath
 import unittest
 import ctsGoatTracker
-import ctsTestingTools
 import ctsBase
 
 # TODO: I'm fighting environment again...
 # SNG_TEST_FILE = 'test/data/gtTestData.sng'
 SNG_TEST_FILE = 'data/gtTestData.sng'
 
-class TestGoatTrackerFunctions(unittest.TestCase):
 
+class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):
+        self.parsed_gt = ctsGoatTracker.import_sng_file(SNG_TEST_FILE)
+        self.rchirp_song = ctsGoatTracker.convert_parsed_gt_to_rchirp(self.parsed_gt, 0)
         # Keep this generating code around (commented out)
-        # print("expected_channels = []")
-        # for voice in rchirp_song.voices:
+        # print("self.expected_channels = (")
+        # for voice in self.rchirp_song.voices:
         #     channel_note_on_events = []
         #     for rchirp_row in voice.get_sorted_rows():
         #         if rchirp_row.gate:
         #             midi_note_name = ctsBase.pitch_to_note_name(rchirp_row.note_num)
         #             channel_note_on_events.append('(%d, "%s")' % (rchirp_row.jiffy_num, midi_note_name))
-        #     line = "expected_channels.append((%s))" % (', '.join(channel_note_on_events))
+        #     line = '    (' + ', '.join(channel_note_on_events) + '),'
         #     print(line)
+        # print(')')
 
         self.expected_channels = (
             ((0, "G4"), (72, "C5"), (144, "E5"), (216, "G#4"), (288, "C#5"), (360, "F5"),
@@ -72,12 +74,8 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     # @unittest.skip("GT import testing not working now...")
     # Test that .sng file to rchirp has expected note content
     def test_sng_to_rchirp(self):
-        # parse all subtunes
-        parsed_gt = ctsGoatTracker.import_sng_file(SNG_TEST_FILE)
-        # get rchirp for subtune 0
-        rchirp_song = ctsGoatTracker.convert_parsed_gt_to_rchirp(parsed_gt, 0)
 
-        self.assertTrue(self.found_expected_note_content(rchirp_song))
+        self.assertTrue(self.found_expected_note_content(self.rchirp_song))
 
         # Uncomment out to make the gt sng file for playback:
         # ctsGoatTracker.convert_rchirp_to_gt_file('test/data/deleteme.sng', \
@@ -85,17 +83,14 @@ class TestGoatTrackerFunctions(unittest.TestCase):
 
     # Test that .sng file to rchirp to .sng binary to rchirp has expected note content
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
-        parsed_gt = ctsGoatTracker.import_sng_file(SNG_TEST_FILE)
-        rchirp_song = ctsGoatTracker.convert_parsed_gt_to_rchirp(parsed_gt, 0)
-        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_binary(rchirp_song,
+        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_binary(self.rchirp_song,
                                                                end_with_repeat=False, compress=False, pattern_len=126)
         parsed_gt_2 = ctsGoatTracker.import_sng_binary(gt_binary)
         rchirp_song_2 = ctsGoatTracker.convert_parsed_gt_to_rchirp(parsed_gt_2, 0)
 
-        self.assertTrue(self.found_expected_note_content(rchirp_song))
+        self.assertTrue(self.found_expected_note_content(rchirp_song_2))
 
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()
     unittest.main(failfast=True)  # Lots of asserts (in a loop), so stop after first fail
-
