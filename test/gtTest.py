@@ -9,13 +9,13 @@ import ctsGoatTracker
 import ctsTestingTools
 import ctsBase
 
+
 class TestGoatTrackerFunctions(unittest.TestCase):
     
     #@unittest.skip("GT import testing not working now...")
     
     def test_sng_parsing(self):
         # TODO: I'm fighting environment again...
-        #sng_in_file = 'test/data/gtTestData.sng'
         sng_in_file = 'data/gtTestData.sng'
 
         # parse all subtunes
@@ -61,12 +61,13 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         # This supports testing of related tempos across channels.
 
         for i, expected_channel in enumerate(expected_channels):
-            actual_channel = rchirp_song.voices[i].get_jiffy_indexed_rows()
-            for expected_jiffy, expected_note in expected_channel:
-                rchirp_row = actual_channel[expected_jiffy]
-                self.assertIsNotNone(rchirp_row) # Make sure there's an actual entry at that expected jiffy
-                actual_note = ctsBase.pitch_to_note_name(rchirp_row.note_num) # do enharmonic comparison              
-                self.assertEqual(actual_note, expected_note)
+            with self.subTest(i=i):
+                actual_channel = rchirp_song.voices[i].get_jiffy_indexed_rows()
+                for expected_jiffy, expected_note in expected_channel:
+                    rchirp_row = actual_channel[expected_jiffy]
+                    self.assertIsNotNone(rchirp_row) # Make sure there's an actual entry at that expected jiffy
+                    actual_note = ctsBase.pitch_to_note_name(rchirp_row.note_num) # do enharmonic comparison
+                    self.assertEqual(actual_note, expected_note)
 
 if __name__ == '__main__':
     #ctsTestingTools.env_to_stdout()
