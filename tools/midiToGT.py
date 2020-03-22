@@ -25,10 +25,21 @@ def main():
     
     song = ctsMidi.midi_to_chirp(args.midi_in_file)
     
-    song.estimate_quantization()
-    song.quantize()
+    # generic approach (when quantizable):
+    # song.estimate_quantization()
+    # song.quantize()
+
     # For Bleibet (due to rit), do line below instead of above two lines
-    #song.quantize_from_note_name("16")
+    # song.quantize_from_note_name("16")
+
+    # For Minuet_106_6ch.mid
+    # song.quantize_from_note_name("16")
+
+    # For The-Speedwalker.mid
+    song.quantize(60, 60)
+    # song.quantize(120, 120)
+
+
     song.remove_polyphony()
 
     if len(song.tracks) > 6:
@@ -37,8 +48,10 @@ def main():
 
     is_stereo = len(song.tracks) > 3
 
-    gt_binary = ctsGoatTracker.chirp_to_GT(song, args.sng_out_file, tracks_to_include, is_stereo)
-    
+    # TODO: this functionality is moving to rchirp, where it will be chirp->rchirp, then rchirp->gt
+    #gt_binary = ctsGoatTracker.chirp_to_GT(song, args.sng_out_file, tracks_to_include, is_stereo)
+    exit("Early exit, refactoring not done yet")
+
     with open(args.sng_out_file, 'wb') as out_file:
         out_file.write(gt_binary)
 

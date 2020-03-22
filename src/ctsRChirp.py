@@ -21,12 +21,13 @@ class RChirpRow:
     """
     The basic RChirp row
     """
-    row_num: int = None     #: rchirp row number
-    jiffy_num: int = None   #: jiffy num since time 0
-    note_num: int = None    #: MIDI note number; None means no note asserted
-    instrument: int = None  #: Instrument number; None means no change
-    gate: bool = None       #: Gate on/off tri-value True/False/None; None means no gate change
-    jiffy_len: int = None   #: Jiffies to process this row (until next row)
+    row_num: int = None           #: rchirp row number
+    jiffy_num: int = None         #: jiffy num since time 0
+    note_num: int = None          #: MIDI note number; None means no note asserted
+    new_instrument: int = None    #: Instrument number; None means no change
+    gate: bool = None             #: Gate on/off tri-value True/False/None; None means no gate change
+    jiffy_len: int = None         #: Jiffies to process this row (until next row)
+    new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
     def __gt__(self, rchirp_row):
         return self.row_num > rchirp_row.row_num
@@ -37,7 +38,8 @@ class RChirpOrderList:
     An order list made up of a set of patterns
     """
     def __init__(self, patterns=None):
-        self.patterns = []
+        self.patterns = []  #: List of RChirpPattern instances
+
         if patterns is not None:
             self.patterns = copy.copy(patterns)
 
@@ -47,9 +49,10 @@ class RChirpPattern:
     A pattern made up of a set of rows
     """
     def __init__(self, rows):
-        self.rows = []
-        row_times = sorted(rows)
-        base_time = min(sorted(rows))
+        self.rows = []                  #: List of RChirpRow instances
+        row_times = sorted(rows)        #: sorted list of row frame numbers
+        base_time = min(sorted(rows))   #: the smallest row frame number
+
         for update in row_times:
             self.rows[update - base_time] = copy.copy(rows[update])
 
@@ -59,8 +62,9 @@ class RChirpVoice:
     The representation of a single voice; contains rows
     """
     def __init__(self, rchirp_song, chirp_track=None):
-        self.rchirp_song = rchirp_song
-        self.rows = collections.defaultdict(RChirpRow)
+        self.rchirp_song = rchirp_song                  #: The song this voice belongs to
+        self.rows = collections.defaultdict(RChirpRow)  #: dictionary: K:row num, V: RChirpRow instance
+
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
@@ -70,7 +74,7 @@ class RChirpVoice:
 
     def get_jiffy_indexed_rows(self):
         """
-        Returns rows indexed by jiffy number
+        Returns dictionary of rows indexed by jiffy number
 
         A voice holds onto a dictionary of rows keyed by row number.  This method returns
         a dictionary of rows keyed by jiffy number. 
@@ -82,6 +86,15 @@ class RChirpVoice:
         return_val = {v.jiffy_num: v for k, v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
+
+    def get_sorted_rows(self):
+        """
+        Returns a list of row-number sorted rows for the voice
+        
+        :return: A sorted list of RChirpRow instances
+        :rtype: list
+        """
+        return [self.rows[k] for k in sorted(self.rows.keys(), reverse=False)]
 
     def append_row(self, rchirp_row):
         """
@@ -151,8 +164,8 @@ class RChirpVoice:
             assert row.jiffy_num >= 0, "Error: RChirpRow row cannot have a negative jiffy_num"
             if row.note_num is not None:
                 assert row.note_num >= 0, "Error: RChirpRow row cannot have a negative note_num"
-            if row.instrument is not None:    
-                assert row.instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
+            if row.new_instrument is not None:    
+                assert row.new_instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
             assert row.jiffy_len is not None, "Error: RChirpRow row cannot have jiffy_len = None"
             assert row.jiffy_len >= 0, "Error: RChirpRow row cannot have a negative jiffy_len"
             row_nums.append(row.row_num)
@@ -202,7 +215,7 @@ class RChirpVoice:
 
         for p in sorted(program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            tmp_rows[n_row].instrument = int(p.program)
+            tmp_rows[n_row].new_instrument = int(p.program)
 
 
 class RChirpSong:
@@ -210,13 +223,15 @@ class RChirpSong:
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
     def __init__(self, chirp_song=None):
-        self.update_freq = ARCH['NTSC'].frame_rate
-        self.voices = []
-        self.voice_groups = []
-        self.stats = {}
-        self.metadata = None
+        self.update_freq = ARCH['NTSC'].frame_rate  #: update frequency expressed as frame rate
+        self.voices = []                            #: list of RChirpVoice instances
+        self.voice_groups = []                      #: voice groupings for lowering to multiple chips
+        self.stats = {}                             #: TODO: ???
+        self.metadata = None                        #: Song metadata (author, copyright, etc.)
 
-        if chirp_song is not None:
+        if chirp_song is None:
+            self.metadata = SongMetadata()
+        else:
             self.metadata = copy.deepcopy(chirp_song.metadata)
             tmp = str(type(chirp_song))
             if tmp != "<class 'ctsChirp.ChirpSong'>":

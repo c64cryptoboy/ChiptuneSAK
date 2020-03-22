@@ -22,7 +22,7 @@ def main():
         parser.error(r'Expecting input filename that ends in ".sng"')
     if not path.exists(args.sng_in_file):
         parser.error('Cannot find "%s"' % args.sng_in_file)
-    sng_data = ctsGoatTracker.import_sng(args.sng_in_file)
+    sng_data = ctsGoatTracker.import_sng_file(args.sng_in_file)
 
     if args.subtune_number < 1:
         parser.error('subtune_number must be >= 1')
