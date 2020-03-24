@@ -196,6 +196,12 @@ class Measure:
             self.events.append(Rest(last_note_end, gap))
             last_note_end = end
 
+        # Add program changes to measure:
+        for pc in track.program_changes:
+            if self.start_time <= pc.start_time < end:
+                # Leave the time of these messages alone
+                self.events.append(pc)
+
         # Add any additional track-specific messages to the measure:
         for m in track.other:
             if self.start_time <= m.start_time < end:

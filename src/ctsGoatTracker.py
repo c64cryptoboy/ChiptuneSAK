@@ -1063,8 +1063,8 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
     else:
         num_channels = 3
 
-    patterns = [] # can be shared across all channels
-    orderlists = [[] for _ in range(num_channels)] # Note: this is bad: [[]] * len(tracknums)
+    patterns = []  # can be shared across all channels
+    orderlists = [[] for _ in range(num_channels)]  # Note: this is bad: [[]] * len(tracknums)
 
     if compress:
         exit("Sorry, generating patterns to support reuse has not been implemented yet")
@@ -1078,10 +1078,10 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
         for i, rchirp_voice in enumerate(rchirp_song.voices):
             rchirp_rows = rchirp_voice.rows   
             pattern_row_index = 0
-            pattern = bytearray() # create a new, empty pattern
+            pattern = bytearray()  # create a new, empty pattern
             # TODO: Instead of max, range, and in, just do a sort
             max_row = max(rchirp_rows)
-            prev_instrument = 1 # TODO: Default instrument 1, this must be generalized
+            prev_instrument = 1  # TODO: Default instrument 1, this must be generalized
 
             # Iterate across row num span (inclusive).  Would normally iterated over
             # sorted rchirp_rows dict keys, but since rchirp is allowed to be sparse
@@ -1093,8 +1093,8 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
                     rchirp_row = rchirp_rows[j]
                     gt_row = GtPatternRow()
 
-                    if rchirp_row.gate: # if starting a note
-                        gt_row.note_data=midi_note_to_pattern_note(rchirp_row.note_num)
+                    if rchirp_row.gate:  # if starting a note
+                        gt_row.note_data = midi_note_to_pattern_note(rchirp_row.note_num)
 
                         # only bother to populate instrument if there's a new note
                         if rchirp_row.new_instrument is not None:
@@ -1106,7 +1106,7 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
                             # (goattracker can assert instrument without note, but that's a NOP)
                             gt_row.inst_num = prev_instrument
 
-                    elif rchirp_row.gate is False: # if ending a note ('false' check because tri-state)
+                    elif rchirp_row.gate is False:  # if ending a note ('false' check because tri-state)
                         gt_row.note_data = GT_KEY_OFF
 
                     if rchirp_row.new_jiffy_tempo is not None:
@@ -1119,10 +1119,10 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
 
                 pattern_row_index += 1
                 # pattern_len notes: index 0 to len-1 for data, index len for 0xFF pattern end mark
-                if pattern_row_index == pattern_len: # if pattern is full
-                    pattern += row_to_bytes(PATTERN_END_ROW) # finish with end row marker
+                if pattern_row_index == pattern_len:  # if pattern is full
+                    pattern += row_to_bytes(PATTERN_END_ROW)  # finish with end row marker
                     patterns.append(pattern)
-                    orderlists[i].append(curr_pattern_num) # append to orderlist for this channel
+                    orderlists[i].append(curr_pattern_num)  # append to orderlist for this channel
                     curr_pattern_num += 1
                     if curr_pattern_num >= GT_MAX_PATTERNS_PER_SONG:
                         too_many_patterns = True
@@ -1131,7 +1131,7 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
                     pattern_row_index = 0
             if too_many_patterns:
                 break
-            if len(pattern) > 0: # if there's a final partially-filled pattern, add it
+            if len(pattern) > 0:  # if there's a final partially-filled pattern, add it
                 pattern += row_to_bytes(PATTERN_END_ROW)
                 patterns.append(pattern)
                 orderlists[i].append(curr_pattern_num)
@@ -1164,11 +1164,11 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
             orderlists[i].append(loop_pattern_num)
 
     for i in range(num_channels):
-        orderlists[i].append(GT_OL_RST) # patterns end with restart indicator
+        orderlists[i].append(GT_OL_RST)  # patterns end with restart indicator
         if end_with_repeat:
-            orderlists[i].append(0) # index of start of channel order list 
+            orderlists[i].append(0)  # index of start of channel order list
         else:
-            orderlists[i].append(len(orderlists[i])-2) # index of the empty loop pattern
+            orderlists[i].append(len(orderlists[i])-2)  # index of the empty loop pattern
 
     gt_binary = bytearray()
 
@@ -1177,11 +1177,11 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
     gt_binary += pad_or_truncate(rchirp_song.metadata.name, 32)
     gt_binary += pad_or_truncate(rchirp_song.metadata.composer, 32)
     gt_binary += pad_or_truncate(rchirp_song.metadata.copyright, 32)
-    gt_binary.append(0x01) # number of subtunes
+    gt_binary.append(0x01)  # number of subtunes
 
     # append orderlists to gt binary
     for i in range(num_channels):
-        gt_binary.append(len(orderlists[i])-1) # orderlist length minus 1
+        gt_binary.append(len(orderlists[i])-1)  # orderlist length minus 1
         gt_binary += bytes(orderlists[i])
 
     # append instruments
@@ -1190,17 +1190,17 @@ def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat = False, compress =
     # For now, just going to design a simple triangle sound as instrument number 1.
     # This requires setting ADSR, and a wavetable position of 01.
     # Then a wavetable with the entires 01:11 00, and 02:FF 00 
-    gt_binary.append(0x01) # number of instruments (not counting NOP instrument 0)
+    gt_binary.append(0x01)  # number of instruments (not counting NOP instrument 0)
     gt_binary += instrument_to_bytes(GtInstrument(inst_num=DEFAULT_INSTRUMENT, \
         attack_decay=0x22, sustain_release=0xFA, wave_ptr=0x01, inst_name='simple triangle'))
     # TODO: In the future, more instruments appended here (in instrument number order)
 
     # append tables
     # TODO: Currently hardcoded: tables for DEFAULT_INSTRUMENT:
-    gt_binary.append(0x02) # wavetable with two row entries
-    gt_binary += bytes([0x11, 0xFF, 0x00, 0x00]) # simple triangle instrument waveform
+    gt_binary.append(0x02)  # wavetable with two row entries
+    gt_binary += bytes([0x11, 0xFF, 0x00, 0x00])  # simple triangle instrument waveform
 
-    gt_binary.append(0x00) # length 0 pulsetable
+    gt_binary.append(0x00)  # length 0 pulsetable
 
     gt_binary.append(0x00) # length 0 filtertable
 

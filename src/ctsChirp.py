@@ -47,13 +47,14 @@ class ChirpTrack:
     """
 
     # Define the message types to preserve as a static variable
-    other_message_types = ['program_change', 'pitchwheel', 'control_change']
+    other_message_types = ['pitchwheel', 'control_change']
 
     def __init__(self, chirp_song, mchirp_track=None):
         self.chirp_song = chirp_song  #: Parent song
         self.name = 'none'  #: Track name
         self.channel = 0  #: This track's midi channel.  Each track should have notes from only one channel.
         self.notes = []  #: The notes in the track
+        self.program_changes = []  #: Program (patch) changes in the track
         self.other = []  #: Other events in the track (includes voice changes and pitchwheel)
         self.qticks_notes = chirp_song.qticks_notes  #: Inherit quantization from song
         self.qticks_durations = chirp_song.qticks_durations  #: Inherit quantization from song
@@ -96,10 +97,12 @@ class ChirpTrack:
         temp_notes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Note)]
         temp_triplets = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Triplet)]
         temp_notes.extend([e for tp in temp_triplets for e in tp.content if isinstance(e, Note)])
+        self.program_changes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, ProgramEvent)]
         self.other = [e for m in mchirp_track.measures for e in m.events if isinstance(e, OtherMidiEvent)]
         temp_notes.sort(key=lambda n: n.start_time)
         self.notes = _anneal_notes(temp_notes)
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+        self.program_changes.sort(key=lambda e: e.start_time)
         self.other.sort(key=lambda n: n.start_time)
 
     def estimate_quantization(self):
@@ -378,6 +381,7 @@ class ChirpTrack:
         set to time zero.
 
         :param offset_ticks:
+        :type offset_ticks: int (signed)
         """
         for i, (t, m) in enumerate(self.other):
             t = max(t + offset_ticks, 0)
@@ -386,6 +390,9 @@ class ChirpTrack:
         for i, n in enumerate(self.notes):
             n.start_time = max(n.start_time + offset_ticks, 0)
             self.notes[i] = copy.copy(n)
+
+    def set_program(self, program):
+        self.program_changes = [ProgramEvent(0, int(program))]
 
     def __str__(self):
         ret_val = "Track: %s (channel %d)\n" % (self.name, self.channel)

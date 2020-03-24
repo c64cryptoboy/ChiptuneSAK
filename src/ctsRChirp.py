@@ -237,11 +237,8 @@ class RChirpVoice:
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
 
-        program_changes = [ProgramEvent(e.start_time, e.msg.program) for e in chirp_track.other
-                           if e.msg.type == 'program_change']
-
         # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
-        for p in sorted(program_changes):
+        for p in sorted(chirp_track.program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
             tmp_rows[n_row].new_instrument = int(p.program)  # TODO: Map midi instruments into tracker instruments
 

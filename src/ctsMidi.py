@@ -66,6 +66,9 @@ def midi_track_to_chirp_track(chirp_song, midi_track):
             # Keep a dictionary of all notes that are currently on
             if msg.note not in current_notes_on:
                 current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
+        # Program changes get their own list
+        elif msg.type == 'program_change':
+            chirp_track.program_changes.append(ProgramEvent(current_time, int(msg.program)))
         elif msg.is_meta and msg.type == 'track_name':
             chirp_track.name = msg.name.strip()
         # Other messages of interest in the track are stored in a separate list as native MIDI messages
@@ -87,6 +90,7 @@ def midi_track_to_chirp_track(chirp_song, midi_track):
     # Now sort the notes by the time they turn on. They were inserted into the list in
     # the order they were turned off.  To do the sort, take advatage of automatic sorting of tuples.
     chirp_track.notes.sort(key=lambda n: (n.start_time, -n.note_num))
+    chirp_track.program_changes.sort(key=lambda n: n.start_time)
     return chirp_track
 
 
@@ -245,6 +249,9 @@ def chirp_track_to_midi_track(chirp_track):
         events.append(mido.Message('note_off',
                                    note=n.note_num, channel=chirp_track.channel,
                                    velocity=0, time=n.start_time + n.duration))
+    for t, program in chirp_track.program_changes:
+        events.append(mido.Message('program_change',
+                                   channel=chirp_track.channel, program=program, time=t))
     for t, msg in chirp_track.other:
         msg.time = t
         events.append(msg)
