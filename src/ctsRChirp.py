@@ -16,7 +16,7 @@ from ctsBase import *
 from ctsConstants import DEFAULT_MIDI_PPQN
 
 
-@dataclass
+@dataclass(order=True)
 class RChirpRow:
     """
     The basic RChirp row
@@ -29,8 +29,8 @@ class RChirpRow:
     jiffy_len: int = None         #: Jiffies to process this row (until next row)
     new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
-    def __gt__(self, rchirp_row):
-        return self.row_num > rchirp_row.row_num
+    # def __gt__(self, rchirp_row):
+    #     return self.row_num > rchirp_row.row_num
 
 
 class RChirpOrderList:
@@ -178,7 +178,32 @@ class RChirpVoice:
         for r in sorted(self.rows):
             if r >= row:
                 return r
-        return max(self.rows)
+        if len(self.rows) == 0:
+            return 0
+        else:
+            return self.get_last_row().row_num
+
+    def _fixup_rows(self):
+        """
+        Goes through the rows and adds missing elements
+        """
+        last = copy.deepcopy(self.rows[0])
+        for r in sorted(self.rows):
+            row = self.rows[r]
+            # Make sure the row has a row_num
+            if row.row_num is None:
+                row.row_num = r
+            # Jiffy number is derived from the last row
+            if row.jiffy_num is None:
+                row.jiffy_num = last.jiffy_num + (last.row_num - row.row_num) * last.jiffy_len
+            # If no jiffy length, use the one from the last row
+            if row.jiffy_len is None:
+                row.jiffy_len = last.jiffy_len
+            # If the row is a note off, set the note number
+            if row.gate is False:
+                row.note_num = last.note_num
+            last = copy.deepcopy(row)
+            self.rows[r] = row
 
     def import_chirp_track(self, chirp_track):
         """
@@ -195,27 +220,33 @@ class RChirpVoice:
         if chirp_track.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to generate RChirp.")
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq * 60) \
-                            / self.rchirp_song.update_freq
-        jiffies_per_row = chirp_track.qticks_notes / ticks_per_jiffy
+        ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
+                            / self.rchirp_song.update_freq)
+        jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         tmp_rows = collections.defaultdict(RChirpRow)
 
         # Insert the notes into the voice
         for n in chirp_track.notes:
-            n_row = n.start_time // ticks_per_row
+            n_row = int(n.start_time // ticks_per_row)  # Note: if tempo varies this gets complicated.
+            tmp_rows[n_row].row_num = n_row
+            tmp_rows[n_row].jiffy_num = n_row * jiffies_per_row
             tmp_rows[n_row].note_num = n.note_num
             tmp_rows[n_row].gate = True
             tmp_rows[n_row].jiffy_len = jiffies_per_row
-            e_row = (n.start_time + n.duration) / ticks_per_row
+            e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
 
-        program_changes = [ProgramEvent(e.start_time, e.program) for e in chirp_track.other
+        program_changes = [ProgramEvent(e.start_time, e.msg.program) for e in chirp_track.other
                            if e.msg.type == 'program_change']
 
+        # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
         for p in sorted(program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            tmp_rows[n_row].new_instrument = int(p.program)
+            tmp_rows[n_row].new_instrument = int(p.program)  # TODO: Map midi instruments into tracker instruments
+
+        self.rows = tmp_rows
+        self._fixup_rows()
 
 
 class RChirpSong:
