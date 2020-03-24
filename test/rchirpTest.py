@@ -3,8 +3,10 @@ import unittest
 import ctsBase
 import ctsMidi
 import ctsRChirp
+import ctsGoatTracker
 
 SONG_TEST_SONG = 'data/twinkle.mid'
+GT_TEST_SONG = 'data/twinkle.sng'
 
 class RChirpSongTestCase(unittest.TestCase):
     def setUp(self):
@@ -20,4 +22,10 @@ class RChirpSongTestCase(unittest.TestCase):
                 diff = chirp_notes - rchirp_notes
                 self.assertTrue(len(diff) == 0)
 
+    def test_gt(self):
+
+        # This is a temporary test that writes out a gt .sng file to listen to.
+        for v in self.rchirp_song.voices:
+            v.rows[0].new_instrument = 0
+        ctsGoatTracker.convert_rchirp_to_gt_file(GT_TEST_SONG, self.rchirp_song)
 
