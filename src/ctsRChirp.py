@@ -236,6 +236,7 @@ class RChirpVoice:
             tmp_rows[n_row].jiffy_len = jiffies_per_row
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
+        tmp_rows[0].new_jiffy_tempo = jiffies_per_row
 
         # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
         for p in sorted(chirp_track.program_changes):

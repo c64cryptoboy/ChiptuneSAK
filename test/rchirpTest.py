@@ -8,6 +8,7 @@ import ctsGoatTracker
 SONG_TEST_SONG = 'data/twinkle.mid'
 GT_TEST_SONG = 'data/twinkle.sng'
 
+
 class RChirpSongTestCase(unittest.TestCase):
     def setUp(self):
         self.test_song = ctsMidi.midi_to_chirp(SONG_TEST_SONG)
@@ -26,6 +27,6 @@ class RChirpSongTestCase(unittest.TestCase):
 
         # This is a temporary test that writes out a gt .sng file to listen to.
         for v in self.rchirp_song.voices:
-            v.rows[0].new_instrument = 0
+            v.rows[0].new_instrument = 1
         ctsGoatTracker.convert_rchirp_to_gt_file(GT_TEST_SONG, self.rchirp_song)
 

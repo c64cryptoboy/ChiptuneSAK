@@ -73,6 +73,10 @@ class ChirpTrack:
         :type mchirp_track: MChirpTrack
         """
         def _anneal_notes(notes):
+            """
+            This function anneals, or combines, notes that crossed measure boundaries.  It's a local
+            function that only exists here.
+            """
             ret_val = []
             current_note = None
             for n in notes:
