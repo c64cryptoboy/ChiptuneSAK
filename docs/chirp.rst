@@ -27,6 +27,14 @@ RChirp is Row-Based Chirp.  It is meant to represent row-based sequences, as wou
 
 RChirp is quantized, and has no single-channel polyphony.
 
+Chirp Workflows
+###############
+
+.. image:: chirpWorkflow.png
+   :width: 500px
+   :alt: chirp workflow diagram
+   :align: center
+
 **************************************
 Concepts in chirp music representation
 **************************************
