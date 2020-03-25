@@ -260,8 +260,3 @@ def num_to_str_name(num, upper=False):
         offset = ord('a')
     str_name = chr((num // 26)+offset) + chr((num % 26)+offset)
     return str_name
-
-
-# only for debugging
-if __name__ == '__main__':
-    pass

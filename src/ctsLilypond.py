@@ -267,23 +267,3 @@ def song_to_lilypond(mchirp_song, auto_sort=False):
     output.append('>>\n')
     return '\n'.join(output)
 
-
-if __name__ == '__main__':
-    import subprocess
-    in_filename = sys.argv[1]
-    song = ctsMidi.midi_to_chirp(in_filename)
-    song.remove_keyswitches()
-    estimated_q = song.estimate_quantization()
-    print(estimated_q)
-    song.quantize(*estimated_q)
-    song.remove_polyphony()
-    # ctsMidi.chirp_to_midi(song, '../test/data/tripletTest_q.mid')
-    m_song = MChirpSong(song)
-    out = song_to_lilypond(m_song, auto_sort=True)
-    os.chdir('../test/temp')
-    out_filename = os.path.splitext(os.path.split(in_filename)[1])[0] + '.ly'
-    with open(out_filename, 'w') as f:
-        f.write(out)
-    # TODO:  Put this functionality into a function and move all the files to a temp directory
-    #subprocess.call('lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 --png %s' % out_filename, shell=True)
-    subprocess.call('lilypond %s' % out_filename, shell=True)

@@ -92,19 +92,3 @@ class ChirpKey:
     def __str__(self):
         return self.key_name
 
-
-if __name__ == '__main__':
-    k = ChirpKey('B')
-    print(k)
-
-    k.transpose(2)
-    print(k)
-
-    k.transpose(2)
-    print(k)
-
-    k.minimize_accidentals()
-    print('Minimized accidentals: %s' % k)
-
-    k.transpose(-7)
-    print(k)

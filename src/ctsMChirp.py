@@ -342,4 +342,3 @@ class MChirpSong:
                 ks = [e for e in m.events if isinstance(e, KeySignatureEvent)]
                 current_key_signature = ks[-1] if len(ks) > 0 else current_key_signature
         return current_key_signature
-
