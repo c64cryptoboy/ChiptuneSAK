@@ -4,36 +4,36 @@ from ctsErrors import *
 KeySignature = collections.namedtuple('Key', ['name', 'offset', 'type', 'sharps', 'flats'])
 
 KEYS = {
-'C' : KeySignature('C', 0,    'major', (), ()),
-'G' : KeySignature('G', 7,    'major', ('F#'), ()),
-'D' : KeySignature('D', 2,    'major', ('F#', 'C#'), ()),
-'A' : KeySignature('A', 9,    'major', ('F#', 'C#', 'G#'), ()),
-'E' : KeySignature('E', 4,    'major', ('F#', 'C#', 'G#', 'D#'), ()),
-'B' : KeySignature('B', 11,   'major', ('F#', 'C#', 'G#', 'D#', 'A#'), ()),
-'F#': KeySignature('F#', 6,   'major', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#'), ()),
-'C#': KeySignature('C#', 1,   'major', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'), ()),
-'F' : KeySignature('F',  5,   'major', (), ('Bb')),
-'Bb': KeySignature('Bb', 10,  'major', (), ('Bb', 'Eb')),
-'Eb': KeySignature('Eb', 3,   'major', (), ('Bb', 'Eb', 'Ab')),
-'Ab': KeySignature('Ab', 8,   'major', (), ('Bb', 'Eb', 'Ab', 'Db')),
-'Db': KeySignature('Db', 1,   'major', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb')),
-'Gb': KeySignature('Gb', 6,   'major', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb')),
-'Cb': KeySignature('Cb', 11,  'major', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb')),
-'Am':  KeySignature('Am', 0,  'minor', (), ()),
-'Em':  KeySignature('Em', 7,  'minor', ('F#'), ()),
-'Bm' : KeySignature('Bm', 2,  'minor', ('F#', 'C#'), ()),
-'F#m': KeySignature('F#m', 9, 'minor', ('F#', 'C#', 'G#'), ()),
-'C#m': KeySignature('C#m', 4, 'minor', ('F#', 'C#', 'G#', 'D#'), ()),
-'G#m': KeySignature('G#m', 11,'minor', ('F#', 'C#', 'G#', 'D#', 'A#'), ()),
-'D#m': KeySignature('D#m', 6, 'minor', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#'), ()),
-'A#m': KeySignature('A#m', 1, 'minor', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'), ()),
-'Dm' : KeySignature('Dm', 5,  'minor', (), ('Bb')),
-'Gm' : KeySignature('Gm', 10, 'minor', (), ('Bb', 'Eb')),
-'Cm' : KeySignature('Cm', 3,  'minor', (), ('Bb', 'Eb', 'Ab')),
-'Fm' : KeySignature('Fm', 8,  'minor', (), ('Bb', 'Eb', 'Ab', 'Db')),
-'Bbm': KeySignature('Bbm', 1, 'minor', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb')),
-'Ebm': KeySignature('Ebm', 6, 'minor', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb')),
-'Abm': KeySignature('Abm', 6, 'minor', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb')),
+    'C':   KeySignature('C', 0,    'major', (), ()),
+    'G':   KeySignature('G', 7,    'major', ('F#'), ()),
+    'D':   KeySignature('D', 2,    'major', ('F#', 'C#'), ()),
+    'A':   KeySignature('A', 9,    'major', ('F#', 'C#', 'G#'), ()),
+    'E':   KeySignature('E', 4,    'major', ('F#', 'C#', 'G#', 'D#'), ()),
+    'B':   KeySignature('B', 11,   'major', ('F#', 'C#', 'G#', 'D#', 'A#'), ()),
+    'F#':  KeySignature('F#', 6,   'major', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#'), ()),
+    'C#':  KeySignature('C#', 1,   'major', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'), ()),
+    'F':   KeySignature('F',  5,   'major', (), ('Bb')),
+    'Bb':  KeySignature('Bb', 10,  'major', (), ('Bb', 'Eb')),
+    'Eb':  KeySignature('Eb', 3,   'major', (), ('Bb', 'Eb', 'Ab')),
+    'Ab':  KeySignature('Ab', 8,   'major', (), ('Bb', 'Eb', 'Ab', 'Db')),
+    'Db':  KeySignature('Db', 1,   'major', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb')),
+    'Gb':  KeySignature('Gb', 6,   'major', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb')),
+    'Cb':  KeySignature('Cb', 11,  'major', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb')),
+    'Am':  KeySignature('Am', 0,   'minor', (), ()),
+    'Em':  KeySignature('Em', 7,   'minor', ('F#'), ()),
+    'Bm':  KeySignature('Bm', 2,   'minor', ('F#', 'C#'), ()),
+    'F#m': KeySignature('F#m', 9,  'minor', ('F#', 'C#', 'G#'), ()),
+    'C#m': KeySignature('C#m', 4,  'minor', ('F#', 'C#', 'G#', 'D#'), ()),
+    'G#m': KeySignature('G#m', 11, 'minor', ('F#', 'C#', 'G#', 'D#', 'A#'), ()),
+    'D#m': KeySignature('D#m', 6,  'minor', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#'), ()),
+    'A#m': KeySignature('A#m', 1,  'minor', ('F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'), ()),
+    'Dm':  KeySignature('Dm', 5,   'minor', (), ('Bb')),
+    'Gm':  KeySignature('Gm', 10,  'minor', (), ('Bb', 'Eb')),
+    'Cm':  KeySignature('Cm', 3,   'minor', (), ('Bb', 'Eb', 'Ab')),
+    'Fm':  KeySignature('Fm', 8,   'minor', (), ('Bb', 'Eb', 'Ab', 'Db')),
+    'Bbm': KeySignature('Bbm', 1,  'minor', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb')),
+    'Ebm': KeySignature('Ebm', 6,  'minor', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb')),
+    'Abm': KeySignature('Abm', 6,  'minor', (), ('Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb')),
 }
 
 
@@ -75,7 +75,8 @@ class ChirpKey:
         return self
 
     def minimize_accidentals(self):
-        possible = [k for k in KEYS if KEYS[k].offset == self.key_signature.offset and KEYS[k].type == self.key_signature.type]
+        possible = [k for k in KEYS
+                    if KEYS[k].offset == self.key_signature.offset and KEYS[k].type == self.key_signature.type]
         if len(possible) > 1:
             possible.sort(key=lambda k: len(KEYS[k].sharps) + len(KEYS[k].flats))
         self.key_name = possible[0]

@@ -1,8 +1,5 @@
 import sys
 import mido
-from ctsErrors import *
-from ctsConstants import *
-from ctsKey import ChirpKey
 from ctsBase import *
 from ctsChirp import Note, ChirpTrack, ChirpSong
 
@@ -24,7 +21,8 @@ def midi_track_to_chirp_track(chirp_song, midi_track):
     """
     Parse a MIDI track into notes.
 
-        :param track:
+    :param midi_track:
+    :type midi_track:
     """
     chirp_track = ChirpTrack(chirp_song)
     # Find the first note_on event and use its channel to set the channel for this track.
@@ -108,7 +106,7 @@ def midi_to_chirp(filename):
     in_midi = mido.MidiFile(filename)
     chirp_song.metadata.ppq = in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
     # If MIDI file is not a Type 0 or 1 file, barf
-    if in_midi.type > 1:
+    if int(in_midi.type) > 1:
         print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (in_midi.type),
               file=sys.stderr)
         sys.exit(1)
@@ -116,7 +114,8 @@ def midi_to_chirp(filename):
     # Parse and process the MIDI file into tracks
     # if this is a MIDI type 0 file, then there will only be one track with all the data in it.
     if in_midi.type == 0:
-        in_midi = split_midi_zero_into_tracks(in_midi)  # Splits into tracks: track 0 (metadata), and tracks 1-16 are note data.
+        # Splits into tracks: track 0 (metadata), and tracks 1-16 are note data.
+        in_midi = split_midi_zero_into_tracks(in_midi)
 
     # Process meta commands in ALL tracks
     chirp_song.time_signature_changes = []
@@ -236,7 +235,6 @@ def chirp_track_to_midi_track(chirp_track):
     Convert  ChirpTrack to a midi track.
     """
     midiTrack = mido.MidiTrack()
-    events = []
     events = [mido.MetaMessage('track_name', name=chirp_track.name, time=0)]
     for n in chirp_track.notes:
         # For the sake of sorting, create the midi event with the absolute time (which will be

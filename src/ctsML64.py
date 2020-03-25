@@ -1,8 +1,5 @@
-import collections
-from fractions import Fraction
-from ctsErrors import *
 from ctsBase import *
-from ctsChirp import Note, ChirpTrack, ChirpSong
+from ctsChirp import Note
 import ctsMChirp
 import ctsMidi
 from ctsConstants import PITCHES
@@ -62,12 +59,16 @@ def ml64_sort_order(c):
         return (c.start_time, 5)
 
 
-def export_chirp_to_ml64(chirp_song, format='standard'):
+def export_chirp_to_ml64(chirp_song, ml64_format='standard'):
     """
     Export song to ML64 format, with a minimum number of notes, either with or without measure comments.
     With measure comments, the comments appear within the measure but are not guaranteed to be exactly at the
     beginning of the measure, as tied notes will take precedence.  In compact mode, the ML64 emitted is almost
     as small as possible.
+    :param chirp_song:
+    :type chirp_song:
+    :param ml64_format:
+    :type ml64_format: str
     """
     output = []
     if not chirp_song.is_quantized():
@@ -77,10 +78,9 @@ def export_chirp_to_ml64(chirp_song, format='standard'):
     if chirp_song.is_polyphonic():
         raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
 
-    mode = format[0].lower()
+    mode = ml64_format[0].lower()
 
     stats = collections.Counter()
-    ppq = chirp_song.metadata.ppq
     output.append('ML64(1.3)')
     output.append('song(1)')
     output.append('tempo(%d)' % chirp_song.metadata.qpm)
@@ -117,6 +117,8 @@ def export_mchirp_to_ml64(mchirp_song):
     """
     Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to
     appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.
+    :param mchirp_song:
+    :type mchirp_song: MChirpSong
     """
     output = []
     stats = collections.Counter()
@@ -144,6 +146,14 @@ def events_to_ml64(events, song, last_continue=False):
     """
     Takes a list of events (such as a measure or a track) and converts it to ML64 commands. If the previous
     list (such as the previous measure) had notes that were not completed, set last_continue.
+    :param events:
+    :type events:
+    :param song:
+    :type song:
+    :param last_continue:
+    :type last_continue:
+    :return:
+    :rtype: tuple
     """
     content = []
     stats = collections.Counter()
@@ -168,33 +178,3 @@ def events_to_ml64(events, song, last_continue=False):
             content.append('i(%d)' % e.program)
             stats['program'] += 1
     return (content, stats, last_continue)
-
-
-if __name__ == '__main__':
-    import sys
-
-    in_song = ctsMidi.midi_to_chirp(sys.argv[1])
-    print("Original:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
-    print("Original:", "quantized" if in_song.is_quantized() else 'non quantized')
-
-    in_song.remove_keyswitches()
-    # in_song.modulate(3, 2)
-    # in_song.quantize(in_song.metadata.ppq // 4,
-    #                  in_song.metadata.ppq // 4)  # Quantize to 16th time_series (assume no dotted 16ths allowed)
-    in_song.quantize_from_note_name('16')
-    print("Overall quantization = ", (in_song.qticks_notes, in_song.qticks_durations), "ticks")
-    print("(%s, %s)" % (
-        duration_to_note_name(in_song.qticks_notes, in_song.metadata.ppq),
-        duration_to_note_name(in_song.qticks_durations, in_song.metadata.ppq)))
-    # Note:  for ML64 ALWAYS remove_polyphony after quantization.
-    in_song.remove_polyphony()
-    print("After polyphony removal:", "polyphonic" if in_song.is_polyphonic() else 'non polyphonic')
-    print("After quantization:", "quantized" if in_song.is_quantized() else 'non quantized')
-
-    # print(sum(len(t.notes) for t in in_song.tracks))
-
-    m_song = ctsMChirp.MChirpSong(in_song)
-
-    print(export_mchirp_to_ml64(m_song))
-    print('------------------')
-    print('\n'.join('%9ss: %d' % (k, m_song.stats['ML64'][k]) for k in m_song.stats['ML64']))

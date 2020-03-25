@@ -1,6 +1,5 @@
 import testingPath
 import unittest
-import ctsBase
 import ctsMidi
 import ctsRChirp
 import ctsGoatTracker
@@ -29,4 +28,3 @@ class RChirpSongTestCase(unittest.TestCase):
         for v in self.rchirp_song.voices:
             v.rows[0].new_instrument = 1
         ctsGoatTracker.convert_rchirp_to_gt_file(self.rchirp_song, GT_TEST_SONG)
-

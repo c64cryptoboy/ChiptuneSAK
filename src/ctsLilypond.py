@@ -1,12 +1,9 @@
 import sys
 import os
 import copy
-from fractions import Fraction
 
-from ctsErrors import *
-from ctsKey import ChirpKey
 from ctsBase import *
-from ctsChirp import ChirpSong, Note
+from ctsChirp import Note
 from ctsMChirp import MChirpSong
 import ctsMidi
 
@@ -23,6 +20,7 @@ lp_durations = {
 current_pitch_set = lp_pitches['sharps']
 current_clef = 'treble'
 current_ottava = 0
+
 
 def lp_pitch_to_note_name(note_num, pitches, octave_offset=-3):
     """
@@ -60,6 +58,7 @@ def make_lp_notes(note_name, duration, ppq):
         retval = '~ '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
     return retval
 
+
 def clef(t_range, current_clef):
     avg = sum(t_range) / len(t_range)
     clef = current_clef
@@ -68,6 +67,7 @@ def clef(t_range, current_clef):
     elif current_clef == 'bass' and avg > 60:
         clef = 'treble'
     return clef
+
 
 def ottava(note_num, clef, current_ottava):
     ottava = current_ottava

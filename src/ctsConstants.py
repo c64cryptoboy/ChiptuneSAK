@@ -59,6 +59,7 @@ BASIC_LINE_MAX_C64 = 80    # 2 lines of 40 col
 BASIC_LINE_MAX_VIC20 = 88  # 4 lines of 22 col
 BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
 
+
 @dataclass()
 class ArchDescription:
     system_clock: int
@@ -74,6 +75,7 @@ class ArchDescription:
         self.frame_rate = self.system_clock / self.cycles_per_frame
         self.ms_per_frame = 1000. / self.frame_rate
         self.blank_lines = self.lines_per_frame - self.visible_lines
+
 
 ARCH = {
     # NTSC C64 and C128 (1Mhz mode)

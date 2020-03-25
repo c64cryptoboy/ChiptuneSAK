@@ -98,8 +98,6 @@ class Measure:
                 #  In the future some or all of these constraints may be relieved
                 #
                 while is_triplet(n, ppq):
-                    triplet_duration = 0
-                    triplet_start_time = self.start_time
                     m_start = n.start_time - self.start_time
                     beat_type = start_beat_type(m_start, ppq)
                     if beat_type % 3 == 0:  # This happens when the triplet does NOT start on a beat
@@ -111,7 +109,7 @@ class Measure:
                             raise ChiptuneSAKContentError("Undeciperable triplet in measure %d" % measure_number)
                         else:
                             triplet_duration = min(n.duration, remainder) * 3
-                    else:  # This happens when the triplet starts on the beat, so this note is the first note of the triplet
+                    else:  # This happens when the triplet starts on the beat this note is the first note of the triplet
                         if inote >= n_notes - 1:  # Was this note the last note?
                             raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
                         next_note = track.notes[inote + 1]  # Get the next note
@@ -121,7 +119,7 @@ class Measure:
                         elif not is_triplet(next_note, ppq):
                             raise ChiptuneSAKContentError("Incomplete triplet in measure %d" % measure_number)
                         else:
-                            triplet_duration = min(next_note.duration, n.duration) * 3  # Choose the shortest of the first 2
+                            triplet_duration = min(next_note.duration, n.duration) * 3  # Choose shortest of the first 2
 
                     if triplet_start_time + triplet_duration > end:  # Triplet would cross measure boundary
                         raise ChiptuneSAKContentError("Triplets past end of measure in measure %d" % measure_number)
@@ -130,7 +128,6 @@ class Measure:
                     gap = triplet_start_time - last_note_end
                     if gap > 0:
                         self.events.append(Rest(last_note_end, gap))
-                        last_note_end = triplet_start_time
 
                     # Now create the triplet and populate with notes
                     tp = Triplet(triplet_start_time, triplet_duration)
@@ -158,7 +155,6 @@ class Measure:
                     while tp_current_time < triplet_end_time:
                         tp.content.append(Rest(tp_current_time, triplet_note_duration))
                         tp_current_time += triplet_note_duration
-                        tp_last_time = tp_current_time
                     assert(sum(e.duration for e in tp.content) == tp.duration), "Triplet failure: notes do not add up"
                     self.events.append(tp)
                     last_note_end = triplet_end_time
@@ -176,7 +172,6 @@ class Measure:
                 # Continue normal note processing
                 if gap > 0:  # Is there a rest before the note starts?
                     self.events.append(Rest(last_note_end, gap))
-                    last_note_end = n.start_time
                 note_end = n.start_time + n.duration  # Time that this note ends
                 if note_end <= end:  # Note fits within the current measure
                     self.events.append(n)
@@ -194,7 +189,6 @@ class Measure:
         gap = end - last_note_end
         if gap > 0:  # Is there a rest needed at the end of the measure?
             self.events.append(Rest(last_note_end, gap))
-            last_note_end = end
 
         # Add program changes to measure:
         for pc in track.program_changes:
@@ -240,7 +234,10 @@ class Measure:
 
 class MChirpTrack:
     def __init__(self, mchirp_song, chirp_track=None):
-        self.mchirp_song = mchirp_song
+        self.measures = []  #: List of measures in the track
+        self.name = ''      #: Track name
+        self.channel = 0    #: Midi channel number
+        self.mchirp_song = mchirp_song  #: parent MChirpSong
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
@@ -252,7 +249,8 @@ class MChirpTrack:
         """
         Converts a track into measures, each of which is a sorted list of notes and other events
 
-        :param track: A ctsSongTrack that has been quantized and had polyphony removed
+        :param chirp_track: A ctsSongTrack that has been quantized and had polyphony removed
+        :type chirp_track: ChirpTrack
         :return:      List of Measure objects corresponding to the measures
         """
         if not chirp_track.is_quantized():
@@ -277,6 +275,8 @@ class MChirpTrack:
 class MChirpSong:
     def __init__(self, chirp_song=None):
         self.tracks = []
+        self.metadata = SongMetadata()  #: Metadata
+        self.other = []  #: Other MIDI events not used in measures
         self.stats = {}
         if chirp_song is not None:
             tmp = str(type(chirp_song))
@@ -288,7 +288,8 @@ class MChirpSong:
     def import_chirp_song(self, chirp_song):
         """
         Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
-        :param song: A ctsChirp.ChirpSong song
+        :param chirp_song: A ctsChirp.ChirpSong song
+        :type chirp_song: ChripSong
         """
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized before populating measures.")
@@ -341,5 +342,4 @@ class MChirpSong:
                 ks = [e for e in m.events if isinstance(e, KeySignatureEvent)]
                 current_key_signature = ks[-1] if len(ks) > 0 else current_key_signature
         return current_key_signature
-
 

@@ -19,10 +19,8 @@ Some notes on Commodore BASIC:
 - Lines numbers can range from 0 to 65520
 """
 
-import sys
-from ctsConstants import BASIC_START_C64, BASIC_START_C128, BASIC_LINE_MAX_C64, \
-    BASIC_LINE_MAX_VIC20, BASIC_LINE_MAX_C128
-from ctsBytesUtil import little_endian_bytes, hexdump
+from ctsConstants import BASIC_START_C64, BASIC_START_C128, BASIC_LINE_MAX_C64, BASIC_LINE_MAX_C128
+from ctsBytesUtil import little_endian_bytes
 from ctsErrors import ChiptuneSAKContentError
 
 rem_len = len('rem')
@@ -105,9 +103,9 @@ def ab2pb(ascii_byte):
         return ascii_byte - 32
 
     if ord('A') <= ascii_byte <= ord('Z'):
-        return ascii_byte + 32    
+        return ascii_byte + 32
 
-    # The rest are either correct (such as printable symbols <= ordinal 64, and a few above that, like
+        # The rest are either correct (such as printable symbols <= ordinal 64, and a few above that, like
     # '[', ']', and '^' (which turns into an up arrow)).  In many cases, there's no equivalent value to
     # translate to (without using unicode, as https://pypi.org/project/cbmcodecs/ does), so the chars
     # are just passed through unchanged.
@@ -118,14 +116,14 @@ def ab2pb(ascii_byte):
 # (Note: REM neuters quotes, and quotes neuters REM)
 def find_1st_rem_outside_quotes(line):
     in_quotes = False
-    for i in range(len(line)-rem_len):
+    for i in range(len(line) - rem_len):
         if line[i] == '"':
             in_quotes = not in_quotes
         if in_quotes:
             continue
-        if line[i:i+rem_len] == 'rem':
+        if line[i:i + rem_len] == 'rem':
             return i
-    return -1 # no rem outside of quotes
+    return -1  # no rem outside of quotes
 
 
 def ascii_to_prg_c128(ascii_prg):
@@ -141,7 +139,7 @@ def ascii_to_prg(ascii_prg, start_of_basic, max_line_len, basic_tokens):
 
     # prg file load addr, gets stripped off during load
     tokenized_lines = little_endian_bytes(mem_pointer)
-    
+
     lines = ascii_prg.strip().split("\n")
     for line in lines:
         if len(line) > max_line_len:
@@ -151,31 +149,29 @@ def ascii_to_prg(ascii_prg, start_of_basic, max_line_len, basic_tokens):
 
         i = 0
         while line[i].isdigit():
-            i+=1
+            i += 1
         line_num = int(line[:i])
         line = line[i:].lstrip()
 
         # Anything to the right of a REM doesn't get tokenized
         rem_split_loc = find_1st_rem_outside_quotes(line)
         if rem_split_loc != -1:
-            remBytes = ascii_to_petscii(bytearray(line[rem_split_loc+rem_len:], 'latin-1'))
-            line = line[:rem_split_loc+rem_len]
+            remBytes = ascii_to_petscii(bytearray(line[rem_split_loc + rem_len:], 'latin-1'))
+            line = line[:rem_split_loc + rem_len]
         else:
             remBytes = b''
 
         # divide up line into parts that do and don't get tokenized
         tokenized_line = bytearray()
         for i, part in enumerate(line.split('"')):
-            part = bytearray(part + '"', 'latin-1') # add the split char back in
-            if i%2 == 0: # if outside quotes, then tokenize
+            part = bytearray(part + '"', 'latin-1')  # add the split char back in
+            if i % 2 == 0:  # if outside quotes, then tokenize
                 # do substitutions on longer tokens first (e.g., PRINT# before PRINT)
-                for aToken in sorted(basic_tokens, key=len, reverse=True):    
+                for aToken in sorted(basic_tokens, key=len, reverse=True):
                     part = part.replace(aToken, basic_tokens[aToken])
             tokenized_line += ascii_to_petscii(part)
         tokenized_line = tokenized_line[:-1] + remBytes + b'\x00'
-        mem_pointer += len(tokenized_line)+4 # start of next basic line
+        mem_pointer += len(tokenized_line) + 4  # start of next basic line
         tokenized_lines += little_endian_bytes(mem_pointer) + little_endian_bytes(line_num) + tokenized_line
     tokenized_lines += b'\x00\x00'
     return tokenized_lines
-
-	

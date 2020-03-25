@@ -4,17 +4,11 @@
 # TODOs:
 # - 
 
-import sys
-import os
-import math
 import collections
-from fractions import Fraction
-import ctsMidi
 from ctsConstants import *
 from ctsBase import Rest, decompose_duration, note_name_to_pitch
 from ctsChirp import Note
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
-import ctsGenPrg
 
 WHOLE_NOTE = 1152
 
@@ -77,6 +71,7 @@ def basic_duration_to_name(duration, ppq):
     if f not in basic_durations:
         raise ChiptuneSAKValueError("Illegal note duration %s" % str(f))
     return basic_durations[f]
+
 
 def trim_note_lengths(song):
     """
@@ -199,7 +194,8 @@ def midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='N
             tmp_line = tmp_line.replace(" ", "")
             # If the line is still too long...
             if len(tmp_line) >= BASIC_LINE_MAX_C128:
-                raise ChiptuneSAKContentError("C128 BASIC line too long: Line %d length %d" % (current_line, len(tmp_line)))
+                raise ChiptuneSAKContentError(
+                    "C128 BASIC line too long: Line %d length %d" % (current_line, len(tmp_line)))
         result.append(tmp_line)
 
         current_line += 10
@@ -269,4 +265,3 @@ def num_to_str_name(num, upper=False):
 # only for debugging
 if __name__ == '__main__':
     pass
-

@@ -2,11 +2,13 @@
 Exceptions for chiptune-sak library
 '''
 
+
 class ChiptuneSAKException(Exception):
     """
     Generic base class for Chiptune-SAK exceptions
     """
     pass
+
 
 class ChiptuneSAKTypeError(Exception):
     """
@@ -14,11 +16,13 @@ class ChiptuneSAKTypeError(Exception):
     """
     pass
 
+
 class ChiptuneSAKValueError(ChiptuneSAKException, ValueError):
     """
     Value error
     """
     pass
+
 
 class ChiptuneSAKQuantizationError(ChiptuneSAKException):
     """
@@ -26,11 +30,13 @@ class ChiptuneSAKQuantizationError(ChiptuneSAKException):
     """
     pass
 
+
 class ChiptuneSAKPolyphonyError(ChiptuneSAKException):
     """
     Polyphony error
     """
     pass
+
 
 class ChiptuneSAKContentError(ChiptuneSAKException):
     """
