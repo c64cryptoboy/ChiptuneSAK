@@ -220,7 +220,7 @@ class RChirpVoice:
         if chirp_track.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to generate RChirp.")
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
+        ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
                             / self.rchirp_song.update_freq)
         jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
@@ -257,6 +257,7 @@ class RChirpSong:
         self.voice_groups = []                      #: voice groupings for lowering to multiple chips
         self.stats = {}                             #: TODO: ???
         self.metadata = None                        #: Song metadata (author, copyright, etc.)
+        self.other = None                           #: Other meta-events in song
 
         if chirp_song is None:
             self.metadata = SongMetadata()
@@ -340,8 +341,7 @@ class RChirpSong:
 
         channels_time_events = self.get_jiffy_indexed_voices()
 
-        csv_header = []
-        csv_header.append("jiffy")
+        csv_header = ["jiffy"]
         for i in range(self.voice_count()):
             csv_header.append("v%d row #" % (i+1))
             csv_header.append("v%d note" % (i+1))
@@ -353,8 +353,7 @@ class RChirpSong:
         for tick in range(max_tick+1):
             # if any channel has a entry at this tick, create a row for all channels
             if any(tick in channels_time_events[i] for i in range(self.voice_count())):
-                a_csv_row = []
-                a_csv_row.append("%d" % tick)
+                a_csv_row = ["%d" % tick]
                 for i in range(self.voice_count()):
                     if tick in channels_time_events[i]:
                         event = channels_time_events[i][tick]
@@ -438,4 +437,3 @@ class RChirpSong:
             song.tracks.append(track)
 
         return song
-

@@ -28,5 +28,5 @@ class RChirpSongTestCase(unittest.TestCase):
         # This is a temporary test that writes out a gt .sng file to listen to.
         for v in self.rchirp_song.voices:
             v.rows[0].new_instrument = 1
-        ctsGoatTracker.convert_rchirp_to_gt_file(GT_TEST_SONG, self.rchirp_song)
+        ctsGoatTracker.convert_rchirp_to_gt_file(self.rchirp_song, GT_TEST_SONG)
 

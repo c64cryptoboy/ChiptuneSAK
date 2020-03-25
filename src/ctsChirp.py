@@ -81,8 +81,8 @@ class ChirpTrack:
             current_note = None
             for n in notes:
                 if current_note is not None:
-                    assert(n.tied_to)
-                    assert(n.start_time == current_note.start_time + current_note.duration)
+                    assert n.tied_to, "Note should be tied to since last ntoe was tied from"
+                    assert n.start_time == current_note.start_time + current_note.duration, "Tied notes not adjacent"
                     current_note.duration += n.duration
                     if n.tied_from:
                         current_note.tied_from = n.tied_from
@@ -91,7 +91,7 @@ class ChirpTrack:
                         current_note = None
                 else:
                     if n.tied_from:
-                        continued_note = copy.copy(n)
+                        current_note = copy.copy(n)
                     else:
                         ret_val.append(n)
             return ret_val
@@ -185,7 +185,6 @@ class ChirpTrack:
                 n.duration = quantize_fn(n.duration, qticks)
                 self.notes[i] = n
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
-
 
     def merge_notes(self, max_merge_length_ticks):
         """
@@ -411,7 +410,18 @@ class ChirpSong:
     """
 
     def __init__(self, mchirp_song=None):
-        self.reset_all()
+        self.metadata = SongMetadata()
+        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
+        self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
+        self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
+        self.tracks = []  #: List of ChirpTrack tracks
+        self.other = []  #: List of all meta events that apply to the song as a whole
+        self.midi_meta_tracks = []  #: list of all the midi tracks that only contain metadata
+        self.midi_note_tracks = []  #: list of all the tracks that contain notes
+        self.time_signature_changes = []  #: List of time signature changes
+        self.key_signature_changes = []  #: List of key signature changes
+        self.tempo_changes = []  #: List of tempo changes
+        self.stats = {}  #: Statistics about the song
         if mchirp_song is not None:
             tmp = str(type(mchirp_song))
             if tmp != "<class 'ctsMChirp.MChirpSong'>":
@@ -424,7 +434,7 @@ class ChirpSong:
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960, which is commonly used.
+        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
@@ -443,6 +453,7 @@ class ChirpSong:
         :param mchirp_song:
         :type mchirp_song: MChirpSong
         """
+        self.reset_all()
         for t in mchirp_song.tracks:
             self.tracks.append(ChirpTrack(self, t))
         self.metadata = copy.deepcopy(mchirp_song.metadata)
@@ -450,7 +461,7 @@ class ChirpSong:
         # these are stored inside measures for ALL tracks so we only have to extract them from one.
         t = mchirp_song.tracks[0]
         self.time_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, TimeSignatureEvent)]
-        self.key_signature_changes= [e for m in t.measures for e in m.events if isinstance(e, KeySignatureEvent)]
+        self.key_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, KeySignatureEvent)]
         self.tempo_changes = [e for m in t.measures for e in m.events if isinstance(e, TempoEvent)]
         self.other = copy.deepcopy(mchirp_song.other)
 
@@ -495,7 +506,8 @@ class ChirpSong:
         for i, m in enumerate(self.tempo_changes):
             self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.qpm)
         for i, m in enumerate(self.time_signature_changes):
-            self.time_signature_changes[i] = TimeSignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
+            self.time_signature_changes[i] = \
+                TimeSignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
         for i, m in enumerate(self.key_signature_changes):
             self.key_signature_changes[i] = KeySignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.key)
         for i, m in enumerate(self.other):
@@ -556,7 +568,6 @@ class ChirpSong:
         old_track = self.tracks.pop(i_track)
         old_track.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         new_tracks = [ChirpTrack(self)]
-        n_tracks = 1
         current_notes = [Note(0, 0, 0, 0)]
         for note in old_track.notes:
             possible = _get_available_tracks(note, current_notes)
@@ -611,6 +622,8 @@ class ChirpSong:
         Transposes the song by semitones
         :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
         :type semitones: int
+        :param minimize_accidentals: True to choose key signature to minimize number of accidentals
+        :type minimize_accidentals: bool
         """
         # First, transpose key signatures
         for ik, ks in enumerate(self.key_signature_changes):
@@ -759,8 +772,8 @@ class ChirpSong:
         """
         Sets the key signature for the entire song.  Any existing key signatures and changes will be removed.
 
-        :param key: Key signature.  String such as 'A#' or 'Abm'
-        :type key: str
+        :param new_key: Key signature.  String such as 'A#' or 'Abm'
+        :type new_key: str
         """
         self.key_signature_changes = [KeySignatureEvent(0, ChirpKey(new_key))]
 
