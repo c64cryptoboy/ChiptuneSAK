@@ -2,10 +2,11 @@
 Utilities
 =========
 
-.. currentmodule:: ctsGoatTracker
 
 GoatTracker Functions
 ---------------------
+
+.. currentmodule:: ctsGoatTracker
 
 import_sng_file
 +++++++++++++++
@@ -37,3 +38,15 @@ GoatTracker Classes
 
 .. autoclass:: GTSong
     :members:
+
+
+C128 BASIC Play Functions
+-------------------------
+.. currentmodule:: ctsC128Basic
+
+.. autofunction:: midi_to_C128_BASIC
+
+.. currentmodule:: ctsGenPrg
+
+.. autofunction:: ascii_to_prg_c128
+

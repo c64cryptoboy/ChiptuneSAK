@@ -10,19 +10,21 @@ from ctsBase import Rest, decompose_duration, note_name_to_pitch
 from ctsChirp import Note
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
-WHOLE_NOTE = 1152
+WHOLE_NOTE = 1152 # counter found in the PLAY routines in the BASIC ROM
 
+# Note: waveform (WF) is a little different in the BASIC, it's
+#    0=triangle, 1=sawtooth, 2=pulse, 3=noise, and 4=ring modulation
 C128_INSTRUMENTS = {
-    'piano': 0,
-    'accordion': 1,
-    'calliope': 2,
-    'drum': 3,
-    'flute': 4,
-    'guitar': 5,
-    'harpsichord': 6,
-    'organ': 7,
-    'trumpet': 8,
-    'xylophone':  9,
+    'piano': 0,         # ADSR 0,9,0,0, WF 2, PW 1536
+    'accordion': 1,     # ADSR 12,0,12,0, WF 1 
+    'calliope': 2,      # ADSR 0,0,15,0, WF 0
+    'drum': 3,          # ADSR 0,5,5,0, WF 3
+    'flute': 4,         # ADSR 9,4,4,0, WF 0
+    'guitar': 5,        # ADSR 0,9,2,1, WF 1
+    'harpsichord': 6,   # ADSR 0,9,0,0, WF 2, PW 512
+    'organ': 7,         # ADSR 0,9,9,0, WF 2, PW 2048
+    'trumpet': 8,       # ADSR 8,9,4,1, WF 2, PW 512
+    'xylophone': 9,     # ADSR 0,9,0,0, WF 0
 }
 
 # These types are similar to standard notes and rests but with voice added
@@ -174,6 +176,17 @@ def measures_to_basic(mchirp_song):
 def midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='NTSC'):
     """
     Convert mchirp into a C128 Basic program that plays the song.
+
+    :param mchirp_song: An mchirp song
+    :type mchirp_song: MChirpSong
+    :param instrum: tuple of instrument string names, defaults to ('piano', 'piano', 'piano')
+    :type instrum: tuple, optional
+    :param arch: Commodore architecture, defaults to 'NTSC'
+    :type arch: str, optional
+    :raises ChiptuneSAKContentError: Various content errors
+    :raises ChiptuneSAKValueError: Various value errors
+    :return: Returns a binary BASIC file
+    :rtype: bytes
     """
     basic_strings = measures_to_basic(mchirp_song)
 

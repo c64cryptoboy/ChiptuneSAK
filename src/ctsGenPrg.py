@@ -127,10 +127,26 @@ def find_1st_rem_outside_quotes(line):
 
 
 def ascii_to_prg_c128(ascii_prg):
+    """
+    Convert an ascii C128 BASIC program into a tokenized binary BASIC file
+    
+    :param ascii_prg: C128 BASIC program in ascii
+    :type ascii_prg: str
+    :return: binary BASIC file suitable for running on a C128
+    :rtype: bytes
+    """
     return ascii_to_prg(ascii_prg, BASIC_START_C128, BASIC_LINE_MAX_C128, c128_tokens)
 
 
 def ascii_to_prg_c64(ascii_prg):
+    """
+    Convert an ascii C64 BASIC program into a tokenized binary BASIC file
+    
+    :param ascii_prg: C64 BASIC program in ascii
+    :type ascii_prg: str
+    :return: binary BASIC file suitable for running on a C64
+    :rtype: bytes
+    """    
     return ascii_to_prg(ascii_prg, BASIC_START_C64, BASIC_LINE_MAX_C64, c64_tokens)
 
 
