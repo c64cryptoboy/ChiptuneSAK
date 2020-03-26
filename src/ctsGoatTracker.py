@@ -187,23 +187,23 @@ def is_2sid(index_at_start_of_orderlist, sng_bytes):
     return has_3_channel_orderlist(file_index, sng_bytes) != -1
 
 
-def import_sng_file(gt_filename):
+def import_sng_file_to_parsed_gt(input_filename):
     """
     Parse a goat tracker '.sng' file and put it into a GTSong instance.
     Supports 1SID and 2SID (stereo) goattracker '.sng' files.
     
-    :param gt_filename: Filename for input .sng file
-    :type gt_filename: string
+    :param input_filename: Filename for input .sng file
+    :type input_filename: string
     :return: A GTSong instance holding the parsed goattracker file
     :rtype: GTSong
     """
-    with open(gt_filename, 'rb') as f:
+    with open(input_filename, 'rb') as f:
         sng_bytes = f.read()
 
-    return import_sng_binary(sng_bytes)
+    return import_sng_binary_to_parsed_gt(sng_bytes)
 
 
-def import_sng_binary(sng_bytes):
+def import_sng_binary_to_parsed_gt(sng_bytes):
     """
     Parse a goat tracker '.sng' binary and put it into a GTSong instance.
     Supports 1SID and 2SID (stereo) goattracker '.sng' file binaries.
@@ -627,7 +627,7 @@ class GtChannelState:
             raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
 
 
-def convert_parsed_gt_to_rchirp(sng_data, subtune_num=0):
+def import_parsed_gt_to_rchirp(sng_data, subtune_num=0):
     """
     Convert the parsed goattracker file into rchirp 
     

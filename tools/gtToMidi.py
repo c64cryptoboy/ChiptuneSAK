@@ -22,7 +22,7 @@ def main():
         parser.error(r'Expecting input filename that ends in ".sng"')
     if not path.exists(args.sng_in_file):
         parser.error('Cannot find "%s"' % args.sng_in_file)
-    sng_data = ctsGoatTracker.import_sng_file(args.sng_in_file)
+    sng_data = ctsGoatTracker.import_sng_file_to_parsed_gt(args.sng_in_file)
 
     if args.subtune_number < 1:
         parser.error('subtune_number must be >= 1')
@@ -30,7 +30,7 @@ def main():
     if args.subtune_number > max_subtune_number:
         parser.error('subtune_number must be <= %d' % max_subtune_number)
      
-    rchirp_song = ctsGoatTracker.convert_parsed_gt_to_rchirp(sng_data, args.subtune_number - 1)
+    rchirp_song = ctsGoatTracker.import_parsed_gt_to_rchirp(sng_data, args.subtune_number - 1)
 
     """
     cvs_filename = '%s.csv' % (args.sng_in_file.split('.')[0])

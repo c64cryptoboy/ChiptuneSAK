@@ -9,20 +9,20 @@ GoatTracker Functions
 
 .. currentmodule:: ctsGoatTracker
 
-import_sng_file
+import_sng_file_to_parsed_gt
 +++++++++++++++
 
-.. autofunction:: import_sng_file
+.. autofunction:: import_sng_file_to_parsed_gt
 
-import_sng_binary
+import_sng_binary_to_parsed_gt
 +++++++++++++++++
 
-.. autofunction:: import_sng_binary
+.. autofunction:: import_sng_binary_to_parsed_gt
 
-convert_parsed_gt_to_rchirp
+import_parsed_gt_to_rchirp
 +++++++++++++++++++++++++++
 
-.. autofunction:: convert_parsed_gt_to_rchirp
+.. autofunction:: import_parsed_gt_to_rchirp
 
 export_rchirp_to_gt
 +++++++++++++++++++++++++
