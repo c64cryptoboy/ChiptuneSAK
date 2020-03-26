@@ -67,7 +67,7 @@ def main():
     desired_q = desired_ppq * DURATION_STR[args.minnote]
 
     print("Reading file %s" % args.midi_out_file)
-    song = ctsMidi.midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
     notes = [n for t in song.tracks for n in t.notes]
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
     f_max = f_min * 8.
@@ -115,7 +115,7 @@ def main():
     song.metadata.ppq = desired_ppq
     # song.quantize_from_note_name('16')
     print("Writing file %s" % args.midi_out_file)
-    ctsMidi.chirp_to_midi(song, args.midi_out_file)
+    ctsMidi.export_chirp_to_midi(song, args.midi_out_file)
 
     print("\ndone")
 

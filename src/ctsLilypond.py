@@ -8,7 +8,7 @@ from ctsMChirp import MChirpSong
 import ctsMidi
 
 # TODO:
-# - There's possibly redundant code between clip_to_lilypond and song_to_lilypond
+# - There's possibly redundant code between export_clip_to_lilypond and export_song_to_lilypond
 
 lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
               'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
@@ -180,7 +180,7 @@ def measure_to_lilypond(measure, ppq):
     return measure_contents
 
 
-def clip_to_lilypond(mchirp_song, measures):
+def export_clip_to_lilypond(mchirp_song, measures):
     """
     Turns a set of measures into Lilypond suitable for use as a clip.  All the music will be on a single line
     with no margins.  It is recommended that this clip be turned into Lilypond using the command line:
@@ -228,7 +228,7 @@ def clip_to_lilypond(mchirp_song, measures):
     return '\n'.join(output)
 
 
-def song_to_lilypond(mchirp_song, auto_sort=False):
+def export_song_to_lilypond(mchirp_song, auto_sort=False):
     """
     Converts a song to Lilypond format. Optimized for multi-page PDF output of the song.
     Recommended lilypond command:

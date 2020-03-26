@@ -10,7 +10,7 @@ from ctsChirp import ChirpSong, ChirpTrack
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp('data/bach_invention_4.mid')
+        self.test_song = ctsMidi.import_midi_to_chirp('data/bach_invention_4.mid')
         self.test_song.quantize_from_note_name('16')
         self.test_song.remove_polyphony()
         self.test_mchirp_song = MChirpSong(self.test_song)
@@ -42,7 +42,7 @@ class SongTestCase(unittest.TestCase):
         chirp_song = ChirpSong(self.test_mchirp_song)
 
         # Used to generate output midi file to check that they sound the same.
-        # ctsMidi.chirp_to_midi(chirp_song, 'MChirp_test.mid')
+        # ctsMidi.export_chirp_to_midi(chirp_song, 'MChirp_test.mid')
 
         self.assertEqual(len(chirp_song.tracks), len(self.test_song.tracks))
         self.assertEqual([t.name for t in chirp_song.tracks], [t.name for t in self.test_song.tracks])
@@ -53,7 +53,7 @@ class SongTestCase(unittest.TestCase):
         self.assertEqual(test_total_notes, chirp_total_notes)
 
     def test_triplets(self):
-        test_song = ctsMidi.midi_to_chirp('data/tripletTest.mid')
+        test_song = ctsMidi.import_midi_to_chirp('data/tripletTest.mid')
         estimated_q = test_song.estimate_quantization()
         test_song.quantize(*estimated_q)
         test_song.remove_polyphony()
@@ -64,4 +64,4 @@ class SongTestCase(unittest.TestCase):
         self.assertEqual(total_triplets, 21)
 
         #tmp_song = ChirpSong(test_mchirp)
-        #ctsMidi.chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')
+        #ctsMidi.export_chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')

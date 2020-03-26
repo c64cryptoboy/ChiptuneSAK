@@ -81,7 +81,8 @@ class ChirpTrack:
             current_note = None
             for n in notes:
                 if current_note is not None:
-                    assert n.tied_to, "Note should be tied to since last ntoe was tied from"
+                    assert current_note.tied_from, "Continued note should be tied from: %s" % current_note
+                    assert n.tied_to, "Note should be tied to since last note was tied from: %s" % n
                     assert n.start_time == current_note.start_time + current_note.duration, "Tied notes not adjacent"
                     current_note.duration += n.duration
                     if n.tied_from:
@@ -94,6 +95,7 @@ class ChirpTrack:
                         current_note = copy.copy(n)
                     else:
                         ret_val.append(n)
+                        current_note = None
             return ret_val
 
         self.name = mchirp_track.name

@@ -78,13 +78,13 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         self.assertTrue(self.found_expected_note_content(self.rchirp_song))
 
         # Uncomment out to make the gt sng file for playback:
-        # ctsGoatTracker.convert_rchirp_to_gt_file('test/data/deleteme.sng', \
+        # ctsGoatTracker.export_rchirp_to_gt('test/data/deleteme.sng', \
         #    rchirp_song, end_with_repeat = False, compress = False, pattern_len = 126)
 
     # Test that .sng file to rchirp to .sng binary to rchirp has expected note content
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
-        gt_binary = ctsGoatTracker.convert_rchirp_to_gt_binary(self.rchirp_song,
-                                                               end_with_repeat=False, compress=False, pattern_len=126)
+        gt_binary = ctsGoatTracker.export_rchirp_to_gt_binary(self.rchirp_song,
+                                                              end_with_repeat=False, compress=False, pattern_len=126)
         parsed_gt_2 = ctsGoatTracker.import_sng_binary(gt_binary)
         rchirp_song_2 = ctsGoatTracker.convert_parsed_gt_to_rchirp(parsed_gt_2, 0)
 

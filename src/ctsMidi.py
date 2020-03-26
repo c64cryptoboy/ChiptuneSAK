@@ -92,18 +92,18 @@ def midi_track_to_chirp_track(chirp_song, midi_track):
     return chirp_track
 
 
-def midi_to_chirp(filename):
+def import_midi_to_chirp(input_filename):
     """
     Open and import a MIDI file into the ChirpSong representation. THis method can handle MIDI type 0 and 1 files.
 
-        :param filename: MIDI filename.
+        :param input_filename: MIDI filename.
     """
     chirp_song = ChirpSong()
     # Clear everything
     chirp_song.reset_all()
 
     # Open the midi file using the Python mido library
-    in_midi = mido.MidiFile(filename)
+    in_midi = mido.MidiFile(input_filename)
     chirp_song.metadata.ppq = in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
     # If MIDI file is not a Type 0 or 1 file, barf
     if int(in_midi.type) > 1:
@@ -303,7 +303,7 @@ def meta_to_midi_track(chirp_song):
     return midi_track
 
 
-def chirp_to_midi(chirp_song, outfile):
+def export_chirp_to_midi(chirp_song, output_filename):
     """
     Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
     is tied to many midi concepts and uses midid messages explicitly for some content.
@@ -312,4 +312,4 @@ def chirp_to_midi(chirp_song, outfile):
     out_midi_file.tracks.append(meta_to_midi_track(chirp_song))
     for t in chirp_song.tracks:
         out_midi_file.tracks.append(chirp_track_to_midi_track(t))
-    out_midi_file.save(outfile)
+    out_midi_file.save(output_filename)

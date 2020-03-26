@@ -23,7 +23,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
     
-    song = ctsMidi.midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
     
     # generic approach (when quantizable):
     # song.estimate_quantization()

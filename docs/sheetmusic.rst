@@ -15,15 +15,15 @@ Examples
 Example 1:  Midi to Lilypond Sheet Music clip
 *********************************************
 
-You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *ctsLilypond.clip_to_lilypond()* to create the Lilypond source for the clip.
+You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *ctsLilypond.export_clip_to_lilypond()* to create the Lilypond source for the clip.
 
 ::    
 
-    song = ctsMidi.midi_to_chirp('bach_invention_4.mid')
+    song = ctsMidi.import_midi_to_chirp('bach_invention_4.mid')
     song.quantize_from_note_name('16')  # Quantize to sixteenth notes
     song.remove_polyphony()
     m_song = ctsMChirp.MChirpSong(song)
-    ly = ctsLilypond.clip_to_lilypond(m_song, m_song.tracks[0].measures[3:8])
+    ly = ctsLilypond.export_clip_to_lilypond(m_song, m_song.tracks[0].measures[3:8])
     with open('bach.ly', 'w') as f:
         f.write(ly)
           

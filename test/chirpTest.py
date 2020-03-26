@@ -11,7 +11,7 @@ TRACK_TEST_SONG = 'data/BWV_799.mid'
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp(SONG_TEST_SONG)
+        self.test_song = ctsMidi.import_midi_to_chirp(SONG_TEST_SONG)
 
     def test_notes(self):
         """
@@ -89,7 +89,7 @@ class SongTestCase(unittest.TestCase):
 
 class TrackTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.midi_to_chirp(TRACK_TEST_SONG)
+        self.test_song = ctsMidi.import_midi_to_chirp(TRACK_TEST_SONG)
 
     def test_quantization(self):
         for i in range(len(self.test_song.tracks)):

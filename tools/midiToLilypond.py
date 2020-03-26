@@ -5,7 +5,7 @@ from os import path
 import toolsPath
 import ctsMidi
 from ctsMChirp import MChirpSong
-from ctsLilypond import song_to_lilypond
+from ctsLilypond import export_song_to_lilypond
 
 """
 Prints a MIDI file to Lilypond sheet music.
@@ -26,7 +26,7 @@ def main():
         autosort = True
 
     print("Reading %s" % args.midi_in_file)
-    chirp_song = ctsMidi.midi_to_chirp(args.midi_in_file)
+    chirp_song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
     print("Removing control notes...")
     chirp_song.remove_keyswitches()
     print("Quantizing...")
@@ -39,7 +39,7 @@ def main():
     print('Converting to measures...')
     mchirp_song = MChirpSong(chirp_song)
     print('Generating lilypond...')
-    ly_out = song_to_lilypond(mchirp_song, auto_sort=autosort)
+    ly_out = export_song_to_lilypond(mchirp_song, auto_sort=autosort)
     ly_name = args.midi_in_file.replace('.mid', '.ly')
     print("Writing lilypond to %s" % ly_name)
     with open(ly_name, 'w') as f:

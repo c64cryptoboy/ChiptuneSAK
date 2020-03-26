@@ -44,7 +44,7 @@ def main():
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
     # chirp_song.time_signature_changes.insert(0, ctsSong.TimeSignature(0, 3, 4))
     
-    ctsMidi.chirp_to_midi(chirp_song, args.midi_out_file)
+    ctsMidi.export_chirp_to_midi(chirp_song, args.midi_out_file)
 
     print("\ndone")
     

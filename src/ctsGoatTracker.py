@@ -780,7 +780,7 @@ def convert_parsed_gt_to_rchirp(sng_data, subtune_num=0):
                 break
 
     # Before returning the rchirp song, might as well make use of our test cases here
-    rchirp_song.integrity_check()  # Will throw assertions if there's problems
+    rchirp_song.integrity_check()  # Will throw assertions if there are any problems
     assert rchirp_song.is_contiguous(), "Error: rchirp representation should not be sparse"
 
     return rchirp_song
@@ -818,12 +818,12 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def convert_rchirp_to_gt_file(rchirp_song, filename, end_with_repeat=False, compress=False, pattern_len=126):
+def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, compress=False, pattern_len=126):
     """
     Convert rchirp into a goattracker .sng file.
     
-    :param filename: Output path and filename
-    :type filename: string
+    :param output_filename: Output path and filename
+    :type output_filename: string
     :param rchirp_song: The rchirp song to convert
     :type rchirp_song: RChirpSong
     :param end_with_repeat: True if song should repeat when finished, defaults to False
@@ -833,12 +833,12 @@ def convert_rchirp_to_gt_file(rchirp_song, filename, end_with_repeat=False, comp
     :param pattern_len: Maximum pattern lengths to create
     :type pattern_len: int, optional
     """
-    binary = convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat, compress, pattern_len)
-    with open(filename, 'wb') as out_file:
+    binary = export_rchirp_to_gt_binary(rchirp_song, end_with_repeat, compress, pattern_len)
+    with open(output_filename, 'wb') as out_file:
         out_file.write(binary)
 
 
-def convert_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, compress=False, pattern_len=126):
+def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, compress=False, pattern_len=126):
     """
     Convert rchirp into a goattracker .sng binary.
     

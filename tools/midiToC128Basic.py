@@ -31,11 +31,11 @@ def main():
 
     # midi -> mchirp
     # TODO: Remove hardcoding in this process
-    song = ctsMidi.midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
     song.remove_keyswitches(8)
     song.quantize_from_note_name('16')
     # TODO: transformMidi.py -q 32 -k Am ..\test\BWV_799.mid ..\test\BWV_799_q.mid
-    #song.quantize_from_note_name('32')    
+    # song.quantize_from_note_name('32')
     song.remove_polyphony()
     ctsC128Basic.trim_note_lengths(song)
     if len(song.metadata.name) == 0:
@@ -51,7 +51,7 @@ def main():
         arch = args.arch
 
     # mchirp -> basic (ascii)
-    program = ctsC128Basic.midi_to_C128_BASIC(mchirp_song, instruments, arch)
+    program = ctsC128Basic.export_midi_to_C128_BASIC(mchirp_song, instruments, arch)
 
     # if -t flag not used, look at output filename extension
     if args.type is None:
@@ -63,7 +63,7 @@ def main():
     if args.type == 'bas':
         with open(args.basic_out_file, 'w') as out_file:
             out_file.write(program)
-    else: # 'prg'
+    else:  # 'prg'
         with open(args.basic_out_file, 'wb') as out_file:
             tokenized_program = ctsGenPrg.ascii_to_prg_c128(program)
             out_file.write(tokenized_program)

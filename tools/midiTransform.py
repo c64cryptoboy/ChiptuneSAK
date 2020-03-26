@@ -34,7 +34,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
 
     # Print stats
     print('%d notes' % (sum(len(t.notes) for t in song.tracks)))
@@ -122,7 +122,7 @@ def main():
     # print('\n'.join("%24s %s" % (s, str(v)) for s, v in song.stats.items()))
 
     print("Exporting to MIDI...")
-    ctsMidi.chirp_to_midi(song, args.midi_out_file)
+    ctsMidi.export_chirp_to_midi(song, args.midi_out_file)
 
 
 if __name__ == '__main__':

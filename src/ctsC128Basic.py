@@ -10,7 +10,7 @@ from ctsBase import Rest, decompose_duration, note_name_to_pitch
 from ctsChirp import Note
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
-WHOLE_NOTE = 1152 # counter found in the PLAY routines in the BASIC ROM
+WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
 
 # Note: waveform (WF) is a little different in the BASIC, it's
 #    0=triangle, 1=sawtooth, 2=pulse, 3=noise, and 4=ring modulation
@@ -173,7 +173,7 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-def midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='NTSC'):
+def export_midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='NTSC'):
     """
     Convert mchirp into a C128 Basic program that plays the song.
 

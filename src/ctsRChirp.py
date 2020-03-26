@@ -38,7 +38,7 @@ class RChirpOrderList:
     An order list made up of a set of patterns
     """
     def __init__(self, patterns=None):
-        self.patterns = []  #: List of RChirpPattern instances
+        self.patterns = []  #: List of patterns and offsets
 
         if patterns is not None:
             self.patterns = copy.copy(patterns)
@@ -48,13 +48,17 @@ class RChirpPattern:
     """
     A pattern made up of a set of rows
     """
-    def __init__(self, rows):
-        self.rows = []                  #: List of RChirpRow instances
-        row_times = sorted(rows)        #: sorted list of row frame numbers
-        base_time = min(sorted(rows))   #: the smallest row frame number
+    def __init__(self, rows=None):
+        self.rows = []                  #: List of RChirpRow instances (NOT a dictionary!m No gaps allowed!)
 
-        for update in row_times:
-            self.rows[update - base_time] = copy.copy(rows[update])
+        if rows is not None:
+            base_row = min(r.row_num for r in rows)      # Starting row frame number
+            base_jiffy = min(r.jiffy_num for r in rows)  # Starting jiffy number
+            for r in rows:
+                r.row_number -= base_row
+                r.jiffy_num -= base_jiffy
+                self.rows.append(r)
+        self.rows.sort()  # Sort the rows by the row number member.
 
 
 class RChirpVoice:
@@ -64,7 +68,7 @@ class RChirpVoice:
     def __init__(self, rchirp_song, chirp_track=None):
         self.rchirp_song = rchirp_song                  #: The song this voice belongs to
         self.rows = collections.defaultdict(RChirpRow)  #: dictionary: K:row num, V: RChirpRow instance
-
+        self.order_list = RChirpOrderList()
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
@@ -252,9 +256,10 @@ class RChirpSong:
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
     def __init__(self, chirp_song=None):
-        self.update_freq = ARCH['NTSC'].frame_rate  #: update frequency expressed as frame rate
-        self.voices = []                            #: list of RChirpVoice instances
-        self.voice_groups = []                      #: voice groupings for lowering to multiple chips
+        self.update_freq = ARCH['NTSC'].frame_rate  #: Update frequency expressed as frame rate
+        self.voices = []                            #: List of RChirpVoice instances
+        self.voice_groups = []                      #: Voice groupings for lowering to multiple chips
+        self.patterns = []                          #: Patterns to be shared among the voices
         self.stats = {}                             #: TODO: ???
         self.metadata = None                        #: Song metadata (author, copyright, etc.)
         self.other = None                           #: Other meta-events in song
