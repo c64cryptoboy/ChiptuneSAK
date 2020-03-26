@@ -117,7 +117,7 @@ def export_mchirp_to_ml64(mchirp_song):
     """
     Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to
     appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.
-    :param mchirp_song:
+    :param mchirp_song: An mchirp song
     :type mchirp_song: MChirpSong
     """
     output = []

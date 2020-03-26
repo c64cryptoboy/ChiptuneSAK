@@ -7,6 +7,9 @@ from ctsChirp import Note
 from ctsMChirp import MChirpSong
 import ctsMidi
 
+# TODO:
+# - There's possibly redundant code between clip_to_lilypond and song_to_lilypond
+
 lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
               'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
               }
@@ -184,9 +187,12 @@ def clip_to_lilypond(mchirp_song, measures):
 
     lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha --png <filename>
 
-        :param mchirp_song:     ChirpSong from which the measures were taken.
-        :param measures: List of measures.
-        :return:         Lilypond text.
+    :param mchirp_song: ChirpSong from which the measures were taken.
+    :type mchirp_song: MChirpSong
+    :param measures: List of measures.
+    :type measures: list
+    :return: Lilypond markup ascii
+    :rtype: str
     """
     global current_pitch_set, current_clef, current_ottava
     global current_key_signature, current_time_signature
@@ -229,9 +235,14 @@ def song_to_lilypond(mchirp_song, auto_sort=False):
 
     lilypond <filename>
 
-        :param mchirp_song:    ChirpSong to convert to Lilypond format
-        :return:        Lilypond text for the song.
+    :param mchirp_song: ChirpSong to convert to Lilypond format
+    :type mchirp_song: MChirpSong
+    :param auto_sort: Autosort the tracks, defaults to False
+    :type auto_sort: bool, optional
+    :return: Lilypond markup ascii
+    :rtype: str
     """
+
     global current_pitch_set, current_clef, current_ottava
     global current_key_signature, current_time_signature
     # Set these to the default, so that they will change on the first measure.
