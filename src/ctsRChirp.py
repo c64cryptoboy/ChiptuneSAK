@@ -29,8 +29,15 @@ class RChirpRow:
     jiffy_len: int = None         #: Jiffies to process this row (until next row)
     new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
-    # def __gt__(self, rchirp_row):
-    #     return self.row_num > rchirp_row.row_num
+    def gt_match(self, other, xf):
+        note_match = True
+        if self.note_num is not None:
+            note_match = self.note_num + xf.transpose == other.note_num
+        elif other.note_num is not None:
+            return False
+        return note_match \
+               and self.new_instrument == other.new_instrument \
+               and self.gate == other.gate
 
 
 class RChirpOrderList:
@@ -136,6 +143,24 @@ class RChirpVoice:
         if len(self.rows) == 0:
             return 0
         return max(self.rows) + 1
+
+    def get_filled_rows(self):
+        ret_rows = []
+        max_row = max(self.rows[rn].row_num for rn in self.rows)
+        assert 0 in self.rows, "No row 0 in rows"  # Row 0 should exist!
+        last_row = self.rows[0]
+        for rn in range(max_row + 1):  # Because max_row needs to be included!
+            if rn in self.rows:
+                last_row = copy.copy(self.rows[rn])
+                ret_rows.append(last_row)
+            else:
+                tmp_row = RChirpRow()
+                tmp_row.row_num = rn
+                tmp_row.jiffy_num = last_row.jiffy_num + last_row.jiffy_len
+                tmp_row.jiffy_len = last_row.jiffy_len
+                last_row = tmp_row
+                ret_rows.append(last_row)
+        return ret_rows
 
     def is_contiguous(self):
         """
