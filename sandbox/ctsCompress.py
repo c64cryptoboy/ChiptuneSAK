@@ -89,7 +89,7 @@ def find_best_compression(song, repeats, pattern_definition_overhead, pattern_de
             tmp = []
             current_track, current_start = r.track, r.start
         tmp.append(r)
-    pattern_starts.append(tmp) # We now have a list of lists of patterns starting at each note position.
+    pattern_starts.append(tmp)  # We now have a list of lists of patterns starting at each note position.
     for p in pattern_starts:
         current_track = p[0].track
         current_start = p[0].start

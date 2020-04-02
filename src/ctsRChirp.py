@@ -30,14 +30,16 @@ class RChirpRow:
     new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
     def gt_match(self, other, xf):
-        note_match = True
-        if self.note_num is not None:
+        if self.note_num is None and other.note_num is None:
+            note_match = True
+        elif self.note_num is None or other.note_num is None:
+            note_match = False
+        else:
             note_match = self.note_num + xf.transpose == other.note_num
-        elif other.note_num is not None:
-            return False
         return note_match \
                and self.new_instrument == other.new_instrument \
-               and self.gate == other.gate
+               and self.gate == other.gate \
+               and self.new_jiffy_tempo == other.new_jiffy_tempo
 
 
 class RChirpOrderList:
@@ -45,7 +47,7 @@ class RChirpOrderList:
     An order list made up of a set of patterns
     """
     def __init__(self, patterns=None):
-        self.patterns = []  #: List of patterns and offsets
+        self.patterns = []  #: List of patterns and transpositions
 
         if patterns is not None:
             self.patterns = copy.copy(patterns)
@@ -62,10 +64,13 @@ class RChirpPattern:
             base_row = min(r.row_num for r in rows)      # Starting row frame number
             base_jiffy = min(r.jiffy_num for r in rows)  # Starting jiffy number
             for r in rows:
-                r.row_number -= base_row
+                r.row_num -= base_row
                 r.jiffy_num -= base_jiffy
                 self.rows.append(r)
         self.rows.sort()  # Sort the rows by the row number member.
+
+    def __str__(self):
+        return '\n  '.join(str(r) for r in self.rows)
 
 
 class RChirpVoice:
@@ -75,7 +80,7 @@ class RChirpVoice:
     def __init__(self, rchirp_song, chirp_track=None):
         self.rchirp_song = rchirp_song                  #: The song this voice belongs to
         self.rows = collections.defaultdict(RChirpRow)  #: dictionary: K:row num, V: RChirpRow instance
-        self.order_list = RChirpOrderList()
+        self.orderlist = RChirpOrderList()
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
