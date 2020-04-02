@@ -17,6 +17,12 @@ class ChiptuneSAKTypeError(Exception):
     pass
 
 
+class ChiptuneSAKIOError(Exception):
+    """
+    IO error
+    """
+    pass
+
 class ChiptuneSAKValueError(ChiptuneSAKException, ValueError):
     """
     Value error

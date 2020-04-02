@@ -20,8 +20,7 @@ from ctsConstants import ARCH, C0_MIDI_NUM
 import ctsChirp
 import ctsRChirp
 import ctsMidi
-from ctsErrors import ChiptuneSAKException, ChiptuneSAKQuantizationError, \
-    ChiptuneSAKContentError, ChiptuneSAKPolyphonyError
+from ctsErrors import *
 
 # Generalized instrument handling when creating new goattracker binaries is not supported yet.
 # So this constant is used so it's easy to look through the code to see where hardcoded assumptions
@@ -185,6 +184,33 @@ def is_2sid(index_at_start_of_orderlist, sng_bytes):
     file_index = has_3_channel_orderlist(index_at_start_of_orderlist, sng_bytes)
     assert file_index != -1, "Error: could not parse orderlist"
     return has_3_channel_orderlist(file_index, sng_bytes) != -1
+
+
+def import_sng_file_to_rchirp(input_filename, subtune_number = 0):
+    """
+    Convert a GoatTracker sng file (normal or stereo) into an RChirp song instance
+
+    :param input_filename: sng input path and filename
+    :type input_filename: str
+    :param subtune_number: the subtune number, defaults to 0
+    :type subtune_number: int, optional
+    :return: An RChirp song for the subtune
+    :rtype: RChirpSong
+    """
+    if not input_filename.lower().endswith(r'.sng'):
+        raise ChiptuneSAKIOError(r'Error: Expecting input filename that ends in ".sng"')
+    if not path.exists(input_filename):
+        raise ChiptuneSAKIOError('Cannot find "%s"' % input_filename)
+
+    sng_data = import_sng_file_to_parsed_gt(input_filename)
+    max_subtune_number = len(sng_data.subtune_orderlists) - 1
+
+    if subtune_number < 0:
+        raise ChiptuneSAKValueError('subtune_number must be >= 0')
+    if subtune_number > max_subtune_number:
+        raise ChiptuneSAKValueError('subtune_number must be <= %d' % max_subtune_number)
+
+    return import_parsed_gt_to_rchirp(sng_data, subtune_number)
 
 
 def import_sng_file_to_parsed_gt(input_filename):
