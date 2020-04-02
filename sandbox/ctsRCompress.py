@@ -204,7 +204,7 @@ def compress_gt(rchirp_song):
             r0 = best_repeats[0]
             rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
             pattern_index = len(rchirp_song.patterns) - 1
-            used, order = apply_pattern(rchirp_song, pattern_index, best_repeats, used, order)
+            used, order = apply_pattern(pattern_index, best_repeats, used, order)
             repeats = trim_repeats(repeats, used)
         while any(not u for u in used):
             it += 1
@@ -226,7 +226,6 @@ def compress_gt(rchirp_song):
 
 
 if __name__ == '__main__':
-    parsed_gt = ctsGoatTracker.import_sng_file_to_parsed_gt('../test/data/gtTestData.sng')
-    rchirp_song = ctsGoatTracker.import_parsed_gt_to_rchirp(parsed_gt, 0)
+    rchirp_song = ctsGoatTracker.import_sng_file_to_rchirp('../test/data/gtTestData.sng')
 
     compress_gt(rchirp_song)
