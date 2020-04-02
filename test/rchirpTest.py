@@ -1,8 +1,10 @@
 import testingPath
+import copy
 import unittest
 import ctsMidi
 import ctsRChirp
 import ctsGoatTracker
+import ctsRCompress
 
 SONG_TEST_SONG = 'data/twinkle.mid'
 GT_TEST_SONG = 'data/twinkle.sng'
@@ -28,3 +30,16 @@ class RChirpSongTestCase(unittest.TestCase):
         for v in self.rchirp_song.voices:
             v.rows[0].new_instrument = 1
         ctsGoatTracker.export_rchirp_to_gt(self.rchirp_song, GT_TEST_SONG)
+
+    def test_compression(self):
+        rchirp_song = copy.deepcopy(self.rchirp_song)
+
+        #ctsRCompress.compress_gt(rchirp_song)
+
+        test_song = ctsMidi.import_midi_to_chirp('../test/data/betrayal_q.mid')
+        test_song.quantize_from_note_name('8')
+        test_song.remove_polyphony()
+        rchirp_song = ctsRChirp.RChirpSong(test_song)
+
+        ctsRCompress.compress_gt(rchirp_song)
+

@@ -14,6 +14,7 @@ import math
 import ctsChirp
 from ctsBase import *
 from ctsConstants import DEFAULT_MIDI_PPQN
+from dataclasses import dataclass
 
 
 @dataclass(order=True)
@@ -223,6 +224,8 @@ class RChirpVoice:
         """
         last = copy.deepcopy(self.rows[0])
         for r in sorted(self.rows):
+            if last.row_num is None:
+                print("Row number is None!")
             row = self.rows[r]
             # Make sure the row has a row_num
             if row.row_num is None:
@@ -260,6 +263,11 @@ class RChirpVoice:
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         tmp_rows = collections.defaultdict(RChirpRow)
 
+        # Always insert a row number 0
+        tmp_rows[0] = RChirpRow(row_num=0,
+                                jiffy_num=0,
+                                jiffy_len=jiffies_per_row,
+                                new_jiffy_tempo=jiffies_per_row)
         # Insert the notes into the voice
         for n in chirp_track.notes:
             n_row = int(n.start_time // ticks_per_row)  # Note: if tempo varies this gets complicated.
@@ -270,7 +278,7 @@ class RChirpVoice:
             tmp_rows[n_row].jiffy_len = jiffies_per_row
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
-        tmp_rows[0].new_jiffy_tempo = jiffies_per_row
+
 
         # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
         for p in sorted(chirp_track.program_changes):

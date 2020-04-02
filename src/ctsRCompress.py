@@ -1,5 +1,3 @@
-import sandboxPath
-import collections
 from dataclasses import dataclass
 import copy
 from ctsBase import *
@@ -72,7 +70,7 @@ def find_all_repeats(rows, min_length=4):
             pattern_length = 1
             ib = base_position + 1
             it = trial_position + 1
-            while rows[ib].gt_match(rows[it], xf):
+            while it < n_rows and rows[ib].gt_match(rows[it], xf):
                 ib += 1
                 it += 1
                 pattern_length += 1
@@ -83,7 +81,7 @@ def find_all_repeats(rows, min_length=4):
     return repeats
 
 
-def find_best_repeats(repeats, used):
+def find_best_repeats(repeats, used, objective_function):
     """
     Find the best repeats to use for a set of repeats.  Right now, the metric is coverage, with the
     shortest repeats that give a certain coverage used, but the metric can easily be changed.
@@ -97,7 +95,7 @@ def find_best_repeats(repeats, used):
     """
     lengths = list(sorted(set(r.length for r in repeats), reverse=True))
     available_rows = used.count(False)
-    max_coverage = 0
+    max_objective = 0
     best_repeats = []
     for length in lengths:
         # Find a set of non-overlapping repeats for length
@@ -112,9 +110,9 @@ def find_best_repeats(repeats, used):
                 if r.repeat_start >= last_used:
                     available_repeats.append(r)
                     last_used = r.repeat_start + r.length
-            coverage = (len(available_repeats) + 1) * r0.length / available_rows
-            if coverage >= max_coverage:
-                max_coverage = coverage
+            objective = objective_function(available_repeats, available_rows)
+            if objective > max_objective:
+                max_objective = objective
                 best_repeats = copy.deepcopy(available_repeats)
     return best_repeats
 
@@ -180,6 +178,12 @@ def trim_repeats(repeats, used):
     return ret_repeats
 
 
+PATTERN_DEF_OVERHEAD = 2
+PATTERN_COST_NOTE = 1
+PATTERN_PLAY_COST = 1
+AVG_PATTERN_LENGTH = 10
+
+
 def compress_gt(rchirp_song):
     """
     Compresses an RChirp song for Goattracker
@@ -188,6 +192,14 @@ def compress_gt(rchirp_song):
     :return: rchirp_song with compression information added
     :rtype: ctsRChirp.RChirpSong
     """
+    def objective(repeats, possible):
+        r0 = repeats[0]
+        nloops = len(repeats) + 1
+        return r0.length * nloops / possible
+        saved_notes = len(repeats) * r0.length
+        cost_notes = PATTERN_DEF_OVERHEAD + nloops * PATTERN_PLAY_COST
+        return saved_notes - cost_notes
+
     last_pattern_count = 0
     for iv, v in enumerate(rchirp_song.voices):
         filled_rows = v.get_filled_rows()
@@ -195,17 +207,21 @@ def compress_gt(rchirp_song):
         n_rows = len(filled_rows)
         print("\nVoice %d: %d rows" % (iv, n_rows))
         order = {}
-        repeats = find_all_repeats(filled_rows)
+        repeats = find_all_repeats(filled_rows, min_length=4)
         it = 0
         while len(repeats) > 0:
             it += 1
             print('iteration %d:' % it, len(repeats), 'repeats left;', used.count(False), 'rows left')
-            best_repeats = find_best_repeats(repeats, used)
-            r0 = best_repeats[0]
-            rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
-            pattern_index = len(rchirp_song.patterns) - 1
-            used, order = apply_pattern(pattern_index, best_repeats, used, order)
-            repeats = trim_repeats(repeats, used)
+            best_repeats = find_best_repeats(repeats, used, objective)
+            if len(best_repeats) > 0:
+                r0 = best_repeats[0]
+                rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
+                pattern_index = len(rchirp_song.patterns) - 1
+                used, order = apply_pattern(pattern_index, best_repeats, used, order)
+                print('created pattern of %d rows, used %d times' % (best_repeats[0].length, len(best_repeats) + 1))
+                repeats = trim_repeats(repeats, used)
+            else:
+                repeats = []
         while any(not u for u in used):
             it += 1
             print('cleanup:', len(repeats), 'repeats left;', used.count(False), 'rows left')
@@ -218,6 +234,7 @@ def compress_gt(rchirp_song):
             order[gap_start] = (pattern_index, 0)
             for ig in range(gap_start, gap_end):
                 used[ig] = True
+            print('created pattern of %d rows, used once' % (gap_end - gap_start))
         assert all(used), "Not all rows were used!"
         print('voice complete. %d patterns created' % (len(rchirp_song.patterns) - last_pattern_count))
         last_pattern_count = len(rchirp_song.patterns)
