@@ -879,8 +879,15 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
     retval = []
     if transposition == prev_transposition:
         transposition = None
-    elif -15 <= transposition < 14:
+    elif -15 <= transposition <= 14:
         transposition += 0xF0  # offset for transpositions
+    else:
+        while transposition > 14:
+            transposition -= 12
+        while transposition < -15:
+            transposition += 12
+        assert(-15 <= transposition <= 14), "bad transposition = %d" % transposition
+        transposition += 0xF0
     while repeats >= 16:
         if transposition is not None:
             retval.append(transposition)  # If no transposition, leave it off.
@@ -895,6 +902,8 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
         if repeats != 1:
             retval.append(repeats - 1 + 0xD0)  # Repeat N times
         retval.append(pattern_number)
+
+    assert all(x >= 0 for x in retval) and all(x < 256 for x in retval), "bytes value error in %s" % repr(retval)
     return retval
 
 
@@ -933,8 +942,8 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                 if r.gate:
                     gt_row.note_data = midi_note_to_pattern_note(r.note_num)
                     if r.new_instrument is not None:
-                        gt_row.inst_num = r.new_instrument
-                        prev_instrument = r.new_instrument
+                        gt_row.inst_num = 1
+                        prev_instrument = 1
                     else:
                         gt_row.inst_num = prev_instrument
                 elif r.gate is False:  # if ending a note ('false' check because tri-state)
