@@ -844,7 +844,7 @@ def instrument_to_bytes(instrument):
     return result
 
 
-def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, compress=False, pattern_len=126):
+def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, pattern_len=126):
     """
     Convert rchirp into a goattracker .sng file.
     
@@ -854,12 +854,10 @@ def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, com
     :type rchirp_song: RChirpSong
     :param end_with_repeat: True if song should repeat when finished, defaults to False
     :type end_with_repeat: bool, optional
-    :param compress: True if to create reusable patterns, defaults to False
-    :type compress: bool, optional
     :param pattern_len: Maximum pattern lengths to create
     :type pattern_len: int, optional
     """
-    binary = export_rchirp_to_gt_binary(rchirp_song, end_with_repeat, compress, pattern_len)
+    binary = export_rchirp_to_gt_binary(rchirp_song, end_with_repeat, pattern_len)
     with open(output_filename, 'wb') as out_file:
         out_file.write(binary)
 
@@ -896,7 +894,7 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
         if transposition is not None:
             retval.append(transposition)
         if repeats != 1:
-            retval.append(repeats + 0xD0)  # Repeat N times
+            retval.append(repeats - 1 + 0xD0)  # Repeat N times
     return retval
 
 
@@ -908,8 +906,6 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     :type rchirp_song: RChirpSong
     :param end_with_repeat: True if song should repeat when finished, defaults to False
     :type end_with_repeat: bool, optional
-    :param compress: True if to create reusable patterns, defaults to False
-    :type compress: bool, optional
     :param pattern_len: Maximum pattern lengths to create
     :type pattern_len: int, optional
     """

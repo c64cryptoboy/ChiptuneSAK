@@ -161,7 +161,8 @@ def make_orderlist(order):
         if p_num == last.pattern_num and trans == last.transposition:
             last.repeats += 1
         else:
-            orderlist.append(last)
+            if last.repeats > 0:
+                orderlist.append(last)
             last = RChirpOrderEntry(p_num, trans, 1)
     orderlist.append(last)
     return orderlist
@@ -368,3 +369,5 @@ if __name__ == '__main__':
         print('Voice %d:' % (i + 1))
         print('%d orderlist entries' % len(v.orderlist))
         print('%d estimated orderlist rows' % get_gt_orderlist_length(v.orderlist))
+
+    ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/test_out.sng')
