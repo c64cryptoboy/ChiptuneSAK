@@ -40,7 +40,14 @@ class RChirpRow:
         return note_match \
                and self.new_instrument == other.new_instrument \
                and self.gate == other.gate \
-               and self.new_jiffy_tempo == other.new_jiffy_tempo
+               and self.jiffy_len == other.jiffy_len
+
+
+@dataclass
+class RChirpOrderEntry:
+    pattern_number: int = None
+    transposition: int = 0
+    repeat: int = 1
 
 
 class RChirpOrderList:
@@ -301,6 +308,7 @@ class RChirpSong:
         self.stats = {}                             #: TODO: ???
         self.metadata = None                        #: Song metadata (author, copyright, etc.)
         self.other = None                           #: Other meta-events in song
+        self.compressed = False                     #: Has song been through compression algorithm?
 
         if chirp_song is None:
             self.metadata = SongMetadata()
@@ -338,6 +346,7 @@ class RChirpSong:
             self.voices.append(RChirpVoice(self, t))
         self.metadata = copy.deepcopy(chirp_song.metadata)
         self.other = copy.deepcopy(chirp_song.other)
+        self.compressed = False
 
     def is_contiguous(self):
         """
