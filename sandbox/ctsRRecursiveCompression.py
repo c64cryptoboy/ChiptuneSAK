@@ -1,5 +1,13 @@
 # Recursive Compression experiments (in progress...)
 
+# TODO:
+# Redo data structures:  Changes the piece/pieces data structures
+# instead, have pieces (which are just ranges that don't belong to patterns)
+# and patterns.  A pattern is start_index, end_index, and list of matching start indexes
+# this reduces complexity, and we won't be skipping over none UNPROCESSED types for no
+# reason.  Both patterns and pieces will be on the stack, and new versions passed down
+# to each recursive instance.
+
 
 # piece types (since python enums are slow, using constants instead)
 UNPROCESSED = 0  # pieces of data not belonging to patterns
@@ -103,16 +111,28 @@ class Pieces():
 # Further suppose A can be matched 3 times, and B 3 times, but if either is matched
 # first, the other can only achieve 2 matches.
 # Recursively explore...
-# 1) no matches of length n (goes on to n-1 with an open playing field)
+# 1) no matches of length n (goes on to n-1)
 # 2) 3 'A' matches of length n (goes on to n-1 with that n-length pattern in place)
 # 2) 3 'B' matches of length n (goes on to n-1 with that n-length pattern in place)
 # 4) 3 'A' matches and 2 'B' matches (goes on to n-1 with those two n-length patterns in place)
 # 5) 3 'B' matches and 2 'A' matches (goes on to n-1 with those two n-length patterns in place)
 
+# if 4) wasn't different than 5), I'd do a breadth-first instead, and dedup the two for less
+# searching.  But since they're different, I'll do depth-first.
+
 # Recursive search
 def find_pats_with_size_le_n(n, pieces):
     if n <= MIN_PAT_LEN:
+        # TODO:
+        # no recursive search done until we reach bottom (perhaps shortcuts could be added
+        # later, reasoning about how many pieces of what lengths are left)
+        # CODE: Add patterns with % coverage to a heap-based (recursively-global) solutions set.
+        # can optionally not add to solution set if worse than what's already there
         return
+
+
+
+
 
     size_n_seen_list = set()
     # Find candidate patterns of length n (from left to right) in each piece to
@@ -139,12 +159,15 @@ def find_pats_with_size_le_n(n, pieces):
                 if cp_matches is not None: # if this is a recursive path worth exploring
                     new_pieces = make_new_pieces(cp_matches, n, pieces)
 
-                    exit("early exit")
+                    #exit("early exit")
 
-                    # TODO: Get some recursion going here
+                    find_pats_with_size_le_n(n-1, new_pieces)
 
-    # propegate up state that has minimum unpatterned chars remaining
-    return # blah
+        # this allows a worse larger match not to block a smaller better match
+        # TODO: clone may not be necessary here (since nothing changed), I'll have to think about that
+        find_pats_with_size_le_n(n-1, pieces.clone())
+
+    return
 
 
 def make_new_pieces(cp_matches, n, pieces):
