@@ -140,7 +140,7 @@ def get_chars(in_bytes, trim_nulls=True):
     return result
 
 
-def get_order_list(an_index, file_bytes):
+def get_orderlist(an_index, file_bytes):
     # Note: orderlist length byte is length -1
     #    e.g. orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
     #    length-1 (06), followed by 7 bytes
@@ -279,7 +279,7 @@ def import_sng_binary_to_parsed_gt(sng_bytes):
     for subtune_index in range(header.num_subtunes):
         channels_order_list = []
         for i in range(a_song.num_channels):
-            channel_order_list = get_order_list(file_index, sng_bytes)
+            channel_order_list = get_orderlist(file_index, sng_bytes)
             file_index += len(channel_order_list) + 1
             channels_order_list.append(channel_order_list)
         subtune_orderlists.append(channels_order_list)
@@ -864,7 +864,43 @@ def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, com
         out_file.write(binary)
 
 
-def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, compress=False, pattern_len=126):
+def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposition):
+    """
+    Makes an orderlist entry from a pattern number, a transposition, and a number of repeats
+    :param pattern_number: pattern number
+    :type pattern_number: int
+    :param transposition: transposition in semitones
+    :type transposition: int
+    :param repeats: Number of times to repeat
+    :type repeats: int
+    :param prev_transposition: Previous transposition
+    :type prev_transposition: int
+    :return: list of orderlist command
+    :rtype: list of int
+    """
+    retval = []
+    if transposition == prev_transposition:
+        transposition = None
+    elif -15 <= transposition < 14:
+        transposition += 0xF0  # offset for transpositions
+    while repeats >= 16:
+        retval.append(pattern_number)
+        if transposition is not None:
+            retval.append(transposition)  # If no transposition, leave it off.
+            transposition = None  # only do it once
+        retval.append(0xD0)  # Repeat 16 times
+        repeats -= 16
+    # Now do the last one (usually this is the only one called)
+    if repeats > 0:
+        retval.append(pattern_number)
+        if transposition is not None:
+            retval.append(transposition)
+        if repeats != 1:
+            retval.append(repeats + 0xD0)  # Repeat N times
+    return retval
+
+
+def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=126):
     """
     Convert rchirp into a goattracker .sng binary.
     
@@ -889,13 +925,45 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, compress=Fals
 
     patterns = []  # can be shared across all channels
     orderlists = [[] for _ in range(num_channels)]  # Note: this is bad: [[]] * len(tracknums)
+    too_many_patterns = False
 
-    if compress:
-        exit("Sorry, generating patterns to support reuse has not been implemented yet")
+    if rchirp_song.compressed:
+        # Convert the patterns to goattracker patterns
+        prev_instrument = 1  # TODO: Default instrument 1, this must be generalized
+        for p in rchirp_song.patterns:
+            pattern = bytearray()  # initialize new empty pattern
+            for r in p.rows:
+                gt_row = GtPatternRow()
+                if r.gate:
+                    gt_row.note_data = midi_note_to_pattern_note(r.note_num)
+                    if r.new_instrument is not None:
+                        gt_row.inst_num = r.new_instrument
+                        prev_instrument = r.new_instrument
+                    else:
+                        gt_row.inst_num = prev_instrument
+                elif r.gate is False:  # if ending a note ('false' check because tri-state)
+                    gt_row.note_data = GT_KEY_OFF
+                if r.new_jiffy_tempo is not None:
+                    gt_row.command = GT_TEMPO_CHNG_CMD
+                    # insert local channel tempo change
+                    gt_row.command_data = r.new_jiffy_tempo + 0x80
+                pattern += row_to_bytes(gt_row)
+            pattern += row_to_bytes(PATTERN_END_ROW)  # finish with end row marker
+            patterns.append(pattern)
+
+        for i, v in enumerate(rchirp_song.voices):
+            prev_transposition = 0  # Sart out each voice with default transposition of 0
+            for entry in v.orderlist:
+                ol_entry = make_orderlist_entry(entry.pattern_num,
+                                                entry.transposition,
+                                                entry.repeats,
+                                                prev_transposition)
+                orderlists[i].extend(ol_entry)
+                prev_transposition = entry.transposition
+
     else:
         # Convert the sparse representation into separate patterns (of bytes)
         curr_pattern_num = 0
-        too_many_patterns = False
 
         # for each channel, get its rows, and create patterns, adding them to the 
         # channel's orderlist

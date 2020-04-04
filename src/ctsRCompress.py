@@ -8,11 +8,7 @@ import ctsGoatTracker
 from ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 
 STARTING_MIN_LENGTH = 16
-PATTERN_MAX = 128
-PATTERN_DEF_OVERHEAD = 2
-PATTERN_COST_NOTE = 1
-PATTERN_PLAY_COST = 1
-AVG_PATTERN_LENGTH = 10
+PATTERN_LENGTH_MAX = 126
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
@@ -83,7 +79,7 @@ def find_all_repeats(rows, min_length=4):
                 pattern_length += 1
                 if ib >= trial_position:
                     break
-            if min_length <= pattern_length <= PATTERN_MAX:
+            if min_length <= pattern_length <= PATTERN_LENGTH_MAX:
                 repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
     return repeats
 
@@ -162,12 +158,12 @@ def make_orderlist(order):
     last = RChirpOrderEntry(0, 0, 0)
     for index in sorted(order):
         p_num, trans = order[index]
-        if p_num == last.pattern_number and trans == last.transposition:
-            last.repeat += 1
+        if p_num == last.pattern_num and trans == last.transposition:
+            last.repeats += 1
         else:
-            orderlist.patterns.append(last)
+            orderlist.append(last)
             last = RChirpOrderEntry(p_num, trans, 1)
-    orderlist.patterns.append(last)
+    orderlist.append(last)
     return orderlist
 
 
@@ -270,7 +266,7 @@ def find_repeats_starting_at(index, rows, used, min_length=4):
         it = trial_position + 1
         il = 1
         while it < n_rows \
-                and il < PATTERN_MAX \
+                and il < PATTERN_LENGTH_MAX \
                 and rows[ib].gt_match(rows[it], xf) \
                 and not used[ib] \
                 and not used[it]:
@@ -280,7 +276,7 @@ def find_repeats_starting_at(index, rows, used, min_length=4):
             pattern_length += 1
             if ib >= trial_position:
                 break
-        if min_length <= pattern_length <= PATTERN_MAX:
+        if min_length <= pattern_length <= PATTERN_LENGTH_MAX:
             repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
     return repeats
 
@@ -348,9 +344,27 @@ def compress_gt_2(rchirp_song):
     return rchirp_song
 
 
+def get_gt_orderlist_length(orderlist):
+    retval = 2  # Start and end commands
+    prev_transposition = 0
+    for entry in orderlist:
+        if entry.transposition != prev_transposition:
+            retval += 1
+            prev_transposition = entry.transposition
+        if entry.repeats > 16:
+            retval += (2 * (entry.repeats // 16))  # 2 bytes for each repeat
+        if entry.repeats % 16 != 0:
+            retval += 1
+            if entry.repeats % 16 != 1:
+                retval += 1
+    return retval
+
 if __name__ == '__main__':
     rchirp_song = ctsGoatTracker.import_sng_file_to_rchirp('../test/data/gtTestData.sng')
 
     rchirp_song = compress_gt_2(rchirp_song)
 
-    print(', '.join(str(len(v.orderlist.patterns)) for v in rchirp_song.voices))
+    for i, v in enumerate(rchirp_song.voices):
+        print('Voice %d:' % (i + 1))
+        print('%d orderlist entries' % len(v.orderlist))
+        print('%d estimated orderlist rows' % get_gt_orderlist_length(v.orderlist))

@@ -45,21 +45,16 @@ class RChirpRow:
 
 @dataclass
 class RChirpOrderEntry:
-    pattern_number: int = None
+    pattern_num: int = None
     transposition: int = 0
-    repeat: int = 1
+    repeats: int = 1
 
 
-class RChirpOrderList:
+class RChirpOrderList(list):
     """
     An order list made up of a set of patterns
     """
-    def __init__(self, patterns=None):
-        self.patterns = []  #: List of patterns and transpositions
-
-        if patterns is not None:
-            self.patterns = copy.copy(patterns)
-
+    pass
 
 class RChirpPattern:
     """
