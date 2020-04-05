@@ -997,8 +997,8 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
 
                         # only bother to populate instrument if there's a new note
                         if rchirp_row.new_instrument is not None:
-                            gt_row.inst_num = rchirp_row.new_instrument
-                            prev_instrument = rchirp_row.new_instrument
+                            gt_row.inst_num = 1  # rchirp_row.new_instrument
+                            prev_instrument = 1  # rchirp_row.new_instrument
                         else:
                             # unlike SID-Wizard which only asserts instrument changes (on any row),
                             # goattracker asserts the current instrument with every note

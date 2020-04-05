@@ -9,6 +9,7 @@ from ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 
 STARTING_MIN_LENGTH = 16
 PATTERN_LENGTH_MAX = 126
+GT_PATTERN_OVERHEAD = 4
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
@@ -70,21 +71,69 @@ def find_all_repeats(rows, min_length=4):
     n_rows = len(rows)
     repeats = []
     for base_position in range(n_rows - min_length):
+        last_end = base_position
         for trial_position in range(base_position, n_rows - min_length):
+            if trial_position < last_end:
+                continue
             xf = get_xform(rows[base_position], rows[trial_position])
+            if xf is None:
+                continue
             if xf.transpose > 14 or xf.transpose < -15:
+                continue
+            if xf.transpose != 0:
                 continue
             pattern_length = 1
             ib = base_position + 1
             it = trial_position + 1
-            while it < n_rows and rows[ib].gt_match(rows[it], xf):
+            il = 1
+            while it < n_rows \
+                    and il < PATTERN_LENGTH_MAX\
+                    and rows[ib].gt_match(rows[it], xf):
                 ib += 1
                 it += 1
+                il += 1
                 pattern_length += 1
                 if ib >= trial_position:
                     break
             if min_length <= pattern_length <= PATTERN_LENGTH_MAX:
                 repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
+                last_end = trial_position + pattern_length
+    return repeats
+
+
+def find_repeats_starting_at(index, rows, used, min_length=4):
+    n_rows = len(rows)
+    repeats = []
+    base_position = index
+    last_end = base_position
+    for trial_position in range(base_position, n_rows - min_length):
+        if used[trial_position] or trial_position < last_end:
+            continue
+        xf = get_xform(rows[base_position], rows[trial_position])
+        if xf is None:
+            continue
+        if xf.transpose > 14 or xf.transpose < -15:
+            continue
+        if xf.transpose != 0:
+            continue
+        pattern_length = 1
+        ib = base_position + 1
+        it = trial_position + 1
+        il = 1
+        while it < n_rows \
+                and il < PATTERN_LENGTH_MAX \
+                and rows[ib].gt_match(rows[it], xf) \
+                and not used[ib] \
+                and not used[it]:
+            ib += 1
+            it += 1
+            il += 1
+            pattern_length += 1
+            if ib >= trial_position:
+                break
+        if min_length <= pattern_length <= PATTERN_LENGTH_MAX:
+            repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
+            last_end = trial_position + pattern_length
     return repeats
 
 
@@ -146,9 +195,9 @@ def apply_pattern(pattern_index, repeats, used, order):
         used[r.start_row:r.start_row + r.length] = [True for i in range(r.length)]
         used[r.repeat_start:r.repeat_start + r.length] = [True for i in range(r.length)]
         order[r.start_row] = (pattern_index, 0)
-        #print('length %d at row %d' % (r.length, r.start_row))
+        # print('length %d at row %d' % (r.length, r.start_row))
         order[r.repeat_start] = (pattern_index, r.xform.transpose)
-        #print('length %d at row %d' % (r.length, r.repeat_start))
+        # print('length %d at row %d' % (r.length, r.repeat_start))
     return used, order
 
 
@@ -211,7 +260,7 @@ def trim_repeats(repeats, used):
     return ret_repeats
 
 
-def compress_gt(rchirp_song):
+def compress_gt_global(rchirp_song, min_pattern_length=8):
     """
     Compresses an RChirp song for Goattracker
     :param rchirp_song: RChirp song to compress
@@ -231,87 +280,44 @@ def compress_gt(rchirp_song):
         filled_rows = v.get_filled_rows()
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
-        print("\nVoice %d: %d rows" % (iv, n_rows))
         order = {}
         repeats = find_all_repeats(filled_rows, min_length=4)
         it = 0
-        min_length = 8
+        min_length = min_pattern_length
         while len(repeats) > 0 or min_length > 4:
-            print('iteration %d:' % it, len(repeats), 'valid repeats;', used.count(False), 'rows left')
             best_repeats = find_best_repeats(repeats, used, objective, min_length=min_length)
             if len(best_repeats) > 0:
                 r0 = best_repeats[0]
                 rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
                 pattern_index = len(rchirp_song.patterns) - 1
                 used, order = apply_pattern(pattern_index, best_repeats, used, order)
-                print('created pattern of %d rows, used %d times' % (best_repeats[0].length, len(best_repeats) + 1))
                 repeats = trim_repeats(repeats, used)
             min_length = max(min_length - 1, 4)
             it += 1
             if it > 20:
                 repeats = []
         while any(not u for u in used):
-            it += 1
-            print('cleanup:', used.count(False), 'rows left')
             gap_start = next(iu for iu, u in enumerate(used) if not u)
             gap_end = gap_start
             while gap_end < n_rows and not used[gap_end]:
                 gap_end += 1
+                if gap_end - gap_start >= PATTERN_LENGTH_MAX:
+                    break
             rchirp_song.patterns.append(RChirpPattern(filled_rows[gap_start: gap_end]))
             pattern_index = len(rchirp_song.patterns) - 1
             order[gap_start] = (pattern_index, 0)
             for ig in range(gap_start, gap_end):
                 used[ig] = True
-            print('created pattern of %d rows, used once' % (gap_end - gap_start))
         assert all(used), "Not all rows were used!"
-        print('voice complete. %d patterns created; %d max patterns in orderlist' % (len(rchirp_song.patterns) - last_pattern_count, len(order)))
         last_pattern_count = len(rchirp_song.patterns)
         if not validate_orderlist(rchirp_song.patterns, order):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    print('\nTotal patterns = %d; longest pattern = %d'
-          % (len(rchirp_song.patterns), max(len(p.rows) for p in rchirp_song.patterns)))
     rchirp_song.compressed = True
     return rchirp_song
 
 
-def find_repeats_starting_at(index, rows, used, min_length=4):
-    n_rows = len(rows)
-    repeats = []
-    base_position = index
-    last_end = base_position
-    for trial_position in range(base_position, n_rows - min_length):
-        if used[trial_position] or trial_position < last_end:
-            continue
-        xf = get_xform(rows[base_position], rows[trial_position])
-        if xf is None:
-            continue
-        if xf.transpose > 14 or xf.transpose < -15:
-            continue
-        if xf.transpose != 0:
-            continue
-        pattern_length = 1
-        ib = base_position + 1
-        it = trial_position + 1
-        il = 1
-        while it < n_rows \
-                and il < PATTERN_LENGTH_MAX \
-                and rows[ib].gt_match(rows[it], xf) \
-                and not used[ib] \
-                and not used[it]:
-            ib += 1
-            it += 1
-            il += 1
-            pattern_length += 1
-            if ib >= trial_position:
-                break
-        if min_length <= pattern_length <= PATTERN_LENGTH_MAX:
-            repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
-            last_end = trial_position + pattern_length
-    return repeats
-
-
-def compress_gt_2(rchirp_song):
+def compress_gt_lr(rchirp_song, min_pattern_length=8):
     """
     Compresses an RChirp song for Goattracker
     :param rchirp_song: RChirp song to compress
@@ -325,13 +331,11 @@ def compress_gt_2(rchirp_song):
         return nloops * r0.length - abs(r0.length - STARTING_MIN_LENGTH) / 10
 
     rchirp_song.patterns = []  # Get rid of any patterns from previous compression
-    last_pattern_count = 0
-    min_pattern_length = 4
     for iv, v in enumerate(rchirp_song.voices):
         filled_rows = v.get_filled_rows()
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
-        print("\nVoice %d: %d rows" % (iv, n_rows))
+        #print("\nVoice %d: %d rows" % (iv, n_rows))
         order = {}
         for i in range(n_rows - min_pattern_length):
             if used[i]:
@@ -346,7 +350,7 @@ def compress_gt_2(rchirp_song):
                     rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
                     pattern_index = len(rchirp_song.patterns) - 1
                     used, order = apply_pattern(pattern_index, best_repeats, used, order)
-                    print('position %d: created pattern of %d rows, used %d times' % (i, best_repeats[0].length, len(best_repeats) + 1))
+                    #print('position %d: created pattern of %d rows, used %d times' % (i, best_repeats[0].length, len(best_repeats) + 1))
                     repeats = trim_repeats(repeats, used)
                 min_length = max(min_length - 1, min_pattern_length)
                 it += 1
@@ -358,25 +362,27 @@ def compress_gt_2(rchirp_song):
             gap_end = gap_start
             while gap_end < n_rows and not used[gap_end]:
                 gap_end += 1
+                if gap_end - gap_start >= PATTERN_LENGTH_MAX:
+                    break
             rchirp_song.patterns.append(RChirpPattern(filled_rows[gap_start: gap_end]))
             pattern_index = len(rchirp_song.patterns) - 1
             order[gap_start] = (pattern_index, 0)
             for ig in range(gap_start, gap_end):
                 used[ig] = True
-            print('cleanup: created pattern of %d rows' % (gap_end - gap_start))
+            #print('cleanup: created pattern of %d rows' % (gap_end - gap_start))
         assert all(used), "Not all rows were used!"
-        print('voice complete. %d patterns created; %d max patterns in orderlist' % (len(rchirp_song.patterns) - last_pattern_count, len(order)))
+        #print('voice complete. %d patterns created; %d max patterns in orderlist' % (len(rchirp_song.patterns) - last_pattern_count, len(order)))
         last_pattern_count = len(rchirp_song.patterns)
         if not validate_orderlist(rchirp_song.patterns, order):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    print('\nTotal patterns = %d; longest pattern = %d'
-          % (len(rchirp_song.patterns), max(len(p.rows) for p in rchirp_song.patterns)))
+    #print('\nTotal patterns = %d; longest pattern = %d'
+    #      % (len(rchirp_song.patterns), max(len(p.rows) for p in rchirp_song.patterns)))
     rchirp_song.compressed = True
     return rchirp_song
 
 
-def get_gt_orderlist_length(orderlist):
+def estimate_gt_orderlist_length(orderlist):
     retval = 2  # Start and end commands
     prev_transposition = 0
     for entry in orderlist:
@@ -392,15 +398,22 @@ def get_gt_orderlist_length(orderlist):
     return retval
 
 
+def estimate_song_size(rchirp_song):
+    total = GT_PATTERN_OVERHEAD * len(rchirp_song.patterns)
+    total += sum(len(p.rows) for p in rchirp_song.patterns)
+    total += sum(estimate_gt_orderlist_length(v.orderlist) for v in rchirp_song.voices)
+    return total
+
 
 if __name__ == '__main__':
     rchirp_song = ctsGoatTracker.import_sng_file_to_rchirp('../test/data/gtTestData.sng')
 
-    rchirp_song = compress_gt_2(rchirp_song)
+
+    rchirp_song = compress_gt_lr(rchirp_song)
 
     for i, v in enumerate(rchirp_song.voices):
         print('Voice %d:' % (i + 1))
         print('%d orderlist entries' % len(v.orderlist))
-        print('%d estimated orderlist rows' % get_gt_orderlist_length(v.orderlist))
+        print('%d estimated orderlist rows' % estimate_gt_orderlist_length(v.orderlist))
 
     ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/test_out.sng')
