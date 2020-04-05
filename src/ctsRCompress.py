@@ -9,7 +9,7 @@ from ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 
 STARTING_MIN_LENGTH = 16
 PATTERN_LENGTH_MAX = 126
-GT_PATTERN_OVERHEAD = 4
+GT_PATTERN_OVERHEAD = 5
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
@@ -393,7 +393,7 @@ def estimate_gt_orderlist_length(orderlist):
 def estimate_song_size(rchirp_song):
     total = GT_PATTERN_OVERHEAD * len(rchirp_song.patterns)
     total += sum(len(p.rows) for p in rchirp_song.patterns)
-    total += sum(estimate_gt_orderlist_length(v.orderlist) for v in rchirp_song.voices)
+    total += sum(len(v.orderlist) for v in rchirp_song.voices)
     return total
 
 

@@ -264,6 +264,10 @@ class RChirpVoice:
                             / self.rchirp_song.update_freq)
         jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
+        rows_per_quarter = int(self.rchirp_song.metadata.ppq / ticks_per_row + 0.5)
+        jiffies_per_quarter = rows_per_quarter * jiffies_per_row
+        jiffies_per_row = jiffies_per_quarter * chirp_track.qticks_notes // self.rchirp_song.metadata.ppq
+        ticks_per_row = chirp_track.qticks_notes
         tmp_rows = collections.defaultdict(RChirpRow)
 
         # Always insert a row number 0
