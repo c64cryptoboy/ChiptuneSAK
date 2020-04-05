@@ -58,13 +58,17 @@ def apply_xform(row, xform):
     return ret_row
 
 
-def find_all_repeats(rows, min_length=4):
+def find_all_repeats(rows, min_length=4, min_transpose=0, max_transpose=0):
     """
     Find every possible repeat in the rows longer than a minimum length
     :param rows: list of rows to search for repeats
     :type rows: list of cts.RChirpRows
     :param min_length: Minimum length pattern to find
     :type min_length: int
+    :param min_transpose:
+    :type min_transpose:
+    :param max_transpose:
+    :type max_transpose:
     :return: list of all repeats found
     :rtype: list of Repeat
     """
@@ -78,9 +82,7 @@ def find_all_repeats(rows, min_length=4):
             xf = get_xform(rows[base_position], rows[trial_position])
             if xf is None:
                 continue
-            if xf.transpose > 14 or xf.transpose < -15:
-                continue
-            if xf.transpose != 0:
+            if xf.transpose < min_transpose or xf.transpose > max_transpose:
                 continue
             pattern_length = 1
             ib = base_position + 1
@@ -101,7 +103,7 @@ def find_all_repeats(rows, min_length=4):
     return repeats
 
 
-def find_repeats_starting_at(index, rows, used, min_length=4):
+def find_repeats_starting_at(index, rows, used, min_length=4, min_transpose=0, max_transpose=0):
     n_rows = len(rows)
     repeats = []
     base_position = index
@@ -112,9 +114,7 @@ def find_repeats_starting_at(index, rows, used, min_length=4):
         xf = get_xform(rows[base_position], rows[trial_position])
         if xf is None:
             continue
-        if xf.transpose > 14 or xf.transpose < -15:
-            continue
-        if xf.transpose != 0:
+        if xf.transpose < min_transpose or xf.transpose > max_transpose:
             continue
         pattern_length = 1
         ib = base_position + 1
@@ -335,7 +335,6 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
         filled_rows = v.get_filled_rows()
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
-        #print("\nVoice %d: %d rows" % (iv, n_rows))
         order = {}
         for i in range(n_rows - min_pattern_length):
             if used[i]:
@@ -350,14 +349,12 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
                     rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
                     pattern_index = len(rchirp_song.patterns) - 1
                     used, order = apply_pattern(pattern_index, best_repeats, used, order)
-                    #print('position %d: created pattern of %d rows, used %d times' % (i, best_repeats[0].length, len(best_repeats) + 1))
                     repeats = trim_repeats(repeats, used)
                 min_length = max(min_length - 1, min_pattern_length)
                 it += 1
                 if it > 20:
                     repeats = []
         while any(not u for u in used):
-            #print('cleanup:', used.count(False), 'rows left')
             gap_start = next(iu for iu, u in enumerate(used) if not u)
             gap_end = gap_start
             while gap_end < n_rows and not used[gap_end]:
@@ -369,15 +366,10 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
             order[gap_start] = (pattern_index, 0)
             for ig in range(gap_start, gap_end):
                 used[ig] = True
-            #print('cleanup: created pattern of %d rows' % (gap_end - gap_start))
         assert all(used), "Not all rows were used!"
-        #print('voice complete. %d patterns created; %d max patterns in orderlist' % (len(rchirp_song.patterns) - last_pattern_count, len(order)))
-        last_pattern_count = len(rchirp_song.patterns)
         if not validate_orderlist(rchirp_song.patterns, order):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    #print('\nTotal patterns = %d; longest pattern = %d'
-    #      % (len(rchirp_song.patterns), max(len(p.rows) for p in rchirp_song.patterns)))
     rchirp_song.compressed = True
     return rchirp_song
 
