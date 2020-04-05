@@ -69,6 +69,7 @@ class RChirpPattern:
             for r in rows:
                 r.row_num -= base_row
                 r.jiffy_num -= base_jiffy
+                assert r.jiffy_num >= 0, "Illegal jiffy number"
                 self.rows.append(r)
         self.rows.sort()  # Sort the rows by the row number member.
 
@@ -234,7 +235,7 @@ class RChirpVoice:
                 row.row_num = r
             # Jiffy number is derived from the last row
             if row.jiffy_num is None:
-                row.jiffy_num = last.jiffy_num + (last.row_num - row.row_num) * last.jiffy_len
+                row.jiffy_num = last.jiffy_num + (row.row_num - last.row_num) * last.jiffy_len
             # If no jiffy length, use the one from the last row
             if row.jiffy_len is None:
                 row.jiffy_len = last.jiffy_len

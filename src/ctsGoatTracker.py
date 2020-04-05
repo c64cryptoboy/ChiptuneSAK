@@ -882,12 +882,14 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
     elif -15 <= transposition <= 14:
         transposition += 0xF0  # offset for transpositions
     else:
+        # Instead of dying, fix transpositions by doing octave offsets
         while transposition > 14:
             transposition -= 12
         while transposition < -15:
             transposition += 12
         assert(-15 <= transposition <= 14), "bad transposition = %d" % transposition
         transposition += 0xF0
+    # Longest possible repeat is 16, so generate as many of those as needed
     while repeats >= 16:
         if transposition is not None:
             retval.append(transposition)  # If no transposition, leave it off.
@@ -899,7 +901,7 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
     if repeats > 0:
         if transposition is not None:
             retval.append(transposition)
-        if repeats != 1:
+        if repeats != 1:  # If only one time, no need to put anything in.
             retval.append(repeats - 1 + 0xD0)  # Repeat N times
         retval.append(pattern_number)
 
