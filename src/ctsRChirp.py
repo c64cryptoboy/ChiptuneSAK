@@ -30,18 +30,6 @@ class RChirpRow:
     jiffy_len: int = None         #: Jiffies to process this row (until next row)
     new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
-    def gt_match(self, other, xf):
-        if self.note_num is None and other.note_num is None:
-            note_match = True
-        elif self.note_num is None or other.note_num is None:
-            note_match = False
-        else:
-            note_match = self.note_num + xf.transpose == other.note_num
-        return note_match \
-               and self.new_instrument == other.new_instrument \
-               and self.gate == other.gate \
-               and self.jiffy_len == other.jiffy_len
-
 
 @dataclass
 class RChirpOrderEntry:
@@ -55,6 +43,7 @@ class RChirpOrderList(list):
     An order list made up of a set of patterns
     """
     pass
+
 
 class RChirpPattern:
     """

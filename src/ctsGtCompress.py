@@ -22,6 +22,31 @@ class Repeat:
     xform: Transform = Transform(0, 0)  #: Transform between repeats
 
 
+def gt_row_match(r1, r2, xf=None):
+    if r1.note_num is None and r2.note_num is None:
+        note_match = True
+    elif r1.note_num is None or r2.note_num is None:
+        note_match = False
+    elif xf is not None:
+        note_match = r1.note_num + xf.transpose == r2.note_num
+    else:
+        note_match = r1.note_num == r2.note_num
+    return note_match \
+           and r1.new_instrument == r2.new_instrument \
+           and r1.gate == r2.gate \
+           and r1.jiffy_len == r2.jiffy_len
+
+
+def gt_pattern_match(p1, p2, xf=None):
+    if len(p1.rows) != len(p2.rows):
+        return False
+    n_rows = len(p1.rows)
+    for ir in range(n_rows):
+        if not gt_row_match(p1.rows[ir], p2.rows[ir], xf):
+            return False
+    return True
+
+
 def get_xform(row1, row2):
     """
     Gets the transform for transposition and time stretching to match two notes.
@@ -89,8 +114,8 @@ def find_all_repeats(rows, min_length=4, min_transpose=0, max_transpose=0):
             it = trial_position + 1
             il = 1
             while it < n_rows \
-                    and il < PATTERN_LENGTH_MAX\
-                    and rows[ib].gt_match(rows[it], xf):
+                    and il < PATTERN_LENGTH_MAX \
+                    and gt_row_match(rows[ib], rows[it], xf):
                 ib += 1
                 it += 1
                 il += 1
@@ -122,7 +147,7 @@ def find_repeats_starting_at(index, rows, used, min_length=4, min_transpose=0, m
         il = 1
         while it < n_rows \
                 and il < PATTERN_LENGTH_MAX \
-                and rows[ib].gt_match(rows[it], xf) \
+                and gt_row_match(rows[ib], rows[it], xf) \
                 and not used[ib] \
                 and not used[it]:
             ib += 1
@@ -176,6 +201,14 @@ def find_best_repeats(repeats, used, objective_function, min_length=4):
     return best_repeats
 
 
+def add_rchirp_pattern(rchirp_song, pattern):
+    for ip, p in enumerate(rchirp_song.patterns):
+        if gt_pattern_match(p, pattern):
+            return ip
+    rchirp_song.patterns.append(pattern)
+    return len(rchirp_song.patterns) - 1
+
+
 def apply_pattern(pattern_index, repeats, used, order):
     """
     Given a pattern index and a set of repeats that match the pattern, mark the affected rows as used
@@ -201,6 +234,22 @@ def apply_pattern(pattern_index, repeats, used, order):
     return used, order
 
 
+def get_hole_lengths(used):
+    retval = []
+    n_rows = len(used)
+    current_hole_size = 0
+    for i in range(n_rows):
+        if not used[i]:
+            current_hole_size += 1
+        else:
+            if current_hole_size > 0:
+                retval.append(current_hole_size)
+                current_hole_size = 0
+    if current_hole_size > 0:
+        retval.append(current_hole_size)
+    return retval
+
+
 def make_orderlist(order):
     """
     Turns the temporary dictionary-based orderlist into an RChirp-compatible orderlist
@@ -224,6 +273,15 @@ def make_orderlist(order):
 
 
 def validate_orderlist(patterns, order):
+    """
+    Validates that the sparse orderlist is self-consistent.
+    :param patterns:
+    :type patterns:
+    :param order:
+    :type order:
+    :return:
+    :rtype:
+    """
     retval = True
     positions = sorted(order)
     position_sum = 0
@@ -271,8 +329,7 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
     def objective(repeats, possible):
         r0 = repeats[0]
         nloops = len(repeats) + 1
-        variation = abs(r0.length - STARTING_MIN_LENGTH + 0.5)
-        return nloops * r0.length - abs(r0.length - STARTING_MIN_LENGTH) / 10
+        return nloops * r0.length + 5 * r0.length
 
     rchirp_song.patterns = []  # Get rid of any patterns from previous compression
     last_pattern_count = 0
@@ -281,21 +338,19 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
         order = {}
-        repeats = find_all_repeats(filled_rows, min_length=4)
+        repeats = find_all_repeats(filled_rows, min_length=min_pattern_length)
         it = 0
-        min_length = min_pattern_length
-        while len(repeats) > 0 or min_length > 4:
-            best_repeats = find_best_repeats(repeats, used, objective, min_length=min_length)
+        while len(repeats) > 0:
+            best_repeats = find_best_repeats(repeats, used, objective)
             if len(best_repeats) > 0:
                 r0 = best_repeats[0]
                 rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
                 pattern_index = len(rchirp_song.patterns) - 1
                 used, order = apply_pattern(pattern_index, best_repeats, used, order)
                 repeats = trim_repeats(repeats, used)
-            min_length = max(min_length - 1, 4)
             it += 1
-            if it > 20:
-                repeats = []
+            holes = get_hole_lengths(used)
+            avg_hole_length = sum(h for h in holes) / len(holes)
         while any(not u for u in used):
             gap_start = next(iu for iu, u in enumerate(used) if not u)
             gap_end = gap_start
@@ -303,8 +358,8 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
                 gap_end += 1
                 if gap_end - gap_start >= PATTERN_LENGTH_MAX:
                     break
-            rchirp_song.patterns.append(RChirpPattern(filled_rows[gap_start: gap_end]))
-            pattern_index = len(rchirp_song.patterns) - 1
+            tmp_patt = RChirpPattern(filled_rows[gap_start: gap_end])
+            pattern_index = add_rchirp_pattern(rchirp_song, tmp_patt)
             order[gap_start] = (pattern_index, 0)
             for ig in range(gap_start, gap_end):
                 used[ig] = True
@@ -341,19 +396,17 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
                 continue
             repeats = find_repeats_starting_at(i, filled_rows, used, min_length=min_pattern_length)
             it = 0
-            min_length = 8
-            while len(repeats) > 0 or min_length > min_pattern_length:
-                best_repeats = find_best_repeats(repeats, used, objective, min_length=min_length)
+            while len(repeats) > 0:
+                best_repeats = find_best_repeats(repeats, used, objective)
                 if len(best_repeats) > 0:
                     r0 = best_repeats[0]
                     rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
                     pattern_index = len(rchirp_song.patterns) - 1
                     used, order = apply_pattern(pattern_index, best_repeats, used, order)
                     repeats = trim_repeats(repeats, used)
-                min_length = max(min_length - 1, min_pattern_length)
+                holes = get_hole_lengths(used)
+                avg_hole_length = sum(h for h in holes) / len(holes)
                 it += 1
-                if it > 20:
-                    repeats = []
         while any(not u for u in used):
             gap_start = next(iu for iu, u in enumerate(used) if not u)
             gap_end = gap_start
@@ -361,8 +414,8 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
                 gap_end += 1
                 if gap_end - gap_start >= PATTERN_LENGTH_MAX:
                     break
-            rchirp_song.patterns.append(RChirpPattern(filled_rows[gap_start: gap_end]))
-            pattern_index = len(rchirp_song.patterns) - 1
+            tmp_patt = RChirpPattern(filled_rows[gap_start: gap_end])
+            pattern_index = add_rchirp_pattern(rchirp_song, tmp_patt)
             order[gap_start] = (pattern_index, 0)
             for ig in range(gap_start, gap_end):
                 used[ig] = True
