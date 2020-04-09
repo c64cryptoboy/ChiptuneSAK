@@ -1,15 +1,21 @@
+import sys
 from dataclasses import dataclass
 import copy
-import math
-import collections
 from ctsBase import *
 from ctsConstants import *
 import ctsGoatTracker
 from ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 
+
+"""
+Compression routines for GoatTracker.
+
+"""
+
 STARTING_MIN_LENGTH = 16
 PATTERN_LENGTH_MAX = 126
 GT_PATTERN_OVERHEAD = 5
+
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
@@ -83,7 +89,7 @@ def apply_xform(row, xform):
     return ret_row
 
 
-def find_all_repeats(rows, min_length=4, min_transpose=0, max_transpose=0):
+def find_all_repeats(rows, used, min_length=4, min_transpose=0, max_transpose=0):
     """
     Find every possible repeat in the rows longer than a minimum length
     :param rows: list of rows to search for repeats
@@ -115,7 +121,9 @@ def find_all_repeats(rows, min_length=4, min_transpose=0, max_transpose=0):
             il = 1
             while it < n_rows \
                     and il < PATTERN_LENGTH_MAX \
-                    and gt_row_match(rows[ib], rows[it], xf):
+                    and gt_row_match(rows[ib], rows[it], xf) \
+                    and not used[ib] \
+                    and not used[it]:
                 ib += 1
                 it += 1
                 il += 1
@@ -202,6 +210,15 @@ def find_best_repeats(repeats, used, objective_function, min_length=4):
 
 
 def add_rchirp_pattern(rchirp_song, pattern):
+    """
+    Adds a pattern to an RChirpSong.  It checks to be sue that the pattern has not been used.
+    :param rchirp_song: An RChirpSong
+    :type rchirp_song: ctsRChirpSong
+    :param pattern: the pattern to add to the song
+    :type pattern:  ctsRChirp.RChirpPattern
+    :return: Index of pattern
+    :rtype: int
+    """
     for ip, p in enumerate(rchirp_song.patterns):
         if gt_pattern_match(p, pattern):
             return ip
@@ -235,6 +252,13 @@ def apply_pattern(pattern_index, repeats, used, order):
 
 
 def get_hole_lengths(used):
+    """
+    Creates list of the holes of unused rows in a set of rows.
+    :param used:
+    :type used:
+    :return:
+    :rtype:
+    """
     retval = []
     n_rows = len(used)
     current_hole_size = 0
@@ -252,10 +276,10 @@ def get_hole_lengths(used):
 
 def make_orderlist(order):
     """
-    Turns the temporary dictionary-based orderlist into an RChirp-compatible orderlist
-    :param order: dictionary orderlist
+    Converts the temporary dictionary-based orderlist into an RChirp-compatible orderlist
+    :param order: dictionary orderlist (created internally)
     :type order: dictionary of (start_row, transposition)
-    :return: orderlist to put into an RChirp song
+    :return: orderlist to put into a ctsRChirp.RChirpVoice
     :rtype: ctsRChirp.RChirpOrderList
     """
     orderlist = RChirpOrderList()
@@ -270,6 +294,29 @@ def make_orderlist(order):
             last = RChirpOrderEntry(p_num, trans, 1)
     orderlist.append(last)
     return orderlist
+
+
+def trim_repeats(repeats, used, min_length=4):
+    """
+    Trims the list of repeats to exclude rows that have been used.
+    :param repeats: list of all repeats
+    :type repeats: list of Repeat objects
+    :param used:
+    :type used:
+    :return: list of valid repeats
+    :rtype: list of Repeat objects
+    """
+    ret_repeats = []
+    for r in repeats:
+        if used[r.start_row] or used[r.repeat_start]:
+            continue
+        l_tmp = 0
+        while l_tmp < r.length and not used[r.start_row + l_tmp] and not used[r.repeat_start + l_tmp]:
+            l_tmp += 1
+        r.length = l_tmp
+        if r.length >= min_length:
+            ret_repeats.append(r)
+    return ret_repeats
 
 
 def validate_orderlist(patterns, order):
@@ -294,35 +341,20 @@ def validate_orderlist(patterns, order):
     return retval
 
 
-def trim_repeats(repeats, used):
-    """
-    Trims the list of repeats to exclude rows that have been used.
-    :param repeats: list of all repeats
-    :type repeats: list of Repeat objects
-    :param used:
-    :type used:
-    :return: list of valid repeats
-    :rtype: list of Repeat objects
-    """
-    ret_repeats = []
-    for r in repeats:
-        if used[r.start_row] or used[r.repeat_start]:
-            continue
-        r_end = r.start_row + r.length
-        l_tmp = 0
-        while l_tmp < r.length and not used[r.start_row + l_tmp] and not used[r.repeat_start + l_tmp]:
-            l_tmp += 1
-        r.length = l_tmp
-        if r.length > 1:
-            ret_repeats.append(r)
-    return ret_repeats
-
-
 def compress_gt_global(rchirp_song, min_pattern_length=8):
     """
-    Compresses an RChirp song for Goattracker
+    Global greedy compression algorithm for GoatTracker
+
+    This algorithm attempts to find the best repeats to compress at every iteration; it begins by finding
+    all possible repeats longer than min_pattern_length (which is O(n^2)) and then at each iteration
+    chooses the set of repeats with the highest score.  The rows used are removed and the algorithm iterates.
+    At each iteration the available repeats are trimmed to avoid the used rows.
+
     :param rchirp_song: RChirp song to compress
     :type rchirp_song: ctsRChirp.RChirpSong
+    :param min_pattern_length: The minimum pattern length that the algorithm will use.  All repeats found will
+                               have lengths greater than or equal to this value.
+    :type min_pattern_length: int
     :return: rchirp_song with compression information added
     :rtype: ctsRChirp.RChirpSong
     """
@@ -338,7 +370,7 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
         order = {}
-        repeats = find_all_repeats(filled_rows, min_length=min_pattern_length)
+        repeats = find_all_repeats(filled_rows, used, min_length=min_pattern_length)
         it = 0
         while len(repeats) > 0:
             best_repeats = find_best_repeats(repeats, used, objective)
@@ -347,7 +379,7 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
                 rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
                 pattern_index = len(rchirp_song.patterns) - 1
                 used, order = apply_pattern(pattern_index, best_repeats, used, order)
-                repeats = trim_repeats(repeats, used)
+                repeats = trim_repeats(repeats, used, min_length=min_pattern_length)
             it += 1
             holes = get_hole_lengths(used)
             avg_hole_length = sum(h for h in holes) / len(holes)
@@ -374,9 +406,20 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
 
 def compress_gt_lr(rchirp_song, min_pattern_length=8):
     """
-    Compresses an RChirp song for Goattracker
+    Right-to-left single-pass compression for GoatTracker
+
+    This compression algorithm is the fastest; it can compress even the longest song in less than a second.
+    It compresses the song in a manner similar to how a GT song would be constructed; starting from the
+    beginning row, it finds the repeats of rows starting at that position that give the best score, and
+    then moves to the first gap in the remaining rows and repeats.  If the algorithm does not find any suitable
+    repeats at a position, it moves to the next, and the unused rows are put into patterns after all the repeats
+    have been found.
+
     :param rchirp_song: RChirp song to compress
     :type rchirp_song: ctsRChirp.RChirpSong
+    :param min_pattern_length: The minimum pattern length that the algorithm will use.  All repeats found will
+                               have lengths greater than or equal to this value.
+    :type min_pattern_length: int
     :return: rchirp_song with compression information added
     :rtype: ctsRChirp.RChirpSong
     """
@@ -427,7 +470,36 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
     return rchirp_song
 
 
-def estimate_gt_orderlist_length(orderlist):
+def validate_gt_limits(rchirp_song):
+    n_patterns = len(rchirp_song.patterns)
+    if n_patterns > ctsGoatTracker.GT_MAX_PATTERNS_PER_SONG:
+        print(f'Too many patterns: {n_patterns}', file=sys.stderr)
+        return False
+    for iv, v in enumerate(rchirp_song.voices):
+        orderlist_length = get_gt_orderlist_length(v.orderlist)
+        if orderlist_length > ctsGoatTracker.GT_MAX_ELM_PER_ORDERLIST:
+            print(f'Orderlist too long in voice {iv+1}: {orderlist_length} bytes', file=sys.stderr)
+            return False
+    for ip, p in enumerate(rchirp_song.patterns):
+        if len(p.rows) + 1 > ctsGoatTracker.GT_MAX_ROWS_PER_PATTERN:
+            print(f'Pattern {ip} too long: {len(p.rows)} rows', file=sys.stderr)
+            return False
+    return True
+
+
+def get_gt_orderlist_length(orderlist):
+    """
+    Calculates the length of the orderlist in the GoatTracker .sng file.
+    A simple pattern with no transposition played once requires 1 entry
+    If there is a transposition change, that adds another entry
+    Multiple repeats add one entry unless there are more than 16, in which case
+    2 bytes are added per 16 repeats; one for the repeat number and another for the
+    pattern number (none is needed for transposition and it cannot change for repeats).
+    :param orderlist: An orderlist from a voice
+    :type orderlist: ctsRChirp.RChirpOrderlist
+    :return: Number of entries required for the GoatTracker orderlist
+    :rtype: int
+    """
     retval = 2  # Start and end commands
     prev_transposition = 0
     for entry in orderlist:
@@ -459,6 +531,6 @@ if __name__ == '__main__':
     for i, v in enumerate(rchirp_song.voices):
         print('Voice %d:' % (i + 1))
         print('%d orderlist entries' % len(v.orderlist))
-        print('%d estimated orderlist rows' % estimate_gt_orderlist_length(v.orderlist))
+        print('%d estimated orderlist rows' % get_gt_orderlist_length(v.orderlist))
 
     ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/test_out.sng')

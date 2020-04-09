@@ -38,12 +38,14 @@ GT_DEFAULT_FUNKTEMPOS = [9, 6]  # default alternating tempos, from gplay.c
 GT_MAX_SUBTUNES_PER_SONG = 32  # Each subtune gets its own orderlist of patterns
 # "song" means a collection of independently-playable subtunes
 GT_MAX_ELM_PER_ORDERLIST = 255  # at minimum, it must contain the endmark and following byte
-GT_MAX_INSTR_PER_SONG = 63
+GT_MAX_INSTR_PER_SONG: int = 63
 GT_MAX_PATTERNS_PER_SONG = 208  # patterns can be shared across channels and subtunes
-GT_MAX_ROWS_PER_PATTERN = 128  # and min rows (not including end marker) is 1
+GT_MAX_ROWS_PER_PATTERN = 128  # and min rows (not including end marker) is 1  ! Does 128 include end marker?
 GT_MAX_TABLE_LEN = 255
 
 GT_REST = 0xBD  # A rest in goattracker means NOP, not rest
+GT_NOTE_OFFSET = 0x60  # Note value offset
+GT_MAX_NOTE_VALUE = 0xBF  # Maximum possible value for note
 GT_KEY_OFF = 0xBE
 GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF  # order list restart marker
@@ -72,6 +74,16 @@ class GtPatternRow:
     inst_num: int = 0
     command: int = 0
     command_data: int = 0
+
+    def to_bytes(self):
+        if self.note_data is not None \
+                and not (GT_NOTE_OFFSET <= self.note_data <= GT_MAX_NOTE_VALUE) \
+                and self.note_data != GT_PAT_END:
+            raise ChiptuneSAKValueError(f'Illegal GT note value number: {self.note_data:02X}')
+        if self.note_data is None or self.note_data == GT_REST:
+            return bytes([GT_REST, 0, 0, 0])
+        else:
+            return bytes([self.note_data, self.inst_num, self.command, self.command_data])
 
 
 @dataclass
@@ -125,12 +137,18 @@ class GTSong:
 # Convert pattern note byte value into midi note value
 # Note: lowest goat tracker note C0 (0x60)
 def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
-    return pattern_note_byte - (0x60 - C0_MIDI_NUM) + (octave_offset * 12)
+    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - C0_MIDI_NUM) + (octave_offset * 12)
+    if not (0 <= midi_note < 128):
+        raise ChiptuneSAKValueError(f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}")
+    return midi_note
 
 
 # Convert midi note value into pattern note value
 def midi_note_to_pattern_note(midi_note, octave_offset=0):
-    return midi_note + (0x60 - C0_MIDI_NUM) + (-1 * octave_offset * 12)
+    gt_note_value = midi_note + (GT_NOTE_OFFSET - C0_MIDI_NUM) + (-1 * octave_offset * 12)
+    if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
+        raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
+    return gt_note_value
 
 
 def get_chars(in_bytes, trim_nulls=True):
@@ -381,7 +399,7 @@ def import_sng_binary_to_parsed_gt(sng_bytes):
         for row_num in range(num_rows):
             a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
                                  command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
-            assert (0x60 <= a_row.note_data < 0xBF) or a_row.note_data == GT_PAT_END, \
+            assert (GT_NOTE_OFFSET <= a_row.note_data <= GT_MAX_NOTE_VALUE) or a_row.note_data == GT_PAT_END, \
                 "Error: unexpected note data value"
             assert a_row.inst_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
             assert a_row.command <= 0x0F, "Error: command number out of range"
@@ -459,12 +477,12 @@ class GtChannelState:
         row = copy.deepcopy(a_song.patterns[self.channel_orderlist[self.orderlist_index]][self.row_index])
 
         # If row contains a note, transpose if necessary (0 = no transform)
-        if 0x60 <= row.note_data <= 0xBC:  # range $60 (C0) to $BC (G#7)
+        if GT_NOTE_OFFSET <= row.note_data < GT_REST:  # range $60 (C0) to $BC (G#7)
             note = row.note_data + self.curr_transposition
-            assert note >= 0x60, "Error: transpose dropped note below midi C0"
+            assert note >= GT_NOTE_OFFSET, "Error: transpose dropped note below midi C0"
             # According to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
             #    that can be entered in the GT GUI, to create a B7
-            assert note <= 0xBF, "Error: transpose raised note above midi B7"
+            assert note <= GT_MAX_NOTE_VALUE, "Error: transpose raised note above midi B7"
             self.curr_note = pattern_note_to_midi_note(note)
             self.row_has_note = True
 
@@ -830,10 +848,6 @@ def pad_or_truncate(to_pad, length):
     return to_pad.ljust(length, b'\0')[0:length]
 
 
-def row_to_bytes(row):
-    return bytes([row.note_data, row.inst_num, row.command, row.command_data])
-
-
 def instrument_to_bytes(instrument):
     result = bytearray()
     result += bytes([instrument.attack_decay, instrument.sustain_release,
@@ -954,8 +968,8 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                     gt_row.command = GT_TEMPO_CHNG_CMD
                     # insert local channel tempo change
                     gt_row.command_data = r.new_jiffy_tempo + 0x80
-                pattern += row_to_bytes(gt_row)
-            pattern += row_to_bytes(PATTERN_END_ROW)  # finish with end row marker
+                pattern += gt_row.to_bytes()
+            pattern += PATTERN_END_ROW.to_bytes()  # finish with end row marker
             patterns.append(pattern)
 
         for i, v in enumerate(rchirp_song.voices):
@@ -994,6 +1008,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
 
                     if rchirp_row.gate:  # if starting a note
                         gt_row.note_data = midi_note_to_pattern_note(rchirp_row.note_num)
+                        assert GT_NOTE_OFFSET <= gt_row.note_data <= GT_MAX_NOTE_VALUE, 'Illegal note number'
 
                         # only bother to populate instrument if there's a new note
                         if rchirp_row.new_instrument is not None:
@@ -1012,14 +1027,14 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                         gt_row.command = GT_TEMPO_CHNG_CMD
                         # insert local channel tempo change
                         gt_row.command_data = rchirp_row.new_jiffy_tempo + 0x80
-                    pattern += row_to_bytes(gt_row)
+                    pattern += gt_row.to_bytes()
                 else:
-                    pattern += row_to_bytes(PATTERN_EMPTY_ROW)
+                    pattern += PATTERN_EMPTY_ROW.to_bytes()
 
                 pattern_row_index += 1
                 # pattern_len notes: index 0 to len-1 for data, index len for 0xFF pattern end mark
                 if pattern_row_index == pattern_len:  # if pattern is full
-                    pattern += row_to_bytes(PATTERN_END_ROW)  # finish with end row marker
+                    pattern += PATTERN_END_ROW.to_bytes()  # finish with end row marker
                     patterns.append(pattern)
                     orderlists[i].append(curr_pattern_num)  # append to orderlist for this channel
                     curr_pattern_num += 1
@@ -1031,7 +1046,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
             if too_many_patterns:
                 break
             if len(pattern) > 0:  # if there's a final partially-filled pattern, add it
-                pattern += row_to_bytes(PATTERN_END_ROW)
+                pattern += PATTERN_END_ROW.to_bytes()
                 patterns.append(pattern)
                 orderlists[i].append(curr_pattern_num)
                 curr_pattern_num += 1
@@ -1055,8 +1070,8 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
         # create a new empty pattern for all channels to loop on forever
         # and add to the end of each orderlist
         loop_pattern = bytearray()
-        loop_pattern += row_to_bytes(GtPatternRow(note_data=GT_KEY_OFF))
-        loop_pattern += row_to_bytes(PATTERN_END_ROW)
+        loop_pattern += GtPatternRow(note_data=GT_KEY_OFF).to_bytes()
+        loop_pattern += PATTERN_END_ROW.to_bytes()
         patterns.append(loop_pattern)
         loop_pattern_num = len(patterns) - 1
         for i in range(num_channels):
