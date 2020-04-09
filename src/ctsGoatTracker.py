@@ -76,6 +76,11 @@ class GtPatternRow:
     command_data: int = 0
 
     def to_bytes(self):
+        """
+        Converts a pattern row into GT bytes.
+        :return: bytes atht represet the pattern row
+        :rtype: bytes
+        """
         if self.note_data is not None \
                 and not (GT_NOTE_OFFSET <= self.note_data <= GT_MAX_NOTE_VALUE) \
                 and self.note_data != GT_PAT_END:
@@ -134,17 +139,34 @@ class GTSong:
         return self.num_channels >= 4
 
 
-# Convert pattern note byte value into midi note value
-# Note: lowest goat tracker note C0 (0x60)
 def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
+    """
+    Convert pattern note byte value into midi note value
+
+    :param pattern_note_byte:  GT note value
+    :type pattern_note_byte: int
+    :param octave_offset: Should always be zero unless some weird midi offset exists
+    :type octave_offset: int
+    :return: Midi note number
+    :rtype: int
+    """
     midi_note = pattern_note_byte - (GT_NOTE_OFFSET - C0_MIDI_NUM) + (octave_offset * 12)
     if not (0 <= midi_note < 128):
         raise ChiptuneSAKValueError(f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}")
     return midi_note
 
 
-# Convert midi note value into pattern note value
 def midi_note_to_pattern_note(midi_note, octave_offset=0):
+    """
+    Convert midi note value to pattern note value
+
+    :param midi_note: midi note number (NOTE: Lowest midi note allowed = 12 (C0_MIDI_NUM)
+    :type midi_note: int
+    :param octave_offset: Should always be zero unless some weird midi offset exists
+    :type octave_offset: int
+    :return: GT note value
+    :rtype: int
+    """
     gt_note_value = midi_note + (GT_NOTE_OFFSET - C0_MIDI_NUM) + (-1 * octave_offset * 12)
     if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
         raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
@@ -879,6 +901,7 @@ def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, pat
 def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposition):
     """
     Makes an orderlist entry from a pattern number, a transposition, and a number of repeats
+
     :param pattern_number: pattern number
     :type pattern_number: int
     :param transposition: transposition in semitones
@@ -891,27 +914,29 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
     :rtype: list of int
     """
     retval = []
+    # Only insert transposition (absolute) when it changes
     if transposition == prev_transposition:
         transposition = None
-    elif -15 <= transposition <= 14:
+    elif -15 <= transposition <= 14:  # Check that transposition is in allowed range
         transposition += 0xF0  # offset for transpositions
-    else:
-        # Instead of dying, fix transpositions by doing octave offsets
+    else:  # Instead of dying, fix transpositions by doing octave offsets until it is within range.
         while transposition > 14:
             transposition -= 12
         while transposition < -15:
             transposition += 12
         assert(-15 <= transposition <= 14), "bad transposition = %d" % transposition
         transposition += 0xF0
+
     # Longest possible repeat is 16, so generate as many of those as needed
     while repeats >= 16:
         if transposition is not None:
             retval.append(transposition)  # If no transposition, leave it off.
-            transposition = None  # only do it once
+            transposition = None  # Only add transposition once
         retval.append(0xD0)  # Repeat 16 times
         retval.append(pattern_number)
         repeats -= 16
-    # Now do the last one (usually this is the only one called)
+
+    # Now do the last one if there are any left (usually this is the only part accessed)
     if repeats > 0:
         if transposition is not None:
             retval.append(transposition)
@@ -919,7 +944,7 @@ def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposit
             retval.append(repeats - 1 + 0xD0)  # Repeat N times
         retval.append(pattern_number)
 
-    assert all(x >= 0 for x in retval) and all(x < 256 for x in retval), "bytes value error in %s" % repr(retval)
+    assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
     return retval
 
 
@@ -954,10 +979,10 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
         for p in rchirp_song.patterns:
             pattern = bytearray()  # initialize new empty pattern
             for r in p.rows:
-                gt_row = GtPatternRow()
+                gt_row = GtPatternRow()  # make a new empty pattern row
                 if r.gate:
                     gt_row.note_data = midi_note_to_pattern_note(r.note_num)
-                    if r.new_instrument is not None:
+                    if r.new_instrument is not None:  # only insert new instrument on note start
                         gt_row.inst_num = 1
                         prev_instrument = 1
                     else:
@@ -973,7 +998,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
             patterns.append(pattern)
 
         for i, v in enumerate(rchirp_song.voices):
-            prev_transposition = 0  # Sart out each voice with default transposition of 0
+            prev_transposition = 0  # Start out each voice with default transposition of 0
             for entry in v.orderlist:
                 ol_entry = make_orderlist_entry(entry.pattern_num,
                                                 entry.transposition,
