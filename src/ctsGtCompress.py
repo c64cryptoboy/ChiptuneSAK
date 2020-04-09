@@ -13,7 +13,7 @@ Compression routines for GoatTracker.
 """
 
 STARTING_MIN_LENGTH = 16
-PATTERN_LENGTH_MAX = 126
+PATTERN_LENGTH_MAX = 127
 GT_PATTERN_OVERHEAD = 5
 
 
@@ -40,7 +40,8 @@ def gt_row_match(r1, r2, xf=None):
     return note_match \
            and r1.new_instrument == r2.new_instrument \
            and r1.gate == r2.gate \
-           and r1.jiffy_len == r2.jiffy_len
+           and r1.jiffy_len == r2.jiffy_len \
+           and r1.new_jiffy_tempo == r2.new_jiffy_tempo
 
 
 def gt_pattern_match(p1, p2, xf=None):

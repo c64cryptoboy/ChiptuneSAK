@@ -85,8 +85,8 @@ class GtPatternRow:
                 and not (GT_NOTE_OFFSET <= self.note_data <= GT_MAX_NOTE_VALUE) \
                 and self.note_data != GT_PAT_END:
             raise ChiptuneSAKValueError(f'Illegal GT note value number: {self.note_data:02X}')
-        if self.note_data is None or self.note_data == GT_REST:
-            return bytes([GT_REST, 0, 0, 0])
+        if self.note_data is None:
+            self.note_data = GT_REST
         else:
             return bytes([self.note_data, self.inst_num, self.command, self.command_data])
 
@@ -900,7 +900,7 @@ def export_rchirp_to_gt(rchirp_song, output_filename, end_with_repeat=False, pat
 
 def make_orderlist_entry(pattern_number, transposition, repeats, prev_transposition):
     """
-    Makes an orderlist entry from a pattern number, a transposition, and a number of repeats
+    Makes orderlist entries from a pattern number, a transposition, and a number of repeats.
 
     :param pattern_number: pattern number
     :type pattern_number: int
@@ -973,10 +973,11 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     orderlists = [[] for _ in range(num_channels)]  # Note: this is bad: [[]] * len(tracknums)
     too_many_patterns = False
 
+    # If the song has gone through a compression algorithm, the compressed property will be set to True
     if rchirp_song.compressed:
         # Convert the patterns to goattracker patterns
         prev_instrument = 1  # TODO: Default instrument 1, this must be generalized
-        for p in rchirp_song.patterns:
+        for ip, p in enumerate(rchirp_song.patterns):
             pattern = bytearray()  # initialize new empty pattern
             for r in p.rows:
                 gt_row = GtPatternRow()  # make a new empty pattern row
@@ -1007,6 +1008,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                 orderlists[i].extend(ol_entry)
                 prev_transposition = entry.transposition
 
+    # Uncompressed song
     else:
         # Convert the sparse representation into separate patterns (of bytes)
         curr_pattern_num = 0
