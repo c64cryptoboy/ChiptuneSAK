@@ -6,8 +6,10 @@
 import copy
 
 MIN_REUSE_FOR_PAT = 2 # must have at least this many occurrences to be promoted to a pattern
-MAX_PAT_LEN = 10
-MIN_PAT_LEN = 5
+MAX_PAT_LEN = 16
+MIN_PAT_LEN = 8
+
+N_STEP_SIZE = 2
 
 # these are overriden in config()
 ALLOW_TRANSPOSE = True
@@ -21,6 +23,7 @@ data = '' # chars for now, rows later
 DEBUG = False
 
 results = []
+all_matches = {}
 
 class Piece:
     def __init__(self, start_index, end_index):
@@ -140,10 +143,11 @@ class Pattern:
 
 
 def patterns_to_string(patterns_dict):
-    result = [] # my comprehension's not working, so doing this the long way
-    for key in sorted(patterns_dict):
-        result.append("%s" % patterns_dict[key])
-    return ', '.join(result)
+    #result = [] # my comprehension's not working, so doing this the long way
+    #for key in sorted(patterns_dict):
+    #    result.append("%s" % patterns_dict[key])
+    #return ', '.join(result)
+    return ', '.join(str(pattern) for pattern in sorted(patterns_dict.values()))
 
 
 def config(target):
@@ -198,8 +202,8 @@ def config(target):
 
 
 # bootstrap recursive search
-def find_patterns(pieces):
-    find_pats_with_size_le_n(MAX_PAT_LEN, pieces, {})
+def eval_patterns(pieces):
+    eval_pats_with_size_le_n(MAX_PAT_LEN, pieces, {})
 
 
 def add_solution(n, pieces, patterns):
@@ -240,9 +244,9 @@ def add_solution(n, pieces, patterns):
 
 
 # Recursive search
-def find_pats_with_size_le_n(n, pieces, patterns):
+def eval_pats_with_size_le_n(n, pieces, patterns):
     # if we reached the bottom of a particular search path, update (global) results
-    if n <= MIN_PAT_LEN:
+    if n < MIN_PAT_LEN:
         add_solution(n, pieces, patterns)
         return
 
@@ -257,9 +261,13 @@ def find_pats_with_size_le_n(n, pieces, patterns):
         piece_start_index = piece.start_index
         piece_end_index = piece.end_index
 
+        if 14 <= n <= MAX_PAT_LEN:
+            print ("size %d on piece %d of %d, current patterns: %s" %
+                (n, piece_index, len(pieces), patterns_to_string(patterns)))
+
         if piece.width() < n:
             continue
-        
+
         # for this piece, find all the candidate patterns
         for i in range(piece_start_index, piece_end_index-n+2):
             cp = data[i:i+n]  # assign candidate pattern to look for
@@ -288,10 +296,10 @@ def find_pats_with_size_le_n(n, pieces, patterns):
                     
                     # with this new pattern in place, skip other size n matches, and go on to n-1
                     # prevents a worse, larger match not to block a smaller, better match (more coverage)
-                    # Note: this is the only recursive call that can reach n=MIN_PAT_LEN and store
+                    # Note: this is the only recursive call that can reach n=MIN_PAT_LEN-1 and store
                     # a potential solution
-                    if DEBUG: print("n=%d keep len n patten(s), but move to n-1" % n)
-                    find_pats_with_size_le_n(n-1, new_pieces, new_patterns)
+                    if DEBUG: print("n=%d keep len n patten(s), but move to n-%d" % (n, N_STEP_SIZE))
+                    find_pats_with_size_le_n(n-N_STEP_SIZE, new_pieces, new_patterns)
                 else:
                     pass
                     if DEBUG: print('length %d pattern "%s" not found' % (n, cp))
@@ -301,9 +309,10 @@ def find_pats_with_size_le_n(n, pieces, patterns):
         if 1 == 1: #debug point
             pass
 
-        if DEBUG: print("n=%d skip len n pattern search, move to n-1" % n)
-        if n > MIN_PAT_LEN+1:
-            find_pats_with_size_le_n(n-1, pieces.clone(), copy.deepcopy(patterns))
+        if DEBUG: print("n=%d skip len n pattern search, move to n-%d" % (n, N_STEP_SIZE))  
+
+        if n - N_STEP_SIZE >= MIN_PAT_LEN:
+            find_pats_with_size_le_n(n-N_STEP_SIZE, pieces.clone(), copy.deepcopy(patterns))
 
     return # recursive calls return nothing, easier design that way
 
@@ -376,7 +385,6 @@ def find_candidate_pattern_matches(n, pieces, cp, starting_piece_index, offset_f
         
         for i in range(piece_start_index + offset, piece_end_index-n+2):
             if matches(data[i:i+n], cp):   
-                # cp_matches.append((piece_index, i, i+n-1))
                 cp_matches.append(i)
 
     cp_matches = deoverlap_matches(cp_matches, n)
@@ -432,7 +440,8 @@ def deoverlap_matches(cp_matches, n):
                 cp_matches.append(match_index)
                 next_allowed_index = match_index+n
             else:
-                print("DEBUG: Resolved a single pattern's match overlaps from left to right; tree search could do better")
+                pass
+                #print("DEBUG: Resolved a single pattern's match overlaps from left to right; tree search could do better")
 
     return cp_matches
 
@@ -449,7 +458,41 @@ def recursive_compress(voices):
         pieces.append(Piece(curr_pos, curr_pos + len(voices[i])-1))
         curr_pos += len(voices[i])
 
-    find_patterns(pieces)
+    precompute_all_matches(pieces)
+
+    eval_patterns(pieces)
+
+
+def precompute_all_matches(pieces):
+    global all_matches
+
+    all_matches = {}
+    for n in range(MIN_PAT_LEN, MAX_PAT_LEN+1):
+        size_n_seen_list = set()
+        all_matches[n] = {}
+
+        for piece_index in range(len(pieces)):
+            piece = pieces[piece_index]
+            piece_start_index = piece.start_index
+            piece_end_index = piece.end_index
+            if n > piece_end_index + 1:
+                continue
+
+            for i in range(piece_start_index, piece_end_index-n+2):
+                cp = data[i:i+n]  # candidate pattern to look for
+                if cp in size_n_seen_list:
+                    continue
+                size_n_seen_list.add(cp)
+
+                # cp_matches comes from the pieces we started with at this n level
+                # (not new_pieces).  That way, a second or later match of size-n can have
+                # a chance to be matches before the 1st size-n match we encountered.
+                # the i+1 means don't match the candidate pattern at the same index 
+                # that we harvested it from   
+                cp_matches = find_candidate_pattern_matches(n, pieces, cp, piece_index, i+1)
+                if cp_matches is not None:
+                    all_matches[n][cp] = cp_matches
+
 
 if __name__ == "__main__":
     v1 = "THIS IS A TEST THIS IS TEST TEST THIS IS A TEST"
