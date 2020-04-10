@@ -6,8 +6,8 @@
 import copy
 
 MIN_REUSE_FOR_PAT = 2 # must have at least this many occurrences to be promoted to a pattern
-MAX_PAT_LEN = 16
-MIN_PAT_LEN = 8
+MAX_PAT_LEN = 20
+MIN_PAT_LEN = 12
 
 N_STEP_SIZE = 2
 
@@ -21,6 +21,7 @@ GT_MAX_ROWS_PER_PATTERN = 128 # refactor this out
 data = '' # chars for now, rows later
 
 DEBUG = False
+same_length_permutations = False
 
 results = []
 all_matches = {}
@@ -176,35 +177,6 @@ def config(target):
 # 4) 3 'A' matches and 2 'B' matches (goes on to n-1 with those two n-length patterns in place)
 # 5) 3 'B' matches and 2 'A' matches (goes on to n-1 with those two n-length patterns in place)
 
-# Simulating the recursion that I'm after:
-#
-# call size n with [] // starts with empty pattern list
-# 	[Ax3]: // Found n-size pattern "A" 3 times
-# 		call size n with [Ax3]:
-# 			[Ax3, Bx2]:	 // B is there 3 times, but one match overlaps with A, so we only get 2 times
-# 				call size n with [Ax3, Bx2]:
-# 					no size n patterns found, so we never call size n
-# 				call size n-1 with [Ax3, Bx2]:
-# 					. . .
-# 		call size n-1 with [Ax3]: // go on to n-1 without exploring size n further
-# 			. . .
-# 	[Bx3]: // If we don't match pattern "A" first, we can find "B" 3 times, and "A" 2 times
-# 		call size n with [Bx3]:
-# 			[Bx3, Ax2]:
-# 				call size n with [Bx3, Ax2]:
-# 					no size n patterns found, so we never call size n
-# 				call size n-1 with [Bx3, Ax2]:
-# 					. . .
-# 		call size n-1 with [Bx3]:
-# 			. . .
-# 	[]: call size n-1  // skip matching on size n
-# 		. . .
-
-
-# bootstrap recursive search
-def eval_patterns(pieces):
-    eval_pats_with_size_le_n(MAX_PAT_LEN, pieces, {})
-
 
 def add_solution(n, pieces, patterns):
     global results
@@ -241,7 +213,33 @@ def add_solution(n, pieces, patterns):
         coverage_str = "{0:.2f}% coverage".format(percent_coverage)
         patterns_str = ', '.join(str(pattern) for pattern in sorted(patterns.values()))
         print('%s, %s\n%s\n' % (reduction_str, coverage_str, patterns_str))
+    
+    pass
 
+"""
+# Simulating the recursion that I'm after:
+#
+# call size n with [] // starts with empty pattern list
+# 	[Ax3]: // Found n-size pattern "A" 3 times
+# 		call size n with [Ax3]:
+# 			[Ax3, Bx2]:	 // B is there 3 times, but one match overlaps with A, so we only get 2 times
+# 				call size n with [Ax3, Bx2]:
+# 					no size n patterns found, so we never call size n
+# 				call size n-1 with [Ax3, Bx2]:
+# 					. . .
+# 		call size n-1 with [Ax3]: // go on to n-1 without exploring size n further
+# 			. . .
+# 	[Bx3]: // If we don't match pattern "A" first, we can find "B" 3 times, and "A" 2 times
+# 		call size n with [Bx3]:
+# 			[Bx3, Ax2]:
+# 				call size n with [Bx3, Ax2]:
+# 					no size n patterns found, so we never call size n
+# 				call size n-1 with [Bx3, Ax2]:
+# 					. . .
+# 		call size n-1 with [Bx3]:
+# 			. . .
+# 	[]: call size n-1  // skip matching on size n
+# 		. . .
 
 # Recursive search
 def eval_pats_with_size_le_n(n, pieces, patterns):
@@ -315,6 +313,85 @@ def eval_pats_with_size_le_n(n, pieces, patterns):
             find_pats_with_size_le_n(n-N_STEP_SIZE, pieces.clone(), copy.deepcopy(patterns))
 
     return # recursive calls return nothing, easier design that way
+    """
+
+
+# bootstrap recursive search
+def eval_patterns(pieces):
+    eval_pats_with_size_le_n(MAX_PAT_LEN, pieces, {}, set())
+
+
+# Recursive search
+def eval_pats_with_size_le_n(n, pieces, patterns, size_n_cp_to_ignore):
+    # if we reached the bottom of a particular search path, update (global) results
+    if n < MIN_PAT_LEN:
+        add_solution(n, pieces, patterns)
+        return
+
+    # Process candidate patterns of length n (from left to right)
+
+    #if 14 <= n <= MAX_PAT_LEN:
+    #    print ("size %d on piece %d of %d, current patterns: %s" %
+    #        (n, piece_index, len(pieces), patterns_to_string(patterns)))
+
+    a_size_n_pattern_found = False
+
+    # a cp_matches also contain initial match location
+    for cp, cp_matches in all_matches[n].items():
+        if cp in size_n_cp_to_ignore:
+            continue
+
+        new_size_n_ignore = size_n_cp_to_ignore.copy()
+        new_size_n_ignore.add(cp) # add candidate pattern
+        (new_pieces, new_patterns) = \
+            make_new_pieces(cp_matches, n, pieces.clone(), copy.deepcopy(patterns))
+        if new_pieces is None:
+            continue
+        a_size_n_pattern_found = True
+
+        # Organize these recursive calls so that
+        # - larger pieces are tested before smaller pieces, yet it's still depth first search,
+        #   so that early results can be used without waiting for the entire program to complete.
+        # - to prevent a worse, larger pattern from obscuring a better larger pattern or a better
+        #   smaller pattern.
+
+        # with the pattern added, continue searching with size n
+        if DEBUG: print("n=%d pattern added, looking for more len n patterns" % n)
+        eval_pats_with_size_le_n(n, new_pieces, new_patterns, new_size_n_ignore)
+        
+        # ignore the new pattern (as if not added), but continue searching for other size n
+        # ultimately, on one of the recursive searches, length-n patterns will be completely skipped
+        if DEBUG: print("n=%d ignoring pattern, looking for more len n patterns" % n)
+        # TODO: probably don't have to do clone here, but playing it safe for now...      
+        eval_pats_with_size_le_n(n, pieces.clone(), copy.deepcopy(patterns), new_size_n_ignore)
+
+        # with the pattern added, skip other size n matches (if any), and go on to n-1
+        if DEBUG: print("n=%d keep len n patten(s), but move to n-%d" % (n, N_STEP_SIZE))
+        eval_pats_with_size_le_n(n-N_STEP_SIZE, new_pieces, new_patterns, set())
+
+        # defer the new pattern.  This lets us shuffle the order in which we match
+        # patterns of the same length.  This can find better solutions, but is costly.
+        # ex: Given patterns A,B,C of length 3, we want to explore
+        #     ABC, BAC, CAB, ACB, BCA, CBA
+        #     (These are explored as well: -, A, B, C, AB, BA, AC, CA, BC, CB)
+        # This is the lowest priority kind of search, so happening after other depth-first
+        # solutions are found.
+        # Also, this introduces some redundant searches.  Example: Pattern A occurs before
+        #    Pattern B in loop order.  Pattern A already explored by the time it gets deferred.
+        #    So on next iteration of cp loop (pattern B), when 'ignore patter B' recursive
+        #    call is made, patten A is re-evaluated.  In other words, my recursion sometimes
+        #    redundantly visits n-length statesin this "all permutations of all lengths" problem.
+        if same_length_permutations:
+            if DEBUG: print("n=%d pattern deferred, looking for more len n patterns" % n)
+        else:
+            size_n_cp_to_ignore = new_size_n_ignore
+
+    if not a_size_n_pattern_found: # and (n - N_STEP_SIZE >= MIN_PAT_LEN):
+        if DEBUG: print("n=%d no len n patten(s), move to n-%d" % (n, N_STEP_SIZE))
+        # TODO: Not sure if clones are necessary
+        eval_pats_with_size_le_n(n-N_STEP_SIZE, pieces.clone(), copy.deepcopy(patterns), set())
+
+    return # recursive calls return nothing, easier design that way
 
 
 # cloned pieces and patterns sent to make_new_pieces, and they will be updated
@@ -322,12 +399,28 @@ def make_new_pieces(cp_matches, n, new_pieces, new_patterns):
     # we have a list of non-overlapping starting indexes for the candidate pattern
     # make new patterns based on these matches
 
-    for i, match_index in enumerate(cp_matches):                  
+    # When we precomputed the matches, we only kept candidate patterns that had a count
+    # >= MIN_REUSE_FOR_PAT.  However, those match opportunities may not be around now
+    # that other patterns have been matched.  Check up front:
+    new_cp_matches = []
+    for match_index in cp_matches:
         index_of_piece_to_mod = new_pieces.piece_containing_index(match_index)
-        assert index_of_piece_to_mod is not None, \
-            "Error: couldn't find the piece that we previously found a match within"
+        # if no piece containing this starting index exists...
+        if index_of_piece_to_mod is None:
+            continue 
+        # if the would-be match got truncated...
+        if new_pieces[index_of_piece_to_mod].end_index < match_index + n-1:
+            continue
+        new_cp_matches.append(match_index)
+    if len(new_cp_matches) < MIN_REUSE_FOR_PAT:
+        return (None, None) # new_pieces and new_patterns remain unmodified
 
+    # create new pieces reflecting the newly extracted pattern
+    new_pattern_index = None
+    for match_index in new_cp_matches:                  
         tmp_pieces = []
+        index_of_piece_to_mod = new_pieces.piece_containing_index(match_index)
+        assert index_of_piece_to_mod is not None, "ERROR: Fix this None!"
         piece_to_mod = new_pieces[index_of_piece_to_mod]
 
         # possibly make a piece left of the match
@@ -335,11 +428,12 @@ def make_new_pieces(cp_matches, n, new_pieces, new_patterns):
             tmp_pieces.append(Piece(piece_to_mod.start_index, match_index-1))
 
         # pull out a pattern
-        if i == 0:
-            new_patterns[match_index] = Pattern(match_index, match_index+n-1)
-            new_patterns[match_index].debug_add_order = len(new_patterns)
+        if new_pattern_index is None:
             new_pattern_index = match_index
-        else:
+        if new_pattern_index not in new_patterns: # insert
+            new_patterns[new_pattern_index] = Pattern(match_index, match_index+n-1)
+            new_patterns[new_pattern_index].debug_add_order = len(new_patterns)
+        else: # update
             new_patterns[new_pattern_index].append(match_index)
 
         # possibly make a piece right of the match
@@ -351,7 +445,7 @@ def make_new_pieces(cp_matches, n, new_pieces, new_patterns):
         new_pieces.pieces[index_of_piece_to_mod:index_of_piece_to_mod+1] = tmp_pieces
 
     # DEBUG:
-    #print("candidate match indexes: %s" % cp_matches)
+    #print("candidate match indexes: %s" % new_cp_matches)
     #print("updated pieces %s" % new_pieces)
     #print("updated patterns %s" % patterns_to_string(new_patterns))
 
@@ -390,7 +484,6 @@ def find_candidate_pattern_matches(n, pieces, cp, starting_piece_index, offset_f
     cp_matches = deoverlap_matches(cp_matches, n)
 
     if len(cp_matches) >= MIN_REUSE_FOR_PAT:
-        # print(cp_matches) # DEBUG
         return cp_matches
     
     return None
