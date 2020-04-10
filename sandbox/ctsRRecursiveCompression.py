@@ -1,12 +1,14 @@
 # Recursive Compression experiments (in progress...)
 
 # TODO:
-# Write check on dictionary that patterns don't repeat values, don't overlap, etc.
+#
+# Convert the string based compression into RChirp rows
 
 import copy
+from datetime import datetime
 
 MIN_REUSE_FOR_PAT = 2 # must have at least this many occurrences to be promoted to a pattern
-MAX_PAT_LEN = 20
+MAX_PAT_LEN = 100
 MIN_PAT_LEN = 12
 
 N_STEP_SIZE = 2
@@ -163,21 +165,6 @@ def config(target):
         TRANSPOSE_MAX = TRANSPOSE_MIN = 0
 
 
-# Desired functionality:
-# A repetition of length n will sometimes give less coverage than a repetition with
-# length n-m; factoring out the length n patterns will block the better n-m patterns.
-# This implies that the recursive tree search should sometimes skip viable, larger patterns.
-# Example:  Suppose the data has A and B, 2 different kinds of repeats of length n.
-# Further suppose A can be matched 3 times, and B 3 times, but if either is matched
-# first, the other can only achieve 2 matches.
-# Recursively explore...
-# 1) no matches of length n (goes on to n-1)
-# 2) 3 'A' matches of length n (goes on to n-1 with that n-length pattern in place)
-# 2) 3 'B' matches of length n (goes on to n-1 with that n-length pattern in place)
-# 4) 3 'A' matches and 2 'B' matches (goes on to n-1 with those two n-length patterns in place)
-# 5) 3 'B' matches and 2 'A' matches (goes on to n-1 with those two n-length patterns in place)
-
-
 def add_solution(n, pieces, patterns):
     global results
 
@@ -217,6 +204,23 @@ def add_solution(n, pieces, patterns):
     pass
 
 """
+Old approach, before strings were precomputed
+
+# Desired functionality:
+# A repetition of length n will sometimes give less coverage than a repetition with
+# length n-m; factoring out the length n patterns will block the better n-m patterns.
+# This implies that the recursive tree search should sometimes skip viable, larger patterns.
+# Example:  Suppose the data has A and B, 2 different kinds of repeats of length n.
+# Further suppose A can be matched 3 times, and B 3 times, but if either is matched
+# first, the other can only achieve 2 matches.
+# Recursively explore...
+# 1) no matches of length n (goes on to n-1)
+# 2) 3 'A' matches of length n (goes on to n-1 with that n-length pattern in place)
+# 2) 3 'B' matches of length n (goes on to n-1 with that n-length pattern in place)
+# 4) 3 'A' matches and 2 'B' matches (goes on to n-1 with those two n-length patterns in place)
+# 5) 3 'B' matches and 2 'A' matches (goes on to n-1 with those two n-length patterns in place)
+
+
 # Simulating the recursion that I'm after:
 #
 # call size n with [] // starts with empty pattern list
@@ -329,11 +333,6 @@ def eval_pats_with_size_le_n(n, pieces, patterns, size_n_cp_to_ignore):
         return
 
     # Process candidate patterns of length n (from left to right)
-
-    #if 14 <= n <= MAX_PAT_LEN:
-    #    print ("size %d on piece %d of %d, current patterns: %s" %
-    #        (n, piece_index, len(pieces), patterns_to_string(patterns)))
-
     a_size_n_pattern_found = False
 
     # a cp_matches also contain initial match location
@@ -443,11 +442,6 @@ def make_new_pieces(cp_matches, n, new_pieces, new_patterns):
         # replace the old piece with 0 to 2 new pieces
         #    this achieves a list insertion via a slice (which flattens the lists, so no nesting)
         new_pieces.pieces[index_of_piece_to_mod:index_of_piece_to_mod+1] = tmp_pieces
-
-    # DEBUG:
-    #print("candidate match indexes: %s" % new_cp_matches)
-    #print("updated pieces %s" % new_pieces)
-    #print("updated patterns %s" % patterns_to_string(new_patterns))
 
     return (new_pieces, new_patterns)
 
@@ -593,6 +587,9 @@ if __name__ == "__main__":
     v3 = "DID I MENTION THIS IS A TEST?  YES"
     voices = [v1, v2, v3]
 
+    print(datetime.now())
+    
     recursive_compress(voices)
-
+    
+    print(datetime.now())
     print("Done")
