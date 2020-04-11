@@ -16,7 +16,7 @@ from fractions import Fraction
 from functools import reduce
 from dataclasses import dataclass
 from collections import defaultdict
-from ctsConstants import ARCH, C0_MIDI_NUM
+from ctsConstants import ARCH, C0_MIDI_NUM, GOATTRACKER_COMPRESSED
 import ctsChirp
 import ctsRChirp
 import ctsMidi
@@ -974,7 +974,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     too_many_patterns = False
 
     # If the song has gone through a compression algorithm, the compressed property will be set to True
-    if rchirp_song.compressed:
+    if rchirp_song.compressed == GOATTRACKER_COMPRESSED:
         # Convert the patterns to goattracker patterns
         prev_instrument = 1  # TODO: Default instrument 1, this must be generalized
         for ip, p in enumerate(rchirp_song.patterns):
@@ -983,13 +983,10 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                 gt_row = GtPatternRow()  # make a new empty pattern row
                 if r.gate:
                     gt_row.note_data = midi_note_to_pattern_note(r.note_num)
-                    if r.new_instrument is not None:  # only insert new instrument on note start
-                        gt_row.inst_num = 1
-                        prev_instrument = 1
-                    else:
-                        gt_row.inst_num = prev_instrument
+                    gt_row.inst_num = r.instrument
                 elif r.gate is False:  # if ending a note ('false' check because tri-state)
                     gt_row.note_data = GT_KEY_OFF
+                    gt_row.inst_num = r.instrument
                 if r.new_jiffy_tempo is not None:
                     gt_row.command = GT_TEMPO_CHNG_CMD
                     # insert local channel tempo change
@@ -1039,8 +1036,8 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
 
                         # only bother to populate instrument if there's a new note
                         if rchirp_row.new_instrument is not None:
-                            gt_row.inst_num = 1  # rchirp_row.new_instrument
-                            prev_instrument = 1  # rchirp_row.new_instrument
+                            gt_row.inst_num = rchirp_row.new_instrument
+                            prev_instrument = rchirp_row.new_instrument
                         else:
                             # unlike SID-Wizard which only asserts instrument changes (on any row),
                             # goattracker asserts the current instrument with every note
@@ -1128,21 +1125,38 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     # append instruments
     # TODO: At some point, should add support for loading gt .ins instrument files for the channels
     # Need an instrument
-    # For now, just going to design a simple triangle sound as instrument number 1.
-    # This requires setting ADSR, and a wavetable position of 01.
-    # Then a wavetable with the entires 01:11 00, and 02:FF 00 
-    gt_binary.append(0x01)  # number of instruments (not counting NOP instrument 0)
-    gt_binary += instrument_to_bytes(GtInstrument(inst_num=DEFAULT_INSTRUMENT,
-                                                  attack_decay=0x22, sustain_release=0xFA, wave_ptr=0x01,
-                                                  inst_name='simple triangle'))
+
+    # For now, we have 3 instruments available: a simple triangle, a simple sawtooth, and a simple pulse
+    instruments = [GtInstrument(inst_num=1,
+                                attack_decay=0x22, sustain_release=0xFA, wave_ptr=0x01,
+                                inst_name='simple triangle'),
+                   GtInstrument(inst_num=2,
+                                attack_decay=0x22, sustain_release=0x7F, wave_ptr=0x03,
+                                inst_name='simple sawtooth'),
+                   GtInstrument(inst_num=3,
+                                attack_decay=0x22, sustain_release=0x7F, wave_ptr=0x05,
+                                pulse_ptr=1,
+                                inst_name='simple pulse'),
+                   ]
+    gt_binary.append(len(instruments))  # number of instruments (not counting NOP instrument 0)
+    for inst in instruments:
+        gt_binary += instrument_to_bytes(inst)
     # TODO: In the future, more instruments appended here (in instrument number order)
 
     # append tables
     # TODO: Currently hardcoded: tables for DEFAULT_INSTRUMENT:
-    gt_binary.append(0x02)  # wavetable with two row entries
-    gt_binary += bytes([0x11, 0xFF, 0x00, 0x00])  # simple triangle instrument waveform
+    gt_binary.append(0x06)  # wavetable with 6 row entries
+    gt_binary += bytes([0x11, 0xFF,
+                        0x21, 0xFF,
+                        0x41, 0xFF,
+                        0x00, 0x00,
+                        0x00, 0x00,
+                        0x00, 0x00])  # simple triangle instrument waveform
 
-    gt_binary.append(0x00)  # length 0 pulsetable
+
+    gt_binary.append(0x02)  # length 2 pulsetable
+    gt_binary += bytes([0x81, 0xFF,
+                       0x00, 0x00])
 
     gt_binary.append(0x00)  # length 0 filtertable
 

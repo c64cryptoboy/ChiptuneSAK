@@ -21,11 +21,61 @@ Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
 
 @dataclass(order=True)
+class GTRow:
+    """
+    The GoatTracker row
+    """
+    row_num: int = None  #: rchirp row number
+    jiffy_num: int = None  #: jiffy num since time 0
+    note_num: int = None  #: MIDI note number; None means no note asserted
+    instrument: int = 1  #: Instrument number
+    new_instrument: int = None  #: Instrument number; None means no change
+    gate: bool = None  #: Gate on/off tri-value True/False/None; None means no gate change
+    jiffy_len: int = None  #: Jiffies to process this row (until next row)
+    new_jiffy_tempo: int = None  #: New tempo for channel (not global); None means no change
+
+    def import_from_rchirp_row(self, rchirp_row):
+        self.row_num = rchirp_row.row_num
+        self.jiffy_num = rchirp_row.jiffy_num
+        self.note_num = rchirp_row.note_num
+        self.new_instrument = rchirp_row.new_instrument
+        self.gate = rchirp_row.gate
+        self.jiffy_len = rchirp_row.jiffy_len
+        self.new_jiffy_tempo = rchirp_row.new_jiffy_tempo
+        return self
+
+
+@dataclass(order=True)
 class Repeat:
     start_row: int = None       #: Starting row of original pattern
     repeat_start: int = None    #: Starting row of repeats
     length: int = 0             #: Length of repeated pattern
     xform: Transform = Transform(0, 0)  #: Transform between repeats
+
+
+def get_gt_filled_rows(voice):
+    ret_rows = []
+    max_row = max(voice.rows[rn].row_num for rn in voice.rows)
+    assert 0 in voice.rows, "No row 0 in rows"  # Row 0 should exist!
+    last_row = voice.rows[0]
+    current_instrument = 1
+    for rn in range(max_row + 1):  # Because max_row needs to be included!
+        if rn in voice.rows:
+            last_row = GTRow().import_from_rchirp_row(voice.rows[rn])
+            if last_row.new_instrument is not None:
+                current_instrument = last_row.new_instrument
+            if last_row.note_num is not None:
+                last_row.instrument = current_instrument
+            ret_rows.append(last_row)
+        else:
+            tmp_row = GTRow()
+            tmp_row.row_num = rn
+            tmp_row.jiffy_num = last_row.jiffy_num + last_row.jiffy_len
+            tmp_row.jiffy_len = last_row.jiffy_len
+            last_row = tmp_row
+            ret_rows.append(last_row)
+    return ret_rows
+
 
 
 def gt_row_match(r1, r2, xf=None):
@@ -38,6 +88,7 @@ def gt_row_match(r1, r2, xf=None):
     else:
         note_match = r1.note_num == r2.note_num
     return note_match \
+           and r1.instrument == r2.instrument \
            and r1.new_instrument == r2.new_instrument \
            and r1.gate == r2.gate \
            and r1.jiffy_len == r2.jiffy_len \
@@ -367,7 +418,7 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
     rchirp_song.patterns = []  # Get rid of any patterns from previous compression
     last_pattern_count = 0
     for iv, v in enumerate(rchirp_song.voices):
-        filled_rows = v.get_filled_rows()
+        filled_rows = get_gt_filled_rows(v)
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
         order = {}
@@ -401,7 +452,7 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
         if not validate_orderlist(rchirp_song.patterns, order):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    rchirp_song.compressed = True
+    rchirp_song.compressed = GOATTRACKER_COMPRESSED
     return rchirp_song
 
 
@@ -431,7 +482,7 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
 
     rchirp_song.patterns = []  # Get rid of any patterns from previous compression
     for iv, v in enumerate(rchirp_song.voices):
-        filled_rows = v.get_filled_rows()
+        filled_rows = get_gt_filled_rows(v)
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
         order = {}
@@ -467,7 +518,7 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
         if not validate_orderlist(rchirp_song.patterns, order):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    rchirp_song.compressed = True
+    rchirp_song.compressed = GOATTRACKER_COMPRESSED
     return rchirp_song
 
 

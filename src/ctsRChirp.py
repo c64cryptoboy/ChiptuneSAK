@@ -142,24 +142,6 @@ class RChirpVoice:
             return 0
         return max(self.rows) + 1
 
-    def get_filled_rows(self):
-        ret_rows = []
-        max_row = max(self.rows[rn].row_num for rn in self.rows)
-        assert 0 in self.rows, "No row 0 in rows"  # Row 0 should exist!
-        last_row = self.rows[0]
-        for rn in range(max_row + 1):  # Because max_row needs to be included!
-            if rn in self.rows:
-                last_row = copy.copy(self.rows[rn])
-                ret_rows.append(last_row)
-            else:
-                tmp_row = RChirpRow()
-                tmp_row.row_num = rn
-                tmp_row.jiffy_num = last_row.jiffy_num + last_row.jiffy_len
-                tmp_row.jiffy_len = last_row.jiffy_len
-                last_row = tmp_row
-                ret_rows.append(last_row)
-        return ret_rows
-
     def is_contiguous(self):
         """
         Determines if the voices rows are contiguous, without gaps in time
@@ -279,7 +261,12 @@ class RChirpVoice:
         # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
         for p in sorted(chirp_track.program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            tmp_rows[n_row].new_instrument = int(p.program)  # TODO: Map midi instruments into tracker instruments
+            new_instrument = 1
+            if p.program > 64:
+                new_instrument = 3
+            elif p.program > 32:
+                new_instrument = 2
+            tmp_rows[n_row].new_instrument = int(new_instrument)  # TODO: Map midi instruments into tracker instruments
 
         self.rows = tmp_rows
         self._fixup_rows()
@@ -297,7 +284,7 @@ class RChirpSong:
         self.stats = {}                             #: TODO: ???
         self.metadata = None                        #: Song metadata (author, copyright, etc.)
         self.other = None                           #: Other meta-events in song
-        self.compressed = False                     #: Has song been through compression algorithm?
+        self.compressed = None                      #: Has song been through compression algorithm?
 
         if chirp_song is None:
             self.metadata = SongMetadata()

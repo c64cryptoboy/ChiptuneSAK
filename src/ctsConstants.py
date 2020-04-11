@@ -59,6 +59,7 @@ BASIC_LINE_MAX_C64 = 80    # 2 lines of 40 col
 BASIC_LINE_MAX_VIC20 = 88  # 4 lines of 22 col
 BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
 
+GOATTRACKER_COMPRESSED = 0x01
 
 @dataclass()
 class ArchDescription:
