@@ -451,6 +451,7 @@ class GtChannelState:
     # The two funktable entries are shared by all channels using a funktempo, so we have it as a
     # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
     # to and processing different songs at the same time (seems unlikely).
+    # TODO:  add instrument handling
     # TODO: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
     funktable = GT_DEFAULT_FUNKTEMPOS
 
@@ -755,6 +756,7 @@ def import_parsed_gt_to_rchirp(sng_data, subtune_num=0):
             rc_row.jiffy_num = global_tick
             rc_row.jiffy_len = cs.curr_tempo
 
+            # TODO: add instrument data to RChirpRows
             # KeyOff (only recorded if there's a curr_note defined)
             if cs.row_has_key_off:
                 rc_row.note_num = cs.curr_note
@@ -1017,7 +1019,6 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
             rchirp_rows = rchirp_voice.rows
             pattern_row_index = 0
             pattern = bytearray()  # create a new, empty pattern
-            # TODO: Instead of max, range, and in, just do a sort
             max_row = max(rchirp_rows)
             prev_instrument = 1  # TODO: Default instrument 1, this must be generalized
 
@@ -1035,6 +1036,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                         gt_row.note_data = midi_note_to_pattern_note(rchirp_row.note_num)
                         assert GT_NOTE_OFFSET <= gt_row.note_data <= GT_MAX_NOTE_VALUE, 'Illegal note number'
 
+                        # TODO: RChirp rows now include instrument; incorporate that into this code
                         # only bother to populate instrument if there's a new note
                         if rchirp_row.new_instrument is not None:
                             gt_row.instr_num = rchirp_row.new_instrument
