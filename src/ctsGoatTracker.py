@@ -71,14 +71,14 @@ class GtHeader:
 @dataclass
 class GtPatternRow:
     note_data: int = GT_REST
-    inst_num: int = 0
+    instr_num: int = 0
     command: int = 0
     command_data: int = 0
 
     def to_bytes(self):
         """
         Converts a pattern row into GT bytes.
-        :return: bytes atht represet the pattern row
+        :return: bytes that represet the pattern row
         :rtype: bytes
         """
         if self.note_data is not None \
@@ -88,12 +88,13 @@ class GtPatternRow:
         if self.note_data is None:
             self.note_data = GT_REST
         else:
-            return bytes([self.note_data, self.inst_num, self.command, self.command_data])
+            assert self.instr_num is not None, "None instrument number"
+            return bytes([self.note_data, self.instr_num, self.command, self.command_data])
 
 
 @dataclass
 class GtInstrument:
-    inst_num: int = 0
+    instr_num: int = 0
     attack_decay: int = 0
     sustain_release: int = 0
     wave_ptr: int = 0
@@ -360,7 +361,7 @@ def import_sng_binary_to_parsed_gt(sng_bytes):
                                      hard_restart_1st_frame_wave=sng_bytes[file_index + 8])
         file_index += 9
 
-        an_instrument.inst_num = i + 1
+        an_instrument.instr_num = i + 1
         an_instrument.inst_name = get_chars(sng_bytes[file_index:file_index + 16])
         file_index += 16
 
@@ -419,11 +420,11 @@ def import_sng_binary_to_parsed_gt(sng_bytes):
         assert num_rows <= GT_MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
         file_index += 1
         for row_num in range(num_rows):
-            a_row = GtPatternRow(note_data=sng_bytes[file_index], inst_num=sng_bytes[file_index + 1],
+            a_row = GtPatternRow(note_data=sng_bytes[file_index], instr_num=sng_bytes[file_index + 1],
                                  command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
             assert (GT_NOTE_OFFSET <= a_row.note_data <= GT_MAX_NOTE_VALUE) or a_row.note_data == GT_PAT_END, \
                 "Error: unexpected note data value"
-            assert a_row.inst_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
+            assert a_row.instr_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
             assert a_row.command <= 0x0F, "Error: command number out of range"
             file_index += 4
             a_pattern.append(a_row)
@@ -974,7 +975,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     too_many_patterns = False
 
     # If the song has gone through a compression algorithm, the compressed property will be set to True
-    if rchirp_song.compressed == GOATTRACKER_COMPRESSED:
+    if rchirp_song.compressed:
         # Convert the patterns to goattracker patterns
         prev_instrument = 1  # TODO: Default instrument 1, this must be generalized
         for ip, p in enumerate(rchirp_song.patterns):
@@ -983,10 +984,10 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                 gt_row = GtPatternRow()  # make a new empty pattern row
                 if r.gate:
                     gt_row.note_data = midi_note_to_pattern_note(r.note_num)
-                    gt_row.inst_num = r.instrument
+                    gt_row.instr_num = r.instr_num
                 elif r.gate is False:  # if ending a note ('false' check because tri-state)
                     gt_row.note_data = GT_KEY_OFF
-                    gt_row.inst_num = r.instrument
+                    gt_row.instr_num = r.instr_num
                 if r.new_jiffy_tempo is not None:
                     gt_row.command = GT_TEMPO_CHNG_CMD
                     # insert local channel tempo change
@@ -1036,13 +1037,13 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
 
                         # only bother to populate instrument if there's a new note
                         if rchirp_row.new_instrument is not None:
-                            gt_row.inst_num = rchirp_row.new_instrument
+                            gt_row.instr_num = rchirp_row.new_instrument
                             prev_instrument = rchirp_row.new_instrument
                         else:
                             # unlike SID-Wizard which only asserts instrument changes (on any row),
                             # goattracker asserts the current instrument with every note
                             # (goattracker can assert instrument without note, but that's a NOP)
-                            gt_row.inst_num = prev_instrument
+                            gt_row.instr_num = prev_instrument
 
                     elif rchirp_row.gate is False:  # if ending a note ('false' check because tri-state)
                         gt_row.note_data = GT_KEY_OFF
@@ -1127,14 +1128,14 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     # Need an instrument
 
     # For now, we have 3 instruments available: a simple triangle, a simple sawtooth, and a simple pulse
-    instruments = [GtInstrument(inst_num=1,
+    instruments = [GtInstrument(instr_num=1,
                                 attack_decay=0x22, sustain_release=0xFA, wave_ptr=0x01,
                                 inst_name='simple triangle'),
-                   GtInstrument(inst_num=2,
-                                attack_decay=0x22, sustain_release=0x7F, wave_ptr=0x03,
+                   GtInstrument(instr_num=2,
+                                attack_decay=0x23, sustain_release=0x4F, wave_ptr=0x03,
                                 inst_name='simple sawtooth'),
-                   GtInstrument(inst_num=3,
-                                attack_decay=0x22, sustain_release=0x7F, wave_ptr=0x05,
+                   GtInstrument(instr_num=3,
+                                attack_decay=0x22, sustain_release=0x4F, wave_ptr=0x05,
                                 pulse_ptr=1,
                                 inst_name='simple pulse'),
                    ]

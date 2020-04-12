@@ -25,6 +25,7 @@ class RChirpRow:
     row_num: int = None           #: rchirp row number
     jiffy_num: int = None         #: jiffy num since time 0
     note_num: int = None          #: MIDI note number; None means no note asserted
+    instr_num: int = None         #: Instrument number
     new_instrument: int = None    #: Instrument number; None means no change
     gate: bool = None             #: Gate on/off tri-value True/False/None; None means no gate change
     jiffy_len: int = None         #: Jiffies to process this row (until next row)
@@ -192,6 +193,29 @@ class RChirpVoice:
         else:
             return self.get_last_row().row_num
 
+    def get_filled_rows(self):
+        ret_rows = []
+        max_row = max(self.rows[rn].row_num for rn in self.rows)
+        assert 0 in self.rows, "No row 0 in rows"  # Row 0 should exist!
+        last_row = self.rows[0]
+        current_instrument = 1
+        for rn in range(max_row + 1):  # Because max_row needs to be included!
+            if rn in self.rows:
+                last_row = copy.copy(self.rows[rn])
+                if last_row.new_instrument is not None:
+                    current_instrument = last_row.new_instrument
+                if last_row.note_num is not None:
+                    last_row.instr_num = current_instrument
+                ret_rows.append(last_row)
+            else:
+                tmp_row = RChirpRow()
+                tmp_row.row_num = rn
+                tmp_row.jiffy_num = last_row.jiffy_num + last_row.jiffy_len
+                tmp_row.jiffy_len = last_row.jiffy_len
+                last_row = copy.copy(tmp_row)
+                ret_rows.append(last_row)
+        return ret_rows
+
     def _fixup_rows(self):
         """
         Goes through the rows and adds missing elements
@@ -256,7 +280,6 @@ class RChirpVoice:
             tmp_rows[n_row].jiffy_len = jiffies_per_row
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
-
 
         # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
         for p in sorted(chirp_track.program_changes):
