@@ -696,97 +696,12 @@ int runcpu(void)
   {
 """
 def runcpu():
-    global pc, cpucycles
+    global pc, cpucycles, flags
     instruction = FETCH()
     cpucycles += cpucycles_table[instruction]
 
-    # "LAX" pseudo-op instructions
-
-    """  
-    case 0xa7:
-    ASSIGNSETFLAGS(a, MEM(ZEROPAGE()));
-    x = a;
-    pc++;
-    break;
-
-    case 0xb7:
-    ASSIGNSETFLAGS(a, MEM(ZEROPAGEY()));
-    x = a;
-    pc++;
-    break;
-
-    case 0xaf:
-    ASSIGNSETFLAGS(a, MEM(ABSOLUTE()));
-    x = a;
-    pc += 2;
-    break;
-
-    case 0xa3:
-    ASSIGNSETFLAGS(a, MEM(INDIRECTX()));
-    x = a;
-    pc++;
-    break;
-
-    case 0xb3:
-    cpucycles += EVALPAGECROSSING_INDIRECTY();
-    ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
-    x = a;
-    pc++;
-    break;
-    
-    """
-    # NOP pseudo-op instructions:
-    """
-    
-    # NOP size 1, 2 cycle
-    case 0x1a:
-    case 0x3a:
-    case 0x5a:
-    case 0x7a:
-    case 0xda:
-    case 0xfa:
-    break;
-    
-    # NOP size 2, 2 cycle
-    case 0x80:
-    case 0x82:
-    case 0x89:
-    case 0xc2:
-    case 0xe2:
-
-    # NOP size 2, 3 cycle
-    case 0x04:
-    case 0x44:
-    case 0x64:
-
-    # NOP size 2, 4 cycle
-    case 0x14:
-    case 0x34:
-    case 0x54:
-    case 0x74:
-    case 0xd4:
-    case 0xf4:
-    pc++;
-    break;
-    
-    # NOP size TODO, 4 cycle
-    case 0x0c:
-
-    # NOP size TODO, 4(+1) cycle
-    case 0x1c:
-    case 0x3c:
-    case 0x5c:
-    case 0x7c:
-    case 0xdc:
-    case 0xfc:
-    cpucycles += EVALPAGECROSSING_ABSOLUTEX();
-    pc += 2;
-    break;
 
     """
-    # ADC instructions
-    """
-    
     case 0x69:
     ADC(IMMEDIATE());
     pc++;
@@ -829,11 +744,45 @@ def runcpu():
     ADC(MEM(INDIRECTY()));
     pc++;
     break;
+    """
+    # ADC instructions    
+    if instruction == 0x69:
+        ADC(OperandRef(BYTE_VAL, IMMEDIATE()))
+        pc += 1
+    
+    elif instruction == 0x65:
+        ADC(OperandRef(LOC_VAL, ZEROPAGE()))
+        pc += 1
+    
+    elif instruction == 0x75:
+        ADC(OperandRef(LOC_VAL, ZEROPAGEX()))
+        pc += 1
+    
+    elif instruction == 0x6d:
+        ADC(OperandRef(LOC_VAL, ABSOLUTE()))
+        pc += 2
+    
+    elif instruction == 0x7d:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        ADC(OperandRef(LOC_VAL, ABSOLUTEX()))
+        pc += 2
+    
+    elif instruction == 0x79:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        ADC(OperandRef(LOC_VAL, ABSOLUTEY()))
+        pc += 2
+    
+    elif instruction == 0x61:
+        ADC(OperandRef(LOC_VAL, INDIRECTX()))
+        pc += 1
+    
+    elif instruction == 0x71:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        ADC(OperandRef(LOC_VAL, INDIRECTY()))
+        pc += 1
+    
 
     """
-    # AND instructions
-    """
-
     case 0x29:
     AND(IMMEDIATE());
     pc++;
@@ -876,8 +825,42 @@ def runcpu():
     AND(MEM(INDIRECTY()));
     pc++;
     break;
-
     """
+    # AND instructions    
+    if instruction == 0x29:
+        AND(OperandRef(BYTE_VAL, IMMEDIATE()))
+        pc += 1
+    
+    elif instruction == 0x25:
+        AND(OperandRef(LOC_VAL, ZEROPAGE()))
+        pc += 1
+    
+    elif instruction == 0x35:
+        AND(OperandRef(LOC_VAL, ZEROPAGEX()))
+        pc += 1
+    
+    elif instruction == 0x2d:
+        AND(OperandRef(LOC_VAL, ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0x3d:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        AND(OperandRef(LOC_VAL, ABSOLUTEX()))
+        pc += 2
+    
+    elif instruction == 0x39:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        AND(OperandRef(LOC_VAL, ABSOLUTEY()))
+        pc += 2
+
+    elif instruction == 0x21:
+        AND(OperandRef(LOC_VAL, INDIRECTX()))
+        pc += 1
+    
+    elif instruction == 0x31:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        AND(OperandRef(LOC_VAL, INDIRECTY()))
+        pc += 1
 
 
     """
@@ -905,7 +888,6 @@ def runcpu():
     pc += 2;
     break;
     """
-
     # ASL instructions
     if instruction == 0x0a:
         ASL(OperandRef(A_REG))
@@ -951,7 +933,6 @@ def runcpu():
             BRANCH()
         else:
             pc += 1
-
 
     """
     case 0xf0:
@@ -1185,21 +1166,18 @@ def runcpu():
     """
     # CPX instructions
     if instruction == 0xe0:
-        CMP(x, OperandRef(BYTE_VAL, IMMEDIATE()))
+        CMP(OperandRef(X_REG), OperandRef(BYTE_VAL, IMMEDIATE()))
         pc += 1
 
     elif instruction == 0xe4:
-        CMP(x, OperandRef(LOC_VAL, ZEROPAGE()))
+        CMP(OperandRef(X_REG), OperandRef(LOC_VAL, ZEROPAGE()))
         pc += 1
 
     elif instruction == 0xec:
-        CMP(x, OperandRef(LOC_VAL, ABSOLUTE()))
+        CMP(OperandRef(X_REG), OperandRef(LOC_VAL, ABSOLUTE()))
         pc += 2
 
-
-    # CPY instructions
     """
-
     case 0xc0:
     CMP(y, IMMEDIATE());
     pc++;
@@ -1214,11 +1192,22 @@ def runcpu():
     CMP(y, MEM(ABSOLUTE()));
     pc += 2;
     break;
+    """
+    # CPY instructions
+    if instruction == 0xc0:
+        CMP(OperandRef(Y_REG), OperandRef(BYTE_VAL, IMMEDIATE()))
+        pc += 1
+
+    elif instruction == 0xc4:
+        CMP(OperandRef(Y_REG), OperandRef(LOC_VAL, ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0xcc:
+        CMP(OperandRef(Y_REG), OperandRef(LOC_VAL, ABSOLUTE()))
+        pc += 2
+
 
     """
-    # DEC instructions
-    """
-
     case 0xc6:
     DEC(MEM(ZEROPAGE()));
     WRITE(ZEROPAGE());
@@ -1242,29 +1231,48 @@ def runcpu():
     WRITE(ABSOLUTEX());
     pc += 2;
     break;
+    """
+    # DEC instructions
+    if instruction == 0xc6:
+        DEC(OperandRef(ZEROPAGE()))
+        WRITE(ZEROPAGE())
+        pc += 1
+
+    elif instruction == 0xd6:
+        DEC(OperandRef(ZEROPAGEX()))
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0xce:
+        DEC(OperandRef(ABSOLUTE()))
+        WRITE(ABSOLUTE())
+        pc += 2
+
+    elif instruction == 0xde:
+        DEC(OperandRef(ABSOLUTEX()))
+        WRITE(ABSOLUTEX())
+        pc += 2
+
 
     """
-    # DEX instruction
-    """
-
     case 0xca:
     x--;
     SETFLAGS(x);
     break;
+    """
+    # DEX instruction
+
 
     """
-    # DEY instruction
-    """
-
     case 0x88:
     y--;
     SETFLAGS(y);
     break;
+    """
+    # DEY instruction
+
 
     """
-    # EOR instructions
-    """
-
     case 0x49:
     EOR(IMMEDIATE());
     pc++;
@@ -1307,11 +1315,11 @@ def runcpu():
     EOR(MEM(INDIRECTY()));
     pc++;
     break;
+    """
+    # EOR instructions
+
 
     """
-    # INC instructions
-    """
-
     case 0xe6:
     INC(MEM(ZEROPAGE()));
     WRITE(ZEROPAGE());
@@ -1335,39 +1343,41 @@ def runcpu():
     WRITE(ABSOLUTEX());
     pc += 2;
     break;
+    """
+    # INC instructions
+
 
     """
-    # INX instruction
-    """
-
     case 0xe8:
     x++;
     SETFLAGS(x);
     break;
+    """
+    # INX instruction
+
+
 
     """
-    # INY instruction
-    """
-
     case 0xc8:
     y++;
     SETFLAGS(y);
     break;
+    """
+    # INY instruction
+
+
 
     """
-    # JSR instruction
-    """
-
     case 0x20:
     PUSH((pc+1) >> 8);
     PUSH((pc+1) & 0xff);
     pc = ABSOLUTE();
     break;
+    """
+    # JSR instruction
+
 
     """
-    # JMP instructions
-    """
-
     case 0x4c:
     pc = ABSOLUTE();
     break;
@@ -1379,11 +1389,11 @@ def runcpu():
       pc = (MEM(adr) | (MEM(((adr + 1) & 0xff) | (adr & 0xff00)) << 8));
     }
     break;
+    """
+    # JMP instructions
+
 
     """
-    # LDA instructions
-    """
-
     case 0xa9:
     ASSIGNSETFLAGS(a, IMMEDIATE());
     pc++;
@@ -1426,11 +1436,12 @@ def runcpu():
     ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
     pc++;
     break;
+    """
+    # LDA instructions
+
+
 
     """
-    # LDX instructions
-    """
-
     case 0xa2:
     ASSIGNSETFLAGS(x, IMMEDIATE());
     pc++;
@@ -1456,11 +1467,12 @@ def runcpu():
     ASSIGNSETFLAGS(x, MEM(ABSOLUTEY()));
     pc += 2;
     break;
+    """
+    # LDX instructions
+
+
 
     """
-    # LDY instructions
-    """
-
     case 0xa0:
     ASSIGNSETFLAGS(y, IMMEDIATE());
     pc++;
@@ -1486,11 +1498,11 @@ def runcpu():
     ASSIGNSETFLAGS(y, MEM(ABSOLUTEX()));
     pc += 2;
     break;
+    """
+    # LDY instructions
+
 
     """
-    # LSR instructions
-    """
-
     case 0x4a:
     LSR(a);
     break;
@@ -1518,18 +1530,18 @@ def runcpu():
     WRITE(ABSOLUTEX());
     pc += 2;
     break;
+    """
+    # LSR instructions
+
 
     """
-    # NOP instruction
-    """
-
     case 0xea:
     break;
+    """
+    # NOP instruction
+
 
     """
-    # ORA instructions
-    """
-
     case 0x09:
     ORA(IMMEDIATE());
     pc++;
@@ -1572,44 +1584,44 @@ def runcpu():
     ORA(MEM(INDIRECTY()));
     pc++;
     break;
+    """
+    # ORA instructions
+
 
     """
-    # PHA instruction
-    """
-
     case 0x48:
     PUSH(a);
     break;
+    """
+    # PHA instruction
+
 
     """
-    # PHP instruction
-    """
-
     # TODO: Pretendo says PHP always pushes B flag as 1...
     case 0x08:
     PUSH(flags);
     break;
+    """
+    # PHP instruction
+
 
     """
-    # PLA instruction
-    """
-
     case 0x68:
     ASSIGNSETFLAGS(a, POP());
     break;
+    """
+    # PLA instruction
 
-    """
-    # PLP instruction
-    """
-    
+
+    """    
     case 0x28:
     flags = POP();
     break;
+    """
+    # PLP instruction
+
 
     """
-    # ROL instructions
-    """
-
     case 0x2a:
     ROL(a);
     break;
@@ -1637,11 +1649,11 @@ def runcpu():
     WRITE(ABSOLUTEX());
     pc += 2;
     break;
+    """
+    # ROL instructions
+
 
     """
-    # ROR instructions
-    """
-
     case 0x6a:
     ROR(a);
     break;
@@ -1669,33 +1681,35 @@ def runcpu():
     WRITE(ABSOLUTEX());
     pc += 2;
     break;
+    """
+    # ROR instructions
+
 
     """
-    # RTI instruction
-    """
-
     case 0x40:
     if (sp == 0xff) return 0;
     flags = POP();
     pc = POP();
     pc |= POP() << 8;
     break;
+    """
+    # RTI instruction
+
+
 
     """
-    # RTS instruction
-    """
-
     case 0x60:
     if (sp == 0xff) return 0;
     pc = POP();
     pc |= POP() << 8;
     pc++;
     break;
+    """
+    # RTS instruction
+
+
 
     """
-    # SBC instructions
-    """
-
     case 0xe9:
     SBC(IMMEDIATE());
     pc++;
@@ -1738,35 +1752,36 @@ def runcpu():
     SBC(MEM(INDIRECTY()));
     pc++;
     break;
+    """
+    # SBC instructions
+
 
     """
-    # SEC instruction
-    """
-
     case 0x38:
     flags |= FC;
     break;
+    """
+    # SEC instruction
+
+
 
     """
-    # SED instruction
-    """
-
     case 0xf8:
     flags |= FD;
     break;
+    """
+    # SED instruction
+
 
     """
-    # SEI instruction
-    """
-
     case 0x78:
     flags |= FI;
     break;
+    """
+    # SEI instruction
+
 
     """
-    # STA instructions
-    """
-
     case 0x85:
     MEM(ZEROPAGE()) = a;
     WRITE(ZEROPAGE());
@@ -1808,11 +1823,12 @@ def runcpu():
     WRITE(INDIRECTY());
     pc++;
     break;
+    """
+    # STA instructions
+
+
 
     """
-    # STX instructions
-    """
-
     case 0x86:
     MEM(ZEROPAGE()) = x;
     WRITE(ZEROPAGE());
@@ -1830,11 +1846,11 @@ def runcpu():
     WRITE(ABSOLUTE());
     pc += 2;
     break;
+    """
+    # STX instructions
+
 
     """
-    # STY instructions
-    """
-
     case 0x84:
     MEM(ZEROPAGE()) = y;
     WRITE(ZEROPAGE());
@@ -1852,73 +1868,175 @@ def runcpu():
     WRITE(ABSOLUTE());
     pc += 2;
     break;
+    """
+    # STY instructions
+
+
 
     """
-    # TAX instruction
-    """
-
     case 0xaa:
     ASSIGNSETFLAGS(x, a);
     break;
+    """
+    # TAX instruction
+
+
 
     """
-    # TSX instruction
-    """
-
     case 0xba:
     ASSIGNSETFLAGS(x, sp);
     break;
+    """
+    # TSX instruction
+
+
 
     """
-    # TXA instruction
-    """
-
     case 0x8a:
     ASSIGNSETFLAGS(a, x);
     break;
+    """
+    # TXA instruction
+
+
 
     """
-    # TXS instruction
-    """
-
     case 0x9a:
     ASSIGNSETFLAGS(sp, x);
     break;
+    """
+    # TXS instruction
+
+
 
     """
-    # TYA instruction
-    """
-
     case 0x98:
     ASSIGNSETFLAGS(a, y);
     break;
+    """
+    # TYA instruction
+
+
 
     """
-    # TAY instruction
-    """
-
     case 0xa8:
     ASSIGNSETFLAGS(y, a);
     break;
+    """
+    # TAY instruction
+
+
 
     """
-    # BRK instruction
-    """
- 
     # TODO: Should set interrupt flag, push PC+2, push flags (like PHP does)
     case 0x00:
     return 0;
+    """
+    # BRK instruction
 
+
+    """  
+    case 0xa7:
+    ASSIGNSETFLAGS(a, MEM(ZEROPAGE()));
+    x = a;
+    pc++;
+    break;
+
+    case 0xb7:
+    ASSIGNSETFLAGS(a, MEM(ZEROPAGEY()));
+    x = a;
+    pc++;
+    break;
+
+    case 0xaf:
+    ASSIGNSETFLAGS(a, MEM(ABSOLUTE()));
+    x = a;
+    pc += 2;
+    break;
+
+    case 0xa3:
+    ASSIGNSETFLAGS(a, MEM(INDIRECTX()));
+    x = a;
+    pc++;
+    break;
+
+    case 0xb3:
+    cpucycles += EVALPAGECROSSING_INDIRECTY();
+    ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
+    x = a;
+    pc++;
+    break;
+    """
+    # "LAX" pseudo-ops
+
+
+
+    """
+    # NOP size 1, 2 cycle
+    case 0x1a:
+    case 0x3a:
+    case 0x5a:
+    case 0x7a:
+    case 0xda:
+    case 0xfa:
+    break;
+    
+    # NOP size 2, 2 cycle
+    case 0x80:
+    case 0x82:
+    case 0x89:
+    case 0xc2:
+    case 0xe2:
+
+    # NOP size 2, 3 cycle
+    case 0x04:
+    case 0x44:
+    case 0x64:
+
+    # NOP size 2, 4 cycle
+    case 0x14:
+    case 0x34:
+    case 0x54:
+    case 0x74:
+    case 0xd4:
+    case 0xf4:
+    pc++;
+    break;
+    
+    # NOP size TODO, 4 cycle
+    case 0x0c:
+
+    # NOP size TODO, 4(+1) cycle
+    case 0x1c:
+    case 0x3c:
+    case 0x5c:
+    case 0x7c:
+    case 0xdc:
+    case 0xfc:
+    cpucycles += EVALPAGECROSSING_ABSOLUTEX();
+    pc += 2;
+    break;
+    """
+    # NOP pseudo-ops:
+
+
+    """
     case 0x02:
     # also 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xb2, 0xd2, 0xf2
     printf("Error: CPU halt at %04X\n", pc-1);
     exit(1);
     break;
-          
+    """
+    # JAM pseudo-ops
+
+
+
+    """         
     default:
     printf("Error: Unknown opcode $%02X at $%04X\n", op, pc-1);
     exit(1);
     break;
+    """
   }
   return 1;
 }
