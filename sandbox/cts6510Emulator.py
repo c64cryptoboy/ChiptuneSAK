@@ -7,6 +7,7 @@
 # - all ~ replaced followed by & 0xff
 # - make sure all IMMEDIATE is BYTE_VAL
 # - make sure all non-IMMEDIATE is LOC_VAL
+# - fully grok the PC logic (some instruction implementations here don't adjust it)
 
 MEM = [0] * 0x10000 # TODO: Later make this lowercase
 cpucycles = 0
@@ -1253,6 +1254,7 @@ def runcpu():
         WRITE(ABSOLUTEX())
         pc += 2
 
+# **************************************************************
 
     """
     case 0xca:
@@ -1261,6 +1263,9 @@ def runcpu():
     break;
     """
     # DEX instruction
+    if instruction == 0xca:
+        x -= 1
+        SETFLAGS(x)
 
 
     """
@@ -1270,6 +1275,9 @@ def runcpu():
     break;
     """
     # DEY instruction
+    if instruction == 0x88:
+        y -= 1
+        SETFLAGS(y)
 
 
     """
@@ -1317,6 +1325,40 @@ def runcpu():
     break;
     """
     # EOR instructions
+    if instruction == 0x49:
+        EOR(IMMEDIATE())
+        pc += 1
+
+    elif instruction == 0x45:
+        EOR(MEM(ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0x55:
+        EOR(MEM(ZEROPAGEX()))
+        pc += 1
+
+    elif instruction == 0x4d:
+        EOR(MEM(ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0x5d:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        EOR(MEM(ABSOLUTEX()))
+        pc += 2
+
+    elif instruction == 0x59:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        EOR(MEM(ABSOLUTEY()))
+        pc += 2
+
+    elif instruction == 0x41:
+        EOR(MEM(INDIRECTX()))
+        pc += 1
+
+    elif instruction == 0x51:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        EOR(MEM(INDIRECTY()))
+        pc += 1
 
 
     """
@@ -1345,6 +1387,25 @@ def runcpu():
     break;
     """
     # INC instructions
+    if instruction == 0xe6:
+        INC(MEM(ZEROPAGE()))
+        WRITE(ZEROPAGE())
+        pc += 1
+
+    elif instruction == 0xf6:
+        INC(MEM(ZEROPAGEX()))
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0xee:
+        INC(MEM(ABSOLUTE()))
+        WRITE(ABSOLUTE())
+        pc += 2
+
+    elif instruction == 0xfe:
+        INC(MEM(ABSOLUTEX()))
+        WRITE(ABSOLUTEX())
+        pc += 2
 
 
     """
@@ -1354,7 +1415,9 @@ def runcpu():
     break;
     """
     # INX instruction
-
+    if instruction == 0xe8:
+        x += 1
+        SETFLAGS(x)
 
 
     """
@@ -1364,7 +1427,9 @@ def runcpu():
     break;
     """
     # INY instruction
-
+    if instruction == 0xc8:
+        y += 1
+        SETFLAGS(y)
 
 
     """
@@ -1375,6 +1440,10 @@ def runcpu():
     break;
     """
     # JSR instruction
+    if instruction == 0x20:
+        PUSH((pc+1) >> 8)
+        PUSH((pc+1) & 0xff)
+        pc = ABSOLUTE()
 
 
     """
@@ -1385,12 +1454,18 @@ def runcpu():
     case 0x6c:
     {
       unsigned short adr = ABSOLUTE();
-      # Yup, indirect JMP is bug compatible
       pc = (MEM(adr) | (MEM(((adr + 1) & 0xff) | (adr & 0xff00)) << 8));
     }
     break;
     """
     # JMP instructions
+    if instruction == 0x4c:
+       pc = ABSOLUTE()
+
+    elif instruction == 0x6c:
+        temp = ABSOLUTE()
+        # Yup, indirect JMP is bug compatible
+        pc = (MEM(temp) | (MEM(((temp + 1) & 0xff) | (temp & 0xff00)) << 8))
 
 
     """
@@ -1438,7 +1513,40 @@ def runcpu():
     break;
     """
     # LDA instructions
+    if instruction == 0xa9:
+        ASSIGNSETFLAGS(a, IMMEDIATE())
+        pc += 1
 
+    elif instruction == 0xa5:
+        ASSIGNSETFLAGS(a, MEM(ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0xb5:
+        ASSIGNSETFLAGS(a, MEM(ZEROPAGEX()))
+        pc += 1
+
+    elif instruction == 0xad:
+        ASSIGNSETFLAGS(a, MEM(ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0xbd:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        ASSIGNSETFLAGS(a, MEM(ABSOLUTEX()))
+        pc += 2
+
+    elif instruction == 0xb9:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        ASSIGNSETFLAGS(a, MEM(ABSOLUTEY()))
+        pc += 2
+
+    elif instruction == 0xa1:
+        ASSIGNSETFLAGS(a, MEM(INDIRECTX()))
+        pc += 1
+
+    elif instruction == 0xb1:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        ASSIGNSETFLAGS(a, MEM(INDIRECTY()))
+        pc += 1
 
 
     """
@@ -1469,7 +1577,26 @@ def runcpu():
     break;
     """
     # LDX instructions
+    if instruction == 0xa2:
+        ASSIGNSETFLAGS(x, IMMEDIATE())
+        pc += 1
 
+    elif instruction == 0xa6:
+        ASSIGNSETFLAGS(x, MEM(ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0xb6:
+        ASSIGNSETFLAGS(x, MEM(ZEROPAGEY()))
+        pc += 1
+
+    elif instruction == 0xae:
+        ASSIGNSETFLAGS(x, MEM(ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0xbe:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        ASSIGNSETFLAGS(x, MEM(ABSOLUTEY()))
+        pc += 2
 
 
     """
@@ -1500,6 +1627,26 @@ def runcpu():
     break;
     """
     # LDY instructions
+    if instruction == 0xa0:
+        ASSIGNSETFLAGS(y, IMMEDIATE())
+        pc += 1
+
+    elif instruction == 0xa4:
+        ASSIGNSETFLAGS(y, MEM(ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0xb4:
+        ASSIGNSETFLAGS(y, MEM(ZEROPAGEX()))
+        pc += 1
+
+    elif instruction == 0xac:
+        ASSIGNSETFLAGS(y, MEM(ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0xbc:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        ASSIGNSETFLAGS(y, MEM(ABSOLUTEX()))
+        pc += 2
 
 
     """
@@ -1532,6 +1679,28 @@ def runcpu():
     break;
     """
     # LSR instructions
+    if instruction == 0x4a:
+        LSR(a)
+
+    elif instruction == 0x46:
+        LSR(MEM(ZEROPAGE()))
+        WRITE(ZEROPAGE())
+        pc += 1
+
+    elif instruction == 0x56:
+        LSR(MEM(ZEROPAGEX()))
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0x4e:
+        LSR(MEM(ABSOLUTE()))
+        WRITE(ABSOLUTE())
+        pc += 2
+
+    elif instruction == 0x5e:
+        LSR(MEM(ABSOLUTEX()))
+        WRITE(ABSOLUTEX())
+        pc += 2
 
 
     """
@@ -1539,6 +1708,8 @@ def runcpu():
     break;
     """
     # NOP instruction
+    if instruction == 0xea:
+        pass
 
 
     """
@@ -1586,6 +1757,40 @@ def runcpu():
     break;
     """
     # ORA instructions
+    if instruction == 0x09:
+        ORA(IMMEDIATE())
+        pc += 1
+
+    elif instruction == 0x05:
+        ORA(MEM(ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0x15:
+        ORA(MEM(ZEROPAGEX()))
+        pc += 1
+
+    elif instruction == 0x0d:
+        ORA(MEM(ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0x1d:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        ORA(MEM(ABSOLUTEX()))
+        pc += 2
+
+    elif instruction == 0x19:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        ORA(MEM(ABSOLUTEY()))
+        pc += 2
+
+    elif instruction == 0x01:
+        ORA(MEM(INDIRECTX()))
+        pc += 1
+
+    elif instruction == 0x11:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        ORA(MEM(INDIRECTY()))
+        pc += 1
 
 
     """
@@ -1594,15 +1799,19 @@ def runcpu():
     break;
     """
     # PHA instruction
+    if instruction == 0x48:
+        PUSH(a)
 
 
     """
-    # TODO: Pretendo says PHP always pushes B flag as 1...
-    case 0x08:
+    case == 0x08:
     PUSH(flags);
     break;
     """
     # PHP instruction
+    # TODO: Pretendo says PHP always pushes B flag as 1...
+    if instruction == 0x08:
+        PUSH(flags)
 
 
     """
@@ -1611,6 +1820,8 @@ def runcpu():
     break;
     """
     # PLA instruction
+    if instruction == 0x68:
+        ASSIGNSETFLAGS(a, POP())
 
 
     """    
@@ -1619,6 +1830,8 @@ def runcpu():
     break;
     """
     # PLP instruction
+    if instruction == 0x28:
+        flags = POP()
 
 
     """
@@ -1651,6 +1864,28 @@ def runcpu():
     break;
     """
     # ROL instructions
+    if instruction == 0x2a:
+        ROL(a)
+
+    elif instruction == 0x26:
+        ROL(MEM(ZEROPAGE()))
+        WRITE(ZEROPAGE())
+        pc += 1
+
+    elif instruction == 0x36:
+        ROL(MEM(ZEROPAGEX()))
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0x2e:
+        ROL(MEM(ABSOLUTE()))
+        WRITE(ABSOLUTE())
+        pc += 2
+
+    elif instruction == 0x3e:
+        ROL(MEM(ABSOLUTEX()))
+        WRITE(ABSOLUTEX())
+        pc += 2
 
 
     """
@@ -1683,6 +1918,28 @@ def runcpu():
     break;
     """
     # ROR instructions
+    if instruction == 0x6a:
+        ROR(a)
+
+    elif instruction == 0x66:
+        ROR(MEM(ZEROPAGE()))
+        WRITE(ZEROPAGE())
+        pc += 1
+
+    elif instruction == 0x76:
+        ROR(MEM(ZEROPAGEX()))
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0x6e:
+        ROR(MEM(ABSOLUTE()))
+        WRITE(ABSOLUTE())
+        pc += 2
+
+    elif instruction == 0x7e:
+        ROR(MEM(ABSOLUTEX()))
+        WRITE(ABSOLUTEX())
+        pc += 2
 
 
     """
@@ -1694,7 +1951,12 @@ def runcpu():
     break;
     """
     # RTI instruction
-
+    if instruction == 0x40:
+        if sp == 0xff:
+            return 0
+        flags = POP()
+        pc = POP()
+        pc |= POP() << 8
 
 
     """
@@ -1706,7 +1968,12 @@ def runcpu():
     break;
     """
     # RTS instruction
-
+    if instruction == 0x60:
+        if sp == 0xff:
+            return 0
+        pc = POP()
+        pc |= POP() << 8
+        pc += 1
 
 
     """
@@ -1754,6 +2021,40 @@ def runcpu():
     break;
     """
     # SBC instructions
+    if instruction == 0xe9:
+        SBC(IMMEDIATE())
+        pc += 1
+
+    elif instruction == 0xe5:
+        SBC(MEM(ZEROPAGE()))
+        pc += 1
+
+    elif instruction == 0xf5:
+        SBC(MEM(ZEROPAGEX()))
+        pc += 1
+
+    elif instruction == 0xed:
+        SBC(MEM(ABSOLUTE()))
+        pc += 2
+
+    elif instruction == 0xfd:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEX()
+        SBC(MEM(ABSOLUTEX()))
+        pc += 2
+
+    elif instruction == 0xf9:
+        cpucycles += EVALPAGECROSSING_ABSOLUTEY()
+        SBC(MEM(ABSOLUTEY()))
+        pc += 2
+
+    elif instruction == 0xe1:
+        SBC(MEM(INDIRECTX()))
+        pc += 1
+
+    elif instruction == 0xf1:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        SBC(MEM(INDIRECTY()))
+        pc += 1
 
 
     """
@@ -1762,7 +2063,8 @@ def runcpu():
     break;
     """
     # SEC instruction
-
+    if instruction == 0x38:
+        flags |= FC
 
 
     """
@@ -1771,6 +2073,8 @@ def runcpu():
     break;
     """
     # SED instruction
+    if instruction == 0xf8:
+       flags |= FD
 
 
     """
@@ -1779,6 +2083,8 @@ def runcpu():
     break;
     """
     # SEI instruction
+    if instruction == 0x78:
+        flags |= FI
 
 
     """
@@ -1825,7 +2131,40 @@ def runcpu():
     break;
     """
     # STA instructions
+    if instruction == 0x85:
+        MEM(ZEROPAGE()) = a
+        WRITE(ZEROPAGE())
+        pc += 1
 
+    elif instruction == 0x95:
+        MEM(ZEROPAGEX()) = a
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0x8d:
+        MEM(ABSOLUTE()) = a
+        WRITE(ABSOLUTE())
+        pc += 2
+
+    elif instruction == 0x9d:
+        MEM(ABSOLUTEX()) = a
+        WRITE(ABSOLUTEX())
+        pc += 2
+
+    elif instruction == 0x99:
+        MEM(ABSOLUTEY()) = a
+        WRITE(ABSOLUTEY())
+        pc += 2
+
+    elif instruction == 0x81:
+        MEM(INDIRECTX()) = a
+        WRITE(INDIRECTX())
+        pc += 1
+
+    elif instruction == 0x91:
+        MEM(INDIRECTY()) = a
+        WRITE(INDIRECTY())
+        pc += 1
 
 
     """
@@ -1848,6 +2187,20 @@ def runcpu():
     break;
     """
     # STX instructions
+    if instruction == 0x86:
+        MEM(ZEROPAGE()) = x
+        WRITE(ZEROPAGE())
+        pc += 1
+
+    elif instruction == 0x96:
+        MEM(ZEROPAGEY()) = x
+        WRITE(ZEROPAGEY())
+        pc += 1
+
+    elif instruction == 0x8e:
+        MEM(ABSOLUTE()) = x
+        WRITE(ABSOLUTE())
+        pc += 2
 
 
     """
@@ -1870,7 +2223,20 @@ def runcpu():
     break;
     """
     # STY instructions
+    if instruction == 0x84:
+        MEM(ZEROPAGE()) = y
+        WRITE(ZEROPAGE())
+        pc += 1
 
+    elif instruction == 0x94:
+        MEM(ZEROPAGEX()) = y
+        WRITE(ZEROPAGEX())
+        pc += 1
+
+    elif instruction == 0x8c:
+        MEM(ABSOLUTE()) = y
+        WRITE(ABSOLUTE())
+        pc += 2
 
 
     """
@@ -1879,7 +2245,8 @@ def runcpu():
     break;
     """
     # TAX instruction
-
+    if instruction == 0xaa:
+        ASSIGNSETFLAGS(x, a)
 
 
     """
@@ -1888,7 +2255,8 @@ def runcpu():
     break;
     """
     # TSX instruction
-
+    if instruction == 0xba:
+        ASSIGNSETFLAGS(x, sp)
 
 
     """
@@ -1897,7 +2265,8 @@ def runcpu():
     break;
     """
     # TXA instruction
-
+    if instruction == 0x8a:
+        ASSIGNSETFLAGS(a, x)
 
 
     """
@@ -1906,7 +2275,8 @@ def runcpu():
     break;
     """
     # TXS instruction
-
+    if instruction == 0x9a:
+       ASSIGNSETFLAGS(sp, x)
 
 
     """
@@ -1915,7 +2285,8 @@ def runcpu():
     break;
     """
     # TYA instruction
-
+    if instruction == 0x98:
+       ASSIGNSETFLAGS(a, y)
 
 
     """
@@ -1924,7 +2295,8 @@ def runcpu():
     break;
     """
     # TAY instruction
-
+    if instruction == 0xa8:
+        ASSIGNSETFLAGS(y, a)
 
 
     """
@@ -1933,6 +2305,9 @@ def runcpu():
     return 0;
     """
     # BRK instruction
+    # TODO: Should set interrupt flag, push PC+2, push flags (like PHP does)
+    if instruction == 0x00:
+        return 0
 
 
     """  
@@ -1968,7 +2343,31 @@ def runcpu():
     break;
     """
     # "LAX" pseudo-ops
+    if instruction == 0xa7:
+        ASSIGNSETFLAGS(a, MEM(ZEROPAGE()))
+        x = a
+        pc += 1
 
+    elif instruction == 0xb7:
+        ASSIGNSETFLAGS(a, MEM(ZEROPAGEY()))
+        x = a
+        pc += 1
+
+    elif instruction == 0xaf:
+        ASSIGNSETFLAGS(a, MEM(ABSOLUTE()))
+        x = a
+        pc += 2
+
+    elif instruction == 0xa3:
+        ASSIGNSETFLAGS(a, MEM(INDIRECTX()))
+        x = a
+        pc += 1
+
+    elif instruction == 0xb3:
+        cpucycles += EVALPAGECROSSING_INDIRECTY()
+        ASSIGNSETFLAGS(a, MEM(INDIRECTY()))
+        x = a
+        pc += 1
 
 
     """
@@ -2018,6 +2417,50 @@ def runcpu():
     break;
     """
     # NOP pseudo-ops:
+    # NOP size 1, 2 cycle
+    case 0x1a:
+    case 0x3a:
+    case 0x5a:
+    case 0x7a:
+    case 0xda:
+    case 0xfa:
+    break;
+    
+    # NOP size 2, 2 cycle
+    case 0x80:
+    case 0x82:
+    case 0x89:
+    case 0xc2:
+    case 0xe2:
+
+    # NOP size 2, 3 cycle
+    case 0x04:
+    case 0x44:
+    case 0x64:
+
+    # NOP size 2, 4 cycle
+    case 0x14:
+    case 0x34:
+    case 0x54:
+    case 0x74:
+    case 0xd4:
+    case 0xf4:
+    pc += 1;
+    break;
+    
+    # NOP size TODO, 4 cycle
+    case 0x0c:
+
+    # NOP size TODO, 4(+1) cycle
+    case 0x1c:
+    case 0x3c:
+    case 0x5c:
+    case 0x7c:
+    case 0xdc:
+    case 0xfc:
+    cpucycles += EVALPAGECROSSING_ABSOLUTEX();
+    pc += 2;
+    break;
 
 
     """
@@ -2028,7 +2471,11 @@ def runcpu():
     break;
     """
     # JAM pseudo-ops
-
+    case 0x02:
+    # also 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xb2, 0xd2, 0xf2
+    printf("Error: CPU halt at %04X\n", pc-1);
+    exit(1);
+    break;
 
 
     """         
