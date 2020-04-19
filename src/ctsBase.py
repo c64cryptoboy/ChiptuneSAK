@@ -313,8 +313,9 @@ def get_arch_freq_for_midi_num(midi_num, architecture):
     :return: int frequency for arch
     :rtype: int    
     """
-    if architecture not in ('NTSC', 'PAL'):
+    if architecture not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKTypeError("Error: arch type not supported for freq conversion")
 
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
+    # SID oscillator is 24-bit (phase-accumulating design)
     return round((pow(256,3) / ARCH[architecture].system_clock) * ctsMidi.freq_for_midi_num(midi_num))

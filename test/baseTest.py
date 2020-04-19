@@ -20,8 +20,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(note_name_to_pitch('C##4'), note_name_to_pitch('Ebb4'))
 
     def test_architecture(self):
-        self.assertEqual(round(ARCH['PAL'].frame_rate, 2), 50.12)
-        self.assertEqual(round(ARCH['NTSC'].ms_per_frame, 2), 16.72)
+        self.assertEqual(round(ARCH['PAL-C64'].frame_rate, 2), 50.12)
+        self.assertEqual(round(ARCH['NTSC-C64'].ms_per_frame, 2), 16.72)
         self.assertEqual(ARCH['NTSC-R56A'].cycles_per_frame, 16768)
 
     def test_duration_names(self):
