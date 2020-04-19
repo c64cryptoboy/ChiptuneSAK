@@ -3,10 +3,6 @@
 # Python code based on C code from https://csdb.dk/release/?id=152422
 
 # TODOs:
-# - Check for unnecessary semicolons
-# - all ~ replaced followed by & 0xff
-# - make sure all IMMEDIATE is BYTE_VAL
-# - make sure all non-IMMEDIATE is LOC_VAL
 # - fully grok the PC logic (some instruction implementations here don't adjust it,fetch does ++)
 
 MEM = [0] * 0x10000 # TODO: Later make this lowercase
@@ -22,6 +18,26 @@ Y_REG = 0x03 + 0xFF
 SP_REG = 0x04 + 0xFF
 BYTE_VAL = 0x05 + 0xFF # immediate values
 LOC_VAL = 0x06 + 0xFF # memory location ($0 to $FFFF)
+
+# static const int cpucycles_table[] = 
+# {
+#   7,  6,  0,  8,  3,  3,  5,  5,  3,  2,  2,  2,  4,  4,  6,  6, 
+#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
+#   6,  6,  0,  8,  3,  3,  5,  5,  4,  2,  2,  2,  4,  4,  6,  6, 
+#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
+#   6,  6,  0,  8,  3,  3,  5,  5,  3,  2,  2,  2,  3,  4,  6,  6, 
+#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
+#   6,  6,  0,  8,  3,  3,  5,  5,  4,  2,  2,  2,  5,  4,  6,  6, 
+#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
+#   2,  6,  2,  6,  3,  3,  3,  3,  2,  2,  2,  2,  4,  4,  4,  4, 
+#   2,  6,  0,  6,  4,  4,  4,  4,  2,  5,  2,  5,  5,  5,  5,  5, 
+#   2,  6,  2,  6,  3,  3,  3,  3,  2,  2,  2,  2,  4,  4,  4,  4, 
+#   2,  5,  0,  5,  4,  4,  4,  4,  2,  4,  2,  4,  4,  4,  4,  4, 
+#   2,  6,  2,  8,  3,  3,  5,  5,  2,  2,  2,  2,  4,  4,  6,  6, 
+#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
+#   2,  6,  2,  8,  3,  3,  5,  5,  2,  2,  2,  2,  4,  4,  6,  6, 
+#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7
+# };
 
 # base cycle values for instructions 0 through 255:
 cpucycles_table = [
@@ -44,7 +60,7 @@ cpucycles_table = [
 
 # The original C code used macros, which resulted in a crazy amount of polymorphism
 # Going to take the simple class approach to absorb some of that generality
-# OperandRef can be a reference to registers, byte vals (immediates), and memory locations
+# OperandRef can be a reference to registers, byte vals (often immediates), and memory locations
 class OperandRef:
     def __init__(self, type, val_or_loc = None):
         assert type in (A_REG, X_REG, Y_REG, SP_REG, BYTE_VAL, LOC_VAL), \
@@ -601,39 +617,7 @@ def BIT(operand_ref):
     else:
         flags &= (~FZ & 0xff)                   
 
-# void initcpu(unsigned short newpc, unsigned char newa, unsigned char newx, unsigned char newy);
-# int runcpu(void);
-# void setpc(unsigned short newpc);
-# 
-# unsigned short pc;
-# unsigned char a;
-# unsigned char x;
-# unsigned char y;
-# unsigned char flags;
-# unsigned char sp;
-# unsigned char mem[0x10000];
-# unsigned int cpucycles;
-# 
-# static const int cpucycles_table[] = 
-# {
-#   7,  6,  0,  8,  3,  3,  5,  5,  3,  2,  2,  2,  4,  4,  6,  6, 
-#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
-#   6,  6,  0,  8,  3,  3,  5,  5,  4,  2,  2,  2,  4,  4,  6,  6, 
-#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
-#   6,  6,  0,  8,  3,  3,  5,  5,  3,  2,  2,  2,  3,  4,  6,  6, 
-#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
-#   6,  6,  0,  8,  3,  3,  5,  5,  4,  2,  2,  2,  5,  4,  6,  6, 
-#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
-#   2,  6,  2,  6,  3,  3,  3,  3,  2,  2,  2,  2,  4,  4,  4,  4, 
-#   2,  6,  0,  6,  4,  4,  4,  4,  2,  5,  2,  5,  5,  5,  5,  5, 
-#   2,  6,  2,  6,  3,  3,  3,  3,  2,  2,  2,  2,  4,  4,  4,  4, 
-#   2,  5,  0,  5,  4,  4,  4,  4,  2,  4,  2,  4,  4,  4,  4,  4, 
-#   2,  6,  2,  8,  3,  3,  5,  5,  2,  2,  2,  2,  4,  4,  6,  6, 
-#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7, 
-#   2,  6,  2,  8,  3,  3,  5,  5,  2,  2,  2,  2,  4,  4,  6,  6, 
-#   2,  5,  0,  8,  4,  4,  6,  6,  2,  4,  2,  7,  4,  4,  7,  7
-# };
-# 
+
 # void initcpu(unsigned short newpc, unsigned char newa, unsigned char newx, unsigned char newy)
 # {
 #   pc = newpc;
@@ -644,6 +628,16 @@ def BIT(operand_ref):
 #   sp = 0xff;
 #   cpucycles = 0;
 # }
+def initicpu(newpc, newa, newx, newy):
+    global pc, a, x, y, flags, sp, cpucycles
+    pc = newpc
+    a = newa
+    x = newx
+    y = newy
+    flags = 0
+    sp = 0xff
+    cpucycles = 0
+
 
 # int runcpu(void)
 # {
@@ -657,11 +651,8 @@ def BIT(operand_ref):
 def runcpu():
     global pc, cpucycles, flags, x, y
     instruction = FETCH()
+    print("PC: %s OP: %s A: %s X: %s Y: %s" % (hex(pc), hex(instruction), hex(a), hex(x), hex(y)))
     cpucycles += cpucycles_table[instruction]
-
-    # TODO: delete this later:
-    if instruction == -1:
-        pass
 
     # case 0x69:
     # ADC(IMMEDIATE());
@@ -705,8 +696,9 @@ def runcpu():
     # ADC(MEM(INDIRECTY()));
     # pc++;
     # break;
+
     # ADC instructions    
-    elif instruction == 0x69:
+    if instruction == 0x69:
         ADC(OperandRef(BYTE_VAL, IMMEDIATE()))
         pc += 1
     
@@ -784,6 +776,7 @@ def runcpu():
     # AND(MEM(INDIRECTY()));
     # pc++;
     # break;
+
     # AND instructions    
     elif instruction == 0x29:
         AND(OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -844,6 +837,7 @@ def runcpu():
     # ASL(MEM(ABSOLUTEX()));
     # pc += 2;
     # break;
+
     # ASL instructions
     elif instruction == 0x0a:
         ASL(OperandRef(A_REG))
@@ -868,6 +862,7 @@ def runcpu():
     # if (!(flags & FC)) BRANCH()
     # else pc++;
     # break;
+
     # BCC instruction
     elif instruction == 0x90:
         if not (flags & FC):
@@ -879,6 +874,7 @@ def runcpu():
     # if (flags & FC) BRANCH()
     # else pc++;
     # break;
+
     # BCS instruction
     elif instruction == 0xb0:
         if (flags & FC):
@@ -890,6 +886,7 @@ def runcpu():
     # if (flags & FZ) BRANCH()
     # else pc++;
     # break;
+
     # BEQ instruction
     elif instruction == 0xf0:
         if (flags & FZ):
@@ -906,6 +903,7 @@ def runcpu():
     # BIT(MEM(ABSOLUTE()));
     # pc += 2;
     # break;
+
     # BIT instructions
     elif instruction == 0x24:
         BIT(OperandRef(LOC_VAL, ZEROPAGE()))
@@ -919,6 +917,7 @@ def runcpu():
     # if (flags & FN) BRANCH()
     # else pc++;
     # break;
+
     # BMI instruction
     elif instruction == 0x30:
         if (flags & FN):
@@ -930,6 +929,7 @@ def runcpu():
     # if (!(flags & FZ)) BRANCH()
     # else pc++;
     # break;
+
     # BNE instruction
     elif instruction == 0xd0:
         if not (flags & FZ):
@@ -941,6 +941,7 @@ def runcpu():
     # if (!(flags & FN)) BRANCH()
     # else pc++;
     # break;
+
     # BPL instruction
     elif instruction == 0x10:
         if not (flags & FN):
@@ -952,6 +953,7 @@ def runcpu():
     # if (!(flags & FV)) BRANCH()
     # else pc++;
     # break;
+
     # BVC instruction
     elif instruction == 0x50:
         if not (flags & FV):
@@ -963,6 +965,7 @@ def runcpu():
     # if (flags & FV) BRANCH()
     # else pc++;
     # break;
+
     # BVS instruction
     elif instruction == 0x70:
         if (flags & FV):
@@ -973,6 +976,7 @@ def runcpu():
     # case 0x18:
     # flags &= ~FC;
     # break;
+
     # CLC instruction
     elif instruction == 0x18:
         flags &= (~FC & 0xff)
@@ -980,6 +984,7 @@ def runcpu():
     # case 0xd8:
     # flags &= ~FD;
     # break;
+
     # CLD instruction
     elif instruction == 0xd8:
         flags &= (~FD & 0xff)
@@ -987,6 +992,7 @@ def runcpu():
     # case 0x58:
     # flags &= ~FI;
     # break;
+
     # CLI instruction
     elif instruction == 0x58:
         flags &= (~FI & 0xff)
@@ -994,6 +1000,7 @@ def runcpu():
     # case 0xb8:
     # flags &= ~FV;
     # break;
+
     # CLV instruction
     elif instruction == 0xb8:
         flags &= (~FV & 0xff)
@@ -1040,6 +1047,7 @@ def runcpu():
     # CMP(a, MEM(INDIRECTY()));
     # pc++;
     # break;
+
     # CMP instructions
     elif instruction == 0xc9:
         CMP(OperandRef(A_REG), OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1090,6 +1098,7 @@ def runcpu():
     # CMP(x, MEM(ABSOLUTE()));
     # pc += 2;
     # break;
+
     # CPX instructions
     elif instruction == 0xe0:
         CMP(OperandRef(X_REG), OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1117,6 +1126,7 @@ def runcpu():
     # CMP(y, MEM(ABSOLUTE()));
     # pc += 2;
     # break;
+
     # CPY instructions
     elif instruction == 0xc0:
         CMP(OperandRef(Y_REG), OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1154,6 +1164,7 @@ def runcpu():
     # WRITE(ABSOLUTEX());
     # pc += 2;
     # break;
+
     # DEC instructions
     elif instruction == 0xc6:
         DEC(OperandRef(ZEROPAGE()))
@@ -1175,12 +1186,11 @@ def runcpu():
         WRITE(ABSOLUTEX())
         pc += 2
 
-# **************************************************************
-
     # case 0xca:
     # x--;
     # SETFLAGS(x);
     # break;
+
     # DEX instruction
     elif instruction == 0xca:
         x -= 1
@@ -1191,6 +1201,7 @@ def runcpu():
     # y--;
     # SETFLAGS(y);
     # break;
+
     # DEY instruction
     elif instruction == 0x88:
         y -= 1
@@ -1239,6 +1250,7 @@ def runcpu():
     # EOR(MEM(INDIRECTY()));
     # pc++;
     # break;
+
     # EOR instructions
     elif instruction == 0x49:
         EOR(OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1299,6 +1311,7 @@ def runcpu():
     # WRITE(ABSOLUTEX());
     # pc += 2;
     # break;
+
     # INC instructions
     elif instruction == 0xe6:
         INC(OperandRef(LOC_VAL, ZEROPAGE()))
@@ -1325,6 +1338,7 @@ def runcpu():
     # x++;
     # SETFLAGS(x);
     # break;
+
     # INX instruction
     elif instruction == 0xe8:
         x += 1
@@ -1335,6 +1349,7 @@ def runcpu():
     # y++;
     # SETFLAGS(y);
     # break;
+
     # INY instruction
     elif instruction == 0xc8:
         y += 1
@@ -1346,6 +1361,7 @@ def runcpu():
     # PUSH((pc+1) & 0xff);
     # pc = ABSOLUTE();
     # break;
+
     # JSR instruction
     elif instruction == 0x20:
         PUSH((pc+1) >> 8)
@@ -1363,6 +1379,7 @@ def runcpu():
     #   pc = (MEM(adr) | (MEM(((adr + 1) & 0xff) | (adr & 0xff00)) << 8));
     # }
     # break;
+
     # JMP instructions
     elif instruction == 0x4c:
        pc = ABSOLUTE()
@@ -1416,6 +1433,7 @@ def runcpu():
     # ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
     # pc++;
     # break;
+    
     # LDA instructions
     elif instruction == 0xa9:
         ASSIGNSETFLAGS(a, OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1478,6 +1496,7 @@ def runcpu():
     # ASSIGNSETFLAGS(x, MEM(ABSOLUTEY()));
     # pc += 2;
     # break;
+
     # LDX instructions
     elif instruction == 0xa2:
         ASSIGNSETFLAGS(x, OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1526,6 +1545,7 @@ def runcpu():
     # ASSIGNSETFLAGS(y, MEM(ABSOLUTEX()));
     # pc += 2;
     # break;
+
     # LDY instructions
     elif instruction == 0xa0:
         ASSIGNSETFLAGS(y, OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1576,6 +1596,7 @@ def runcpu():
     # WRITE(ABSOLUTEX());
     # pc += 2;
     # break;
+
     # LSR instructions
     elif instruction == 0x4a:
         LSR(a)
@@ -1603,6 +1624,7 @@ def runcpu():
 
     # case 0xea:
     # break;
+
     # NOP instruction
     elif instruction == 0xea:
         pass
@@ -1650,6 +1672,7 @@ def runcpu():
     # ORA(MEM(INDIRECTY()));
     # pc++;
     # break;
+
     # ORA instructions
     elif instruction == 0x09:
         ORA(OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1690,6 +1713,7 @@ def runcpu():
     # case 0x48:
     # PUSH(a);
     # break;
+
     # PHA instruction
     elif instruction == 0x48:
         PUSH(a)
@@ -1698,6 +1722,7 @@ def runcpu():
     # case == 0x08:
     # PUSH(flags);
     # break;
+
     # PHP instruction
     # TODO: Pretendo says PHP always pushes B flag as 1...
     elif instruction == 0x08:
@@ -1707,6 +1732,7 @@ def runcpu():
     # case 0x68:
     # ASSIGNSETFLAGS(a, POP());
     # break;
+
     # PLA instruction
     elif instruction == 0x68:
         ASSIGNSETFLAGS(a, POP())
@@ -1715,6 +1741,7 @@ def runcpu():
     # case 0x28:
     # flags = POP();
     # break;
+
     # PLP instruction
     elif instruction == 0x28:
         flags = POP()
@@ -1747,6 +1774,7 @@ def runcpu():
     # WRITE(ABSOLUTEX());
     # pc += 2;
     # break;
+
     # ROL instructions
     elif instruction == 0x2a:
         ROL(a)
@@ -1799,6 +1827,7 @@ def runcpu():
     # WRITE(ABSOLUTEX());
     # pc += 2;
     # break;
+
     # ROR instructions
     elif instruction == 0x6a:
         ROR(a)
@@ -1830,6 +1859,7 @@ def runcpu():
     # pc = POP();
     # pc |= POP() << 8;
     # break;
+
     # RTI instruction
     elif instruction == 0x40:
         if sp == 0xff:
@@ -1845,6 +1875,7 @@ def runcpu():
     # pc |= POP() << 8;
     # pc++;
     # break;
+
     # RTS instruction
     elif instruction == 0x60:
         if sp == 0xff:
@@ -1896,6 +1927,7 @@ def runcpu():
     # SBC(MEM(INDIRECTY()));
     # pc++;
     # break;
+
     # SBC instructions
     elif instruction == 0xe9:
         SBC(OperandRef(BYTE_VAL, IMMEDIATE()))
@@ -1936,6 +1968,7 @@ def runcpu():
     # case 0x38:
     # flags |= FC;
     # break;
+
     # SEC instruction
     elif instruction == 0x38:
         flags |= FC
@@ -1944,6 +1977,7 @@ def runcpu():
     # case 0xf8:
     # flags |= FD;
     # break;
+
     # SED instruction
     elif instruction == 0xf8:
        flags |= FD
@@ -1952,6 +1986,7 @@ def runcpu():
     # case 0x78:
     # flags |= FI;
     # break;
+
     # SEI instruction
     elif instruction == 0x78:
         flags |= FI
@@ -1998,6 +2033,7 @@ def runcpu():
     # WRITE(INDIRECTY());
     # pc++;
     # break;
+
     # STA instructions
     # Note: STA/X/Y doesn't affect flags
     elif instruction == 0x85:
@@ -2053,6 +2089,7 @@ def runcpu():
     # WRITE(ABSOLUTE());
     # pc += 2;
     # break;
+
     # STX instructions
     elif instruction == 0x86:
         MEM[ZEROPAGE()] = x
@@ -2087,6 +2124,7 @@ def runcpu():
     # WRITE(ABSOLUTE());
     # pc += 2;
     # break;
+
     # STY instructions
     elif instruction == 0x84:
         MEM[ZEROPAGE()] = y
@@ -2107,6 +2145,7 @@ def runcpu():
     # case 0xaa:
     # ASSIGNSETFLAGS(x, a);
     # break;
+
     # TAX instruction
     elif instruction == 0xaa:
         ASSIGNSETFLAGS(x, a)
@@ -2115,6 +2154,7 @@ def runcpu():
     # case 0xba:
     # ASSIGNSETFLAGS(x, sp);
     # break;
+
     # TSX instruction
     elif instruction == 0xba:
         ASSIGNSETFLAGS(x, sp)
@@ -2123,6 +2163,7 @@ def runcpu():
     # case 0x8a:
     # ASSIGNSETFLAGS(a, x);
     # break;
+
     # TXA instruction
     elif instruction == 0x8a:
         ASSIGNSETFLAGS(a, x)
@@ -2131,6 +2172,7 @@ def runcpu():
     # case 0x9a:
     # ASSIGNSETFLAGS(sp, x);
     # break;
+
     # TXS instruction
     elif instruction == 0x9a:
        ASSIGNSETFLAGS(sp, x)
@@ -2139,6 +2181,7 @@ def runcpu():
     # case 0x98:
     # ASSIGNSETFLAGS(a, y);
     # break;
+
     # TYA instruction
     elif instruction == 0x98:
        ASSIGNSETFLAGS(a, y)
@@ -2147,6 +2190,7 @@ def runcpu():
     # case 0xa8:
     # ASSIGNSETFLAGS(y, a);
     # break;
+
     # TAY instruction
     elif instruction == 0xa8:
         ASSIGNSETFLAGS(y, a)
@@ -2155,6 +2199,7 @@ def runcpu():
     # # TODO: Should set interrupt flag, push PC+2, push flags (like PHP does)
     # case 0x00:
     # return 0;
+
     # BRK instruction
     # TODO: Should set interrupt flag, push PC+2, push flags (like PHP does)
     elif instruction == 0x00:
@@ -2191,6 +2236,7 @@ def runcpu():
     # x = a;
     # pc++;
     # break;
+
     # "LAX" pseudo-ops
     elif instruction == 0xa7:
         ASSIGNSETFLAGS(a, OperandRef(LOC_VAL, ZEROPAGE()))
@@ -2219,7 +2265,6 @@ def runcpu():
         pc += 1
 
 
-    # # NOP size 1, 2 cycle
     # case 0x1a:
     # case 0x3a:
     # case 0x5a:
@@ -2228,19 +2273,14 @@ def runcpu():
     # case 0xfa:
     # break;
     # 
-    # # NOP size 2, 2 cycle
     # case 0x80:
     # case 0x82:
     # case 0x89:
     # case 0xc2:
     # case 0xe2:
-    # 
-    # # NOP size 2, 3 cycle
     # case 0x04:
     # case 0x44:
     # case 0x64:
-    # 
-    # # NOP size 2, 4 cycle
     # case 0x14:
     # case 0x34:
     # case 0x54:
@@ -2250,10 +2290,7 @@ def runcpu():
     # pc++;
     # break;
     # 
-    # # NOP size TODO, 4 cycle
     # case 0x0c:
-    # 
-    # # NOP size TODO, 4(+1) cycle
     # case 0x1c:
     # case 0x3c:
     # case 0x5c:
@@ -2263,6 +2300,7 @@ def runcpu():
     # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
     # pc += 2;
     # break;
+
     # NOP pseudo-ops:
 
     # NOP size 1, 2 cycle
@@ -2288,6 +2326,7 @@ def runcpu():
     # printf("Error: CPU halt at %04X\n", pc-1);
     # exit(1);
     # break;
+
     # JAM pseudo-ops
     elif instruction in (0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92,
         0xb2, 0xd2, 0xf2):
@@ -2298,6 +2337,8 @@ def runcpu():
     # printf("Error: Unknown opcode $%02X at $%04X\n", op, pc-1);
     # exit(1);
     # break;
+    else:
+        raise Exception("Error: unknown opcode %s at %s" % (hex(instruction), hex(pc-1)))
 
     return True
 
