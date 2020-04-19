@@ -5,6 +5,7 @@ from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsKey import ChirpKey
+import ctsMidi
 
 
 # Named tuple types for several lists throughout
@@ -312,9 +313,8 @@ def get_arch_freq_for_midi_num(midi_num, architecture):
     :return: int frequency for arch
     :rtype: int    
     """
-    freq = CONCERT_A * pow(2, (midi_num - A4_MIDI_NUM) / 12)
-
     if architecture not in ('NTSC', 'PAL'):
         raise ChiptuneSAKTypeError("Error: arch type not supported for freq conversion")
 
-    return (pow(256,3) / ARCH[architecture].system_clock) * freq
+    # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
+    return round((pow(256,3) / ARCH[architecture].system_clock) * ctsMidi.freq_for_midi_num(midi_num))
