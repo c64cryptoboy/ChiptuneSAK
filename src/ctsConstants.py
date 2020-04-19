@@ -6,11 +6,14 @@ from dataclasses import dataclass, field
 
 CHIPTUNESAK_VERSION = "0.13"
 
+BIG_NUMBER = 0xFFFFFFFF
+
 DEFAULT_MIDI_PPQN = 960
 
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
-BIG_NUMBER = 0xFFFFFFFF
+A4_MIDI_NUM = C4_MIDI_NUM + 9
+CONCERT_A = 440 # note: scene sometimes uses 435Hz to reach B7 on PAL
 
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -77,7 +80,9 @@ class ArchDescription:
         self.ms_per_frame = 1000. / self.frame_rate
         self.blank_lines = self.lines_per_frame - self.visible_lines
 
-
+# TODO: 'NTSC', and 'PAL' will have to be renamed 'NTSC-C64' and 'PAL-C64' to not cause confusion
+# when other systems come on board (Atari Pokey chip, NES RP2A03 (NTSC) and RP2A07 (PAL) chips, etc.)
+# Would also be nice to change string literals into constants, e.g. NTSC-VIC20 = 4, PAL-VIC20 = 5, etc.
 ARCH = {
     # NTSC C64 and C128 (1Mhz mode)
     'NTSC': ArchDescription(system_clock=1022727,  # The "new" NTSC 6567R8

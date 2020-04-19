@@ -299,3 +299,22 @@ def start_beat_type(time, ppq):
     """
     f = Fraction(time, ppq).limit_denominator(16)
     return f.denominator
+
+
+def get_arch_freq_for_midi_num(midi_num, architecture):
+    """
+    Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
+    
+    :param midi_num: midi note number
+    :type midi_num: int
+    :param architecture: Architecture description string (TODO: should be replaced by an constant)
+    :type architecture: string
+    :return: int frequency for arch
+    :rtype: int    
+    """
+    freq = CONCERT_A * pow(2, (midi_num - A4_MIDI_NUM) / 12)
+
+    if architecture not in ('NTSC', 'PAL'):
+        raise ChiptuneSAKTypeError("Error: arch type not supported for freq conversion")
+
+    return (pow(256,3) / ARCH[architecture].system_clock) * freq
