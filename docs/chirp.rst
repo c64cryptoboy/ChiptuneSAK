@@ -73,7 +73,7 @@ Currently, ctsGoatTracker.py does not implement multispeed handling.
 Octave and Frequency designations
 #################################
 Chirp frequency reasoning will default to a twelve-tone equal temperament system.
-Middle C is 261.63Hz, and following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number and its frequency is 440*2^((m-69)*12), where 69 is the midi number for A4, which is defined as exactly 440Hz ("concert A").
+Middle C is 261.63Hz, and following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number and its frequency is 440*2^((m-69)/12), where 69 is the midi number for A4, which is defined as exactly 440Hz ("concert A").
 
 Some midi octave conventions differ, e.g., assigning middle C (261.63Hz) to C3 with midi note number 60.  However, since midi really does not have a note-octave representation, this difference is only one of convention. With respect to chirp, such a system has an octave offset of -1.
 
