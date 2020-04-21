@@ -45,7 +45,7 @@ def little_endian_int(a_bytearray):
 def big_endian_int(a_bytearray):
     val = 0
     for byte in a_bytearray:
-        val = (val << 8) | (byte << 8)
+        val = (val << 8) | byte
     return val
 
 
