@@ -1,9 +1,9 @@
-# 6510 instruction-level emulation
+# 6502 instruction-level emulation
 #
 # Python code based on C code from https://csdb.dk/release/?id=152422
 
 # TODOs:
-# - fully grok the PC logic (some instruction implementations here don't adjust it,fetch does ++)
+# - after testing, change method and variable names to python practices
 
 MEM = [0] * 0x10000 # TODO: Later make this lowercase
 cpucycles = 0
@@ -2342,12 +2342,6 @@ def runcpu():
 
     return True
 
-# # Note: got rid of this:
-# void setpc(unsigned short newpc)
-# {
-#   pc = newpc;
-# }
-# 
 
 # debugging main
 if __name__ == "__main__":

@@ -302,7 +302,7 @@ def start_beat_type(time, ppq):
     return f.denominator
 
 
-def get_arch_freq_for_midi_num(midi_num, architecture):
+def get_arch_freq_for_midi_num(midi_num, architecture, tuning=CONCERT_A):
     """
     Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
     
@@ -318,4 +318,4 @@ def get_arch_freq_for_midi_num(midi_num, architecture):
 
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
     # SID oscillator is 24-bit (phase-accumulating design)
-    return round((pow(256,3) / ARCH[architecture].system_clock) * ctsMidi.freq_for_midi_num(midi_num))
+    return round((pow(256,3) / ARCH[architecture].system_clock) * ctsMidi.freq_for_midi_num(midi_num, tuning))
