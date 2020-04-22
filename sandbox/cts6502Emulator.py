@@ -54,16 +54,16 @@ class Cpu6502Emulator:
 # Note: memory is integers, not bytes, because we want to be able to perform
 # arbitrary assignments
     def __init__(self):
-        self.cpucycles = 0              #: todo 
-        self.memory = 0x10000 * [0x00]  #: memory as integers
-        self.a = 0                      #: 
-        self.x = 0                      #: 
-        self.y = 0                      #: 
-        self.flags = 0                  #: 
-        self.sp = 0                     #:         
-        self.pc = 0                     #: 
-        self.has_basic = False          #:
-        self.has_kernal = False         #:
+        self.memory = 0x10000 * [0x00]  #: 64K memory as integers
+        self.a = 0                      #: accumulator (byte)
+        self.x = 0                      #: x register (byte)
+        self.y = 0                      #: y register (byte)
+        self.flags = 0                  #: flags (byte)
+        self.sp = 0                     #: stack pointer (byte)        
+        self.pc = 0                     #: program counter (16-bit)
+        self.has_basic = False          #: True if BASIC ROM loaded
+        self.has_kernal = False         #: True if KERNAL ROM loaded
+        self.cpucycles = 0              #: count of cpu cycles processed 
 
     #define LO() (MEM(pc))
     def lo(self):
@@ -83,11 +83,11 @@ class Cpu6502Emulator:
     #define PUSH(data) (MEM(0x100 + (sp--)) = (data))
     def push(self, data):
         self.memory[0x100 + self.sp] = data
-        self.sp -= 1
+        self.sp -= 1; self.sp &= 0xff
 
     #define POP() (MEM(0x100 + (++sp)))
     def pop(self):
-        self.sp += 1
+        self.sp += 1; self.sp &= 0xff
         return self.memory[0x100 + self.sp]
 
     #define IMMEDIATE() (LO())
@@ -1174,7 +1174,7 @@ class Cpu6502Emulator:
 
         # DEX instruction
         if instruction == 0xca:
-            self.x -= 1
+            self.x -= 1; self.x &= 0xff
             self.set_flags(self.x)
             return 1
 
@@ -1186,7 +1186,7 @@ class Cpu6502Emulator:
 
         # DEY instruction
         if instruction == 0x88:
-            self.y -= 1
+            self.y -= 1; self.y &= 0xff
             self.set_flags(self.y)
             return 1
 
@@ -1336,7 +1336,7 @@ class Cpu6502Emulator:
 
         # INX instruction
         if instruction == 0xe8:
-            self.x += 1
+            self.x += 1; self.x &= 0xff
             self.set_flags(self.x)
             return 1
 
@@ -1348,7 +1348,7 @@ class Cpu6502Emulator:
 
         # INY instruction
         if instruction == 0xc8:
-            self.y += 1
+            self.y += 1; self.y &= 0xff
             self.set_flags(self.y)
             return 1
 
@@ -1622,7 +1622,7 @@ class Cpu6502Emulator:
 
         # LSR instructions
         if instruction == 0x4a:
-            self.LSR(self.a)
+            self.LSR(OperandRef(A_REG))
             return 1
 
         if instruction == 0x46:
@@ -1753,7 +1753,7 @@ class Cpu6502Emulator:
 
         # PHA instruction
         if instruction == 0x48:
-            self.push(self.a)
+            self.push(OperandRef(A_REG))
             return 1
 
 
@@ -1818,7 +1818,7 @@ class Cpu6502Emulator:
 
         # ROL instructions
         if instruction == 0x2a:
-            self.ROL(self.a)
+            self.ROL(OperandRef(A_REG))
             return 1
 
         if instruction == 0x26:
@@ -1876,7 +1876,7 @@ class Cpu6502Emulator:
 
         # ROR instructions
         if instruction == 0x6a:
-            self.ROR(self.a)
+            self.ROR(OperandRef(A_REG))
             return 1
 
         if instruction == 0x66:
