@@ -296,14 +296,14 @@ class RChirpSong:
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
     def __init__(self, chirp_song=None):
-        self.update_freq = ARCH['NTSC'].frame_rate  #: Update frequency expressed as frame rate
-        self.voices = []                            #: List of RChirpVoice instances
-        self.voice_groups = []                      #: Voice groupings for lowering to multiple chips
-        self.patterns = []                          #: Patterns to be shared among the voices
-        self.stats = {}                             #: TODO: ???
-        self.metadata = None                        #: Song metadata (author, copyright, etc.)
-        self.other = None                           #: Other meta-events in song
-        self.compressed = None                      #: Has song been through compression algorithm?
+        self.update_freq = ARCH['NTSC-C64'].frame_rate  #: Update frequency expressed as frame rate
+        self.voices = []                                #: List of RChirpVoice instances
+        self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
+        self.patterns = []                              #: Patterns to be shared among the voices
+        self.stats = {}                                 #: TODO: ???
+        self.metadata = None                            #: Song metadata (author, copyright, etc.)
+        self.other = None                               #: Other meta-events in song
+        self.compressed = None                          #: Has song been through compression algorithm?
 
         if chirp_song is None:
             self.metadata = SongMetadata()

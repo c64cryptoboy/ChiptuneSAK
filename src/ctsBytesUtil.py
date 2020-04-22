@@ -36,17 +36,19 @@ def big_endian_bytes(a_num, min_bytes=2):
 
 
 def little_endian_int(a_bytearray):
-    val = 0
-    for i, byte in enumerate(a_bytearray):
-        val |= (byte << (8*i))
-    return val
+    #val = 0
+    #for i, byte in enumerate(a_bytearray):
+    #    val |= (byte << (8*i))
+    #return val
+    return int.from_bytes(a_bytearray, byteorder='little')
 
 
 def big_endian_int(a_bytearray):
-    val = 0
-    for byte in a_bytearray:
-        val = (val << 8) | (byte << 8)
-    return val
+    #val = 0
+    #for byte in a_bytearray:
+    #    val = (val << 8) | byte
+    #return val
+    return int.from_bytes(a_bytearray, byteorder='big')
 
 
 # start of copy from http://code.activestate.com/recipes/579064-hex-dump/

@@ -173,7 +173,7 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-def export_midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='NTSC'):
+def export_midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), arch='NTSC-C64'):
     """
     Convert mchirp into a C128 Basic program that plays the song.
 
@@ -181,7 +181,7 @@ def export_midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), 
     :type mchirp_song: MChirpSong
     :param instrum: tuple of instrument string names, defaults to ('piano', 'piano', 'piano')
     :type instrum: tuple, optional
-    :param arch: Commodore architecture, defaults to 'NTSC'
+    :param arch: Commodore architecture, defaults to 'NTSC-C64'
     :type arch: str, optional
     :raises ChiptuneSAKContentError: Various content errors
     :raises ChiptuneSAKValueError: Various value errors

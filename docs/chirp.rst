@@ -70,9 +70,11 @@ Multispeed
 Instead of a single music player update per frame, "multispeed" allows multiple player updates per frame.  This means different things in different trackers.  In SID-Wizard, only the tables (waveform, pulse, and filter) are affected, but the onset of new notes only happens on frame boundaries.  In GoatTracker, the entire engine is driven faster, requiring speedtable values (e.g. tempos) and gateoff timers to be multiplied by the multispeed factor.
 Currently, ctsGoatTracker.py does not implement multispeed handling.
 
-Octave designations
-###################
+Octave and Frequency designations
+#################################
 Chirp frequency reasoning will default to a twelve-tone equal temperament system.
-Middle C is 261.63Hz, and following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number and its frequency is 440*2^((m-69)*12), where 69 is the midi number for A4, which is defined as exactly 440Hz.
+Middle C is 261.63Hz, and following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number and its frequency is 440*2^((m-69)/12), where 69 is the midi number for A4, which is defined as exactly 440Hz ("concert A").
 
 Some midi octave conventions differ, e.g., assigning middle C (261.63Hz) to C3 with midi note number 60.  However, since midi really does not have a note-octave representation, this difference is only one of convention. With respect to chirp, such a system has an octave offset of -1.
+
+Historically, 432 Hz (France) and 435 Hz (Italy) were competing tuning standards.  By 1953, nearly everyone had agreed on 440 Hz, which is an `ISO standard <https://www.iso.org/standard/3601.html>`_ for all instruments based on chromatic scale.  The SID chip covers 8 octaves, from C0 to B7.  However, with 440 tuning, the PAL can't reach note B7 (SID freq 67280, > 16bit), so some in the scene use frequency tables tuned to 435 Hz (where B7 in PAL is 66516)

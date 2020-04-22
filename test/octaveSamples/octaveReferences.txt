@@ -7,6 +7,7 @@ Sibelius                C4 piano                peak 262Hz (C4)
 C128 NTSC BASIC         C4 "v1o4t0u15wc"        peak 269Hz (C4)
 C128 PAL BASIC          C4 "v1o4t0u15wc"        peak 269Hz (C4)
 C64 NTSC ML64           A4 triangle             peak 440Hz (A4)
+C64 Prog. Ref. Man.	A4 triangle		peak 443Hz (A4)
 
 Middle C is note #60, usually (but not always) called C4
 

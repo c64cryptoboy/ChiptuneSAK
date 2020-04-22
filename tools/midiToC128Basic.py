@@ -46,7 +46,7 @@ def main():
     if args.instruments:
         instruments = (i.lower() for i in args.instruments)
 
-    arch = 'NTSC'
+    arch = 'NTSC-C64'
     if args.arch:
         arch = args.arch
 
