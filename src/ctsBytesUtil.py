@@ -72,3 +72,10 @@ def hexdump(data):
         print('{:010X}: {:48}  {:16}'.format(i * 16, h, c))
 # end of copy from http://code.activestate.com/recipes/579064-hex-dump/
 
+
+def read_binary_file(path_and_filename):
+    try:
+        with open(path_and_filename, mode='rb') as in_file:
+            return in_file.read()
+    except FileNotFoundError:
+        return None
