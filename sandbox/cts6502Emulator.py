@@ -6,6 +6,7 @@
 # - make all this into a class with no globals
 # - after testing, change method and variable names to python practices (MEM, FETCH(), etc.)
 
+DEBUG = True
 
 # operand "enums" (set outside normal byte range to avoid inband errors)
 A_REG = 0x01 + 0xFF
@@ -46,7 +47,7 @@ class Cpu6502Emulator:
 
     def __init__(self):
         self.cpucycles = 0          #: 
-        self.memory = [0] * 0x10000    #: todo
+        self.memory = [0] * 0x10000 #: todo
         self.a = 0                  #: 
         self.x = 0                  #: 
         self.y = 0                  #: 
@@ -535,15 +536,18 @@ class Cpu6502Emulator:
     #   sp = 0xff;
     #   cpucycles = 0;
     # }
-    def initicpu(self, newpc, newa, newx, newy):
+    def init_cpu(self, newpc, newa, newx, newy):
         self.pc = newpc
         self.a = newa
         self.x = newx
         self.y = newy
-        self.flags = 0
+        self.flags = 0b00100000
         self.sp = 0xff
         self.cpucycles = 0
 
+
+    def byte_hex(self, num):
+        return '{0:0{1}X}'.format(num,2)
 
     # int runcpu(void)
     # {
@@ -555,11 +559,13 @@ class Cpu6502Emulator:
     #   switch(op)
     #   {
     def runcpu(self):
-        instruction = self.fetch()
-        print("PC: %s OP: %s A: %s X: %s Y: %s" % (hex(self.pc), hex(instruction), hex(self.a), hex(self.x), hex(self.y)))
+        instruction = self.fetch()        
+        print("PC: %s OP: %s A: %s X: %s Y: %s flags: %s" %  (hex(self.pc - 1), hex(instruction),
+            self.byte_hex(self.a), self.byte_hex(self.x), self.byte_hex(self.y),
+            format(self.flags, '08b')))
         self.cpucycles += cpucycles_table[instruction]
 
-        # Had convereted the C case statement to a bunch of elif statements.  However, pylint can't handle
+        # Had converted the C case statement to a bunch of elif statements.  However, pylint can't handle
         # that many ("Maximum recursion depth exceeded"), so converted all to if statements with a return
         # after each one.
 
@@ -1347,6 +1353,11 @@ class Cpu6502Emulator:
             self.push((self.pc+1) >> 8)
             self.push((self.pc+1) & 0xff)
             self.pc = self.absolute()
+
+            # Stub in some kernal routines
+            if self.pc == 65490 and DEBUG: 
+                print("$FFD2 prints '%s'" % (chr(self.a)))
+
             return 1
 
 
@@ -2439,23 +2450,52 @@ class OperandRef:
     #    content value
     def get_byte(self, cpuInstance):
         if self.type == A_REG:
-            return cpuInstance.a
+            result = cpuInstance.a
         elif self.type == X_REG:
-            return cpuInstance.x
+            result = cpuInstance.x
         elif self.type == Y_REG:
-            return cpuInstance.y
+            result = cpuInstance.y
         elif self.type == SP_REG:
-            return cpuInstance.sp
+            result = cpuInstance.sp
         elif self.type == LOC_VAL:
-            return cpuInstance.memory[self.val_or_loc]
+            result = cpuInstance.memory[self.val_or_loc]
         else: # BYTE_VAL
-            return self.val_or_loc
-
+            result = self.val_or_loc
+        return result
 
 # debugging main
 if __name__ == "__main__":
     cpuState = Cpu6502Emulator()
-    # cpuState.initcpu()
-    #cpuState.assign_then_set_flags(OperandRef(A_REG), OperandRef(BYTE_VAL, 17))
-    #cpuState.CMP(OperandRef(A_REG), OperandRef(BYTE_VAL, 17))
+
+    # init: init_cpu(initaddress, subtune, 0, 0);
+    # play: init_cpu(playaddress, 0, 0, 0);
+
+    test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
+        81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
+
+    """
+    10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
+    20 DATA160,15,152,89,12,128,32,210,255,136,208,246,96
+    30 DATA12,71,81,65,77,38,84,73,94,42,74,74,66,87,2
+
+    .C:8000  A0 0F       LDY #$0F
+    .C:8002  98          TYA
+    .C:8003  59 0C 80    EOR $800C,Y
+    .C:8006  20 D2 FF    JSR $FFD2
+    .C:8009  88          DEY
+    .C:800a  D0 F6       BNE $8002
+    .C:800c  60          RTS
+    """
+
+    for i, byte in enumerate(test_prog):
+        cpuState.memory[32768+i] = byte
+
+    cpuState.memory[65490] = 0x60 # Make $FFD2 an RTS
+
+    cpuState.init_cpu(32768, 0, 0, 0)
+    
+    while cpuState.runcpu():
+        pass
+    
+
 
