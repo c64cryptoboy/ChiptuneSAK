@@ -1130,18 +1130,6 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     # Need an instrument
 
     """
-        
-    e
-        envelope number (0-9). 
-    a
-        attack rate (0-15) 
-    d
-        decay rate (0-15) 
-    s
-        sustain level (0-15) 
-    r
-        release rate (0-15) 
-    wf
         waveform
     
             0 = triangle          10
@@ -1169,7 +1157,8 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     9         Xylophone   0       9      0        0        0
     """
 
-    # For now, we have 3 instruments available: a simple triangle, a simple sawtooth, and a simple pulse
+    # For now, we have 13 instruments available: the C128 BASIC instruments, a simple triangle,
+    # a simple sawtooth, and a simple pulse
     instruments = [GtInstrument(instr_num=1,
                                 attack_decay=0x09, sustain_release=0x00, wave_ptr=0x01, pulse_ptr=3,
                                 inst_name='C128 Piano'),
@@ -1180,10 +1169,10 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                                 attack_decay=0x00, sustain_release=0xF0, wave_ptr=0x05,
                                 inst_name='C128 Calliope'),
                    GtInstrument(instr_num=4,
-                                attack_decay=0x05, sustain_release=0x50, wave_ptr=0x07,
+                                attack_decay=0x05, sustain_release=0x00, wave_ptr=0x07,
                                 inst_name='C128 Drum'),
                    GtInstrument(instr_num=5,
-                                attack_decay=0x94, sustain_release=0x40, wave_ptr=0x09,
+                                attack_decay=0x94, sustain_release=0x80, wave_ptr=0x09,
                                 inst_name='C128 Flute'),
                    GtInstrument(instr_num=6,
                                 attack_decay=0x09, sustain_release=0x21, wave_ptr=0x0B,
@@ -1192,7 +1181,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
                                 attack_decay=0x09, sustain_release=0x00, wave_ptr=0x0D, pulse_ptr=5,
                                 inst_name='C128 Harpsichord'),
                    GtInstrument(instr_num=8,
-                                attack_decay=0x09, sustain_release=0x90, wave_ptr=0x0F, pulse_ptr=1,
+                                attack_decay=0x09, sustain_release=0x30, wave_ptr=0x0F, pulse_ptr=1,
                                 inst_name='C128 Organ'),
                    GtInstrument(instr_num=9,
                                 attack_decay=0x89, sustain_release=0x41, wave_ptr=0x11, pulse_ptr=5,
@@ -1213,16 +1202,9 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
     gt_binary.append(len(instruments))  # number of instruments (not counting NOP instrument 0)
     for inst in instruments:
         gt_binary += instrument_to_bytes(inst)
-    # TODO: In the future, more instruments appended here (in instrument number order)
 
     # append tables
-    # TODO: Currently hardcoded: tables for DEFAULT_INSTRUMENT:
-    """
-    0 = triangle      10
-    1 = sawtooth      20
-    2 = pulse(square) 40
-    3 = noise         80
-    """
+    # TODO: Currently hardcoded
     wavetable = [0x41, 0x00, 0xFF, 0x00,  # Piano
                  0x21, 0x00, 0xFF, 0x00,  # Accordion
                  0x11, 0x00, 0xFF, 0x00,  # Calliope

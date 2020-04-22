@@ -397,6 +397,7 @@ class ChirpTrack:
             self.notes[i] = copy.copy(n)
 
     def set_program(self, program):
+        print(f'Program changed to {program}')
         self.program_changes = [ProgramEvent(0, int(program))]
 
     def __str__(self):

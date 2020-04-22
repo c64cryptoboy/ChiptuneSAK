@@ -284,7 +284,7 @@ class RChirpVoice:
         # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
         for p in sorted(chirp_track.program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            new_instrument = (p.program % 13) + 1
+            new_instrument = (p.program % 13)
             tmp_rows[n_row].new_instrument = int(new_instrument)  # TODO: Map midi instruments into tracker instruments
 
         self.rows = tmp_rows
