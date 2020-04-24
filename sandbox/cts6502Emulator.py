@@ -5,6 +5,10 @@
 # TODOs:
 # - make all this into a class with no globals
 # - after testing, change method and variable names to python practices (MEM, FETCH(), etc.)
+# - TODO: make all PC incrementing call a method that insures wrapping (i.e., & 0xFFFF)
+
+from ctsBytesUtil import little_endian_int, read_binary_file
+
 
 DEBUG = True
 
@@ -16,13 +20,14 @@ SP_REG = 0x04 + 0xFF
 BYTE_VAL = 0x05 + 0xFF # immediate values
 LOC_VAL = 0x06 + 0xFF # memory location ($0 to $FFFF)
 
-FN = 0x80 # Negative
-FV = 0x40 # oVerflow
-FB = 0x10 # Break
-FD = 0x08 # Decimal
-FI = 0x04 # Interrupt
-FZ = 0x02 # Zero
-FC = 0x01 # Carry
+FN = 0b10000000 # Negative
+FV = 0b01000000 # oVerflow
+FU = 0b00100000 # Unused
+FB = 0b00010000 # Break
+FD = 0b00001000 # Decimal
+FI = 0b00000100 # Interrupt
+FZ = 0b00000010 # Zero
+FC = 0b00000001 # Carry
 
 # base cycle values for instructions (and pseudo-ops) 0 through 255:
 cpucycles_table = [
@@ -43,17 +48,22 @@ cpucycles_table = [
     2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, 
     2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7]
 
+
 class Cpu6502Emulator:
 
+# Note: memory is integers, not bytes, because we want to be able to perform
+# arbitrary assignments
     def __init__(self):
-        self.cpucycles = 0          #: 
-        self.memory = [0] * 0x10000 #: todo
-        self.a = 0                  #: 
-        self.x = 0                  #: 
-        self.y = 0                  #: 
-        self.flags = 0              #: 
-        self.sp = 0                 #:         
-        self.pc = 0                 #: 
+        self.memory = 0x10000 * [0x00]  #: 64K memory as integers
+        self.a = 0                      #: accumulator (byte)
+        self.x = 0                      #: x register (byte)
+        self.y = 0                      #: y register (byte)
+        self.flags = 0                  #: flags (byte)
+        self.sp = 0                     #: stack pointer (byte)        
+        self.pc = 0                     #: program counter (16-bit)
+        self.has_basic = False          #: True if BASIC ROM loaded
+        self.has_kernal = False         #: True if KERNAL ROM loaded
+        self.cpucycles = 0              #: count of cpu cycles processed 
 
     #define LO() (MEM(pc))
     def lo(self):
@@ -65,18 +75,19 @@ class Cpu6502Emulator:
 
     #define FETCH() (MEM(pc++))
     def fetch(self):
+        self.pc &= 0xffff
         val = self.memory[self.pc]
-        self.pc += 1
+        self.pc = (self.pc + 1) & 0xffff       
         return val
 
     #define PUSH(data) (MEM(0x100 + (sp--)) = (data))
     def push(self, data):
         self.memory[0x100 + self.sp] = data
-        self.sp -= 1
+        self.sp -= 1; self.sp &= 0xff
 
     #define POP() (MEM(0x100 + (++sp)))
     def pop(self):
-        self.sp += 1
+        self.sp += 1; self.sp &= 0xff
         return self.memory[0x100 + self.sp]
 
     #define IMMEDIATE() (LO())
@@ -89,11 +100,11 @@ class Cpu6502Emulator:
 
     #define ABSOLUTEX() (((LO() | (HI() << 8)) + x) & 0xffff)
     def absolute_x(self):
-        return ((self.lo() | (self.hi() << 8)) + self.x) & 0xffff
+        return (self.absolute() + self.x) & 0xffff
 
     #define ABSOLUTEY() (((LO() | (HI() << 8)) + y) & 0xffff)
     def absolute_y(self):
-        return ((self.lo() | (self.hi() << 8)) + self.y) & 0xffff
+        return (self.absolute() + self.y) & 0xffff
 
     #define ZEROPAGE() (LO() & 0xff)
     def zeropage(self):
@@ -125,7 +136,7 @@ class Cpu6502Emulator:
     #   /* cpuwritemap[(address) >> 6] = 1; */  \
     # }
     def debug_write(self, address): # TODO: Kill this later?
-        return  
+        return
 
     #define EVALPAGECROSSING(baseaddr, realaddr) ((((baseaddr) ^ (realaddr)) & 0xff00) ? 1 : 0)
     def eval_page_crossing(self, baseaddr, realaddr):
@@ -536,12 +547,12 @@ class Cpu6502Emulator:
     #   sp = 0xff;
     #   cpucycles = 0;
     # }
-    def init_cpu(self, newpc, newa, newx, newy):
+    def init_cpu(self, newpc, newa = 0, newx = 0, newy = 0, flags = FU):
         self.pc = newpc
         self.a = newa
         self.x = newx
         self.y = newy
-        self.flags = 0b00100000
+        self.flags = flags
         self.sp = 0xff
         self.cpucycles = 0
 
@@ -1163,7 +1174,7 @@ class Cpu6502Emulator:
 
         # DEX instruction
         if instruction == 0xca:
-            self.x -= 1
+            self.x -= 1; self.x &= 0xff
             self.set_flags(self.x)
             return 1
 
@@ -1175,7 +1186,7 @@ class Cpu6502Emulator:
 
         # DEY instruction
         if instruction == 0x88:
-            self.y -= 1
+            self.y -= 1; self.y &= 0xff
             self.set_flags(self.y)
             return 1
 
@@ -1325,7 +1336,7 @@ class Cpu6502Emulator:
 
         # INX instruction
         if instruction == 0xe8:
-            self.x += 1
+            self.x += 1; self.x &= 0xff
             self.set_flags(self.x)
             return 1
 
@@ -1337,7 +1348,7 @@ class Cpu6502Emulator:
 
         # INY instruction
         if instruction == 0xc8:
-            self.y += 1
+            self.y += 1; self.y &= 0xff
             self.set_flags(self.y)
             return 1
 
@@ -1611,7 +1622,7 @@ class Cpu6502Emulator:
 
         # LSR instructions
         if instruction == 0x4a:
-            self.LSR(self.a)
+            self.LSR(OperandRef(A_REG))
             return 1
 
         if instruction == 0x46:
@@ -1742,7 +1753,7 @@ class Cpu6502Emulator:
 
         # PHA instruction
         if instruction == 0x48:
-            self.push(self.a)
+            self.push(OperandRef(A_REG))
             return 1
 
 
@@ -1807,7 +1818,7 @@ class Cpu6502Emulator:
 
         # ROL instructions
         if instruction == 0x2a:
-            self.ROL(self.a)
+            self.ROL(OperandRef(A_REG))
             return 1
 
         if instruction == 0x26:
@@ -1865,7 +1876,7 @@ class Cpu6502Emulator:
 
         # ROR instructions
         if instruction == 0x6a:
-            self.ROR(self.a)
+            self.ROR(OperandRef(A_REG))
             return 1
 
         if instruction == 0x66:
@@ -2412,6 +2423,33 @@ class Cpu6502Emulator:
         raise Exception("Error: unknown opcode %s at %s" % (hex(instruction), hex(self.pc-1)))
 
 
+    def get_addr_at_loc(self, mem_loc):
+        return little_endian_int(self.memory[mem_loc:mem_loc+2])
+
+
+    def inject_bytes(self, mem_loc, bytes):
+        for i, a_byte in enumerate(bytes):
+            self.memory[mem_loc + i] = a_byte
+
+
+    def inject_roms(self):
+        path_and_filename = r'res/c64kernal.bin'
+        binary = read_binary_file(path_and_filename)
+        if binary is not None:
+            self.inject_bytes(57344, binary) # KERNAL ROM 57344-65535 ($E000-$FFFF)
+            self.has_kernal = True
+        else:
+            print("Warning: could not find %s" % (path_and_filename))
+
+        path_and_filename = r'res/c64basic.bin'
+        binary = read_binary_file(path_and_filename)
+        if binary is not None:
+            self.inject_bytes(40960, binary) # BASIC ROM 40960-49151 ($A000-$BFFF)
+            self.has_basic = True
+        else:               
+            print("Warning: could not find %s" % (path_and_filename))
+
+
 # The original C code used macros, which resulted in a crazy amount of polymorphism
 # Going to take the simple class approach to absorb some of that generality
 # OperandRef can be a reference to registers, byte vals (often immediates), and memory locations
@@ -2465,10 +2503,13 @@ class OperandRef:
 
 # debugging main
 if __name__ == "__main__":
+
+    # Test 1
+    
     cpuState = Cpu6502Emulator()
 
-    # init: init_cpu(initaddress, subtune, 0, 0);
-    # play: init_cpu(playaddress, 0, 0, 0);
+    # init: init_cpu(initaddress, subtune);
+    # play: init_cpu(playaddress);
 
     test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
         81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
@@ -2490,12 +2531,50 @@ if __name__ == "__main__":
     for i, byte in enumerate(test_prog):
         cpuState.memory[32768+i] = byte
 
-    cpuState.memory[65490] = 0x60 # Make $FFD2 an RTS
+    # ROM Patch:  Make $FFD2 print routine just an RTS
+    cpuState.memory[65490] = 0x60
 
-    cpuState.init_cpu(32768, 0, 0, 0)
+    cpuState.init_cpu(32768)
     
     while cpuState.runcpu():
         pass
-    
 
+    # Test 2
+
+    cpuState = Cpu6502Emulator()
+
+    cpuState.inject_roms()
+
+    # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the PC
+    # then just continues
+    reset = cpuState.get_addr_at_loc(65532)
+
+    # According to Michael, B flag not set on reset, as I've seen others do:
+    #    https://www.pagetable.com/?p=410
+    cpuState.init_cpu(reset)
+
+    while cpuState.runcpu():
+        # $E5CA - $E5D5 is waiting for keyboard input, we've gone far enough
+        if 58826 <= cpuState.pc <= 58837:
+            break 
+
+    # check what's written on the screen 1024-2023 ($0400-$07E7)
+    print(cpuState.memory[1024:2024])
+    pass
+
+    """
+    From the Compute book Mapping the C64:
+    64738 $FCE2
+    Power-On Reset Routine
+    This is the RESET routine which is pointed to by the 6510 hardware
+    RESET vector at 65532 ($FFFC).
+    This routine is automatically executed when the computer is first
+    turned on. First, it sets the Interrupt disable flag, sets the stack point
+    er, and clears the Decimal mode flag. Next it tests for an autostart
+    cartridge. If one is found, the routine immediately jumps through the
+    cartridge cold start vector at 32768 ($8000). If no cartridge is found,
+    the Kernal initialization routines IOINIT, RAMTAS, RESTOR, and
+    CINT are called, the Interrupt disable flag is cleared, and the BASIC
+    program is entered through the cold start vector at 40960 ($A000).
+    """
 
