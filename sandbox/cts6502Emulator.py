@@ -3,16 +3,11 @@
 # Python code based on C code from https://csdb.dk/release/?id=152422
 
 # TODOs:
-# - make all this into a class with no globals
-# - after testing, change method and variable names to python practices (MEM, FETCH(), etc.)
-# - TODO: make all PC incrementing call a method that insures wrapping (i.e., & 0xFFFF)
+# - need code coverage testing, then build tests for what's not been covered
+#   - i.e., INDIRECT_X (indexed indirect) not tested by kernel boot
+# - abstract out kernel boot test to a separate test file
+# - get rid of all the cruft I added when trying to test kernel boot
 
-
-# Report bug on CSDB siddump that PHP is not setting break flag on byte that gets put on stack
-
-# Make sure all assign_then_set_flags if passing in a temp value has 0xff applied (since this conversion
-#   happens in the original naturally)
-# MUST DO:  INDIRECT_Y was wrong, Check INDIRECT_X!!!!!!!!
 
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
@@ -612,24 +607,14 @@ class Cpu6502Emulator:
     #   {
     def runcpu(self):
         global start_output
-        #mem_watch = 1068
-        mem_watch = 1161
-        if self.pc == 65379:
-            start_output = True
-        if OUTPUT and start_output:
-            output_str = "PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
-                .format(self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])            
-            #output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
-            #    .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])
+
+        if OUTPUT:
+            output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b}" \
+                .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags)            
             if WRITE_LOG:
-                #print("PC: %s OP: %s A: %s X: %s Y: %s flags: %s" %  (hex(self.pc - 1),
-                #    hex(instruction), self.byte_hex(self.a), self.byte_hex(self.x),
-                #    self.byte_hex(self.y), format(self.flags, '08b')))
                 debug_outfile.write(output_str + "\n")
             else:
                 print(output_str)
-            #if self.memory[mem_watch] != 148:
-            #    exit("CHANGED!")
 
         instruction = self.fetch()
         self.cpucycles += cpucycles_table[instruction]
@@ -2667,30 +2652,25 @@ if __name__ == "__main__":
 
     cpuState = Cpu6502Emulator()
 
+    # Looks like it's necessary to have unmodifiable memory in the BASIC ROM area.
+    # The startup ram check only stops when, working its way up from $0801, it hits the
+    # BASIC ROM and finds that it can't change it.
+    # This method makes those ROM ranges immutable
     cpuState.inject_roms()
 
-    """
-    print("Want to see this used on screen memory:")
-    strings = cpuState.memory[58464:58539]
-    print(strings)
-    for char in strings:
-        if not chr(char).isprintable():
-            char = ord('~')
-        print(chr(char), end='')
-    print("\n\n")
-    """
-
-    # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the PC
-    # then just continues
+    # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the program counter
+    # then continues from there.  This will be 64738, as in the good ol' SYS64738, which
+    # will test for an autostart cartridge (which it won't find).
+    # Then IOINIT, RAMTAS, RESTOR, and CINT called.  Then BASIC entered through
+    # cold start vector at $A000, and we get the start-up message.    
     reset = cpuState.get_addr_at_loc(65532)
 
-    # According to Michael, B flag not set on reset, as I've seen others do:
-    #    https://www.pagetable.com/?p=410
+    # I've seen other set the break flag on RESET, but VICE doesn't do that, and
+    # pagetable says not to: https://www.pagetable.com/?p=410
     cpuState.init_cpu(reset)
 
     last_raster = -1
     while cpuState.runcpu():
- 
         # fake the raster
         raster = (cpuState.cpucycles // ARCH['NTSC-C64'].cycles_per_line) \
             % ARCH['NTSC-C64'].lines_per_frame
@@ -2705,30 +2685,17 @@ if __name__ == "__main__":
         # 65371 $FF5B CINT: "Initialize Screen Editor and VIC-Chip"
         #    FF5E   AD 12 D0   LDA $D012
         #    FF61   D0 FB      BNE $FF5E
-        # Can't just hold 53266 at a constant read value, because it also gets set (to set the IRQ)
+        # Can't just hold 53266 as a constant value for reading, because it also gets set (to set the IRQ)
+        # Could treat it like an immutable value, but simulating raster instead.
 
-        # Necessary to have unmodifiable memory in the BASIC ROM area.
-        # The ram check only stops when, working its way up from $0801, it hits the
-        # BASIC ROM and finds that it can't change it
-
-        # Current bug: Says 0 basic bytes free.
-        # Evaluating bug in SBC, fixed?  Not sure until next bulk compare:
-        if cpuState.pc == 58419:
-            True == True
-            OUTPUT = True
-            start_output = True
-
-#        if cpuState.cpucycles > 2510000:
-#            break
-
-        # if we reach $E5D4, we're in the loop waiting for keyboard input, and we've gone far enough
+        # if we reach $E5D4, we're in the loop waiting for keyboard input, and we've finished booting
         if cpuState.pc == 58836:
             break
 
-    # check what's written on the screen 1024-2023 ($0400-$07E7)
     if WRITE_LOG:
         debug_outfile.close()
 
+    # check what's written on the screen 1024-2023 ($0400-$07E7)
     for i in range(320):
         if i%40 == 0:
             print()
@@ -2741,26 +2708,4 @@ if __name__ == "__main__":
         print("%s" % (screen_code), end='')
     print()
 
-    """
-    From the Compute book Mapping the C64:
-    64738 $FCE2
-    Power-On Reset Routine
-    This is the RESET routine which is pointed to by the 6510 hardware
-    RESET vector at 65532 ($FFFC).
-    This routine is automatically executed when the computer is first
-    turned on. First, it sets the Interrupt disable flag, sets the stack point
-    er, and clears the Decimal mode flag. Next it tests for an autostart
-    cartridge. If one is found, the routine immediately jumps through the
-    cartridge cold start vector at 32768 ($8000). If no cartridge is found,
-    the Kernal initialization routines IOINIT, RAMTAS, RESTOR, and
-    CINT are called, the Interrupt disable flag is cleared, and the BASIC
-    program is entered through the cold start vector at 40960 ($A000).
-
-
-    58464 $E460 WORDS
-    Power-Up Messages
-    The ASCII text of the start-up messages "**** COMMODORE 64
-    BASIC V2 ****" and "BYTES FREE" is stored here.
-
-    """
 
