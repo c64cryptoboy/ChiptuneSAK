@@ -33,12 +33,12 @@ print('\n'.join(t.name for t in chirp_song.tracks))
 
 ctsMidi.export_chirp_to_midi(chirp_song, input_dir + output_midi_file)
 
-for i, program in enumerate([9, 1, 6, 7, 12]):
+for i, program in enumerate([9, 10, 10, 10, 6]):              # ([9, 1, 6, 7, 12]):
     chirp_song.tracks[i].set_program(program)
 
 rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 
-#rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song, 8)
+rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song, 8)
 
 ctsGoatTracker.export_rchirp_to_gt(rchirp_song, input_dir + output_gt_file)
 
