@@ -12,8 +12,9 @@
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
 
-OUTPUT = True
+OUTPUT = False
 WRITE_LOG = False
+start_output = False
 
 if WRITE_LOG:
     debug_outfile = open(r'sandbox/output.csv', 'w')
@@ -75,6 +76,9 @@ class Cpu6502Emulator:
         self.rom_ranges = []            #: ranages of immutable memory
 
     def set_ram(self, loc, val):
+        if not (0 <= val <= 255):
+            exit("Error: POKE(%d),%d" %(loc, val))
+
         for immutable_range in self.rom_ranges:
             if immutable_range[0] <= loc <= immutable_range[1]:
                 return # don't change an immutable memory location
@@ -97,13 +101,15 @@ class Cpu6502Emulator:
 
     #define PUSH(data) (MEM(0x100 + (sp--)) = (data))
     def push(self, data):
-        self.memory[0x100 + self.sp] = data
+        #self.memory[0x100 + self.sp] = data
+        self.set_ram(0x100 + self.sp, data)
         self.sp -= 1; self.sp &= 0xff
 
     #define POP() (MEM(0x100 + (++sp)))
     def pop(self):
         self.sp += 1; self.sp &= 0xff
-        return self.memory[0x100 + self.sp]
+        result = self.memory[0x100 + self.sp]
+        return result
 
     #define IMMEDIATE() (LO())
     def immediate(self):
@@ -154,6 +160,8 @@ class Cpu6502Emulator:
     #   /* cpuwritemap[(address) >> 6] = 1; */  \
     # }
     def debug_write(self, address):
+        if address == 53266:
+            pass
         #if 1024 <= address <= 2023:
         """
         if 40960 <= address <= 49151:
@@ -323,8 +331,7 @@ class Cpu6502Emulator:
                 self.flags |= FC                                                 
             else:                                                             
                 self.flags &= (~FC & 0xff)                                                
-        self.a = temp                                                            
-
+        self.a = temp & 0xff                                                           
 
 
     # #define SBC(data)                                                        \
@@ -391,7 +398,7 @@ class Cpu6502Emulator:
                 self.flags |= FV                                                 
             else:                                                             
                 self.flags &= (~FV & 0xff)                                                
-            self.a = tempval2                                                    
+            self.a = tempval2 & 0xff                                                
         else:                                                                 
             self.set_flags(temp & 0xff)                                           
             if (temp < 0x100):                                           
@@ -402,7 +409,7 @@ class Cpu6502Emulator:
                 self.flags |= FV                                                 
             else:                                                             
                 self.flags &= (~FV & 0xff)                                                
-            self.a = temp                                                        
+            self.a = temp & 0xff                                                        
 
     # #define CMP(src, data)                  \
     # {                                       \
@@ -595,9 +602,12 @@ class Cpu6502Emulator:
     #   switch(op)
     #   {
     def runcpu(self):
+        global start_output
         #mem_watch = 1068
-        mem_watch = 40960
-        if OUTPUT:
+        mem_watch = 1068
+        if self.pc == 65379:
+            start_output = True
+        if OUTPUT and start_output:
             output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
                 .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])
             if WRITE_LOG:
@@ -1794,7 +1804,7 @@ class Cpu6502Emulator:
 
         # PHA instruction
         if instruction == 0x48:
-            self.push(OperandRef(A_REG))
+            self.push(self.a)
             return 1
 
 
@@ -1815,7 +1825,7 @@ class Cpu6502Emulator:
 
         # PLA instruction
         if instruction == 0x68:
-            self.assign_then_set_flags(OperandRef(A_REG), self.pop())
+            self.assign_then_set_flags(OperandRef(A_REG), OperandRef(BYTE_VAL, self.pop()))
             return 1
 
 
@@ -2557,6 +2567,8 @@ class OperandRef:
             result = cpuInstance.memory[self.val_or_loc]
         else: # BYTE_VAL
             result = self.val_or_loc
+        if not (0 <= result <= 255):
+            raise Exception("Error: byte out of range")
         return result
 
 # debugging main
@@ -2606,6 +2618,7 @@ if __name__ == "__main__":
 
     cpuState.inject_roms()
 
+    """
     print("Want to see this used on screen memory:")
     strings = cpuState.memory[58464:58539]
     print(strings)
@@ -2614,6 +2627,7 @@ if __name__ == "__main__":
             char = ord('~')
         print(chr(char), end='')
     print("\n\n")
+    """
 
     # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the PC
     # then just continues
@@ -2625,6 +2639,7 @@ if __name__ == "__main__":
 
     last_raster = -1
     while cpuState.runcpu():
+ 
         # fake the raster
         raster = (cpuState.cpucycles // ARCH['NTSC-C64'].cycles_per_line) \
             % ARCH['NTSC-C64'].lines_per_frame
@@ -2635,32 +2650,42 @@ if __name__ == "__main__":
                 high |= 0b10000000
             cpuState.memory[53265] = high
             last_raster = raster
-        # Among other things, faking the raster keeps up from getting stuck in
-        # an infinite loop here:
+        # A non-changing raster will cause an infinite loop:
         # 65371 $FF5B CINT: "Initialize Screen Editor and VIC-Chip"
         #    FF5E   AD 12 D0   LDA $D012
         #    FF61   D0 FB      BNE $FF5E
+        # Can't just hold 53266 at a constant read value, because it also gets set (to set the IRQ)
 
         # Necessary to have unmodifiable memory in the BASIC ROM area.
         # The ram check only stops when, working its way up from $0801, it hits the
         # BASIC ROM and finds that it can't change it
 
-        # Current bug:  Why didn't the add 40 work?
-        if cpuState.cpucycles == 2005051:
+        # Current bug: Says 0 basic bytes free. TODO:  Find the next stop point (not 2053139)
+        if cpuState.cpucycles == 2053139:
             True == True
 
-        if cpuState.cpucycles > 2410000:
+        if cpuState.cpucycles > 2510000:
             break
 
         # $E5CA - $E5D5 is waiting for keyboard input, we've gone far enough
-        if 58826 <= cpuState.pc <= 58837:
-            break 
+        #if 58826 <= cpuState.pc <= 58837:
+        #    break 
 
     # check what's written on the screen 1024-2023 ($0400-$07E7)
     if WRITE_LOG:
         debug_outfile.close()
-    print(cpuState.memory[1024:2024])
-    pass
+
+    for i in range(320):
+        if i%40 == 0:
+            print()
+        screen_code = cpuState.memory[1024+i]
+        if 1 <= screen_code <= 26:
+            screen_code += 64
+        screen_code = chr(screen_code)
+        if not screen_code.isprintable:
+            screen_code = '.'
+        print("%s" % (screen_code), end='')
+    print()
 
     """
     From the Compute book Mapping the C64:
