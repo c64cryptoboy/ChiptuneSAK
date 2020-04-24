@@ -7,6 +7,11 @@
 # - after testing, change method and variable names to python practices (MEM, FETCH(), etc.)
 # - TODO: make all PC incrementing call a method that insures wrapping (i.e., & 0xFFFF)
 
+
+# Report bug on CSDB siddump that PHP is not setting break flag on byte that gets put on stack
+
+# Make sure all assign_then_set_flags if passing in a temp value has 0xff applied (since this conversion
+#   happens in the original naturally)
 # MUST DO:  INDIRECT_Y was wrong, Check INDIRECT_X!!!!!!!!
 
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
@@ -295,7 +300,7 @@ class Cpu6502Emulator:
     def ADC(self, operand_ref):
         data = operand_ref.get_byte(self)
         if (self.flags & FD):                                           
-            temp = (self.a & 0xf) + (data & 0xf) + (self.flags & FC)               
+            temp = (self.a & 0xf) + (data & 0xf) + (self.flags & FC) # not a byte              
             if (temp > 0x9):                                                  
                 temp += 0x6                                                 
             if (temp <= 0x0f):                                                
@@ -379,16 +384,17 @@ class Cpu6502Emulator:
     def SBC(self, operand_ref):
         # TODO: once this all works, clean up temp vars
         tempval = operand_ref.get_byte(self)                                             
-        temp = self.a - tempval - ((self.flags & FC) ^ FC)                            
+        temp = (self.a - tempval - ((self.flags & FC) ^ FC)) & 0xffff # not a byte                  
 
         if (self.flags & FD):
-            tempval2 = (self.a & 0xf) - (tempval & 0xf) - ((self.flags & FC) ^ FC)    
+            tempval2 = ((self.a & 0xf) - (tempval & 0xf) - ((self.flags & FC) ^ FC)) & 0xffff # not a byte    
             if (tempval2 & 0x10):                                             
-                tempval2 = ((tempval2 - 6) & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0) - 0x10)                                         
+                tempval2 = (((tempval2 - 6) & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0) - 0x10)) & 0xffff                                         
             else:
-                tempval2 = (tempval2 & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0)) 
+                tempval2 = ((tempval2 & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0))) & 0xffff 
             if (tempval2 & 0x100):                                           
-                tempval2 -= 0x60                                            
+                tempval2 -= 0x60
+                tempval2 &= 0xffff                                            
             if (temp < 0x100):                                               
                 self.flags |= FC                                                 
             else:                                                             
@@ -481,11 +487,12 @@ class Cpu6502Emulator:
         temp = operand_ref.get_byte(self)                          
         temp <<= 1                           
         if (self.flags & FC):
-            temp |= 1            
+            temp |= 1            # Why "1" instead of FC, and does this do anything?!?
         if (temp & 0x100):
             self.flags |= FC        
         else:
-            self.flags &= (~FC & 0xff)                    
+            self.flags &= (~FC & 0xff)
+        temp &= 0xff                 
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define ROR(data)                       \
@@ -505,7 +512,7 @@ class Cpu6502Emulator:
             self.flags |= FC            
         else:
             self.flags &= (~FC & 0xff)                    
-        temp >>= 1                           
+        temp >>= 1                 
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define DEC(data)                       \
@@ -514,7 +521,8 @@ class Cpu6502Emulator:
     #   ASSIGNSETFLAGS(data, temp);           \
     # }
     def DEC(self, operand_ref):                       
-        temp = operand_ref.get_byte(self) - 1                      
+        temp = operand_ref.get_byte(self) - 1
+        temp &= 0xff                
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define INC(data)                       \
@@ -523,7 +531,8 @@ class Cpu6502Emulator:
     #   ASSIGNSETFLAGS(data, temp);           \
     # }
     def INC(self, operand_ref):                       
-        temp = operand_ref.get_byte(self) + 1                      
+        temp = operand_ref.get_byte(self) + 1 
+        temp &= 0xff                             
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define EOR(data)                       \
@@ -604,12 +613,14 @@ class Cpu6502Emulator:
     def runcpu(self):
         global start_output
         #mem_watch = 1068
-        mem_watch = 1068
+        mem_watch = 1161
         if self.pc == 65379:
             start_output = True
         if OUTPUT and start_output:
-            output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
-                .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])
+            output_str = "PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
+                .format(self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])            
+            #output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
+            #    .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])
             if WRITE_LOG:
                 #print("PC: %s OP: %s A: %s X: %s Y: %s flags: %s" %  (hex(self.pc - 1),
                 #    hex(instruction), self.byte_hex(self.a), self.byte_hex(self.x),
@@ -1192,25 +1203,25 @@ class Cpu6502Emulator:
 
         # DEC instructions
         if instruction == 0xc6:
-            self.DEC(OperandRef(self.zeropage()))
+            self.DEC(OperandRef(LOC_VAL, self.zeropage()))
             self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0xd6:
-            self.DEC(OperandRef(self.zeropage_x()))
+            self.DEC(OperandRef(LOC_VAL, self.zeropage_x()))
             self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0xce:
-            self.DEC(OperandRef(self.absolute()))
+            self.DEC(OperandRef(LOC_VAL, self.absolute()))
             self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0xde:
-            self.DEC(OperandRef(self.absolute_x()))
+            self.DEC(OperandRef(LOC_VAL, self.absolute_x()))
             self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
@@ -1813,9 +1824,9 @@ class Cpu6502Emulator:
         # break;
 
         # PHP instruction
-        # TODO: Pretendo says PHP always pushes B flag as 1...
         if instruction == 0x08:
-            self.push(self.flags)
+            # add in the B flag: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
+            self.push(self.flags | FB) # siddump.c forgot to do this
             return 1
 
 
@@ -2350,6 +2361,46 @@ class Cpu6502Emulator:
         if instruction == 0x00:
             return 0
 
+        """
+        From py65 / mpu6502.py
+
+        @instruction(name="BRK", mode="imp", cycles=7)
+        def inst_0x00(self):
+        # pc has already been increased one
+        pc = (self.pc + 1) & self.addrMask
+        self.stPushWord(pc)
+
+        self.p |= self.BREAK
+        self.stPush(self.p | self.BREAK | self.UNUSED)
+
+        self.p |= self.INTERRUPT
+        self.pc = self.WordAt(self.IRQ)
+
+        http://nesdev.com/the%20%27B%27%20flag%20&%20BRK%20instruction.txt
+        Regardless of what ANY 6502 documentation says, BRK is a 2 byte opcode. The 
+        first is #$00, and the second is a padding byte. This explains why interrupt 
+        routines called by BRK always return 2 bytes after the actual BRK opcode, 
+        and not just 1.
+
+        http://visual6502.org/wiki/index.php?title=6502_BRK_and_B_bit
+
+        http://forum.6502.org/viewtopic.php?p=13036#13036
+        >software instructions BRK & PHP will push the B flag as being 1.
+        >hardware interrupts IRQ & NMI will push the B flag as being 0.
+        which I quoted earlier are now borne out by what I see in visual6502. I notice that RESET also uses D1x1 and therefore would push a zero for the B flag, except in the NMOS 6502 the three pushes in this case are masked out (as discussed previously) - I imagine that the 65C02 will push with B as 0.
+        Youd note: VICE x64.exe does reset with B flas as 0 
+
+        http://www.6502.org/tutorials/register_preservation.html
+        The B (Break) flag, bit 4 of the P (Processor status) register, is a frequent source of confusion on the 6502. The sole purpose of this flag is to distinguish a BRK from a IRQ. However, the behavior of BRK and IRQ (and how to distinguish between the two) can be described without even mentioning the B flag.
+
+        After the return address has been pushed onto the stack, a BRK instruction pushes the value of the P register ORed with $10, then transfers control to the BRK/IRQ interrupt handler.
+
+        After the return address has been pushed onto the stack, an IRQ interrupt pushes the value of the P register ANDed with $EF, then transfers control to the BRK/IRQ interrupt handler.
+
+        This means that the value of the P register that was pushed onto the stack must be used to distinguish a BRK from a IRQ, not the value of the P register upon entry to the BRK/IRQ interrupt handler. . . . there is no B flag in the processor status register; that bit is simply unused. When pushing the status register on the stack, that bit is set to a fixed value based on the instruction/event (set for PHP and BRK, clear for NMI). This is much simpler to explain and leads to no incorrect assumption that there is a B flag in the status register that can be checked.        
+
+        """
+
 
         # case 0xa7:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGE()));
@@ -2660,16 +2711,19 @@ if __name__ == "__main__":
         # The ram check only stops when, working its way up from $0801, it hits the
         # BASIC ROM and finds that it can't change it
 
-        # Current bug: Says 0 basic bytes free. TODO:  Find the next stop point (not 2053139)
-        if cpuState.cpucycles == 2053139:
+        # Current bug: Says 0 basic bytes free.
+        # Evaluating bug in SBC, fixed?  Not sure until next bulk compare:
+        if cpuState.pc == 58419:
             True == True
+            OUTPUT = True
+            start_output = True
 
-        if cpuState.cpucycles > 2510000:
+#        if cpuState.cpucycles > 2510000:
+#            break
+
+        # if we reach $E5D4, we're in the loop waiting for keyboard input, and we've gone far enough
+        if cpuState.pc == 58836:
             break
-
-        # $E5CA - $E5D5 is waiting for keyboard input, we've gone far enough
-        #if 58826 <= cpuState.pc <= 58837:
-        #    break 
 
     # check what's written on the screen 1024-2023 ($0400-$07E7)
     if WRITE_LOG:
