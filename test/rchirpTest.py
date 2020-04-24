@@ -4,10 +4,11 @@ import unittest
 import ctsMidi
 import ctsRChirp
 import ctsGoatTracker
-import ctsRCompress
+import ctsGtCompress
 
 SONG_TEST_SONG = 'data/twinkle.mid'
 GT_TEST_SONG = 'data/twinkle.sng'
+COMPRESS_TEST_SONG = 'data/BWV_799.mid'
 
 
 class RChirpSongTestCase(unittest.TestCase):
@@ -15,6 +16,7 @@ class RChirpSongTestCase(unittest.TestCase):
         self.test_song = ctsMidi.import_midi_to_chirp(SONG_TEST_SONG)
         self.test_song.quantize(*self.test_song.estimate_quantization())
         self.rchirp_song = ctsRChirp.RChirpSong(self.test_song)
+        self.compress_test_song = ctsMidi.import_midi_to_chirp(COMPRESS_TEST_SONG)
 
     def test_notes(self):
         for i, (t, v) in enumerate(zip(self.test_song.tracks, self.rchirp_song.voices)):
@@ -24,22 +26,38 @@ class RChirpSongTestCase(unittest.TestCase):
                 diff = chirp_notes - rchirp_notes
                 self.assertTrue(len(diff) == 0)
 
-    def test_gt(self):
+    def test_gt_compression(self):
+        self.compress_test_song = ctsMidi.import_midi_to_chirp('../test/data/BWV_799.mid')
+        self.compress_test_song.quantize_from_note_name('16')
+        for i, program in enumerate([11, 10, 6]):
+            self.compress_test_song.tracks[i].set_program(program)
 
-        # This is a temporary test that writes out a gt .sng file to listen to.
-        for v in self.rchirp_song.voices:
-            v.rows[0].new_instrument = 1
-        ctsGoatTracker.export_rchirp_to_gt(self.rchirp_song, GT_TEST_SONG)
+        self.compress_test_song.remove_polyphony()
+        self.compress_test_song.remove_keyswitches(12)
+        rchirp_song = ctsRChirp.RChirpSong(self.compress_test_song)
 
-    def test_compression(self):
-        rchirp_song = copy.deepcopy(self.rchirp_song)
+        rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song, 16)
 
-        #ctsRCompress.compress_gt(rchirp_song)
+        self.assertTrue(ctsGtCompress.validate_gt_limits(rchirp_song))
+        self.assertTrue(rchirp_song.validate_compression())
 
-        test_song = ctsMidi.import_midi_to_chirp('../test/data/betrayal_q.mid')
-        test_song.quantize_from_note_name('8')
-        test_song.remove_polyphony()
-        rchirp_song = ctsRChirp.RChirpSong(test_song)
+        ctsGtCompress.compress_gt_global(rchirp_song, 16)
 
-        ctsRCompress.compress_gt(rchirp_song)
+        self.assertTrue(ctsGtCompress.validate_gt_limits(rchirp_song))
+        self.assertTrue(rchirp_song.validate_compression())
+        ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/gt_test_out.sng')
 
+        # Now delete a row from a pattern which should cause compressed song not to work.
+        rchirp_song.patterns[0].rows.pop()
+        self.assertFalse(rchirp_song.validate_compression())
+
+        # print(f'{len(rchirp_song.patterns)} total patterns with a total of {sum(len(p.rows) for p in rchirp_song.patterns)} rows')
+        #
+        # print('%d total orderlist entries' % sum(len(v.orderlist) for v in rchirp_song.voices))
+        # print('%d bytes estimated orderlist size' % sum(ctsGtCompress.get_gt_orderlist_length(v.orderlist) for v in rchirp_song.voices))
+        # for i, v in enumerate(rchirp_song.voices):
+        #     print(f'Voice {i+1}:')
+        #     print(f'{len(v.orderlist)} orderlist entries')
+        #     print(f'{ctsGtCompress.get_gt_orderlist_length(v.orderlist)} estimated orderlist rows')
+        # print(f'{ctsGtCompress.estimate_song_size(rchirp_song)} bytes estimated song size')
+        #
