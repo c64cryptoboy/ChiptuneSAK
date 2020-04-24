@@ -397,7 +397,6 @@ class ChirpTrack:
             self.notes[i] = copy.copy(n)
 
     def set_program(self, program):
-        print(f'Program changed to {program}')
         self.program_changes = [ProgramEvent(0, int(program))]
 
     def __str__(self):
@@ -565,8 +564,7 @@ class ChirpSong:
             for it, n in enumerate(current_notes):
                 if note.start_time >= n.start_time + n.duration:
                     ret.append(it)
-            ret.sort(key=lambda n:
-                (-current_notes[n].note_num))
+            #ret.sort(key=lambda n: (-current_notes[n].note_num))
             return ret
         old_track = self.tracks.pop(i_track)
         old_track.notes.sort(key=lambda n: (n.start_time, -n.note_num))

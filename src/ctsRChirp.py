@@ -31,6 +31,27 @@ class RChirpRow:
     jiffy_len: int = None         #: Jiffies to process this row (until next row)
     new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
 
+    def match(self, other):
+        if self.row_num != other.row_num \
+                or self.jiffy_num != other.jiffy_num \
+                or self.jiffy_len != other.jiffy_len:
+            return False
+        if self.note_num is not None or other.note_num is not None:
+            if self.note_num != other.note_num:
+                return False
+        if self.gate is not None or other.gate is not None:
+            if self.gate != other.gate:
+                return False
+        if self.instr_num is not None or other.instr_num is not None:
+            if self.instr_num != other.instr_num:
+                return False
+        if self.new_instrument is not None and other.new_instrument is not None:
+            if self.new_instrument != other.new_instrument:
+                return False
+        if self.new_jiffy_tempo is not None and other.new_jiffy_tempo is not None:  # only check if both
+            if self.new_jiffy_tempo != other.new_jiffy_tempo:
+                return False
+        return True
 
 @dataclass
 class RChirpOrderEntry:
@@ -75,6 +96,7 @@ class RChirpVoice:
         self.rchirp_song = rchirp_song                  #: The song this voice belongs to
         self.rows = collections.defaultdict(RChirpRow)  #: dictionary: K:row num, V: RChirpRow instance
         self.orderlist = RChirpOrderList()
+        self.name = ''
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
@@ -240,6 +262,42 @@ class RChirpVoice:
             last = copy.deepcopy(row)
             self.rows[r] = row
 
+    def orderlist_to_rows(self):
+        ret_rows = []
+        current_row = 0
+        current_jiffy = 0
+        irow = 0
+        for entry in self.orderlist:
+            patt = entry.pattern_num
+            trans = entry.transposition
+            if patt >= len(self.rchirp_song.patterns):
+                raise ChiptuneSAKContentError(f"Illegal pattern number: {patt}")
+            for _ in range(entry.repeats):
+                for r in self.rchirp_song.patterns[patt].rows:
+                    tmp_row = copy.copy(r)
+                    tmp_row.row_num = current_row
+                    tmp_row.jiffy_num = current_jiffy
+                    if tmp_row.note_num is not None:
+                        tmp_row.note_num += trans
+                    current_row += 1
+                    current_jiffy += tmp_row.jiffy_len
+                    ret_rows.append(tmp_row)
+                    irow += 1
+        return ret_rows
+
+    def validate_orderlist(self):
+        filled_rows = self.get_filled_rows()
+        compressed_rows = self.orderlist_to_rows()
+        if len(filled_rows) != len(compressed_rows):
+            return False
+        for irow, c_row in enumerate(compressed_rows):
+            if not c_row.match(filled_rows[irow]):
+                print(f"row mismatch in voice {self.name} at row {irow}:")
+                print(f"  compressed: {c_row}")
+                print(f"  original:   {filled_rows[irow]}")
+                return False
+        return True
+
     def import_chirp_track(self, chirp_track):
         """
         Imports a Chirp track into a raw RChirpVoice object.  No compression or conversion to patterns
@@ -254,6 +312,8 @@ class RChirpVoice:
             raise ChiptuneSAKQuantizationError("Track must be quantized to generate RChirp.")
         if chirp_track.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to generate RChirp.")
+
+        self.name = chirp_track.name
         # Right now don't allow tempo variations; just use the initial tempo
         ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
                             / self.rchirp_song.update_freq)
@@ -303,7 +363,7 @@ class RChirpSong:
         self.stats = {}                                 #: TODO: ???
         self.metadata = None                            #: Song metadata (author, copyright, etc.)
         self.other = None                               #: Other meta-events in song
-        self.compressed = None                          #: Has song been through compression algorithm?
+        self.compressed = False                         #: Has song been through compression algorithm?
 
         if chirp_song is None:
             self.metadata = SongMetadata()
@@ -370,11 +430,10 @@ class RChirpSong:
         """
         return [voice.get_jiffy_indexed_rows() for voice in self.voices]
 
-    @staticmethod    
-    def __str_with_null_handling(a_value):
-        if a_value is None:
-            return ''
-        return str(a_value)
+    def validate_compression(self):
+        if not self.compressed:
+            return False
+        return all(v.validate_orderlist() for v in self.voices)
 
     # Create CVS debug output
     def note_time_data_str(self):
@@ -384,6 +443,9 @@ class RChirpSong:
         :return: CSV string
         :rtype: str
         """
+        def _str_with_null_handling(a_value):
+            return str(a_value) if a_value is not None else ''
+
         max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count()))
 
         channels_time_events = self.get_jiffy_indexed_voices()
@@ -405,8 +467,8 @@ class RChirpSong:
                     if tick in channels_time_events[i]:
                         event = channels_time_events[i][tick]
                         a_csv_row.append("%s" % event.row_num)
-                        a_csv_row.append("%s" % RChirpSong.__str_with_null_handling(event.note_num))
-                        a_csv_row.append("%s" % RChirpSong.__str_with_null_handling(event.gate))
+                        a_csv_row.append("%s" % _str_with_null_handling(event.note_num))
+                        a_csv_row.append("%s" % _str_with_null_handling(event.gate))
                         if event.jiffy_len != prev_tempo[i]:
                             tempo_update = event.jiffy_len
                         else:

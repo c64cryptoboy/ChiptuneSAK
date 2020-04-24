@@ -16,7 +16,7 @@ from fractions import Fraction
 from functools import reduce
 from dataclasses import dataclass
 from collections import defaultdict
-from ctsConstants import ARCH, C0_MIDI_NUM, GOATTRACKER_COMPRESSED
+from ctsConstants import ARCH, C0_MIDI_NUM
 import ctsChirp
 import ctsRChirp
 import ctsMidi

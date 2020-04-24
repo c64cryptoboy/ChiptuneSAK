@@ -2,7 +2,6 @@ import sys
 import argparse
 from os import path
 import toolsPath
-import ctsChirp
 import ctsMidi
 
 
@@ -47,7 +46,7 @@ def main():
         print("Renaming song to %s" % args.name)
         song.metadata.name = args.name
 
-    if args.removecontrolnotes:
+    if args.removekeyswitchnotes:
         print("Removing control notes...")
         song.remove_keyswitches()
 

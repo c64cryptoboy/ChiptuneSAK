@@ -118,18 +118,16 @@ def find_all_repeats(rows, used, min_length=4, min_transpose=0, max_transpose=0)
                 continue
             if xf.transpose < min_transpose or xf.transpose > max_transpose:
                 continue
-            pattern_length = 1
-            ib = base_position + 1
-            it = trial_position + 1
-            il = 1
+            pattern_length = 0
+            ib = base_position
+            it = trial_position
             while it < n_rows \
-                    and il < PATTERN_LENGTH_MAX \
+                    and pattern_length < PATTERN_LENGTH_MAX \
                     and gt_row_match(rows[ib], rows[it], xf) \
                     and not used[ib] \
                     and not used[it]:
                 ib += 1
                 it += 1
-                il += 1
                 pattern_length += 1
                 if ib >= trial_position:
                     break
@@ -152,18 +150,16 @@ def find_repeats_starting_at(index, rows, used, min_length=4, min_transpose=0, m
             continue
         if xf.transpose < min_transpose or xf.transpose > max_transpose:
             continue
-        pattern_length = 1
-        ib = base_position + 1
-        it = trial_position + 1
-        il = 1
+        pattern_length = 0
+        ib = base_position
+        it = trial_position
         while it < n_rows \
-                and il < PATTERN_LENGTH_MAX \
+                and pattern_length < PATTERN_LENGTH_MAX \
                 and gt_row_match(rows[ib], rows[it], xf) \
                 and not used[ib] \
                 and not used[it]:
             ib += 1
             it += 1
-            il += 1
             pattern_length += 1
             if ib >= trial_position:
                 break
@@ -322,7 +318,7 @@ def trim_repeats(repeats, used, min_length=4):
     return ret_repeats
 
 
-def validate_orderlist(patterns, order):
+def validate_orderlist(patterns, order, total_length):
     """
     Validates that the sparse orderlist is self-consistent.
     :param patterns:
@@ -341,6 +337,8 @@ def validate_orderlist(patterns, order):
             retval = False
         o = order[p]
         position_sum += len(patterns[o[0]].rows)
+    if position_sum != total_length:
+        return False
     return retval
 
 
@@ -400,10 +398,10 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
                 used[ig] = True
         assert all(used), "Not all rows were used!"
         last_pattern_count = len(rchirp_song.patterns)
-        if not validate_orderlist(rchirp_song.patterns, order):
+        if not validate_orderlist(rchirp_song.patterns, order, len(filled_rows)):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    rchirp_song.compressed = GOATTRACKER_COMPRESSED
+    rchirp_song.compressed = True
     return rchirp_song
 
 
@@ -466,12 +464,11 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
             for ig in range(gap_start, gap_end):
                 used[ig] = True
         assert all(used), "Not all rows were used!"
-        if not validate_orderlist(rchirp_song.patterns, order):
+        if not validate_orderlist(rchirp_song.patterns, order, len(filled_rows)):
             exit('Orderlist mismatch')
         rchirp_song.voices[iv].orderlist = make_orderlist(order)
-    rchirp_song.compressed = GOATTRACKER_COMPRESSED
+    rchirp_song.compressed = True
     return rchirp_song
-
 
 def validate_gt_limits(rchirp_song):
     n_patterns = len(rchirp_song.patterns)
