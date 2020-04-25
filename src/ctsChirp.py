@@ -331,6 +331,16 @@ class ChirpTrack:
         """
         self.notes = [n for n in self.notes if n.note_num > ks_max]
 
+    def truncate(self, max_tick):
+        """
+        Truncate the track to max_tick
+        :param max_tick:  maximum tick number for events to start (track will play to end of any notes started)
+        :type max_tick: int
+        """
+        self.notes = [n for n in self.notes if n.start_time <= max_tick]
+        self.program_changes = [p for p in self.program_changes if p.start_time <= max_tick]
+        self.other = [e for e in self.other if e.start_time <= max_tick]
+
     def transpose(self, semitones):
         """
         Transposes track in-place by semitones, which can be positive (transpose up) or negative (transpose down)
@@ -617,6 +627,20 @@ class ChirpSong:
         """
         for t in self.tracks:
             t.remove_keyswitches(ks_max)
+
+    def truncate(self, max_tick):
+        """
+        Truncate the song to max_tick
+        :param max_tick:  maximum tick number for events to start (song will play to end of any notes started)
+        :type max_tick: int
+        """
+        self.time_signature_changes = [ts for ts in self.time_signature_changes if ts.start_time <= max_tick]
+        self.key_signature_changes = [ks for ks in self.key_signature_changes if ks.start_time <= max_tick]
+        self.tempo_changes = [t for t in self.tempo_changes if t.start_time <= max_tick]
+        self.other = [e for e in self.other if e.start_time <= max_tick]
+        for t in self.tracks:
+            t.truncate(max_tick)
+
 
     def transpose(self, semitones, minimize_accidentals=True):
         """

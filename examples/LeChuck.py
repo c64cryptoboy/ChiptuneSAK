@@ -6,29 +6,47 @@ import ctsRChirp
 import ctsGtCompress
 import ctsGoatTracker
 
-input_dir = '../test/data\\'
-input_file = 'MonkeyIsland1LechuckThemeVer3_manuallyEdited.mid'
+input_dir = 'data/'
+input_file = 'MonkeyIsland_LechuckTheme.mid'
 output_midi_file = 'LeChuck.mid'
 output_gt_file = 'LeChuck.sng'
 
 chirp_song = ctsMidi.import_midi_to_chirp(input_dir + input_file)
 
-print(f'original song:')
+print(f'Original song:')
+print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')
+print()
+print('Original track names:')
+print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
+print()
 
 
 # First thing, we rename the song
 chirp_song.metadata.name = "Monkey Island - LeChuck Theme"
 
-# Now order the tracks the way we want them, which is the reverse of the midi we got.
-tracks = [copy.copy(chirp_song.tracks[i]) for i in [2, 1, 0]]
+print('Truncating original song...')
+chirp_song.truncate(21240)
+
+# Now select and order the tracks the way we want them, which is the reverse of the midi we got.
+print('Selecting and ordering tracks...')
+tracks = [copy.copy(chirp_song.tracks[i]) for i in [3, 2, 1]]
 chirp_song.tracks = tracks
+
+print(f'Now {len(chirp_song.tracks)} tracks')
 
 # Now given the tracks the names we want them to have, because the track names in the original midi were
 # used for information that is supposed to go elsewhere in midi files.
+print('Renaming tracks...')
 for t, n in zip(chirp_song.tracks, ['Lead', 'Chord', 'Bass']):
     t.name = n
+
+print('Tracks:')
+print('\n'.join(f'  {t.name}' for t in chirp_song.tracks))
+print()
+
+print('Adjusting ppq and tempo...')
 
 # Experimentally determine ticks per measure
 # - Counted measures by hand listening to the music.  We identified the note at the start of measure 21
@@ -50,27 +68,41 @@ chirp_song.set_qpm(192)
 # Looking at the midi and listening to the song, the best quantization appears to be eighth notes.
 chirp_song.quantize_from_note_name('8')
 
+
 # Track 2 has chords in it that have 3 notes at a time.  We need to move those to separate voices, so
 #   we split that track:
+print('Exploding polyphony of chord track...')
 chirp_song.explode_polyphony(1)
+
+print(f'Now {len(chirp_song.tracks)} tracks')
+print('Tracks:')
+print('\n'.join(f'  {t.name}' for t in chirp_song.tracks))
+print()
+
 
 # Any other polyphony is unintentional so make sure it is all gone (in particular, one note in the bass line
 #   seems to make a chord, but it's not real.
+print('Removing remaining polyphony')
 chirp_song.remove_polyphony()  # There is one place in the bass line that made a chord; this removes it
 
 # Now export the modified chirp to a new midi file, which can be viewed and should look nice and neat
+print(f'Writing {output_midi_file}...')
 ctsMidi.export_chirp_to_midi(chirp_song, input_dir + output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.  Use some of our standard pre-defined instruments
+print(f'Setting goattracker instruments...')
 for i, program in enumerate([9, 10, 10, 10, 6]):
     chirp_song.tracks[i].set_program(program)
 
 # Now that everything is C64 compatible, we convert the song to goattracker format.
+print(f'Converting ChirpSong to RChirpSong...')
 rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
+print('Compressing RChirp')
 rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song, 16)
 
 # Now export the compressed song to goattracker format.
+print(f'Writing {output_gt_file}')
 ctsGoatTracker.export_rchirp_to_gt(rchirp_song, input_dir + output_gt_file)
