@@ -12,7 +12,44 @@ class Test6502Emulator(unittest.TestCase):
         global cpuState
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
-    def test_C64_kernel_boot(self):
+
+    def test_obfuscated_sig(self):
+        # Emulate the ML portion of my lemon64 signature
+        # Note: signature line is obfuscated by changing XOR mask
+        
+        """
+        10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
+        20 DATA160,15,152,89,12,128,32,210,255,136,208,246,96
+        30 DATA12,71,81,65,77,38,84,73,94,42,74,74,66,87,2
+
+        .C:8000  A0 0F       LDY #$0F
+        .C:8002  98          TYA
+        .C:8003  59 0C 80    EOR $800C,Y
+        .C:8006  20 D2 FF    JSR $FFD2
+        .C:8009  88          DEY
+        .C:800a  D0 F6       BNE $8002
+        .C:800c  60          RTS
+        """
+        test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
+            81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
+
+        cpuState.inject_bytes(32768, test_prog)
+
+        # Memory Patch:  Since kernal not loaded, make $FFD2 just an RTS
+        cpuState.memory[65490] = 0x60
+
+        cpuState.init_cpu(32768)
+        
+        output_text = ""
+        while cpuState.runcpu():
+            # Capture petscii characters sent to screen print routine
+            if cpuState.pc == 65490: # $FFD2
+                output_text += chr(cpuState.a)
+
+        self.assertTrue(output_text == '\rYOFA WAS HERE\r')
+
+
+    def test_C64_kernal_boot(self):
         global cpuState
 
         expected_screen_output = \

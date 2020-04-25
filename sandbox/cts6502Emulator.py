@@ -18,10 +18,10 @@
 
 
 # TODOs:
+# - stop creating new instances for the registers each time
 # - write BRK functionality
 # - document decimal value and name of each instruction in the case section
-# - stop creating new instances for the registers each time
-# - Let Michael know what code is not covered via C64 kernel boot
+# - Let Michael know what code is not covered via C64 kernal boot
 
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
@@ -160,23 +160,6 @@ class Cpu6502Emulator:
         #return ((self.memory[self.lo()] | (self.memory[(self.lo() + 1) & 0xff] << 8)) + 0) & 0xffff
         zp_vec = self.memory[self.pc]
         return ((self.memory[zp_vec] | (self.memory[(zp_vec + 1) & 0xff] << 8)) + 0) & 0xffff
-
-    # Drop:
-    # #define WRITE(address)                  \
-    # {                                       \
-    #   /* cpuwritemap[(address) >> 6] = 1; */  \
-    # }
-    def debug_write(self, address):
-        if address == 53266:
-            pass
-        #if 1024 <= address <= 2023:
-        """
-        if 40960 <= address <= 49151:
-            print("DEBUG: attempt to write to BASIC 40960-49151 ($A000-$BFFF) at %d" % (address))
-        if 57344 <= address <= 65535:
-            print("DEBUG: attempt to write to KERNEL 57344-65535 ($E000-$FFFF) at %d" % (address))
-        """
-        pass
 
     #define EVALPAGECROSSING(baseaddr, realaddr) ((((baseaddr) ^ (realaddr)) & 0xff00) ? 1 : 0)
     def eval_page_crossing(self, baseaddr, realaddr):
@@ -1188,25 +1171,21 @@ class Cpu6502Emulator:
         # DEC instructions
         if instruction == 0xc6:
             self.DEC(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0xd6:
             self.DEC(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0xce:
             self.DEC(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0xde:
             self.DEC(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1349,25 +1328,21 @@ class Cpu6502Emulator:
         # INC instructions
         if instruction == 0xe6:
             self.INC(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0xf6:
             self.INC(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0xee:
             self.INC(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0xfe:
             self.INC(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1673,25 +1648,21 @@ class Cpu6502Emulator:
 
         if instruction == 0x46:
             self.LSR(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x56:
             self.LSR(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x4e:
             self.LSR(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x5e:
             self.LSR(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1869,25 +1840,21 @@ class Cpu6502Emulator:
 
         if instruction == 0x26:
             self.ROL(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x36:
             self.ROL(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x2e:
             self.ROL(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x3e:
             self.ROL(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1927,25 +1894,21 @@ class Cpu6502Emulator:
 
         if instruction == 0x66:
             self.ROR(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x76:
             self.ROR(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x6e:
             self.ROR(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x7e:
             self.ROR(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -2149,49 +2112,42 @@ class Cpu6502Emulator:
         if instruction == 0x85:
             #self.memory[self.zeropage()] = self.a
             self.set_ram(self.zeropage(), self.a)
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x95:
             #self.memory[self.zeropage_x()] = self.a
             self.set_ram(self.zeropage_x(), self.a)
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x8d:
             #self.memory[self.absolute()] = self.a
             self.set_ram(self.absolute(), self.a)
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x9d:
             #self.memory[self.absolute_x()] = self.a
             self.set_ram(self.absolute_x(), self.a)
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
         if instruction == 0x99:
             #self.memory[self.absolute_y()] = self.a
             self.set_ram(self.absolute_y(), self.a)
-            self.debug_write(self.absolute_y())
             self.pc += 2
             return 1
 
         if instruction == 0x81:
             #self.memory[self.indirect_x()] = self.a
             self.set_ram(self.indirect_x(), self.a)
-            self.debug_write(self.indirect_x())
             self.pc += 1
             return 1
 
         if instruction == 0x91:
             #self.memory[self.indirect_y()] = self.a
             self.set_ram(self.indirect_y(), self.a)
-            self.debug_write(self.indirect_y())
             self.pc += 1
             return 1
 
@@ -2217,21 +2173,18 @@ class Cpu6502Emulator:
         if instruction == 0x86:
             #self.memory[self.zeropage()] = self.x
             self.set_ram(self.zeropage(), self.x)
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x96:
             #self.memory[self.zeropage_y()] = self.x
             self.set_ram(self.zeropage_y(), self.x)
-            self.debug_write(self.zeropage_y())
             self.pc += 1
             return 1
 
         if instruction == 0x8e:
             #self.memory[self.absolute()] = self.x
             self.set_ram(self.absolute(), self.x)
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
@@ -2258,21 +2211,18 @@ class Cpu6502Emulator:
         if instruction == 0x84:
             #self.memory[self.zeropage()] = self.y
             self.set_ram(self.zeropage(), self.y)
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x94:
             #self.memory[self.zeropage_x()] = self.y
             self.set_ram(self.zeropage_x(), self.y)
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x8c:
             #self.memory[self.absolute()] = self.y
             self.set_ram(self.absolute(), self.y)
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
@@ -2611,41 +2561,4 @@ if __name__ == "__main__":
 
     # init: init_cpu(initaddress, subtune);
     # play: init_cpu(playaddress);
-
-
-    # Test 1
-    cpuState = Cpu6502Emulator()
-
-    test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
-        81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
-
-    """
-    10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
-    20 DATA160,15,152,89,12,128,32,210,255,136,208,246,96
-    30 DATA12,71,81,65,77,38,84,73,94,42,74,74,66,87,2
-
-    .C:8000  A0 0F       LDY #$0F
-    .C:8002  98          TYA
-    .C:8003  59 0C 80    EOR $800C,Y
-    .C:8006  20 D2 FF    JSR $FFD2
-    .C:8009  88          DEY
-    .C:800a  D0 F6       BNE $8002
-    .C:800c  60          RTS
-    """
-
-    for i, byte in enumerate(test_prog):
-        cpuState.memory[32768+i] = byte
-
-    # ROM Patch:  Make $FFD2 print routine just an RTS
-    cpuState.memory[65490] = 0x60
-
-    #cpuState.inject_roms()
-
-    cpuState.init_cpu(32768)
-    
-    while cpuState.runcpu():
-        pass
-
-    #    if WRITE_LOG:
-    #        debug_outfile.close()
-
+    pass
