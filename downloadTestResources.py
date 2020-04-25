@@ -16,6 +16,10 @@ class ResourceFile:
             self.local_name = remote_url.split('/')[-1]
 
 def manage_resources(resources):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:75.0) Gecko/20100101 Firefox/75.0'
+    }
+
     for resource in resources:
         local_file = os.path.join(resource.local_path, resource.local_name)
         
@@ -27,15 +31,21 @@ def manage_resources(resources):
                 continue
             else:
                 print('Will overwrite "%s"' % (local_file))
+
+        print("%s -> %s" % (resource.remote_url, local_file))
         try:
-            req = requests.get(resource.remote_url)
+            response = requests.get(resource.remote_url, headers=headers)
         except requests.exceptions.RequestException as e:
             print('Unable to download file at "%s", due to exception "%s"' % (resource.remote_url, e))
             continue
 
-        print("%s -> %s" % (resource.remote_url, local_file))
+        content = response.content
+
+        if b'<head>' in content.lower()[0:80]:
+            print('Warning: "%s" might merely be HTML saying the equivalent of "no botz allowed"' % (local_file))
+
         with open(local_file, 'wb') as out_file:
-            out_file.write(req.content)
+            out_file.write(content)
 
         time.sleep(1) # be friendly to web sites
         print()
