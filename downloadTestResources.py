@@ -63,7 +63,7 @@ def main():
     resources.append(ResourceFile(
         'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
         'examples/data',
-        'monkeyisland_lechucktheme.mid'
+        'MonkeyIsland_LechuckTheme.mid'
         )) 
 
     resources.append(ResourceFile(
