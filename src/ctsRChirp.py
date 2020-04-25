@@ -53,6 +53,7 @@ class RChirpRow:
                 return False
         return True
 
+
 @dataclass
 class RChirpOrderEntry:
     pattern_num: int = None
