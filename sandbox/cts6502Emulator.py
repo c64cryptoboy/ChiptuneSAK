@@ -1,25 +1,32 @@
 # 6502 instruction-level emulation
 #
-# Python code based on C code from https://csdb.dk/release/?id=152422
+# This module can emulate 6502 machine language programs at an instruction-level
+# of granularity (not a cycle-level).
+#
+# Code references used during development:
+# 1) C code: siddumper: https://csdb.dk/release/?id=152422
+#    In fact, this is a direct python adaptation of that code.  At this time, the original
+#    C code is still included in this file as reference.  It made heavy use of macros
+#    (something python doesn't have) for register/value/address polymorphism.  
+# 2) python code: py65: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
+#    If I had just imported this library, I would have been done.  But then I wouldn't have
+#    learned nearly as much trying to get this emulator bug free.
+# 3) python code: The Pretendo NES emulator:
+#    Nice docs: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
+# 4) python code: pyc64, a C64 simulator in python, using py65
+#    https://github.com/irmen/pyc64
+
 
 # TODOs:
-# - need code coverage testing, then build tests for what's not been covered
-#   - i.e., INDIRECT_X (indexed indirect) not tested by kernel boot
-# - abstract out kernel boot test to a separate test file
-# - get rid of all the cruft I added when trying to test kernel boot
-
+# - write BRK functionality
+# - document decimal value and name of each instruction in the case section
+# - stop creating new instances for the registers each time
+# - Let Michael know what code is not covered via C64 kernel boot
 
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
 
-OUTPUT = False
-WRITE_LOG = False
-start_output = False
-
-if WRITE_LOG:
-    debug_outfile = open(r'sandbox/output.csv', 'w')
-else:
-    debug_outfile = None
+DEBUG = False
 
 # operand "enums" (set outside normal byte range to avoid inband errors)
 A_REG = 0x01 + 0xFF
@@ -482,7 +489,7 @@ class Cpu6502Emulator:
         temp = operand_ref.get_byte(self)                          
         temp <<= 1                           
         if (self.flags & FC):
-            temp |= 1            # Why "1" instead of FC, and does this do anything?!?
+            temp |= 1   # aka FC
         if (temp & 0x100):
             self.flags |= FC        
         else:
@@ -593,9 +600,6 @@ class Cpu6502Emulator:
         self.cpucycles = 0
 
 
-    def byte_hex(self, num):
-        return '{0:0{1}X}'.format(num,2)
-
     # int runcpu(void)
     # {
     #   unsigned temp;
@@ -606,15 +610,10 @@ class Cpu6502Emulator:
     #   switch(op)
     #   {
     def runcpu(self):
-        global start_output
-
-        if OUTPUT:
+        if DEBUG:
             output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b}" \
                 .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags)            
-            if WRITE_LOG:
-                debug_outfile.write(output_str + "\n")
-            else:
-                print(output_str)
+            print(output_str)
 
         instruction = self.fetch()
         self.cpucycles += cpucycles_table[instruction]
@@ -2610,12 +2609,12 @@ class OperandRef:
 # debugging main
 if __name__ == "__main__":
 
-    # Test 1
-    '''    
-    cpuState = Cpu6502Emulator()
-
     # init: init_cpu(initaddress, subtune);
     # play: init_cpu(playaddress);
+
+
+    # Test 1
+    cpuState = Cpu6502Emulator()
 
     test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
         81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
@@ -2646,66 +2645,7 @@ if __name__ == "__main__":
     
     while cpuState.runcpu():
         pass
-    '''
 
-    # Test 2
-
-    cpuState = Cpu6502Emulator()
-
-    # Looks like it's necessary to have unmodifiable memory in the BASIC ROM area.
-    # The startup ram check only stops when, working its way up from $0801, it hits the
-    # BASIC ROM and finds that it can't change it.
-    # This method makes those ROM ranges immutable
-    cpuState.inject_roms()
-
-    # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the program counter
-    # then continues from there.  This will be 64738, as in the good ol' SYS64738, which
-    # will test for an autostart cartridge (which it won't find).
-    # Then IOINIT, RAMTAS, RESTOR, and CINT called.  Then BASIC entered through
-    # cold start vector at $A000, and we get the start-up message.    
-    reset = cpuState.get_addr_at_loc(65532)
-
-    # I've seen other set the break flag on RESET, but VICE doesn't do that, and
-    # pagetable says not to: https://www.pagetable.com/?p=410
-    cpuState.init_cpu(reset)
-
-    last_raster = -1
-    while cpuState.runcpu():
-        # fake the raster
-        raster = (cpuState.cpucycles // ARCH['NTSC-C64'].cycles_per_line) \
-            % ARCH['NTSC-C64'].lines_per_frame
-        if raster != last_raster:
-            cpuState.memory[53266] = raster & 0xff
-            high = cpuState.memory[53265] & 0b01111111
-            if raster > 255:
-                high |= 0b10000000
-            cpuState.memory[53265] = high
-            last_raster = raster
-        # A non-changing raster will cause an infinite loop:
-        # 65371 $FF5B CINT: "Initialize Screen Editor and VIC-Chip"
-        #    FF5E   AD 12 D0   LDA $D012
-        #    FF61   D0 FB      BNE $FF5E
-        # Can't just hold 53266 as a constant value for reading, because it also gets set (to set the IRQ)
-        # Could treat it like an immutable value, but simulating raster instead.
-
-        # if we reach $E5D4, we're in the loop waiting for keyboard input, and we've finished booting
-        if cpuState.pc == 58836:
-            break
-
-    if WRITE_LOG:
-        debug_outfile.close()
-
-    # check what's written on the screen 1024-2023 ($0400-$07E7)
-    for i in range(320):
-        if i%40 == 0:
-            print()
-        screen_code = cpuState.memory[1024+i]
-        if 1 <= screen_code <= 26:
-            screen_code += 64
-        screen_code = chr(screen_code)
-        if not screen_code.isprintable:
-            screen_code = '.'
-        print("%s" % (screen_code), end='')
-    print()
-
+    #    if WRITE_LOG:
+    #        debug_outfile.close()
 
