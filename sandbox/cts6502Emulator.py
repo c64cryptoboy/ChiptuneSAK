@@ -1,25 +1,32 @@
 # 6502 instruction-level emulation
 #
-# Python code based on C code from https://csdb.dk/release/?id=152422
+# This module can emulate 6502 machine language programs at an instruction-level
+# of granularity (not a cycle-level).
+#
+# Code references used during development:
+# 1) C code: siddumper: https://csdb.dk/release/?id=152422
+#    In fact, this is a direct python adaptation of that code.  At this time, the original
+#    C code is still included in this file as reference.  It made heavy use of macros
+#    (something python doesn't have) for register/value/address polymorphism.  
+# 2) python code: py65: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
+#    If I had just imported this library, I would have been done.  But then I wouldn't have
+#    learned nearly as much trying to get this emulator bug free.
+# 3) python code: The Pretendo NES emulator:
+#    Nice docs: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
+# 4) python code: pyc64, a C64 simulator in python, using py65
+#    https://github.com/irmen/pyc64
+
 
 # TODOs:
-# - make all this into a class with no globals
-# - after testing, change method and variable names to python practices (MEM, FETCH(), etc.)
-# - TODO: make all PC incrementing call a method that insures wrapping (i.e., & 0xFFFF)
-
-# MUST DO:  INDIRECT_Y was wrong, Check INDIRECT_X!!!!!!!!
+# - stop creating new instances for the registers each time
+# - write BRK functionality
+# - document decimal value and name of each instruction in the case section
+# - Let Michael know what code is not covered via C64 kernal boot
 
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
 
-OUTPUT = False
-WRITE_LOG = False
-start_output = False
-
-if WRITE_LOG:
-    debug_outfile = open(r'sandbox/output.csv', 'w')
-else:
-    debug_outfile = None
+DEBUG = False
 
 # operand "enums" (set outside normal byte range to avoid inband errors)
 A_REG = 0x01 + 0xFF
@@ -154,23 +161,6 @@ class Cpu6502Emulator:
         zp_vec = self.memory[self.pc]
         return ((self.memory[zp_vec] | (self.memory[(zp_vec + 1) & 0xff] << 8)) + 0) & 0xffff
 
-    # Drop:
-    # #define WRITE(address)                  \
-    # {                                       \
-    #   /* cpuwritemap[(address) >> 6] = 1; */  \
-    # }
-    def debug_write(self, address):
-        if address == 53266:
-            pass
-        #if 1024 <= address <= 2023:
-        """
-        if 40960 <= address <= 49151:
-            print("DEBUG: attempt to write to BASIC 40960-49151 ($A000-$BFFF) at %d" % (address))
-        if 57344 <= address <= 65535:
-            print("DEBUG: attempt to write to KERNEL 57344-65535 ($E000-$FFFF) at %d" % (address))
-        """
-        pass
-
     #define EVALPAGECROSSING(baseaddr, realaddr) ((((baseaddr) ^ (realaddr)) & 0xff00) ? 1 : 0)
     def eval_page_crossing(self, baseaddr, realaddr):
         if (baseaddr ^ realaddr) & 0xff00 != 0:
@@ -295,7 +285,7 @@ class Cpu6502Emulator:
     def ADC(self, operand_ref):
         data = operand_ref.get_byte(self)
         if (self.flags & FD):                                           
-            temp = (self.a & 0xf) + (data & 0xf) + (self.flags & FC)               
+            temp = (self.a & 0xf) + (data & 0xf) + (self.flags & FC) # not a byte              
             if (temp > 0x9):                                                  
                 temp += 0x6                                                 
             if (temp <= 0x0f):                                                
@@ -379,16 +369,17 @@ class Cpu6502Emulator:
     def SBC(self, operand_ref):
         # TODO: once this all works, clean up temp vars
         tempval = operand_ref.get_byte(self)                                             
-        temp = self.a - tempval - ((self.flags & FC) ^ FC)                            
+        temp = (self.a - tempval - ((self.flags & FC) ^ FC)) & 0xffff # not a byte                  
 
         if (self.flags & FD):
-            tempval2 = (self.a & 0xf) - (tempval & 0xf) - ((self.flags & FC) ^ FC)    
+            tempval2 = ((self.a & 0xf) - (tempval & 0xf) - ((self.flags & FC) ^ FC)) & 0xffff # not a byte    
             if (tempval2 & 0x10):                                             
-                tempval2 = ((tempval2 - 6) & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0) - 0x10)                                         
+                tempval2 = (((tempval2 - 6) & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0) - 0x10)) & 0xffff                                         
             else:
-                tempval2 = (tempval2 & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0)) 
+                tempval2 = ((tempval2 & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0))) & 0xffff 
             if (tempval2 & 0x100):                                           
-                tempval2 -= 0x60                                            
+                tempval2 -= 0x60
+                tempval2 &= 0xffff                                            
             if (temp < 0x100):                                               
                 self.flags |= FC                                                 
             else:                                                             
@@ -481,11 +472,12 @@ class Cpu6502Emulator:
         temp = operand_ref.get_byte(self)                          
         temp <<= 1                           
         if (self.flags & FC):
-            temp |= 1            
+            temp |= 1   # aka FC
         if (temp & 0x100):
             self.flags |= FC        
         else:
-            self.flags &= (~FC & 0xff)                    
+            self.flags &= (~FC & 0xff)
+        temp &= 0xff                 
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define ROR(data)                       \
@@ -505,7 +497,7 @@ class Cpu6502Emulator:
             self.flags |= FC            
         else:
             self.flags &= (~FC & 0xff)                    
-        temp >>= 1                           
+        temp >>= 1                 
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define DEC(data)                       \
@@ -514,7 +506,8 @@ class Cpu6502Emulator:
     #   ASSIGNSETFLAGS(data, temp);           \
     # }
     def DEC(self, operand_ref):                       
-        temp = operand_ref.get_byte(self) - 1                      
+        temp = operand_ref.get_byte(self) - 1
+        temp &= 0xff                
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define INC(data)                       \
@@ -523,7 +516,8 @@ class Cpu6502Emulator:
     #   ASSIGNSETFLAGS(data, temp);           \
     # }
     def INC(self, operand_ref):                       
-        temp = operand_ref.get_byte(self) + 1                      
+        temp = operand_ref.get_byte(self) + 1 
+        temp &= 0xff                             
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))           
 
     # #define EOR(data)                       \
@@ -589,9 +583,6 @@ class Cpu6502Emulator:
         self.cpucycles = 0
 
 
-    def byte_hex(self, num):
-        return '{0:0{1}X}'.format(num,2)
-
     # int runcpu(void)
     # {
     #   unsigned temp;
@@ -602,23 +593,10 @@ class Cpu6502Emulator:
     #   switch(op)
     #   {
     def runcpu(self):
-        global start_output
-        #mem_watch = 1068
-        mem_watch = 1068
-        if self.pc == 65379:
-            start_output = True
-        if OUTPUT and start_output:
-            output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b},{:05d}={:03d}/${:02x}" \
-                .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags, mem_watch, self.memory[mem_watch], self.memory[mem_watch])
-            if WRITE_LOG:
-                #print("PC: %s OP: %s A: %s X: %s Y: %s flags: %s" %  (hex(self.pc - 1),
-                #    hex(instruction), self.byte_hex(self.a), self.byte_hex(self.x),
-                #    self.byte_hex(self.y), format(self.flags, '08b')))
-                debug_outfile.write(output_str + "\n")
-            else:
-                print(output_str)
-            #if self.memory[mem_watch] != 148:
-            #    exit("CHANGED!")
+        if DEBUG:
+            output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b}" \
+                .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags)            
+            print(output_str)
 
         instruction = self.fetch()
         self.cpucycles += cpucycles_table[instruction]
@@ -1192,26 +1170,22 @@ class Cpu6502Emulator:
 
         # DEC instructions
         if instruction == 0xc6:
-            self.DEC(OperandRef(self.zeropage()))
-            self.debug_write(self.zeropage())
+            self.DEC(OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
         if instruction == 0xd6:
-            self.DEC(OperandRef(self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
+            self.DEC(OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
         if instruction == 0xce:
-            self.DEC(OperandRef(self.absolute()))
-            self.debug_write(self.absolute())
+            self.DEC(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
         if instruction == 0xde:
-            self.DEC(OperandRef(self.absolute_x()))
-            self.debug_write(self.absolute_x())
+            self.DEC(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
 
@@ -1354,25 +1328,21 @@ class Cpu6502Emulator:
         # INC instructions
         if instruction == 0xe6:
             self.INC(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0xf6:
             self.INC(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0xee:
             self.INC(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0xfe:
             self.INC(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1678,25 +1648,21 @@ class Cpu6502Emulator:
 
         if instruction == 0x46:
             self.LSR(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x56:
             self.LSR(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x4e:
             self.LSR(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x5e:
             self.LSR(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1813,9 +1779,9 @@ class Cpu6502Emulator:
         # break;
 
         # PHP instruction
-        # TODO: Pretendo says PHP always pushes B flag as 1...
         if instruction == 0x08:
-            self.push(self.flags)
+            # add in the B flag: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
+            self.push(self.flags | FB) # siddump.c forgot to do this
             return 1
 
 
@@ -1874,25 +1840,21 @@ class Cpu6502Emulator:
 
         if instruction == 0x26:
             self.ROL(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x36:
             self.ROL(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x2e:
             self.ROL(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x3e:
             self.ROL(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -1932,25 +1894,21 @@ class Cpu6502Emulator:
 
         if instruction == 0x66:
             self.ROR(OperandRef(LOC_VAL, self.zeropage()))
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x76:
             self.ROR(OperandRef(LOC_VAL, self.zeropage_x()))
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x6e:
             self.ROR(OperandRef(LOC_VAL, self.absolute()))
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x7e:
             self.ROR(OperandRef(LOC_VAL, self.absolute_x()))
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
@@ -2154,49 +2112,42 @@ class Cpu6502Emulator:
         if instruction == 0x85:
             #self.memory[self.zeropage()] = self.a
             self.set_ram(self.zeropage(), self.a)
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x95:
             #self.memory[self.zeropage_x()] = self.a
             self.set_ram(self.zeropage_x(), self.a)
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x8d:
             #self.memory[self.absolute()] = self.a
             self.set_ram(self.absolute(), self.a)
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
         if instruction == 0x9d:
             #self.memory[self.absolute_x()] = self.a
             self.set_ram(self.absolute_x(), self.a)
-            self.debug_write(self.absolute_x())
             self.pc += 2
             return 1
 
         if instruction == 0x99:
             #self.memory[self.absolute_y()] = self.a
             self.set_ram(self.absolute_y(), self.a)
-            self.debug_write(self.absolute_y())
             self.pc += 2
             return 1
 
         if instruction == 0x81:
             #self.memory[self.indirect_x()] = self.a
             self.set_ram(self.indirect_x(), self.a)
-            self.debug_write(self.indirect_x())
             self.pc += 1
             return 1
 
         if instruction == 0x91:
             #self.memory[self.indirect_y()] = self.a
             self.set_ram(self.indirect_y(), self.a)
-            self.debug_write(self.indirect_y())
             self.pc += 1
             return 1
 
@@ -2222,21 +2173,18 @@ class Cpu6502Emulator:
         if instruction == 0x86:
             #self.memory[self.zeropage()] = self.x
             self.set_ram(self.zeropage(), self.x)
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x96:
             #self.memory[self.zeropage_y()] = self.x
             self.set_ram(self.zeropage_y(), self.x)
-            self.debug_write(self.zeropage_y())
             self.pc += 1
             return 1
 
         if instruction == 0x8e:
             #self.memory[self.absolute()] = self.x
             self.set_ram(self.absolute(), self.x)
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
@@ -2263,21 +2211,18 @@ class Cpu6502Emulator:
         if instruction == 0x84:
             #self.memory[self.zeropage()] = self.y
             self.set_ram(self.zeropage(), self.y)
-            self.debug_write(self.zeropage())
             self.pc += 1
             return 1
 
         if instruction == 0x94:
             #self.memory[self.zeropage_x()] = self.y
             self.set_ram(self.zeropage_x(), self.y)
-            self.debug_write(self.zeropage_x())
             self.pc += 1
             return 1
 
         if instruction == 0x8c:
             #self.memory[self.absolute()] = self.y
             self.set_ram(self.absolute(), self.y)
-            self.debug_write(self.absolute())
             self.pc += 2
             return 1
 
@@ -2349,6 +2294,46 @@ class Cpu6502Emulator:
         # TODO: Should set interrupt flag, push PC+2, push flags (like PHP does)
         if instruction == 0x00:
             return 0
+
+        """
+        From py65 / mpu6502.py
+
+        @instruction(name="BRK", mode="imp", cycles=7)
+        def inst_0x00(self):
+        # pc has already been increased one
+        pc = (self.pc + 1) & self.addrMask
+        self.stPushWord(pc)
+
+        self.p |= self.BREAK
+        self.stPush(self.p | self.BREAK | self.UNUSED)
+
+        self.p |= self.INTERRUPT
+        self.pc = self.WordAt(self.IRQ)
+
+        http://nesdev.com/the%20%27B%27%20flag%20&%20BRK%20instruction.txt
+        Regardless of what ANY 6502 documentation says, BRK is a 2 byte opcode. The 
+        first is #$00, and the second is a padding byte. This explains why interrupt 
+        routines called by BRK always return 2 bytes after the actual BRK opcode, 
+        and not just 1.
+
+        http://visual6502.org/wiki/index.php?title=6502_BRK_and_B_bit
+
+        http://forum.6502.org/viewtopic.php?p=13036#13036
+        >software instructions BRK & PHP will push the B flag as being 1.
+        >hardware interrupts IRQ & NMI will push the B flag as being 0.
+        which I quoted earlier are now borne out by what I see in visual6502. I notice that RESET also uses D1x1 and therefore would push a zero for the B flag, except in the NMOS 6502 the three pushes in this case are masked out (as discussed previously) - I imagine that the 65C02 will push with B as 0.
+        Youd note: VICE x64.exe does reset with B flas as 0 
+
+        http://www.6502.org/tutorials/register_preservation.html
+        The B (Break) flag, bit 4 of the P (Processor status) register, is a frequent source of confusion on the 6502. The sole purpose of this flag is to distinguish a BRK from a IRQ. However, the behavior of BRK and IRQ (and how to distinguish between the two) can be described without even mentioning the B flag.
+
+        After the return address has been pushed onto the stack, a BRK instruction pushes the value of the P register ORed with $10, then transfers control to the BRK/IRQ interrupt handler.
+
+        After the return address has been pushed onto the stack, an IRQ interrupt pushes the value of the P register ANDed with $EF, then transfers control to the BRK/IRQ interrupt handler.
+
+        This means that the value of the P register that was pushed onto the stack must be used to distinguish a BRK from a IRQ, not the value of the P register upon entry to the BRK/IRQ interrupt handler. . . . there is no B flag in the processor status register; that bit is simply unused. When pushing the status register on the stack, that bit is set to a fixed value based on the instruction/event (set for PHP and BRK, clear for NMI). This is much simpler to explain and leads to no incorrect assumption that there is a B flag in the status register that can be checked.        
+
+        """
 
 
         # case 0xa7:
@@ -2574,139 +2559,6 @@ class OperandRef:
 # debugging main
 if __name__ == "__main__":
 
-    # Test 1
-    '''    
-    cpuState = Cpu6502Emulator()
-
     # init: init_cpu(initaddress, subtune);
     # play: init_cpu(playaddress);
-
-    test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
-        81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
-
-    """
-    10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
-    20 DATA160,15,152,89,12,128,32,210,255,136,208,246,96
-    30 DATA12,71,81,65,77,38,84,73,94,42,74,74,66,87,2
-
-    .C:8000  A0 0F       LDY #$0F
-    .C:8002  98          TYA
-    .C:8003  59 0C 80    EOR $800C,Y
-    .C:8006  20 D2 FF    JSR $FFD2
-    .C:8009  88          DEY
-    .C:800a  D0 F6       BNE $8002
-    .C:800c  60          RTS
-    """
-
-    for i, byte in enumerate(test_prog):
-        cpuState.memory[32768+i] = byte
-
-    # ROM Patch:  Make $FFD2 print routine just an RTS
-    cpuState.memory[65490] = 0x60
-
-    #cpuState.inject_roms()
-
-    cpuState.init_cpu(32768)
-    
-    while cpuState.runcpu():
-        pass
-    '''
-
-    # Test 2
-
-    cpuState = Cpu6502Emulator()
-
-    cpuState.inject_roms()
-
-    """
-    print("Want to see this used on screen memory:")
-    strings = cpuState.memory[58464:58539]
-    print(strings)
-    for char in strings:
-        if not chr(char).isprintable():
-            char = ord('~')
-        print(chr(char), end='')
-    print("\n\n")
-    """
-
-    # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the PC
-    # then just continues
-    reset = cpuState.get_addr_at_loc(65532)
-
-    # According to Michael, B flag not set on reset, as I've seen others do:
-    #    https://www.pagetable.com/?p=410
-    cpuState.init_cpu(reset)
-
-    last_raster = -1
-    while cpuState.runcpu():
- 
-        # fake the raster
-        raster = (cpuState.cpucycles // ARCH['NTSC-C64'].cycles_per_line) \
-            % ARCH['NTSC-C64'].lines_per_frame
-        if raster != last_raster:
-            cpuState.memory[53266] = raster & 0xff
-            high = cpuState.memory[53265] & 0b01111111
-            if raster > 255:
-                high |= 0b10000000
-            cpuState.memory[53265] = high
-            last_raster = raster
-        # A non-changing raster will cause an infinite loop:
-        # 65371 $FF5B CINT: "Initialize Screen Editor and VIC-Chip"
-        #    FF5E   AD 12 D0   LDA $D012
-        #    FF61   D0 FB      BNE $FF5E
-        # Can't just hold 53266 at a constant read value, because it also gets set (to set the IRQ)
-
-        # Necessary to have unmodifiable memory in the BASIC ROM area.
-        # The ram check only stops when, working its way up from $0801, it hits the
-        # BASIC ROM and finds that it can't change it
-
-        # Current bug: Says 0 basic bytes free. TODO:  Find the next stop point (not 2053139)
-        if cpuState.cpucycles == 2053139:
-            True == True
-
-        if cpuState.cpucycles > 2510000:
-            break
-
-        # $E5CA - $E5D5 is waiting for keyboard input, we've gone far enough
-        #if 58826 <= cpuState.pc <= 58837:
-        #    break 
-
-    # check what's written on the screen 1024-2023 ($0400-$07E7)
-    if WRITE_LOG:
-        debug_outfile.close()
-
-    for i in range(320):
-        if i%40 == 0:
-            print()
-        screen_code = cpuState.memory[1024+i]
-        if 1 <= screen_code <= 26:
-            screen_code += 64
-        screen_code = chr(screen_code)
-        if not screen_code.isprintable:
-            screen_code = '.'
-        print("%s" % (screen_code), end='')
-    print()
-
-    """
-    From the Compute book Mapping the C64:
-    64738 $FCE2
-    Power-On Reset Routine
-    This is the RESET routine which is pointed to by the 6510 hardware
-    RESET vector at 65532 ($FFFC).
-    This routine is automatically executed when the computer is first
-    turned on. First, it sets the Interrupt disable flag, sets the stack point
-    er, and clears the Decimal mode flag. Next it tests for an autostart
-    cartridge. If one is found, the routine immediately jumps through the
-    cartridge cold start vector at 32768 ($8000). If no cartridge is found,
-    the Kernal initialization routines IOINIT, RAMTAS, RESTOR, and
-    CINT are called, the Interrupt disable flag is cleared, and the BASIC
-    program is entered through the cold start vector at 40960 ($A000).
-
-
-    58464 $E460 WORDS
-    Power-Up Messages
-    The ASCII text of the start-up messages "**** COMMODORE 64
-    BASIC V2 ****" and "BYTES FREE" is stored here.
-
-    """
-
+    pass
