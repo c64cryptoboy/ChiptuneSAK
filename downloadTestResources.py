@@ -51,6 +51,12 @@ def main():
     """
 
     resources.append(ResourceFile(
+        'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
+        'examples/data',
+        'monkeyisland_lechucktheme.mid'
+        )) 
+
+    resources.append(ResourceFile(
         'http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/kernal.901227-03.bin',
         'res',
         'c64kernal.bin'
