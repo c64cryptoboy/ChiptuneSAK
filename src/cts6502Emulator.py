@@ -102,7 +102,6 @@ class Cpu6502Emulator:
 
     #define PUSH(data) (MEM(0x100 + (sp--)) = (data))
     def push(self, data):
-        #self.memory[0x100 + self.sp] = data
         self.set_ram(0x100 + self.sp, data)
         self.sp -= 1; self.sp &= 0xff
 
@@ -2094,43 +2093,36 @@ class Cpu6502Emulator:
         # STA instructions
         # Note: STA/X/Y doesn't affect flags
         if instruction == 0x85: # $85/133 STA zp
-            #self.memory[self.zeropage()] = self.a
             self.set_ram(self.zeropage(), self.a)
             self.pc += 1
             return 1
 
         if instruction == 0x95: # $95/149 STA zp,X
-            #self.memory[self.zeropage_x()] = self.a
             self.set_ram(self.zeropage_x(), self.a)
             self.pc += 1
             return 1
 
         if instruction == 0x8d: # $8D/141 STA abs
-            #self.memory[self.absolute()] = self.a
             self.set_ram(self.absolute(), self.a)
             self.pc += 2
             return 1
 
         if instruction == 0x9d: # $9D/157 STA abs,X
-            #self.memory[self.absolute_x()] = self.a
             self.set_ram(self.absolute_x(), self.a)
             self.pc += 2
             return 1
 
         if instruction == 0x99: # $99/153 STA abs,Y
-            #self.memory[self.absolute_y()] = self.a
             self.set_ram(self.absolute_y(), self.a)
             self.pc += 2
             return 1
 
         if instruction == 0x81: # $81/129 STA (zp,X)
-            #self.memory[self.indirect_x()] = self.a
             self.set_ram(self.indirect_x(), self.a)
             self.pc += 1
             return 1
 
         if instruction == 0x91: # $91/145 STA (zp),Y
-            #self.memory[self.indirect_y()] = self.a
             self.set_ram(self.indirect_y(), self.a)
             self.pc += 1
             return 1
@@ -2155,19 +2147,16 @@ class Cpu6502Emulator:
 
         # STX instructions
         if instruction == 0x86: # $86/134 STX zp
-            #self.memory[self.zeropage()] = self.x
             self.set_ram(self.zeropage(), self.x)
             self.pc += 1
             return 1
 
         if instruction == 0x96: # $96/150 STX zp,Y
-            #self.memory[self.zeropage_y()] = self.x
             self.set_ram(self.zeropage_y(), self.x)
             self.pc += 1
             return 1
 
         if instruction == 0x8e: # $8E/142 STX abs
-            #self.memory[self.absolute()] = self.x
             self.set_ram(self.absolute(), self.x)
             self.pc += 2
             return 1
@@ -2193,19 +2182,16 @@ class Cpu6502Emulator:
 
         # STY instructions
         if instruction == 0x84: # $84/132 STY zp
-            #self.memory[self.zeropage()] = self.y
             self.set_ram(self.zeropage(), self.y)
             self.pc += 1
             return 1
 
         if instruction == 0x94: # $94/148 STY zp,X
-            #self.memory[self.zeropage_x()] = self.y
             self.set_ram(self.zeropage_x(), self.y)
             self.pc += 1
             return 1
 
         if instruction == 0x8c: # $8C/140 STY abs
-            #self.memory[self.absolute()] = self.y
             self.set_ram(self.absolute(), self.y)
             self.pc += 2
             return 1
