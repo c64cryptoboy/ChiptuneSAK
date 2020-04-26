@@ -18,13 +18,17 @@
 
 
 # TODOs:
-# - write BRK functionality
-# - Let Michael know what code is not covered via C64 kernal boot
+# - Develop test cases for gaps in test coverage
 
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
 
 DEBUG = False
+
+# 6502 vector locations
+NMI = 0xfffa    # on C64, vector points to NMI routine at $FE43/65091
+RESET = 0xfffc  # on C64, vector points to power-on routine $FCE2/64738
+IRQ = 0xfffe    # on C64, vector points to IRQ handler routine at $FF48/65352
 
 FN = 0b10000000 # Negative
 FV = 0b01000000 # oVerflow
@@ -1781,7 +1785,7 @@ class Cpu6502Emulator:
 
         # PLP instruction
         if instruction == 0x28: # $28/40 PLP
-            self.flags = self.pop()
+            self.flags = self.pop() # no action taken on B flag
             return 1
 
 
@@ -1904,7 +1908,7 @@ class Cpu6502Emulator:
         if instruction == 0x40: # $40/64 RTI
             if self.sp == 0xff:
                 return 0
-            self.flags = self.pop()
+            self.flags = self.pop() # no action taken on B flag
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             return 1
@@ -2271,49 +2275,24 @@ class Cpu6502Emulator:
         # return 0;
 
         # BRK instruction
-        # TODO: Should set interrupt flag, push PC+2, push flags (like PHP does)
+        # http://www.6502.org/tutorials/register_preservation.html
+        # https://wiki.nesdev.com/w/index.php/Status_flags
+        # Interesting.  Articles say there is no B flag in the processor status register,
+        # the bit is unused.  PHP and BRK pushes the P register onto the stack with break
+        # bit set, and IRQ/NMI pushes P register with break bit clear.  The "actual" B flag
+        # goes unchanged.  I did a BRK in Vice, and sure enough, the B flag wasn't set.
+
         if instruction == 0x00: # $00/0 BRK
+            # This is unnecessary to implement from a SID playback perspective
+            # so siddump.c ignored it
+            self.pc += 1 # BRK is a 2-byte opcode (2nd byte is padding)
+            self.pc &= 0xf000
+            self.push((self.pc) >> 8)
+            self.push((self.pc) & 0xff)
+            self.push(self.flags | FB)
+            self.flags |= FI
+            self.pc = self.get_addr_at_loc(IRQ)
             return 0
-
-        """
-        From py65 / mpu6502.py
-
-        @instruction(name="BRK", mode="imp", cycles=7)
-        def inst_0x00(self):
-        # pc has already been increased one
-        pc = (self.pc + 1) & self.addrMask
-        self.stPushWord(pc)
-
-        self.p |= self.BREAK
-        self.stPush(self.p | self.BREAK | self.UNUSED)
-
-        self.p |= self.INTERRUPT
-        self.pc = self.WordAt(self.IRQ)
-
-        http://nesdev.com/the%20%27B%27%20flag%20&%20BRK%20instruction.txt
-        Regardless of what ANY 6502 documentation says, BRK is a 2 byte opcode. The 
-        first is #$00, and the second is a padding byte. This explains why interrupt 
-        routines called by BRK always return 2 bytes after the actual BRK opcode, 
-        and not just 1.
-
-        http://visual6502.org/wiki/index.php?title=6502_BRK_and_B_bit
-
-        http://forum.6502.org/viewtopic.php?p=13036#13036
-        >software instructions BRK & PHP will push the B flag as being 1.
-        >hardware interrupts IRQ & NMI will push the B flag as being 0.
-        which I quoted earlier are now borne out by what I see in visual6502. I notice that RESET also uses D1x1 and therefore would push a zero for the B flag, except in the NMOS 6502 the three pushes in this case are masked out (as discussed previously) - I imagine that the 65C02 will push with B as 0.
-        Youd note: VICE x64.exe does reset with B flas as 0 
-
-        http://www.6502.org/tutorials/register_preservation.html
-        The B (Break) flag, bit 4 of the P (Processor status) register, is a frequent source of confusion on the 6502. The sole purpose of this flag is to distinguish a BRK from a IRQ. However, the behavior of BRK and IRQ (and how to distinguish between the two) can be described without even mentioning the B flag.
-
-        After the return address has been pushed onto the stack, a BRK instruction pushes the value of the P register ORed with $10, then transfers control to the BRK/IRQ interrupt handler.
-
-        After the return address has been pushed onto the stack, an IRQ interrupt pushes the value of the P register ANDed with $EF, then transfers control to the BRK/IRQ interrupt handler.
-
-        This means that the value of the P register that was pushed onto the stack must be used to distinguish a BRK from a IRQ, not the value of the P register upon entry to the BRK/IRQ interrupt handler. . . . there is no B flag in the processor status register; that bit is simply unused. When pushing the status register on the stack, that bit is set to a fixed value based on the instruction/event (set for PHP and BRK, clear for NMI). This is much simpler to explain and leads to no incorrect assumption that there is a B flag in the status register that can be checked.        
-
-        """
 
 
         # case 0xa7:
