@@ -1,5 +1,89 @@
 # Tests of 6502 Emulation
 
+# TODO:
+# sections of code still not tested:
+"""
+    def zeropage_y(self): 
+        return (self.lo() + self.y) & 0xff 
+
+    def indirect_x(self): 
+        return self.memory[(self.lo() + self.x) & 0xff] | (self.memory[(self.lo() + self.x + 1) & 0xff] << 8) 
+
+    The BCD part of ADC
+    The BCD part of SBC
+    The need to set the V flag in SBC (when not BCD)
+    The need to set the C flag in ASL
+
+    And these instructions:
+    $75/117 ADC zp,X 
+    $6D/109 ADC abs 
+    $7D/125 ADC abs,X 
+    $61/97 ADC (zp,X) 
+    $71/113 ADC (zp),Y 
+    $25/37 AND zp 
+    $35/53 AND zp,X 
+    $2D/45 AND abs 
+    $3D/61 AND abs,X 
+    $39/57 AND abs,Y 
+    $21/33 AND (zp,X) 
+    $31/49 AND (zp),Y 
+    $0A/10 ASL A 
+    $0E/14 ASL abs 
+    $1E/30 ASL abs,X 
+    $2C/44 BIT abs 
+    $50/80 BVC rel 
+    $70/112 BVS rel 
+    $B8/184 CLV 
+    $D5/213 CMP zp,X 
+    $CD/205 CMP abs 
+    $D9/217 CMP abs,Y 
+    $C1/193 CMP (zp,X) 
+    $EC/236 CPX abs 
+    $CC/204 CPY abs 
+    $D6/214 DEC zp,X 
+    $CE/206 DEC abs 
+    $DE/222 DEC abs,X 
+    $55/85 EOR zp,X 
+    $4D/77 EOR abs 
+    $5D/93 EOR abs,X 
+    $41/65 EOR (zp,X) 
+    $51/81 EOR (zp),Y 
+    $F6/246 INC zp,X 
+    $EE/238 INC abs 
+    $FE/254 INC abs,X 
+    $A1/161 LDA (zp,X) 
+    $B6/182 LDX zp,Y 
+    $BE/190 LDX abs,Y 
+    $BC/188 LDY abs,X 
+    $4A/74 LSR A 
+    $4E/78 LSR abs 
+    $5E/94 LSR abs,X 
+    $EA/234 NOP 
+    $15/21 ORA zp,X 
+    $1D/29 ORA abs,X 
+    $19/25 ORA abs,Y 
+    $01/1 ORA (zp,X) 
+    $11/17 ORA (zp),Y 
+    $26/38 ROL zp 
+    $36/54 ROL zp,X 
+    $2E/46 ROL abs 
+    $3E/62 ROL abs,X
+    $6E/110 ROR abs 
+    $7E/126 ROR abs,X 
+    $40/64 RTI 
+    $F5/245 SBC zp,X 
+    $ED/237 SBC abs 
+    $FD/253 SBC abs,X 
+    $F9/249 SBC abs,Y 
+    $E1/225 SBC (zp,X) 
+    $F1/241 SBC (zp),Y 
+    $F8/248 SED 	
+    $81/129 STA (zp,X) 
+    $96/150 STX zp,Y 
+    $BA/186 TSX 
+    $00/0 BRK 
+"""
+
 import testingPath
 import unittest
 import cts6502Emulator
