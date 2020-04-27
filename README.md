@@ -22,26 +22,30 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ### Music importers
 * Standard [MIDI](https://www.midi.org/specifications) file (type 0 or 1):  Contains note on/off events in delta time
 * [GoatTracker 2](https://sourceforge.net/p/goattracker2/code/HEAD/tree/): A Commodore 64 pattern-based music editor for Windows/linux/MacOS
+* [GoatTracker 2 Stereo](https://sourceforge.net/projects/goattracker2/files/GoatTracker%202%20Stereo/) (2SID)
 
 #### Importers: under development
-* ML64: Human-readable music format for [Unknown Realm](https://www.kickstarter.com/projects/stirringdragongames/unknown-realm-an-8bit-rpg-for-pc-and-commodore-64) music contributions from those supporting at the "bard tier"
-* [GoatTracker 2 Stereo](https://sourceforge.net/projects/goattracker2/files/GoatTracker%202%20Stereo/) (2SID)
+* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): Arbitrary C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  Will support PSID and some RSID.  Importer is proposed as alternative to the closed-source SID2MIDI.
+
 
 #### Importers: proposed
 * Subset of [MusicXML](https://www.musicxml.com/for-developers/): A digital sheet music interchange format
-* jellybiscuits [Music Box Composer](http://www.jellybiscuits.com/?page_id=951) file format
-* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): Arbitrary C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  Importer is proposed as alternative to the closed-source SID2MIDI.
+* [MOD](http://web.archive.org/web/20120806024858/http://16-bits.org/mod/) (Amiga Module) files
+* [NSF](https://wiki.nesdev.com/w/index.php/NSF) (Nintendo Sound Format).  We already have a pure-python 6502 emulator working for the C64 SID importer that can be reused.
+* Many opportunities with VGM (Video Game Music)  -- a sample-accurate sound logging format for [many machines](https://vgmrips.net/packs/systems) and many [sound chips](https://vgmrips.net/packs/chips)
+* COMPUTE!'s [Sidplayer](https://archive.org/details/Computes_Music_System_for_the_Commodore_128_and_64/mode/2up) [format](https://ist.uwaterloo.ca/~schepers/formats/SIDPLAY.TXT)
+
 
 ### ChIRp processing / transformations
 * Quantizing of note onset and duration
+* tick scaling, truncation, voice projection and reordering
 * Arbitrary metric modulation with support for music with varying meters
 * Transpose score
 * Separate ("explode") polyphony into separate voices
+* Music compression for trackers: compute patterns, including reused based on transposition and differing tempos
 
 #### ChIRp processing: under development
-* Music compression
-   * For Trackers: compute patterns, including compression opportunities based on transposition and tempo
-   * For measure-based systems
+* Additional tracker compression schemes
  
 #### ChIRp processing: proposed
 *
@@ -49,25 +53,30 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ### Music exporters
 * MIDI
 * [LilyPond](http://lilypond.org/doc/v2.19/Documentation/notation.pdf): Sheet music markup language
-* ML64
 * [Commodore 128 BASIC](https://www.c64-wiki.com/wiki/BASIC#Overview_of_BASIC_Version_7.0_Commands) music program
- 
+* GoatTracker 2 and GoatTracker 2 Stereo (2SID), both automatically compute patterns for smaller files
+* ML64: Human-readable music format for [Unknown Realm](https://www.kickstarter.com/projects/stirringdragongames/unknown-realm-an-8bit-rpg-for-pc-and-commodore-64) music contributions from those supporting at the "bard tier"
+
 #### Exporters: Under development
 
-* GoatTracker 2 (working, except for automatic compressed pattern creation)
-* GoatTracker 2 Stereo (2SID)
+* [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (targeting dual and triple SID, as SID-Wizard only supports midi->single SID)
   
 #### Exporters: Proposed
-* Markus's yet-unnamed Dr. Cat-derrived 3-SID C64 player
+
+* Minecraft [Note Blocks](https://minecraft.gamepedia.com/Note_Block)
+* [Mario Paint Composer](https://mariopaintcomposer.proboards.com/)
+* Markus's yet-unnamed Dr. Cat-derived 3-SID C64 player
 * [ABC](http://abcnotation.com/wiki/abc:standard:v2.1) Notation: Human-readable music format.  Used to allow user-submitted music in online games including Starbound, Lord of the Rings Online, and Shroud of the Avatar
-* jellybiscuits Music Box Composer format
-* [SID-Wizard](https://sourceforge.net/p/sid-wizard/code/HEAD/tree/) 1.8 (targeting dual and triple SID, as SID-Wizard only supports midi->single SID)
+* jellybiscuits [Music Box Composer](http://www.jellybiscuits.com/?page_id=951) file format
 * A [Rob Hubbard engine](https://www.1xn.org/text/C64/rob_hubbards_music.txt)
 * RobTracker v1.11 (publicly released Dec 25th. 2019)
 
+
 ## Recent milestones
-* Exported goattracker's example "consultant.sng" file as midi and as pdf sheet music
+* Exported some Monkey Island (MS-DOS 1990) midi capture into 2SID GoatTracker.  Patterns automatically computed to reduce file size.
+* Created 6502 emulator for upcoming SID importer
 * Exported some Betrayal at Krondor (MS-DOS, 1993) midi capture to pdf sheet music, goat tracker, and Commodore 128 BASIC program
+
 
 ## Requirements/Building
 * [Python 3.7+](https://www.python.org/downloads/)
@@ -77,5 +86,4 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
    * more_itertools
    * recordtype
    * sortedcontainers
-   * py65
  * [Lilypond](https://lilypond.org/download.html)
