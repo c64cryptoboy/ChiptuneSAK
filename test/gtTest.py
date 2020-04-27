@@ -4,13 +4,13 @@
 # - Add an additional subtune to gtTestData.sng and create tests here for it
 
 import testingPath
-import os
 import unittest
 import ctsGoatTracker
 import ctsBase
-from ctsConstants import get_project_root
+from ctsConstants import project_to_absolute_path
 
-SNG_TEST_FILE = os.path.join(get_project_root(), 'test/data/gtTestData.sng')
+SNG_TEST_FILE = project_to_absolute_path('test/data/gtTestData.sng')
+
 
 class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):

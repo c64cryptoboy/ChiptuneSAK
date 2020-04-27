@@ -20,8 +20,7 @@
 # TODOs:
 # - Develop test cases for gaps in test coverage
 
-import os
-from ctsConstants import get_project_root
+from ctsConstants import project_to_absolute_path
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
 from ctsConstants import ARCH
 
@@ -2489,7 +2488,7 @@ class Cpu6502Emulator:
     # TODO:  This is commodore-specific functionality that I need to move out of this module into
     # a new module, however, it's not quite yet ready to check that new module in yet
     def inject_roms(self):
-        path_and_filename = os.path.join(get_project_root(), 'res/c64kernal.bin')
+        path_and_filename = project_to_absolute_path('res/c64kernal.bin')
         binary = read_binary_file(path_and_filename)
         if binary is not None:
             self.inject_bytes(57344, binary)  # KERNAL ROM 57344-65535 ($E000-$FFFF)
@@ -2498,7 +2497,7 @@ class Cpu6502Emulator:
         else:
             print("Warning: could not find %s" % (path_and_filename))
 
-        path_and_filename = os.path.join(get_project_root(), 'res/c64basic.bin')
+        path_and_filename = project_to_absolute_path('res/c64basic.bin')
         binary = read_binary_file(path_and_filename)
         if binary is not None:
             self.inject_bytes(40960, binary)  # BASIC ROM 40960-49151 ($A000-$BFFF)

@@ -125,5 +125,5 @@ class TrackTestCase(unittest.TestCase):
             t.set_min_note_len(test_duration * 2)
 
         total_notes_test = sum(len(t.notes) for t in tmp_song.tracks)
-        expected_lost = short_notes // 2 #  In this piece, the short notes come in pairs
+        expected_lost = short_notes // 2  #  In this piece, the short notes come in pairs
         self.assertEqual(total_notes_test + expected_lost, total_notes)
