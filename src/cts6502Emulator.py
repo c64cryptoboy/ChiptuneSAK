@@ -2498,7 +2498,7 @@ class Cpu6502Emulator:
             self.memory[mem_loc + i] = a_byte
 
     def inject_roms(self):
-        path_and_filename = r'../res/c64kernal.bin'
+        path_and_filename = r'res/c64kernal.bin'
         binary = read_binary_file(path_and_filename)
         if binary is not None:
             self.inject_bytes(57344, binary)  # KERNAL ROM 57344-65535 ($E000-$FFFF)
@@ -2507,7 +2507,7 @@ class Cpu6502Emulator:
         else:
             print("Warning: could not find %s" % (path_and_filename))
 
-        path_and_filename = r'../res/c64basic.bin'
+        path_and_filename = r'res/c64basic.bin'
         binary = read_binary_file(path_and_filename)
         if binary is not None:
             self.inject_bytes(40960, binary)  # BASIC ROM 40960-49151 ($A000-$BFFF)
