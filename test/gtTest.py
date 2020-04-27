@@ -4,14 +4,15 @@
 # - Add an additional subtune to gtTestData.sng and create tests here for it
 
 import testingPath
+import os
 import unittest
 import ctsGoatTracker
 import ctsBase
+from ctsConstants import get_project_root
 
-# TODO: I'm fighting environment again...
-# SNG_TEST_FILE = 'test/data/gtTestData.sng'
-SNG_TEST_FILE = 'data/gtTestData.sng'
-
+#SNG_TEST_FILE = 'test/data/gtTestData.sng'
+#SNG_TEST_FILE = 'data/gtTestData.sng'
+SNG_TEST_FILE = os.path.join(get_project_root + 'test/data/gtTestData.sng')
 
 class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):
@@ -84,7 +85,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     # Test that .sng file to rchirp to .sng binary to rchirp has expected note content
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
         gt_binary = ctsGoatTracker.export_rchirp_to_gt_binary(self.rchirp_song,
-                                                              end_with_repeat=False, compress=False, pattern_len=126)
+            end_with_repeat=False, pattern_len=126)
         parsed_gt_2 = ctsGoatTracker.import_sng_binary_to_parsed_gt(gt_binary)
         rchirp_song_2 = ctsGoatTracker.import_parsed_gt_to_rchirp(parsed_gt_2, 0)
 
