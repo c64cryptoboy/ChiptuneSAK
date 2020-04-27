@@ -308,7 +308,7 @@ def get_arch_freq_for_midi_num(midi_num, architecture, tuning=CONCERT_A):
     
     :param midi_num: midi note number
     :type midi_num: int
-    :param architecture: Architecture description string (TODO: should be replaced by an constant)
+    :param architecture: Architecture description string
     :type architecture: string
     :return: int frequency for arch
     :rtype: int    

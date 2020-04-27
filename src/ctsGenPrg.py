@@ -4,7 +4,7 @@
 # Does not implement a grammar for BASIC, so no grammar checking, but will generate a valid PRG
 # for a valid ascii BASIC program
 #
-# TODO
+# FUTUREs
 # - Probably don't want to implement a syntax for control characters (e.g. {CYN})
 #   https://www.c64-wiki.com/wiki/control_character
 #   Currently, one must simply use the petscii byte with the correct control code value

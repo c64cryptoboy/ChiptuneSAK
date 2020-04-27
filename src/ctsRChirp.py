@@ -5,7 +5,6 @@
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
 #
 # TODO:
-# - test Knapp's chirp->rchirp functionality
 # - create proper docstrings on class defs (methods already done)
 
 import copy

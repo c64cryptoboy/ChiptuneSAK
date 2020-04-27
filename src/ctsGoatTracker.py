@@ -3,9 +3,8 @@
 # Notes:
 # - This code ignores multispeed (for now)
 #
-# TODOs:
+# FUTUREs:
 # - Add instrument file loader to use with channels on exports
-# - Lots of misc TODOs in the code below
 
 from os import path
 import sys
@@ -451,8 +450,8 @@ class GtChannelState:
     # The two funktable entries are shared by all channels using a funktempo, so we have it as a
     # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
     # to and processing different songs at the same time (seems unlikely).
-    # TODO:  add instrument handling
-    # TODO: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
+    # FUTURE: add instrument handling
+    # FUTURE: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
     funktable = GT_DEFAULT_FUNKTEMPOS
 
     def __init__(self, voice_num, channel_orderlist):
@@ -576,7 +575,7 @@ class GtChannelState:
             # Note: The higher voice number seems to win ties on simultaneous speed changes
 
             assert row.command_data not in [0x02, 0x82], \
-                "TODO: Don't know how to support tempo change with value %d" % row.command_data
+                "Unimplemented: Don't know how to support tempo change with value %d" % row.command_data
 
             new_row_duration = row.command_data & 127  # don't care if it's global or local
             if new_row_duration < 2:
@@ -617,7 +616,7 @@ class GtChannelState:
         else:
             self.row_ticks_left = self.curr_tempo
 
-        # TODO: Possibly handle some of the (below) commands in the future?
+        # FUTUREs: Possibly handle some of the (below) commands in the future?
         # from docs:
         #    Command 1XY: Portamento up. XY is an index to a 16-bit speed value in the speedtable.
         #
@@ -658,7 +657,7 @@ class GtChannelState:
             #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
             #   Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
             #   I'm assuming byte 224 is never used in orderlists
-            assert a_byte != 0xE0, "TODO: I don't believe byte E0 should occur in the orderlist"
+            assert a_byte != 0xE0, "Unimplemented: Don't believe byte E0 should occur in the orderlist"
             if 0xE1 <= a_byte <= 0xFE:  # F0 = +0 = no transposition
                 self.curr_transposition = a_byte - 0xF0  # transpose range is -15 to +14
                 continue
@@ -712,10 +711,9 @@ def import_parsed_gt_to_rchirp(sng_data, subtune_num=0):
                       for i in range(sng_data.num_channels)]
 
     rchirp_song = ctsRChirp.RChirpSong()
-    # This is instead of channels_time_events (TODO: delete this comment later)
     rchirp_song.voices = [ctsRChirp.RChirpVoice(rchirp_song) for i in range(sng_data.num_channels)]
 
-    # TODO: Later, make track assignment to SID groupings not hardcoded
+    # TODO: Make track assignment to SID groupings not hardcoded
     if sng_data.is_stereo:
         rchirp_song.voice_groups = [(1, 2, 3), (4, 5, 6)]
     else:
@@ -1126,7 +1124,7 @@ def export_rchirp_to_gt_binary(rchirp_song, end_with_repeat=False, pattern_len=1
         gt_binary += bytes(orderlists[i])
 
     # append instruments
-    # TODO: At some point, should add support for loading gt .ins instrument files for the channels
+    # FUTURE: At some point, should add support for loading gt .ins instrument files for the channels
     # Need an instrument
 
     """
