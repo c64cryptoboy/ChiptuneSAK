@@ -1,9 +1,11 @@
 # Constants for ChiptuneSAK
 #
 
+import os
 from fractions import Fraction
 from dataclasses import dataclass, field
 from pathlib import Path
+
 
 CHIPTUNESAK_VERSION = "0.13"
 
@@ -108,6 +110,6 @@ ARCH = {
                                  visible_lines=284),
 }
 
-def get_project_root() -> Path:
+def project_to_absolute_path(file_path) -> Path:
     """Returns project root folder"""
-    return Path(__file__).parent.parent.absolute()
+    return os.path.join(Path(__file__).parent.parent.absolute(), file_path)
