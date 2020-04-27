@@ -5,7 +5,6 @@ from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsKey import ChirpKey
-import ctsMidi
 
 
 # Named tuple types for several lists throughout

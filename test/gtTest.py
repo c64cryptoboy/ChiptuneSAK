@@ -84,7 +84,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     # Test that .sng file to rchirp to .sng binary to rchirp has expected note content
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
         gt_binary = ctsGoatTracker.export_rchirp_to_gt_binary(self.rchirp_song,
-                                                              end_with_repeat=False, compress=False, pattern_len=126)
+                                                              end_with_repeat=False, pattern_len=126)
         parsed_gt_2 = ctsGoatTracker.import_sng_binary_to_parsed_gt(gt_binary)
         rchirp_song_2 = ctsGoatTracker.import_parsed_gt_to_rchirp(parsed_gt_2, 0)
 
