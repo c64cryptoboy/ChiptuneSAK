@@ -1,6 +1,7 @@
-
+# Parse SID header information
 
 from ctsBytesUtil import big_endian_int, little_endian_int
+from ctsConstants import project_to_absolute_path
 
 class SidFile:
     def __init__(self):
@@ -334,8 +335,8 @@ class SidFile:
         return little_endian_int(self.c64_payload[0:2])
 
 
-# TODO: Debugging stub, remove later
+# Debugging stub
 if __name__ == "__main__":
     sid = SidFile()
-    sid.file_import(f'test\sid\Master_of_the_Lamps_PAL.sid')
-    print(sid.get_load_addr_from_payload())
+    sid.file_import(project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'))
+    print("Load addr $%s" % (hex(sid.get_load_addr_from_payload()))[2:].upper())
