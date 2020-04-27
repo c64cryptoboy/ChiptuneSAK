@@ -315,15 +315,3 @@ def export_chirp_to_midi(chirp_song, output_filename):
     out_midi_file.save(output_filename)
 
 
-def freq_for_midi_num(midi_num, tuning = CONCERT_A):
-    """
-    Convert a midi number into its frequency
-
-    :param midi_num: midi number
-    :type midi_num: int
-    :param tuning: frequency, defaults to CONCERT_A
-    :type tuning: float, optional
-    :return: frequency for midi number
-    :rtype: float
-    """
-    return tuning * pow(2, (midi_num - A4_MIDI_NUM) / 12)
