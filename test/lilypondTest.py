@@ -1,21 +1,21 @@
 import testingPath
 import os
 import unittest
-import subprocess
-import ctsChirp
 import ctsMChirp
 import ctsMidi
 import ctsTestingTools
 import ctsLilypond
+from ctsConstants import project_path
+
+MIDI_TEST_FILE = os.path.join(get_project_root(), 'test/data/bach_invention_4.mid')
+KNOWN_GOOD_LY_FILE = os.path.join(get_project_root(), 'test/data/bach_invention_4_clip_good.ly')
 
 class TestExportLilypond(unittest.TestCase):
     def test_lilypond_(self):
-        midi_file = 'data/bach_invention_4.mid'
-        known_good_ly_file = 'data/bach_invention_4_clip_good.ly'
-        known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ly_file)
+        known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(KNOWN_GOOD_LY_FILE)
 
 
-        song = ctsMidi.import_midi_to_chirp(midi_file)
+        song = ctsMidi.import_midi_to_chirp(MIDI_TEST_FILE)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
 

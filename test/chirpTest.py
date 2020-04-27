@@ -1,13 +1,15 @@
 import sys
 import copy
+import os
 sys.path.append('../src/')
 import unittest
 import ctsMidi
 import ctsChirp
 from ctsKey import ChirpKey
+from ctsConstants import get_project_root
 
-SONG_TEST_SONG = 'data/twinkle.mid'
-TRACK_TEST_SONG = 'data/BWV_799.mid'
+SONG_TEST_SONG = os.path.join(get_project_root(), 'test/data/twinkle.mid')
+TRACK_TEST_SONG = os.path.join(get_project_root(), 'test/data/BWV_799.mid')
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
