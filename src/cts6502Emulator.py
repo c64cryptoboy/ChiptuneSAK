@@ -318,8 +318,7 @@ class Cpu6502Emulator:
                 self.flags &= (~FC & 0xff)
         self.a = temp & 0xff
 
-        # #define SBC(data)                                                        \
-
+    # #define SBC(data)                                                        \
     # {                                                                        \
     #     unsigned tempval = data;                                             \
     #     temp = a - tempval - ((flags & FC) ^ FC);                            \
@@ -397,8 +396,7 @@ class Cpu6502Emulator:
                 self.flags &= (~FV & 0xff)
             self.a = temp & 0xff
 
-            # #define CMP(src, data)                  \
-
+    # #define CMP(src, data)                  \
     # {                                       \
     #   temp = (src - data) & 0xff;           \
     #                                         \
@@ -420,8 +418,7 @@ class Cpu6502Emulator:
         if src >= data:
             self.flags |= FC
 
-            # #define ASL(data)                       \
-
+    # #define ASL(data)                       \
     # {                                       \
     #   temp = data;                          \
     #   temp <<= 1;                           \
@@ -438,8 +435,7 @@ class Cpu6502Emulator:
             self.flags &= (~FC & 0xff)
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
-        # #define LSR(data)                       \
-
+    # #define LSR(data)                       \
     # {                                       \
     #   temp = data;                          \
     #   if (temp & 1) flags |= FC;            \
@@ -456,8 +452,7 @@ class Cpu6502Emulator:
         temp >>= 1
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
-        # #define ROL(data)                       \
-
+    # #define ROL(data)                       \
     # {                                       \
     #   temp = data;                          \
     #   temp <<= 1;                           \
@@ -478,8 +473,7 @@ class Cpu6502Emulator:
         temp &= 0xff
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
-        # #define ROR(data)                       \
-
+    # #define ROR(data)                       \
     # {                                       \
     #   temp = data;                          \
     #   if (flags & FC) temp |= 0x100;        \
@@ -499,8 +493,7 @@ class Cpu6502Emulator:
         temp >>= 1
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
-        # #define DEC(data)                       \
-
+    # #define DEC(data)                       \
     # {                                       \
     #   temp = data - 1;                      \
     #   ASSIGNSETFLAGS(data, temp);           \
@@ -510,8 +503,7 @@ class Cpu6502Emulator:
         temp &= 0xff
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
-        # #define INC(data)                       \
-
+    # #define INC(data)                       \
     # {                                       \
     #   temp = data + 1;                      \
     #   ASSIGNSETFLAGS(data, temp);           \
@@ -521,8 +513,7 @@ class Cpu6502Emulator:
         temp &= 0xff
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
-        # #define EOR(data)                       \
-
+    # #define EOR(data)                       \
     # {                                       \
     #   a ^= data;                            \
     #   SETFLAGS(a);                          \
@@ -531,8 +522,7 @@ class Cpu6502Emulator:
         self.a ^= operand_ref.get_byte(self)
         self.set_flags(self.a)
 
-        # #define ORA(data)                       \
-
+    # #define ORA(data)                       \
     # {                                       \
     #   a |= data;                            \
     #   SETFLAGS(a);                          \
@@ -541,8 +531,7 @@ class Cpu6502Emulator:
         self.a |= operand_ref.get_byte(self)
         self.set_flags(self.a)
 
-        # #define AND(data)                       \
-
+    # #define AND(data)                       \
     # {                                       \
     #   a &= data;                            \
     #   SETFLAGS(a)                           \
@@ -551,8 +540,7 @@ class Cpu6502Emulator:
         self.a &= operand_ref.get_byte(self)
         self.set_flags(self.a)
 
-        # #define BIT(data)                       \
-
+    # #define BIT(data)                       \
     # {                                       \
     #   flags = (flags & ~(FN|FV)) |          \
     #           (data & (FN|FV));             \
@@ -567,8 +555,7 @@ class Cpu6502Emulator:
         else:
             self.flags &= (~FZ & 0xff)
 
-            # void initcpu(unsigned short newpc, unsigned char newa, unsigned char newx, unsigned char newy)
-
+    # void initcpu(unsigned short newpc, unsigned char newa, unsigned char newx, unsigned char newy)
     # {
     #   pc = newpc;
     #   a = newa;

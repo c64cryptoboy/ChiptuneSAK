@@ -3,6 +3,7 @@
 
 from fractions import Fraction
 from dataclasses import dataclass, field
+from pathlib import Path
 
 CHIPTUNESAK_VERSION = "0.13"
 
@@ -106,3 +107,7 @@ ARCH = {
                                  lines_per_frame=312,
                                  visible_lines=284),
 }
+
+def get_project_root() -> Path:
+    """Returns project root folder"""
+    return Path(__file__).parent.parent.absolute
