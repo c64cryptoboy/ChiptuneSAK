@@ -10,9 +10,7 @@ import ctsGoatTracker
 import ctsBase
 from ctsConstants import get_project_root
 
-#SNG_TEST_FILE = 'test/data/gtTestData.sng'
-#SNG_TEST_FILE = 'data/gtTestData.sng'
-SNG_TEST_FILE = os.path.join(get_project_root + 'test/data/gtTestData.sng')
+SNG_TEST_FILE = os.path.join(get_project_root(), 'test/data/gtTestData.sng')
 
 class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):
