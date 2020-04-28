@@ -1,8 +1,4 @@
 # Convert midi .mid file into Commodore 128 BASIC .bas (ascii text) or .prg (native) files
-#
-# TODOs:
-# - have prg or bas type also decided by output filename
-
 
 import os
 import toolsPath
@@ -30,11 +26,10 @@ def main():
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
     # midi -> mchirp
-    # TODO: Remove hardcoding in this process
     song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
     song.remove_keyswitches(8)
     song.quantize_from_note_name('16')
-    # TODO: transformMidi.py -q 32 -k Am ..\test\BWV_799.mid ..\test\BWV_799_q.mid
+    # transformMidi.py -q 32 -k Am ..\test\BWV_799.mid ..\test\BWV_799_q.mid
     # song.quantize_from_note_name('32')
     song.remove_polyphony()
     ctsC128Basic.trim_note_lengths(song)

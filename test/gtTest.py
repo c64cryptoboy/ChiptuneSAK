@@ -7,10 +7,9 @@ import testingPath
 import unittest
 import ctsGoatTracker
 import ctsBase
+from ctsConstants import project_to_absolute_path
 
-# TODO: I'm fighting environment again...
-# SNG_TEST_FILE = 'test/data/gtTestData.sng'
-SNG_TEST_FILE = 'data/gtTestData.sng'
+SNG_TEST_FILE = project_to_absolute_path('test/data/gtTestData.sng')
 
 
 class TestGoatTrackerFunctions(unittest.TestCase):
@@ -21,7 +20,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         # print("self.expected_channels = (")
         # for voice in self.rchirp_song.voices:
         #     channel_note_on_events = []
-        #     for rchirp_row in voice.get_sorted_rows():
+        #     for rchirp_row in voice.sorted_rows():
         #         if rchirp_row.gate:
         #             midi_note_name = ctsBase.pitch_to_note_name(rchirp_row.note_num)
         #             channel_note_on_events.append('(%d, "%s")' % (rchirp_row.jiffy_num, midi_note_name))
@@ -63,7 +62,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         """
         for i, expected_channel in enumerate(self.expected_channels):
             with self.subTest(i=i):
-                actual_channel = rchirp_song.voices[i].get_jiffy_indexed_rows()
+                actual_channel = rchirp_song.voices[i].jiffy_indexed_rows
                 for expected_jiffy, expected_note in expected_channel:
                     rchirp_row = actual_channel[expected_jiffy]
                     self.assertIsNotNone(rchirp_row, "Null Row in channel %d" % i)
@@ -84,7 +83,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     # Test that .sng file to rchirp to .sng binary to rchirp has expected note content
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
         gt_binary = ctsGoatTracker.export_rchirp_to_gt_binary(self.rchirp_song,
-                                                              end_with_repeat=False, compress=False, pattern_len=126)
+            end_with_repeat=False, pattern_len=126)
         parsed_gt_2 = ctsGoatTracker.import_sng_binary_to_parsed_gt(gt_binary)
         rchirp_song_2 = ctsGoatTracker.import_parsed_gt_to_rchirp(parsed_gt_2, 0)
 

@@ -872,7 +872,7 @@ class ChirpSong:
         # Return the corresponding measure/beat
         return measure_beats[pos - 1]
 
-    def get_time_signature(self, time_in_ticks):
+    def get_active_time_signature(self, time_in_ticks):
         """
         Get the active time signature at a given time (in ticks) during the song.
 
@@ -889,7 +889,7 @@ class ChirpSong:
             itime += 1
         return self.time_signature_changes[itime-1]
 
-    def get_key_signature(self, time_in_ticks):
+    def get_active_key_signature(self, time_in_ticks):
         """
         Get the active key signature at a given time (in ticks) during the song.
 

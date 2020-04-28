@@ -1,3 +1,4 @@
+import toolsPath
 from ctsConstants import C0_MIDI_NUM, CONCERT_A, A4_MIDI_NUM
 import ctsBase
 import ctsMidi

@@ -5,7 +5,6 @@ from fractions import Fraction
 from ctsErrors import *
 from ctsConstants import *
 from ctsKey import ChirpKey
-import ctsMidi
 
 
 # Named tuple types for several lists throughout
@@ -302,13 +301,27 @@ def start_beat_type(time, ppq):
     return f.denominator
 
 
+def freq_for_midi_num(midi_num, tuning = CONCERT_A):
+    """
+    Convert a midi number into its frequency
+
+    :param midi_num: midi number
+    :type midi_num: int
+    :param tuning: frequency, defaults to CONCERT_A
+    :type tuning: float, optional
+    :return: frequency for midi number
+    :rtype: float
+    """
+    return tuning * pow(2, (midi_num - A4_MIDI_NUM) / 12)
+
+
 def get_arch_freq_for_midi_num(midi_num, architecture, tuning=CONCERT_A):
     """
     Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
     
     :param midi_num: midi note number
     :type midi_num: int
-    :param architecture: Architecture description string (TODO: should be replaced by an constant)
+    :param architecture: Architecture description string
     :type architecture: string
     :return: int frequency for arch
     :rtype: int    
@@ -318,4 +331,4 @@ def get_arch_freq_for_midi_num(midi_num, architecture, tuning=CONCERT_A):
 
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
     # SID oscillator is 24-bit (phase-accumulating design)
-    return round((pow(256,3) / ARCH[architecture].system_clock) * ctsMidi.freq_for_midi_num(midi_num, tuning))
+    return round((pow(256,3) / ARCH[architecture].system_clock) * freq_for_midi_num(midi_num, tuning))

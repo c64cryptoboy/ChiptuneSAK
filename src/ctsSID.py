@@ -1,33 +1,34 @@
-
+# Parse SID header information
 
 from ctsBytesUtil import big_endian_int, little_endian_int
+from ctsConstants import project_to_absolute_path
 
 class SidFile:
     def __init__(self):
-        self.magic_id = None        #: todo
-        self.version = None         #: 
-        self.dataoffset = None      #: 
-        self.loadaddress = None     #: 
-        self.initaddress = None     #: 
-        self.playaddress = None     #: 
-        self.num_subtunes = None    #: 
-        self.start_song = None      #: 
-        self.speed = None           #: 
-        self.name = None            #: 
-        self.author = None          #: 
-        self.released = None        #: 
-        self.c64_payload = None     #: 
-        self.flags = 0              #: 
-        self.flag_0 = 0             #: 
-        self.flag_1 = 0             #: 
-        self.clock = 0              #: 
-        self.sid_model = 0          #: 
-        self.sid2_model = 0         #: 
-        self.sid3_model = 0         #: 
-        self.start_page = 0         #: 
-        self.page_length = 0        #: 
-        self.sid2_address = 0       #: 
-        self.sid3_address = 0       #: 
+        self.magic_id = None        #: PSID or RSID
+        self.version = None         #: 1 to 4
+        self.dataoffset = None      #: start of the C64 payload
+        self.loadaddress = None     #: often the starting memory location
+        self.initaddress = None     #: often the init address
+        self.playaddress = None     #: often the play address
+        self.num_subtunes = None    #: number of songs
+        self.start_song = None      #: starting song
+        self.speed = None           #: bitfield for each subtune indicating playback considerations
+        self.name = None            #: SID name
+        self.author = None          #: SID author
+        self.released = None        #: SID release details
+        self.c64_payload = None     #: The C64 payload
+        self.flags = 0              #: Collection of flags
+        self.flag_0 = 0             #: bit 0 from flags
+        self.flag_1 = 0             #: bit 1 from flags
+        self.clock = 0              #: video clock
+        self.sid_model = 0          #: SID1 chip type
+        self.sid2_model = 0         #: SID2 chip type
+        self.sid3_model = 0         #: SID3 chip type
+        self.start_page = 0         #: helps indicate where SID writes to memory
+        self.page_length = 0        #: helps indicate where SID writes to memory
+        self.sid2_address = 0       #: SID2 I/O starting address
+        self.sid3_address = 0       #: SID3 I/O starting address
 
     def file_import(self, sidname):
         # This SID file parser code based on documentation from:
@@ -270,7 +271,7 @@ class SidFile:
             # relocation range should also not overlap or encompass any of the ROM areas
             # ($A000-$BFFF and $D000-$FFFF) or the reserved memory area ($0000-$03FF).
             self.page_length = sid_binary[121]
-            # TODO: put in the checks mentioned above, generate a warning if violated
+            # FUTURE: put in the checks mentioned above, generate a warning if violated
 
 
             # From documentation:
@@ -334,8 +335,8 @@ class SidFile:
         return little_endian_int(self.c64_payload[0:2])
 
 
-# TODO: Debugging stub, remove later
+# Debugging stub
 if __name__ == "__main__":
     sid = SidFile()
-    sid.file_import(f'test\sid\Master_of_the_Lamps_PAL.sid')
-    print(sid.get_load_addr_from_payload())
+    sid.file_import(project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'))
+    print("Load addr $%s" % (hex(sid.get_load_addr_from_payload()))[2:].upper())

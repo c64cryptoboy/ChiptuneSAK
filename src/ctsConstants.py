@@ -1,8 +1,11 @@
 # Constants for ChiptuneSAK
 #
 
+import os
 from fractions import Fraction
 from dataclasses import dataclass, field
+from pathlib import Path
+
 
 CHIPTUNESAK_VERSION = "0.13"
 
@@ -13,7 +16,7 @@ DEFAULT_MIDI_PPQN = 960
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
 A4_MIDI_NUM = C4_MIDI_NUM + 9
-CONCERT_A = 440.0 # note: scene sometimes uses 435Hz to reach B7 on PAL
+CONCERT_A = 440.0  # note: scene sometimes uses 435Hz to reach B7 on PAL
 
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -63,21 +66,28 @@ BASIC_LINE_MAX_VIC20 = 88  # 4 lines of 22 col
 BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
 
 
-@dataclass()
+@dataclass(frozen=True)
 class ArchDescription:
     system_clock: int
-    frame_rate: float = field(init=False)
-    ms_per_frame: float = field(init=False)
     cycles_per_line: int
     lines_per_frame: int
     visible_lines: int
-    blank_lines: int = field(init=False)
 
-    def __post_init__(self):
-        self.cycles_per_frame = self.lines_per_frame * self.cycles_per_line
-        self.frame_rate = self.system_clock / self.cycles_per_frame
-        self.ms_per_frame = 1000. / self.frame_rate
-        self.blank_lines = self.lines_per_frame - self.visible_lines
+    @property
+    def cycles_per_frame(self):
+        return self.lines_per_frame * self.cycles_per_line
+
+    @property
+    def frame_rate(self):
+        return self.system_clock / self.cycles_per_frame
+
+    @property
+    def ms_per_frame(self):
+        return 1000. / self.frame_rate
+
+    @property
+    def blank_lines(self):
+        return self.lines_per_frame - self.visible_lines
 
 # Someday this will hopefully have settings for Atari Pokey chip, the NES RP2A03 (NTSC) and RP2A07
 # (PAL) chips, etc.
@@ -106,3 +116,7 @@ ARCH = {
                                  lines_per_frame=312,
                                  visible_lines=284),
 }
+
+def project_to_absolute_path(file_path) -> Path:
+    """Returns project root folder"""
+    return os.path.join(Path(__file__).parent.parent.absolute(), file_path)

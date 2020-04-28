@@ -1,8 +1,6 @@
 # Lower MChirp to C128 BASIC PLAY commands
 # returns ascii representation of the program
 #
-# TODOs:
-# - 
 
 import collections
 from ctsConstants import *
@@ -232,7 +230,7 @@ def export_midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), 
     current_line = 7000  # data might reach line 6740
     # Note: U9 = volume 15
     volume = 9
-    # TODO: For each voice, provide a way to pick (or override) the default envelopes
+    # FUTURE: For each voice, provide a way to pick (or override) the default envelopes
     instruments = 'u%dv1t%dv2t%dv3t%d' % (volume, *(C128_INSTRUMENTS[inst] for inst in instrum))
     result.append('%d play"%s":rem init instruments' % (current_line, instruments))
     current_line += 10

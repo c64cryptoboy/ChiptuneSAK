@@ -5,6 +5,8 @@ import ctsChirp
 import ctsMChirp
 import ctsMidi
 import ctsML64
+from ctsConstants import project_to_absolute_path
+
 
 
 class TestExportML64(unittest.TestCase):
@@ -12,8 +14,8 @@ class TestExportML64(unittest.TestCase):
         """
         Test ML64 export using "measures" mode against known good files made with our previous tools.
         """
-        midi_file = 'data/jingleBellsSDG.mid'
-        known_good_ml64_file = 'data/jingleBellsSDG_good.ml64'
+        midi_file = project_to_absolute_path('test/data/jingleBellsSDG.mid')
+        known_good_ml64_file = project_to_absolute_path('test/data/jingleBellsSDG_good.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.import_midi_to_chirp(midi_file)
@@ -25,8 +27,8 @@ class TestExportML64(unittest.TestCase):
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
-        midi_file = 'data/bach_invention_4.mid'
-        known_good_ml64_file = 'data/bach_invention_4_good.ml64'
+        midi_file = project_to_absolute_path('test/data/bach_invention_4.mid')
+        known_good_ml64_file = project_to_absolute_path('test/data/bach_invention_4_good.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.import_midi_to_chirp(midi_file)
@@ -42,8 +44,8 @@ class TestExportML64(unittest.TestCase):
         """
         Test ML64 export using "compact" mode against a known good file.
         """
-        midi_file = 'data/tripletTest.mid'
-        known_good_ml64_file = 'data/tripletTest_good.ml64'
+        midi_file = project_to_absolute_path('test/data/tripletTest.mid')
+        known_good_ml64_file = project_to_absolute_path('test/data/tripletTest_good.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.import_midi_to_chirp(midi_file)
