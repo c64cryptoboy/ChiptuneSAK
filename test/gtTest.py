@@ -20,7 +20,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         # print("self.expected_channels = (")
         # for voice in self.rchirp_song.voices:
         #     channel_note_on_events = []
-        #     for rchirp_row in voice.get_sorted_rows():
+        #     for rchirp_row in voice.sorted_rows():
         #         if rchirp_row.gate:
         #             midi_note_name = ctsBase.pitch_to_note_name(rchirp_row.note_num)
         #             channel_note_on_events.append('(%d, "%s")' % (rchirp_row.jiffy_num, midi_note_name))
@@ -62,7 +62,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         """
         for i, expected_channel in enumerate(self.expected_channels):
             with self.subTest(i=i):
-                actual_channel = rchirp_song.voices[i].get_jiffy_indexed_rows()
+                actual_channel = rchirp_song.voices[i].jiffy_indexed_rows
                 for expected_jiffy, expected_note in expected_channel:
                     rchirp_row = actual_channel[expected_jiffy]
                     self.assertIsNotNone(rchirp_row, "Null Row in channel %d" % i)

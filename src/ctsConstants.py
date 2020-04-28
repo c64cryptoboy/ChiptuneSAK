@@ -66,21 +66,28 @@ BASIC_LINE_MAX_VIC20 = 88  # 4 lines of 22 col
 BASIC_LINE_MAX_C128 = 160  # 4 lines of 40 col
 
 
-@dataclass()
+@dataclass(frozen=True)
 class ArchDescription:
     system_clock: int
-    frame_rate: float = field(init=False)
-    ms_per_frame: float = field(init=False)
     cycles_per_line: int
     lines_per_frame: int
     visible_lines: int
-    blank_lines: int = field(init=False)
 
-    def __post_init__(self):
-        self.cycles_per_frame = self.lines_per_frame * self.cycles_per_line
-        self.frame_rate = self.system_clock / self.cycles_per_frame
-        self.ms_per_frame = 1000. / self.frame_rate
-        self.blank_lines = self.lines_per_frame - self.visible_lines
+    @property
+    def cycles_per_frame(self):
+        return self.lines_per_frame * self.cycles_per_line
+
+    @property
+    def frame_rate(self):
+        return self.system_clock / self.cycles_per_frame
+
+    @property
+    def ms_per_frame(self):
+        return 1000. / self.frame_rate
+
+    @property
+    def blank_lines(self):
+        return self.lines_per_frame - self.visible_lines
 
 # Someday this will hopefully have settings for Atari Pokey chip, the NES RP2A03 (NTSC) and RP2A07
 # (PAL) chips, etc.

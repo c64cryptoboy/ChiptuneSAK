@@ -104,7 +104,8 @@ class RChirpVoice:
             else:
                 self.import_chirp_track(chirp_track)     
 
-    def get_jiffy_indexed_rows(self):
+    @property
+    def jiffy_indexed_rows(self):
         """
         Returns dictionary of rows indexed by jiffy number
 
@@ -114,19 +115,19 @@ class RChirpVoice:
         :return: A dictionary of rows keyed by jiffy number
         :rtype: defaultdict
         """
-
         return_val = {v.jiffy_num: v for k, v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
 
-    def get_sorted_rows(self):
+    @property
+    def sorted_rows(self):
         """
         Returns a list of row-number sorted rows for the voice
-        
+
         :return: A sorted list of RChirpRow instances
         :rtype: list
         """
-        return [self.rows[k] for k in sorted(self.rows.keys(), reverse=False)]
+        return [self.rows[k] for k in sorted(self.rows.keys())]
 
     def append_row(self, rchirp_row):
         """
@@ -139,43 +140,45 @@ class RChirpVoice:
         :type rchirp_row: RChirpRow
         """
         insert_row = copy.deepcopy(rchirp_row)
-        insert_row.row_num = self.get_next_row_num()
+        insert_row.row_num = self.next_row_num
         self.rows[insert_row.row_num] = insert_row
-    
-    def get_last_row(self):
+
+    @property
+    def last_row(self):
         """
         Returns the row with the largest jiffy number (latest in time)
-        
+
         :return: row with latest jiffy number
         :rtype: RChirpRow
-        """ 
+        """
+        return None if len(self.rows) == 0 else self.rows[max(self.rows, key=self.rows.get)]
 
-        if len(self.rows) == 0:
-            return None
-        return self.rows[max(self.rows, key=self.rows.get)]
-
-    def get_next_row_num(self):
+    @property
+    def next_row_num(self):
         """
         Returns one greater than the largest row number held onto by the voice
-        
+
         :return: largest row number + 1
         :rtype: int
         """
-        if len(self.rows) == 0:
-            return 0
-        return max(self.rows) + 1
+        return 0 if len(self.rows) == 0 else max(self.rows) + 1
 
     def is_contiguous(self):
         """
-        Determines if the voices rows are contiguous, without gaps in time
+        Determines if the voice's rows are contiguous.  This function requires that row numbers
+        are consecutive and that the corresponding jiffy numbers have no gaps.
         
         :return: True if rows are contiguous, False if not
         :rtype: boolean
         """
-        curr_jiffy = 0
+        start_row = 0 if len(self.rows) == 0 else min(self.rows)
+        curr_jiffy, curr_row = self.rows[start_row].jiffy_num, self.rows[start_row].row_num
         for row_num in sorted(self.rows):
+            if self.rows[row_num].row_num != curr_row:
+                return False
             if self.rows[row_num].jiffy_num != curr_jiffy:
                 return False
+            curr_row += 1
             curr_jiffy += self.rows[row_num].jiffy_len
         return True
 
@@ -374,13 +377,13 @@ class RChirpSong:
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
             else:
                 self.import_chirp_song(chirp_song)
-    
+
+    @property
     def voice_count(self):
         """
-        Returns the number of voices (aka channels) in the rchirp song
-        
-        :return: number of voices
-        :rtype: int
+        Returns the number of voices (channels)
+        :return:
+        :rtype:
         """
         return len(self.voices)
 
@@ -421,14 +424,15 @@ class RChirpSong:
         """    
         return all(voice.integrity_check() for voice in self.voices)
 
-    def get_jiffy_indexed_voices(self):
+    @property
+    def jiffy_indexed_voices(self):
         """
         Returns a list of lists, where many voices hold onto many rows.  Rows indexed by jiffy number.
         
         :return: a list of lists (voices->rows)
         :rtype: list
         """
-        return [voice.get_jiffy_indexed_rows() for voice in self.voices]
+        return [voice.jiffy_indexed_rows for voice in self.voices]
 
     def validate_compression(self):
         if not self.compressed:
@@ -446,24 +450,24 @@ class RChirpSong:
         def _str_with_null_handling(a_value):
             return str(a_value) if a_value is not None else ''
 
-        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count()))
+        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count))
 
-        channels_time_events = self.get_jiffy_indexed_voices()
+        channels_time_events = self.jiffy_indexed_voices
 
         csv_header = ["jiffy"]
-        for i in range(self.voice_count()):
+        for i in range(self.voice_count):
             csv_header.append("v%d row #" % (i+1))
             csv_header.append("v%d note" % (i+1))
             csv_header.append("v%d on/off/none" % (i+1))
             csv_header.append("v%d tempo update" % (i+1))
  
         csv_rows = []
-        prev_tempo = [-1] * self.voice_count()
+        prev_tempo = [-1] * self.voice_count
         for tick in range(max_tick+1):
             # if any channel has a entry at this tick, create a row for all channels
-            if any(tick in channels_time_events[i] for i in range(self.voice_count())):
+            if any(tick in channels_time_events[i] for i in range(self.voice_count)):
                 a_csv_row = ["%d" % tick]
-                for i in range(self.voice_count()):
+                for i in range(self.voice_count):
                     if tick in channels_time_events[i]:
                         event = channels_time_events[i][tick]
                         a_csv_row.append("%s" % event.row_num)
@@ -498,10 +502,10 @@ class RChirpSong:
         song.metadata.ppq = DEFAULT_MIDI_PPQN
         song.name = song_name
 
-        channels_time_events = self.get_jiffy_indexed_voices()
-        all_ticks = sorted(set(int(t) for i in range(self.voice_count()) for t in channels_time_events[i].keys()))
+        channels_time_events = self.jiffy_indexed_voices()
+        all_ticks = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
         note_ticks = sorted([t for t in all_ticks if any(channels_time_events[i].get(t, None) 
-                        and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count()))])
+                        and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])
         notes_offset = note_ticks[0]
         # TODO: Should the two "100"s be parameterized?
         ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))

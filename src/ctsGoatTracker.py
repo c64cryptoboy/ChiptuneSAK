@@ -803,7 +803,7 @@ def import_parsed_gt_to_rchirp(sng_data, subtune_num=0):
                     # convert into a normal tempo change
                     new_tempo = GtChannelState.funktable[cs.curr_funktable_index]
 
-                current_rc_row = rchirp_song.voices[j].get_last_row()
+                current_rc_row = rchirp_song.voices[j].last_row
 
                 # If row state is in progress, leave its remaining ticks alone.
                 # But if it's the very start of a new row, then override with the new global tempo
@@ -832,7 +832,7 @@ def import_parsed_gt_to_rchirp(sng_data, subtune_num=0):
     # unrolling a global funk tempo.
     for voice in rchirp_song.voices:
         prev_tempo = -1
-        for rchirp_row in voice.get_sorted_rows():
+        for rchirp_row in voice.sorted_rows:
             if rchirp_row.jiffy_len != prev_tempo:
                 rchirp_row.new_jiffy_tempo = rchirp_row.jiffy_len
                 prev_tempo = rchirp_row.jiffy_len
@@ -841,7 +841,7 @@ def import_parsed_gt_to_rchirp(sng_data, subtune_num=0):
     # binaries.  This code will just stub in a default instrument for each voice on that voice's
     # first note (if any).
     for voice in rchirp_song.voices:
-        for rchirp_row in voice.get_sorted_rows():
+        for rchirp_row in voice.sorted_rows:
             if rchirp_row.note_num is not None and rchirp_row.new_instrument is None:
                 rchirp_row.new_instrument = DEFAULT_INSTRUMENT
                 break
