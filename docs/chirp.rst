@@ -1,6 +1,6 @@
-*****
-Chirp
-*****
+****************************************
+ChiptuneSAK Intermediate Representations
+****************************************
 
 .. contents::
 
@@ -19,13 +19,15 @@ MChirp
 ######
 MChirp is Measure-Based Chirp.  It is closely related to chirp, but is measure aware, and is designed to aid reasoning about measures and bars, as is often the case when dealing with sheet music.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
 
+In MChirp, the measure (aka bar) is the primary abstraction.  Everything is forced to fit into measures and notes that extend beyond measure boundaries become tied notes, etc.
+
 Chirp can be converted to MChirp and vise versa.  Because each format retains different details, the conversion is necessarily lossy.
 
 RChirp
 ######
-RChirp is Row-Based Chirp.  It is meant to represent row-based sequences, as would be created by a tracker. RChirp is designed to enable operations that are naturally tied to row-based music players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.
+RChirp is Row-Based Chirp.  It represented the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.  RChirp is quantized, and has no single-channel polyphony.
 
-RChirp is quantized, and has no single-channel polyphony.
+In RChirp, the row is the primary abstraction.  Directly supports patterns and orderlists of patterns.
 
 Chirp Workflows
 ###############

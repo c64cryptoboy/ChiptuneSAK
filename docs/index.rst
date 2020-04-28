@@ -11,6 +11,7 @@ ChiptuneSAK documentation
    chirp
    sheetmusic
    c128BASIC
+   utilities
    Classes
 
 
