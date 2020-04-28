@@ -1,0 +1,426 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Utilities &#8212; ChiptuneSAK 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="utilities">
+<h1>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h1>
+<hr class="docutils" />
+<div class="section" id="goattracker-functions">
+<h2>GoatTracker Functions<a class="headerlink" href="#goattracker-functions" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="import-sng-file-to-rchirp">
+<h3>import_sng_file_to_rchirp<a class="headerlink" href="#import-sng-file-to-rchirp" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="ctsGoatTracker.import_sng_file_to_rchirp">
+<code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">import_sng_file_to_rchirp</code><span class="sig-paren">(</span><em class="sig-param">input_filename</em>, <em class="sig-param">subtune_number=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#import_sng_file_to_rchirp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.import_sng_file_to_rchirp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a GoatTracker sng file (normal or stereo) into an RChirp song instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_filename</strong> (<em>str</em>) – sng input path and filename</p></li>
+<li><p><strong>subtune_number</strong> (<em>int</em><em>, </em><em>optional</em>) – the subtune number, defaults to 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An RChirp song for the subtune</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="Classes.html#ctsRChirp.RChirpSong" title="ctsRChirp.RChirpSong">RChirpSong</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="import-sng-file-to-parsed-gt">
+<h3>import_sng_file_to_parsed_gt<a class="headerlink" href="#import-sng-file-to-parsed-gt" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="ctsGoatTracker.import_sng_file_to_parsed_gt">
+<code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">import_sng_file_to_parsed_gt</code><span class="sig-paren">(</span><em class="sig-param">input_filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#import_sng_file_to_parsed_gt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.import_sng_file_to_parsed_gt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a goat tracker ‘.sng’ file and put it into a GTSong instance.
+Supports 1SID and 2SID (stereo) goattracker ‘.sng’ files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_filename</strong> (<em>string</em>) – Filename for input .sng file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A GTSong instance holding the parsed goattracker file</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ctsGoatTracker.GTSong" title="ctsGoatTracker.GTSong">GTSong</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="import-sng-binary-to-parsed-gt">
+<h3>import_sng_binary_to_parsed_gt<a class="headerlink" href="#import-sng-binary-to-parsed-gt" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="ctsGoatTracker.import_sng_binary_to_parsed_gt">
+<code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">import_sng_binary_to_parsed_gt</code><span class="sig-paren">(</span><em class="sig-param">sng_bytes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#import_sng_binary_to_parsed_gt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.import_sng_binary_to_parsed_gt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a goat tracker ‘.sng’ binary and put it into a GTSong instance.
+Supports 1SID and 2SID (stereo) goattracker ‘.sng’ file binaries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>sng_bytes</strong> (<em>bytes</em>) – Binary contents of a sng file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A GTSong instance holding the parsed goattracker file</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#ctsGoatTracker.GTSong" title="ctsGoatTracker.GTSong">GTSong</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="import-parsed-gt-to-rchirp">
+<h3>import_parsed_gt_to_rchirp<a class="headerlink" href="#import-parsed-gt-to-rchirp" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="ctsGoatTracker.import_parsed_gt_to_rchirp">
+<code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">import_parsed_gt_to_rchirp</code><span class="sig-paren">(</span><em class="sig-param">sng_data</em>, <em class="sig-param">subtune_num=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#import_parsed_gt_to_rchirp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.import_parsed_gt_to_rchirp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the parsed goattracker file into rchirp</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sng_data</strong> (<a class="reference internal" href="#ctsGoatTracker.GTSong" title="ctsGoatTracker.GTSong"><em>GTSong</em></a>) – Parsed goattracker file</p></li>
+<li><p><strong>subtune_num</strong> (<em>int</em><em>, </em><em>optional</em>) – The subtune number to convert to rchirp, defaults to 0</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>rchirp song instance</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="Classes.html#ctsRChirp.RChirpSong" title="ctsRChirp.RChirpSong">RChirpSong</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="export-rchirp-to-gt">
+<h3>export_rchirp_to_gt<a class="headerlink" href="#export-rchirp-to-gt" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="ctsGoatTracker.export_rchirp_to_gt">
+<code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">export_rchirp_to_gt</code><span class="sig-paren">(</span><em class="sig-param">rchirp_song</em>, <em class="sig-param">output_filename</em>, <em class="sig-param">end_with_repeat=False</em>, <em class="sig-param">pattern_len=126</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#export_rchirp_to_gt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.export_rchirp_to_gt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert rchirp into a goattracker .sng file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_filename</strong> (<em>string</em>) – Output path and filename</p></li>
+<li><p><strong>rchirp_song</strong> (<a class="reference internal" href="Classes.html#ctsRChirp.RChirpSong" title="ctsRChirp.RChirpSong"><em>RChirpSong</em></a>) – The rchirp song to convert</p></li>
+<li><p><strong>end_with_repeat</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if song should repeat when finished, defaults to False</p></li>
+<li><p><strong>pattern_len</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum pattern lengths to create</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="export-rchirp-to-gt-binary">
+<h3>export_rchirp_to_gt_binary<a class="headerlink" href="#export-rchirp-to-gt-binary" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="ctsGoatTracker.export_rchirp_to_gt_binary">
+<code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">export_rchirp_to_gt_binary</code><span class="sig-paren">(</span><em class="sig-param">rchirp_song</em>, <em class="sig-param">end_with_repeat=False</em>, <em class="sig-param">pattern_len=126</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#export_rchirp_to_gt_binary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.export_rchirp_to_gt_binary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert rchirp into a goattracker .sng binary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rchirp_song</strong> (<a class="reference internal" href="Classes.html#ctsRChirp.RChirpSong" title="ctsRChirp.RChirpSong"><em>RChirpSong</em></a>) – The rchirp song to convert</p></li>
+<li><p><strong>end_with_repeat</strong> (<em>bool</em><em>, </em><em>optional</em>) – True if song should repeat when finished, defaults to False</p></li>
+<li><p><strong>pattern_len</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum pattern lengths to create</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="goattracker-classes">
+<h2>GoatTracker Classes<a class="headerlink" href="#goattracker-classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="ctsGoatTracker.GTSong">
+<em class="property">class </em><code class="sig-prename descclassname">ctsGoatTracker.</code><code class="sig-name descname">GTSong</code><a class="reference internal" href="_modules/ctsGoatTracker.html#GTSong"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.GTSong" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains parsed .sng data.</p>
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.headers">
+<code class="sig-name descname">headers</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>goattracker file headers</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.num_channels">
+<code class="sig-name descname">num_channels</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.num_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>3 or 6 voices</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.subtune_orderlists">
+<code class="sig-name descname">subtune_orderlists</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.subtune_orderlists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nested lists: Subtunes-&gt;channels-&gt;orderlist</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.instruments">
+<code class="sig-name descname">instruments</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.instruments" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of GtInstrument instances</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.wave_table">
+<code class="sig-name descname">wave_table</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.wave_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>wave table</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.pulse_table">
+<code class="sig-name descname">pulse_table</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.pulse_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>pulse table</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.filter_table">
+<code class="sig-name descname">filter_table</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.filter_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>filter table</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.speed_table">
+<code class="sig-name descname">speed_table</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.speed_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>speed table</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="ctsGoatTracker.GTSong.patterns">
+<code class="sig-name descname">patterns</code><em class="property"> = None</em><a class="headerlink" href="#ctsGoatTracker.GTSong.patterns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nested lists: patterns-&gt;GtPatternRow instances</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="ctsGoatTracker.GTSong.is_stereo">
+<code class="sig-name descname">is_stereo</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGoatTracker.html#GTSong.is_stereo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGoatTracker.GTSong.is_stereo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if this is stereo GoatTracker</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if stereo, False if not</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<hr class="docutils" />
+<div class="section" id="c128-basic-play-functions">
+<h2>C128 BASIC Play Functions<a class="headerlink" href="#c128-basic-play-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="ctsC128Basic.export_midi_to_C128_BASIC">
+<code class="sig-prename descclassname">ctsC128Basic.</code><code class="sig-name descname">export_midi_to_C128_BASIC</code><span class="sig-paren">(</span><em class="sig-param">mchirp_song</em>, <em class="sig-param">instrum=('piano'</em>, <em class="sig-param">'piano'</em>, <em class="sig-param">'piano')</em>, <em class="sig-param">arch='NTSC-C64'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsC128Basic.html#export_midi_to_C128_BASIC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsC128Basic.export_midi_to_C128_BASIC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert mchirp into a C128 Basic program that plays the song.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mchirp_song</strong> (<a class="reference internal" href="Classes.html#ctsMChirp.MChirpSong" title="ctsMChirp.MChirpSong"><em>MChirpSong</em></a>) – An mchirp song</p></li>
+<li><p><strong>instrum</strong> (<em>tuple</em><em>, </em><em>optional</em>) – tuple of instrument string names, defaults to (‘piano’, ‘piano’, ‘piano’)</p></li>
+<li><p><strong>arch</strong> (<em>str</em><em>, </em><em>optional</em>) – Commodore architecture, defaults to ‘NTSC-C64’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ChiptuneSAKContentError</strong> – Various content errors</p></li>
+<li><p><strong>ChiptuneSAKValueError</strong> – Various value errors</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Returns a binary BASIC file</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bytes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="ctsGenPrg.ascii_to_prg_c128">
+<code class="sig-prename descclassname">ctsGenPrg.</code><code class="sig-name descname">ascii_to_prg_c128</code><span class="sig-paren">(</span><em class="sig-param">ascii_prg</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsGenPrg.html#ascii_to_prg_c128"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsGenPrg.ascii_to_prg_c128" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert an ascii C128 BASIC program into a tokenized binary BASIC file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ascii_prg</strong> (<em>str</em>) – C128 BASIC program in ascii</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>binary BASIC file suitable for running on a C128</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bytes</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<hr class="docutils" />
+<div class="section" id="ml64-functions">
+<h2>ML64 Functions<a class="headerlink" href="#ml64-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="ctsML64.export_mchirp_to_ml64">
+<code class="sig-prename descclassname">ctsML64.</code><code class="sig-name descname">export_mchirp_to_ml64</code><span class="sig-paren">(</span><em class="sig-param">mchirp_song</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsML64.html#export_mchirp_to_ml64"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsML64.export_mchirp_to_ml64" title="Permalink to this definition">¶</a></dt>
+<dd><p>Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to
+appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.
+:param mchirp_song: An mchirp song
+:type mchirp_song: MChirpSong</p>
+</dd></dl>
+
+</div>
+<hr class="docutils" />
+<div class="section" id="lilypond-sheetmusic-functions">
+<h2>Lilypond sheetmusic Functions<a class="headerlink" href="#lilypond-sheetmusic-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="ctsLilypond.export_song_to_lilypond">
+<code class="sig-prename descclassname">ctsLilypond.</code><code class="sig-name descname">export_song_to_lilypond</code><span class="sig-paren">(</span><em class="sig-param">mchirp_song</em>, <em class="sig-param">auto_sort=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsLilypond.html#export_song_to_lilypond"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsLilypond.export_song_to_lilypond" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a song to Lilypond format. Optimized for multi-page PDF output of the song.
+Recommended lilypond command:</p>
+<p>lilypond &lt;filename&gt;</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mchirp_song</strong> (<a class="reference internal" href="Classes.html#ctsMChirp.MChirpSong" title="ctsMChirp.MChirpSong"><em>MChirpSong</em></a>) – ChirpSong to convert to Lilypond format</p></li>
+<li><p><strong>auto_sort</strong> (<em>bool</em><em>, </em><em>optional</em>) – Autosort the tracks, defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Lilypond markup ascii</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="ctsLilypond.export_clip_to_lilypond">
+<code class="sig-prename descclassname">ctsLilypond.</code><code class="sig-name descname">export_clip_to_lilypond</code><span class="sig-paren">(</span><em class="sig-param">mchirp_song</em>, <em class="sig-param">measures</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ctsLilypond.html#export_clip_to_lilypond"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ctsLilypond.export_clip_to_lilypond" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turns a set of measures into Lilypond suitable for use as a clip.  All the music will be on a single line
+with no margins.  It is recommended that this clip be turned into Lilypond using the command line:</p>
+<p>lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha –png &lt;filename&gt;</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mchirp_song</strong> (<a class="reference internal" href="Classes.html#ctsMChirp.MChirpSong" title="ctsMChirp.MChirpSong"><em>MChirpSong</em></a>) – ChirpSong from which the measures were taken.</p></li>
+<li><p><strong>measures</strong> (<em>list</em>) – List of measures.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Lilypond markup ascii</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ChiptuneSAK</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="MusicConcepts.html">Musical Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chirp.html">Chirp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chirp.html#chirp-formats">Chirp Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chirp.html#concepts-in-chirp-music-representation">Concepts in chirp music representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sheetmusic.html">PDF Sheetmusic via Lilypond</a></li>
+<li class="toctree-l1"><a class="reference internal" href="c128BASIC.html">C128 BASIC music programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Classes.html">Classes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, David Youd and David Knapp.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/utilities.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

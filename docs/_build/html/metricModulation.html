@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Metric Modulation &#8212; ChiptuneSAK 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Chirp" href="chirp.html" />
+    <link rel="prev" title="Musical Concepts" href="MusicConcepts.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="metric-modulation">
+<h1><a class="toc-backref" href="#id1">Metric Modulation</a><a class="headerlink" href="#metric-modulation" title="Permalink to this headline">¶</a></h1>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#metric-modulation" id="id1">Metric Modulation</a></p>
+<ul>
+<li><p><a class="reference internal" href="#definition-description" id="id2">Definition/Description</a></p></li>
+<li><p><a class="reference internal" href="#examples" id="id3">Examples:</a></p>
+<ul>
+<li><p><a class="reference internal" href="#example-1-enforce-a-shortest-note-division" id="id4">Example 1: Enforce a shortest note division</a></p></li>
+<li><p><a class="reference internal" href="#example-2-remove-triplets-by-converting-to-a-compound-meter" id="id5">Example 2: Remove triplets by converting to a compound meter</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="definition-description">
+<h2><a class="toc-backref" href="#id2">Definition/Description</a><a class="headerlink" href="#definition-description" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+</div>
+<div class="section" id="examples">
+<h2><a class="toc-backref" href="#id3">Examples:</a><a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="example-1-enforce-a-shortest-note-division">
+<h3><a class="toc-backref" href="#id4">Example 1: Enforce a shortest note division</a><a class="headerlink" href="#example-1-enforce-a-shortest-note-division" title="Permalink to this headline">¶</a></h3>
+<p>tools/BWV_799.mid is a three-part Bach invention.  We can convert it to a C128 BASIC program as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">tools</span>\<span class="n">midiToC128Basic</span><span class="o">.</span><span class="n">py</span> <span class="n">test</span>\<span class="n">BWV_test</span><span class="o">.</span><span class="n">mid</span> <span class="n">test</span>\<span class="n">BWV_test</span><span class="o">.</span><span class="n">prg</span> <span class="o">-</span><span class="n">t</span> <span class="n">prg</span>
+</pre></div>
+</div>
+<p>This should sound fine to anyone not familiar with the piece.  However, C128 BASIC PLAY command can perform 16th notes, but not finer durations (e.g., 32nd notes, etc).  And BWV 799 contains 32nd notes towards the end.</p>
+<p>A solution is to use metric modulation to double all the note durations, as well as doubling the BPM so that the perceived tempo remains the same.  That way, the smallest note duration is a 16th note, which PLAY commands can play.</p>
+<p>This command will change the 3/8 time signature piece into a 3/4 time signature, along with the changes described above:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">tools</span>\<span class="n">midiTransform</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="mi">2</span><span class="o">/</span><span class="mi">1</span> <span class="o">-</span><span class="n">q</span> <span class="mi">16</span> <span class="o">-</span><span class="n">j</span> <span class="mi">3</span><span class="o">/</span><span class="mi">4</span> <span class="n">test</span>\<span class="n">BWV_799</span><span class="o">.</span><span class="n">mid</span> <span class="n">test</span>\<span class="n">BWV_test</span><span class="o">.</span><span class="n">mid</span>
+</pre></div>
+</div>
+<p>Now when BWV_test is converted to C128 BASIC, all the notes are present.</p>
+</div>
+<div class="section" id="example-2-remove-triplets-by-converting-to-a-compound-meter">
+<h3><a class="toc-backref" href="#id5">Example 2: Remove triplets by converting to a compound meter</a><a class="headerlink" href="#example-2-remove-triplets-by-converting-to-a-compound-meter" title="Permalink to this headline">¶</a></h3>
+<p>TODO</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ChiptuneSAK</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="MusicConcepts.html">Musical Concepts</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Metric Modulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="chirp.html">Chirp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chirp.html#chirp-formats">Chirp Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chirp.html#concepts-in-chirp-music-representation">Concepts in chirp music representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sheetmusic.html">PDF Sheetmusic via Lilypond</a></li>
+<li class="toctree-l1"><a class="reference internal" href="c128BASIC.html">C128 BASIC music programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Classes.html">Classes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="MusicConcepts.html">Musical Concepts</a><ul>
+      <li>Previous: <a href="MusicConcepts.html" title="previous chapter">Musical Concepts</a></li>
+      <li>Next: <a href="chirp.html" title="next chapter">Chirp</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, David Youd and David Knapp.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/metricModulation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

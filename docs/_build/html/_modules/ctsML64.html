@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ctsML64 &#8212; ChiptuneSAK 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ctsML64</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">ctsBase</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">ctsChirp</span> <span class="kn">import</span> <span class="n">Note</span>
+<span class="kn">import</span> <span class="nn">ctsMChirp</span>
+<span class="kn">import</span> <span class="nn">ctsMidi</span>
+<span class="kn">from</span> <span class="nn">ctsConstants</span> <span class="kn">import</span> <span class="n">PITCHES</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">This file contains functions required to export MidiSimple songs to ML64 format.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">ml64_durations</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">Fraction</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="s1">&#39;1d&#39;</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="s1">&#39;2d&#39;</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span>
+    <span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span> <span class="s1">&#39;4d&#39;</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span> <span class="s1">&#39;8d&#39;</span><span class="p">,</span> <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span> <span class="s1">&#39;8&#39;</span><span class="p">,</span>
+    <span class="n">Fraction</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span> <span class="s1">&#39;16&#39;</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">pitch_to_ml64_note_name</span><span class="p">(</span><span class="n">note_num</span><span class="p">,</span> <span class="n">octave_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets note name for a given MIDI pitch</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">note_num</span> <span class="o">&lt;=</span> <span class="mi">127</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ChiptuneSAKValueError</span><span class="p">(</span><span class="s2">&quot;Illegal note number </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">note_num</span><span class="p">)</span>
+    <span class="n">octave_num</span> <span class="o">=</span> <span class="p">((</span><span class="n">note_num</span> <span class="o">-</span> <span class="n">C0_MIDI_NUM</span><span class="p">)</span> <span class="o">//</span> <span class="mi">12</span><span class="p">)</span> <span class="o">+</span> <span class="n">octave_offset</span>
+    <span class="n">pitch</span> <span class="o">=</span> <span class="n">note_num</span> <span class="o">%</span> <span class="mi">12</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="si">%s%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">PITCHES</span><span class="p">[</span><span class="n">pitch</span><span class="p">],</span> <span class="n">octave_num</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">make_ml64_notes</span><span class="p">(</span><span class="n">note_name</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">ppq</span><span class="p">):</span>
+    <span class="n">durs</span> <span class="o">=</span> <span class="n">decompose_duration</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">ppq</span><span class="p">,</span> <span class="n">ml64_durations</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">note_name</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span> <span class="ow">or</span> <span class="n">note_name</span> <span class="o">==</span> <span class="s1">&#39;c&#39;</span><span class="p">:</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">note_name</span><span class="p">,</span> <span class="n">ml64_durations</span><span class="p">[</span><span class="n">f</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">durs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">retval</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">note_name</span><span class="p">,</span> <span class="n">ml64_durations</span><span class="p">[</span><span class="n">durs</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">durs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">retval</span> <span class="o">+=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;c(</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ml64_durations</span><span class="p">[</span><span class="n">f</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">durs</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="n">retval</span>
+
+
+<span class="k">def</span> <span class="nf">ml64_sort_order</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sort function for measure contents.</span>
+<span class="sd">    Items are sorted by time and then, for equal times, in this order:</span>
+<span class="sd">     *  Patch Change</span>
+<span class="sd">     *   Tempo</span>
+<span class="sd">     *   Notes and rests</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">Note</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">Rest</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">MeasureMarker</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">TempoEvent</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">ProgramEvent</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">export_chirp_to_ml64</span><span class="p">(</span><span class="n">chirp_song</span><span class="p">,</span> <span class="n">ml64_format</span><span class="o">=</span><span class="s1">&#39;standard&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Export song to ML64 format, with a minimum number of notes, either with or without measure comments.</span>
+<span class="sd">    With measure comments, the comments appear within the measure but are not guaranteed to be exactly at the</span>
+<span class="sd">    beginning of the measure, as tied notes will take precedence.  In compact mode, the ML64 emitted is almost</span>
+<span class="sd">    as small as possible.</span>
+<span class="sd">    :param chirp_song:</span>
+<span class="sd">    :type chirp_song:</span>
+<span class="sd">    :param ml64_format:</span>
+<span class="sd">    :type ml64_format: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">is_quantized</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">ChiptuneSAKQuantizationError</span><span class="p">(</span><span class="s2">&quot;ChirpSong must be quantized for export to ML64&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">qticks_notes</span> <span class="o">&lt;</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">ppq</span> <span class="o">//</span> <span class="mi">4</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">tracks</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ChiptuneSAKQuantizationError</span><span class="p">(</span><span class="s2">&quot;ChirpSong must be quantized to 16th notes or larger for ML64&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">is_polyphonic</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">ChiptuneSAKPolyphonyError</span><span class="p">(</span><span class="s2">&quot;All tracks must be non-polyphonic for export to ML64&quot;</span><span class="p">)</span>
+
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">ml64_format</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">()</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;ML64(1.3)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;song(1)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;tempo(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">qpm</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">it</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">chirp_song</span><span class="o">.</span><span class="n">tracks</span><span class="p">):</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;track(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">it</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">track_events</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">last_note_end</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Create a list of events for the entire track</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">notes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">last_note_end</span><span class="p">:</span>
+                <span class="n">track_events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Rest</span><span class="p">(</span><span class="n">last_note_end</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">last_note_end</span><span class="p">))</span>
+            <span class="n">track_events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">last_note_end</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">n</span><span class="o">.</span><span class="n">duration</span>
+        <span class="n">track_events</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">program_changes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;s&#39;</span><span class="p">:</span>  <span class="c1"># Add measures for standard format</span>
+            <span class="n">last_note_end</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">n</span><span class="o">.</span><span class="n">duration</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">tracks</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
+            <span class="n">measures</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">start_time</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">chirp_song</span><span class="o">.</span><span class="n">measure_beats</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">beat</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">im</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">measures</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">last_note_end</span><span class="p">:</span>
+                    <span class="n">track_events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MeasureMarker</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">im</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">track_events</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">ml64_sort_order</span><span class="p">)</span>
+        <span class="c1"># Now send the entire list of events to the ml64 creator</span>
+        <span class="n">track_content</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">events_to_ml64</span><span class="p">(</span><span class="n">track_events</span><span class="p">,</span> <span class="n">chirp_song</span><span class="p">)</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">track_content</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;track(-)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;song(-)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;ML64(-)&#39;</span><span class="p">)</span>
+    <span class="n">chirp_song</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;ML64&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stats</span>
+    <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="export_mchirp_to_ml64"><a class="viewcode-back" href="../utilities.html#ctsML64.export_mchirp_to_ml64">[docs]</a><span class="k">def</span> <span class="nf">export_mchirp_to_ml64</span><span class="p">(</span><span class="n">mchirp_song</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to</span>
+<span class="sd">    appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.</span>
+<span class="sd">    :param mchirp_song: An mchirp song</span>
+<span class="sd">    :type mchirp_song: MChirpSong</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">()</span>
+    <span class="n">ppq</span> <span class="o">=</span> <span class="n">mchirp_song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">ppq</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;ML64(1.3)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;song(1)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;tempo(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">mchirp_song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">qpm</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">it</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mchirp_song</span><span class="o">.</span><span class="n">tracks</span><span class="p">):</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;track(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">it</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">measures</span>
+        <span class="n">last_continue</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">im</span><span class="p">,</span> <span class="n">measure</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">measures</span><span class="p">):</span>
+            <span class="n">measure_content</span><span class="p">,</span> <span class="n">tmp_stats</span><span class="p">,</span> <span class="n">last_continue</span> <span class="o">=</span> <span class="n">events_to_ml64</span><span class="p">(</span><span class="n">measure</span><span class="o">.</span><span class="n">events</span><span class="p">,</span> <span class="n">mchirp_song</span><span class="p">,</span> <span class="n">last_continue</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">measure_content</span><span class="p">))</span>
+            <span class="n">stats</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tmp_stats</span><span class="p">)</span>
+        <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;track(-)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;song(-)&#39;</span><span class="p">)</span>
+    <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;ML64(-)&#39;</span><span class="p">)</span>
+    <span class="n">mchirp_song</span><span class="o">.</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;ML64&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stats</span>
+    <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">events_to_ml64</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">song</span><span class="p">,</span> <span class="n">last_continue</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a list of events (such as a measure or a track) and converts it to ML64 commands. If the previous</span>
+<span class="sd">    list (such as the previous measure) had notes that were not completed, set last_continue.</span>
+<span class="sd">    :param events:</span>
+<span class="sd">    :type events:</span>
+<span class="sd">    :param song:</span>
+<span class="sd">    :type song:</span>
+<span class="sd">    :param last_continue:</span>
+<span class="sd">    :type last_continue:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    :rtype: tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">Counter</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">Note</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">last_continue</span><span class="p">:</span>
+                <span class="n">tmp_note</span> <span class="o">=</span> <span class="n">make_ml64_notes</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="n">song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">ppq</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tmp_note</span> <span class="o">=</span> <span class="n">make_ml64_notes</span><span class="p">(</span><span class="n">pitch_to_ml64_note_name</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">note_num</span><span class="p">),</span> <span class="n">e</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="n">song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">ppq</span><span class="p">)</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_note</span><span class="p">)</span>
+            <span class="n">last_continue</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">tied_from</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;note&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;continue&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tmp_note</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;c(&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">Rest</span><span class="p">):</span>
+            <span class="n">tmp_note</span> <span class="o">=</span> <span class="n">make_ml64_notes</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">duration</span><span class="p">,</span> <span class="n">song</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">ppq</span><span class="p">)</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tmp_note</span><span class="p">)</span>
+            <span class="n">last_continue</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;rest&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">tmp_note</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;r(&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">MeasureMarker</span><span class="p">):</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;[m</span><span class="si">%d</span><span class="s1">]&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="o">.</span><span class="n">measure_number</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">ProgramEvent</span><span class="p">):</span>
+            <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;i(</span><span class="si">%d</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="n">e</span><span class="o">.</span><span class="n">program</span><span class="p">)</span>
+            <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;program&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">stats</span><span class="p">,</span> <span class="n">last_continue</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">ChiptuneSAK</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../MusicConcepts.html">Musical Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chirp.html">Chirp</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chirp.html#chirp-formats">Chirp Formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../chirp.html#concepts-in-chirp-music-representation">Concepts in chirp music representation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sheetmusic.html">PDF Sheetmusic via Lilypond</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../c128BASIC.html">C128 BASIC music programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Classes.html">Classes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, David Youd and David Knapp.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.4.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
