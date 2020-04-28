@@ -28,7 +28,7 @@ class RChirpSongTestCase(unittest.TestCase):
                 self.assertTrue(len(diff) == 0)
 
     def test_gt_compression(self):
-        self.compress_test_song = ctsMidi.import_midi_to_chirp('../test/data/BWV_799.mid')
+        self.compress_test_song = ctsMidi.import_midi_to_chirp(COMPRESS_TEST_SONG)
         self.compress_test_song.quantize_from_note_name('16')
         for i, program in enumerate([11, 10, 6]):
             self.compress_test_song.tracks[i].set_program(program)
@@ -46,7 +46,7 @@ class RChirpSongTestCase(unittest.TestCase):
 
         self.assertTrue(ctsGtCompress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
-        ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/gt_test_out.sng')
+        #ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/gt_test_out.sng')
 
         # Now delete a row from a pattern which should cause compressed song not to work.
         rchirp_song.patterns[0].rows.pop()

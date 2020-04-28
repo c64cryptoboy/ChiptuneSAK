@@ -54,7 +54,7 @@ class SongTestCase(unittest.TestCase):
         self.assertEqual(test_total_notes, chirp_total_notes)
 
     def test_triplets(self):
-        test_song = ctsMidi.import_midi_to_chirp('data/tripletTest.mid')
+        test_song = ctsMidi.import_midi_to_chirp(project_to_absolute_path('test/data/tripletTest.mid'))
         estimated_q = test_song.estimate_quantization()
         test_song.quantize(*estimated_q)
         test_song.remove_polyphony()
