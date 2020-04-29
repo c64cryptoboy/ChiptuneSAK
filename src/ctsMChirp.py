@@ -50,6 +50,7 @@ class Measure:
     def populate(self, track, carry=None):
         """
         Populates a single measure with notes, rests, and other events.
+
         :param track: Track from which events are to be imported
         :param carry: If last note in previous measure is continued in this measure, the note with remainining time
         :return: Carry note, if last note is to be carried into the next measure.
@@ -289,6 +290,7 @@ class MChirpSong:
     def import_chirp_song(self, chirp_song):
         """
         Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
+
         :param chirp_song: A ctsChirp.ChirpSong song
         :type chirp_song: ChripSong
         """
@@ -317,6 +319,7 @@ class MChirpSong:
     def get_time_signature(self, time_in_ticks):
         """
         Finds the active key signature at a given time in the song
+
         :param time_in_ticks:
         :return: The last time signature change event before the given time.
         """
@@ -332,6 +335,7 @@ class MChirpSong:
     def get_key_signature(self, time_in_ticks):
         """
         Finds the active key signature at a given time in the song
+
         :param time_in_ticks:
         :return: The last key signature change event before the given time.
         """
