@@ -502,7 +502,7 @@ class RChirpSong:
         song.metadata.ppq = DEFAULT_MIDI_PPQN
         song.name = song_name
 
-        channels_time_events = self.jiffy_indexed_voices()
+        channels_time_events = self.jiffy_indexed_voices
         all_ticks = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
         note_ticks = sorted([t for t in all_ticks if any(channels_time_events[i].get(t, None) 
                         and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])
