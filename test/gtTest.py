@@ -14,7 +14,8 @@ SNG_TEST_FILE = project_to_absolute_path('test/data/gtTestData.sng')
 
 class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):
-        self.parsed_gt = ctsGoatTracker.import_sng_file_to_parsed_gt(SNG_TEST_FILE)
+        self.parsed_gt = ctsGoatTracker.GTSong()
+        self.parsed_gt.import_sng_file_to_parsed_gt(SNG_TEST_FILE)
         self.rchirp_song = ctsGoatTracker.import_parsed_gt_to_rchirp(self.parsed_gt, 0)
         # Keep this generating code around (commented out)
         # print("self.expected_channels = (")
@@ -84,7 +85,8 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
         gt_binary = ctsGoatTracker.export_rchirp_to_gt_binary(self.rchirp_song,
             end_with_repeat=False, pattern_len=126)
-        parsed_gt_2 = ctsGoatTracker.import_sng_binary_to_parsed_gt(gt_binary)
+        parsed_gt_2 = ctsGoatTracker.GTSong()
+        parsed_gt_2.import_sng_binary_to_parsed_gt(gt_binary)
         rchirp_song_2 = ctsGoatTracker.import_parsed_gt_to_rchirp(parsed_gt_2, 0)
 
         self.assertTrue(self.found_expected_note_content(rchirp_song_2))
