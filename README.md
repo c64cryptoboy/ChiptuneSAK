@@ -83,7 +83,10 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * pip install
    * numpy
    * matplotlib
-   * more_itertools
-   * recordtype
-   * sortedcontainers
+   * more-itertools
+   * sphinx
+   * mido
+   * ~~recordtype~~
+   * ~~sortedcontainers~~
+   * ~~cbmcodecs~~
  * [Lilypond](https://lilypond.org/download.html)
