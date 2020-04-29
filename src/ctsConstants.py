@@ -119,4 +119,4 @@ ARCH = {
 
 def project_to_absolute_path(file_path) -> Path:
     """Returns project root folder"""
-    return os.path.join(Path(__file__).parent.parent.absolute(), file_path)
+    return os.path.normpath(os.path.join(Path(__file__).parent.parent.absolute(), file_path))

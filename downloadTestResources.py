@@ -1,11 +1,16 @@
 # Download additional resources that could be used in testing / demonstrations
 # that don't belong in the github code base
 
+# TODO: Need to create the directories if they don't exist
+
 import os
 import time
 import requests
+from random import uniform
+from ctsConstants import project_to_absolute_path
 
 SKIP_IF_EXISTS = True
+last_site = None
 
 class ResourceFile:
     def __init__(self, remote_url, local_path, local_name = None):
@@ -21,7 +26,8 @@ def manage_resources(resources):
     }
 
     for resource in resources:
-        local_file = os.path.join(resource.local_path, resource.local_name)
+        local_path = project_to_absolute_path(resource.local_path)
+        local_file = os.path.normpath(os.path.join(local_path, resource.local_name))
         
         if os.path.exists(local_file):
             if not os.path.isfile(local_file):
@@ -41,13 +47,13 @@ def manage_resources(resources):
 
         content = response.content
 
-        if b'<head>' in content.lower()[0:80]:
+        if b'<html' in content.lower()[0:200]:
             print('Warning: "%s" might merely be HTML saying the equivalent of "no botz allowed"' % (local_file))
 
         with open(local_file, 'wb') as out_file:
             out_file.write(content)
 
-        time.sleep(1) # be friendly to web sites
+        time.sleep(uniform(1.5, 2.8)) # be friendly to web sites
         print()
 
 
@@ -77,6 +83,33 @@ def main():
         'res',
         'c64basic.bin'
         )) 
+
+    # An HVSC mirror:
+    an_hvsc_mirror = 'https://www.sannic.nl/hvsc/C64Music/MUSICIANS'
+    # Note above URL base works for downloading, but not HTML navigating.
+    # The below URL works for navigating, but not for downloading:
+    # https://www.sannic.nl/hvsc/?dir=C64Music/MUSICIANS
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid','test/sid')) 
 
     manage_resources(resources)
 
