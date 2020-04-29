@@ -1,7 +1,5 @@
 # Download additional resources that could be used in testing / demonstrations
-# that don't belong in the github code base
-
-# TODO: Need to create the directories if they don't exist
+# that don't belong in the github code base 
 
 import os
 import time
@@ -27,8 +25,14 @@ def manage_resources(resources):
 
     for resource in resources:
         local_path = project_to_absolute_path(resource.local_path)
+
+        # pathlib would have been better (can build full dir paths), but didn't work for me
+        # pathlib.Path(local_path).parent.mkdir(parents=True, exist_ok=True)
+        # this approach assumes parent dir exists, which is fine
+        os.makedirs(local_path, exist_ok=True)
+
         local_file = os.path.normpath(os.path.join(local_path, resource.local_name))
-        
+
         if os.path.exists(local_file):
             if not os.path.isfile(local_file):
                 raise Exception('Error: not expecting "%s" to not be a file' % (local_file))
