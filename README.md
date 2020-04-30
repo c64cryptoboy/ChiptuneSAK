@@ -99,7 +99,7 @@ from docs folder:
 ## Running Tests
 from test folder:
 
-`python -m unittest discover -p '*Test.py' -v`
+`python -m unittest discover -p "*Test.py" -v`
 
 or for an individual test:
 
