@@ -4,20 +4,21 @@
 # - This code ignores multispeed (for now)
 #
 # TODO:  BIG REFACTORING IS IN PROGRESS:
-# - replace hardcoded instruments with external .ins instrument files
-#   - Status: .ins loader written but not yet tested
+# - Have GTSong write sng file out
+#    - Status: done and has test case
 # - Put most of the functionality directly into the GTSong class
-#   - Status: 40% done
+#    - Status: 40% done
+# - Replace hardcoded instruments with external .ins instrument files
+#    - Status: .ins loader written but not yet tested
 # - For sng file -> GTSong -> RChirp:
 #   Allow arbitrarily-named (dictionary) binary resources to hang off of rchirp metadata
 #   preserve all the binary data in rchrip metadata (such as instruments, wave/pulse/filter/speed
 #   tables, orderlists, etc.)
-#   - Status: not started
-# - for sng file writing:
-#   Instead of RChirp -> sng, refactor to become RChirp -> GTSong  -> sng
+#    - Status: not started
+# - Create RChirp -> GTSong and delete the RChirp -> sng code
 #   build test case for gt -> GTSong -> rchirp -> GTSong -> gt'.  Then confirm gt ~= gt'
 #   This addresses the use case of taking an sng, compressing it, and writing it back out.
-#   - Status: not started
+#    - Status: not started
 
 from os import path
 import sys
@@ -113,6 +114,8 @@ class GtPatternRow:
             assert self.instr_num is not None, "None instrument number"
             return bytes([self.note_data, self.instr_num, self.command, self.command_data])
 
+PATTERN_END_ROW = GtPatternRow(note_data=GT_PAT_END)
+
 
 @dataclass
 class GtInstrument:
@@ -196,6 +199,7 @@ def pad_or_truncate(to_pad, length):
 class GTSong:
     """
     Contains parsed .sng data.
+    Can convert an sng binary into a parsed form, and parsed form into an sng binary.
     """
 
     def __init__(self):
@@ -581,15 +585,12 @@ class GTSong:
             out_file.write(binary)
 
 
-    # TODO: Test this!!!!!!!!!!!!
-    def export_parsed_gt_to_gt_binary(self, end_with_repeat=False, pattern_len=126):
+    def export_parsed_gt_to_gt_binary(self):
         """
         Convert parsed_gt into a goattracker .sng binary.
-        
-        :param end_with_repeat: True if song should repeat when finished, defaults to False
-        :type end_with_repeat: bool, optional
-        :param pattern_len: Maximum pattern lengths to create
-        :type pattern_len: int, optional
+
+        :return: a GoatTracker sng file binary
+        :rtype: bytes        
         """
 
         gt_binary = bytearray()
@@ -598,7 +599,8 @@ class GTSong:
 
         for subtune in self.subtune_orderlists:
             for channel_orderlist in subtune:
-                gt_binary.append(len(channel_orderlist) - 1) # orderlist length minus 1, strange but true
+                # orderlist length minus 1, strange but true
+                gt_binary.append(len(channel_orderlist) - 1)
                 gt_binary += bytes(channel_orderlist)
 
         num_instruments =len(self.instruments)
@@ -630,7 +632,7 @@ class GTSong:
 # 
 #
 
-PATTERN_END_ROW = GtPatternRow(note_data=GT_PAT_END)
+
 
 def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     """
