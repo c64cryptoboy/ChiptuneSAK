@@ -105,21 +105,6 @@ class RChirpVoice:
                 self.import_chirp_track(chirp_track)     
 
     @property
-    def jiffy_indexed_rows(self):
-        """
-        Returns dictionary of rows indexed by jiffy number
-
-        A voice holds onto a dictionary of rows keyed by row number.  This method returns
-        a dictionary of rows keyed by jiffy number. 
-
-        :return: A dictionary of rows keyed by jiffy number
-        :rtype: defaultdict
-        """
-        return_val = {v.jiffy_num: v for k, v in self.rows.items()}
-        return_val = collections.defaultdict(RChirpRow, return_val)
-        return return_val
-
-    @property
     def sorted_rows(self):
         """
         Returns a list of row-number sorted rows for the voice
@@ -218,7 +203,7 @@ class RChirpVoice:
         else:
             return self.last_row.row_num
 
-    def get_filled_rows(self):
+    def make_filled_rows(self):
         ret_rows = []
         max_row = max(self.rows[rn].row_num for rn in self.rows)
         assert 0 in self.rows, "No row 0 in rows"  # Row 0 should exist!
@@ -289,7 +274,7 @@ class RChirpVoice:
         return ret_rows
 
     def validate_orderlist(self):
-        filled_rows = self.get_filled_rows()
+        filled_rows = self.make_filled_rows()
         compressed_rows = self.orderlist_to_rows()
         if len(filled_rows) != len(compressed_rows):
             return False

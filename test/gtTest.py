@@ -63,7 +63,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         """
         for i, expected_channel in enumerate(self.expected_channels):
             with self.subTest(i=i):
-                actual_channel = rchirp_song.voices[i].jiffy_indexed_rows
+                actual_channel = {v.jiffy_num: v for k, v in rchirp_song.voices[i].rows.items()}
                 for expected_jiffy, expected_note in expected_channel:
                     rchirp_row = actual_channel[expected_jiffy]
                     self.assertIsNotNone(rchirp_row, "Null Row in channel %d" % i)
