@@ -382,6 +382,7 @@ class RChirpSong:
     def voice_count(self):
         """
         Returns the number of voices (channels)
+
         :return:
         :rtype:
         """
