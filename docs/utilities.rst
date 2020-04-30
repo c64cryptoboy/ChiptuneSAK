@@ -14,11 +14,6 @@ import_sng_file_to_rchirp
 .. autofunction:: import_sng_file_to_rchirp
 
 
-import_parsed_gt_to_rchirp
-+++++++++++++++++++++++++++
-
-.. autofunction:: import_parsed_gt_to_rchirp
-
 export_rchirp_to_gt
 +++++++++++++++++++
 

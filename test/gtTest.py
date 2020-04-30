@@ -89,7 +89,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     # @unittest.skip("GT import testing not working now...")
     # Test that .sng file to rchirp has expected note content
     def test_sng_to_rchirp(self):
-        rchirp_song = ctsGoatTracker.import_parsed_gt_to_rchirp(self.parsed_gt, 0)
+        rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp(0)
 
         self.assertTrue(self.found_expected_note_content(rchirp_song))
 
@@ -99,13 +99,13 @@ class TestGoatTrackerFunctions(unittest.TestCase):
 
     # Test that .sng file to rchirp back to .sng binary to rchirp has expected note content
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
-        rchirp_song = ctsGoatTracker.import_parsed_gt_to_rchirp(self.parsed_gt, 0)
+        rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp(0)
 
         gt_binary2 = ctsGoatTracker.export_rchirp_to_gt_binary(rchirp_song,
             end_with_repeat=False, pattern_len=126)
         parsed_gt_2 = ctsGoatTracker.GTSong()
         parsed_gt_2.import_sng_binary_to_parsed_gt(gt_binary2)
-        rchirp_song_2 = ctsGoatTracker.import_parsed_gt_to_rchirp(parsed_gt_2, 0)
+        rchirp_song_2 = parsed_gt_2.import_parsed_gt_to_rchirp(0)
 
         self.assertTrue(self.found_expected_note_content(rchirp_song_2))
 
