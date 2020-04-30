@@ -216,7 +216,7 @@ class RChirpVoice:
         if len(self.rows) == 0:
             return 0
         else:
-            return self.get_last_row().row_num
+            return self.last_row.row_num
 
     def get_filled_rows(self):
         ret_rows = []
@@ -451,7 +451,7 @@ class RChirpSong:
         def _str_with_null_handling(a_value):
             return str(a_value) if a_value is not None else ''
 
-        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count))
+        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(self.voice_count))
 
         channels_time_events = self.jiffy_indexed_voices
 
