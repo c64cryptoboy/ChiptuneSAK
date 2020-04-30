@@ -90,3 +90,17 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
     * ~~sortedcontainers~~
     * ~~cbmcodecs~~
  * [Lilypond](https://lilypond.org/download.html)
+
+## Generating Documentation
+from docs folder:
+
+`make html`
+
+## Running Tests
+from test folder:
+
+`python -m unittest discover -p '*Test.py' -v`
+
+or for an individual test:
+
+`python -m unittest chirpTest.py`
