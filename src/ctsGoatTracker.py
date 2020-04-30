@@ -74,11 +74,20 @@ GT_TEMPO_CHNG_CMD = 0x0F
 
 @dataclass
 class GtHeader:
-    id: str = ''
+    id: str = GT_FILE_HEADER
     song_name: str = ''
     author_name: str = ''
     copyright: str = ''
     num_subtunes: int = 0
+
+    def to_bytes(self):
+        result = bytearray()
+        result += GT_FILE_HEADER
+        result += pad_or_truncate(self.song_name, 32)
+        result += pad_or_truncate(self.author_name, 32)
+        result += pad_or_truncate(self.copyright, 32)
+        result.append(self.num_subtunes)
+        return result
 
 
 @dataclass
@@ -119,6 +128,15 @@ class GtInstrument:
     hard_restart_1st_frame_wave: int = 0x09
     inst_name: str = ''
 
+    def to_bytes(self):
+        result = bytearray()
+        result += bytes([self.attack_decay, self.sustain_release,
+                        self.wave_ptr, self.pulse_ptr, self.filter_ptr,
+                        self.vib_speedtable_ptr, self.vib_delay, self.gateoff_timer,
+                        self.hard_restart_1st_frame_wave])
+        result += pad_or_truncate(self.inst_name, 16)
+        return result
+
 
 @dataclass
 class GtTable:
@@ -130,6 +148,13 @@ class GtTable:
         self.row_cnt += a_table.row_cnt
         self.left_col += a_table.left_col
         self.right_col += a_table.right_col
+
+    def to_bytes(self):
+        result = bytearray()
+        result.append(self.row_cnt)
+        result += self.left_col
+        result += self.right_col
+        return result
 
 
 def import_sng_file_to_rchirp(input_filename, subtune_number=0):
@@ -159,6 +184,13 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
         raise ChiptuneSAKValueError('subtune_number must be <= %d' % max_subtune_number)
 
     return import_parsed_gt_to_rchirp(parsed_gt, subtune_number)
+
+
+# A Procrustean bed for GT text fields.  Can accept a string or bytes.
+def pad_or_truncate(to_pad, length):
+    if isinstance(to_pad, str):
+        to_pad = to_pad.encode('latin-1')
+    return to_pad.ljust(length, b'\0')[0:length]
 
 
 class GTSong:
@@ -462,6 +494,134 @@ class GTSong:
             raise Exception("Error: max table length exceeded when appending instrument from file")
 
         return an_instrument.instr_num
+
+    def midi_note_to_pattern_note(self, midi_note, octave_offset=0):
+        """
+        Convert midi note value to pattern note value
+
+        :param midi_note: midi note number (NOTE: Lowest midi note allowed = 12 (C0_MIDI_NUM)
+        :type midi_note: int
+        :param octave_offset: Should always be zero unless some weird midi offset exists
+        :type octave_offset: int
+        :return: GT note value
+        :rtype: int
+        """
+        gt_note_value = midi_note + (GT_NOTE_OFFSET - C0_MIDI_NUM) + (-1 * octave_offset * 12)
+        if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
+            raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
+        return gt_note_value
+
+    def make_orderlist_entry(self, pattern_number, transposition, repeats, prev_transposition):
+        """
+        Makes orderlist entries from a pattern number, a transposition, and a number of repeats.
+
+        :param pattern_number: pattern number
+        :type pattern_number: int
+        :param transposition: transposition in semitones
+        :type transposition: int
+        :param repeats: Number of times to repeat
+        :type repeats: int
+        :param prev_transposition: Previous transposition
+        :type prev_transposition: int
+        :return: list of orderlist command
+        :rtype: list of int
+        """
+        retval = []
+        # Only insert transposition (absolute) when it changes
+        if transposition == prev_transposition:
+            transposition = None
+        elif -15 <= transposition <= 14:  # Check that transposition is in allowed range
+            transposition += 0xF0  # offset for transpositions
+        else:  # Instead of dying, fix transpositions by doing octave offsets until it is within range.
+            while transposition > 14:
+                transposition -= 12
+            while transposition < -15:
+                transposition += 12
+            assert(-15 <= transposition <= 14), "bad transposition = %d" % transposition
+            transposition += 0xF0
+
+        # Longest possible repeat is 16, so generate as many of those as needed
+        while repeats >= 16:
+            if transposition is not None:
+                retval.append(transposition)  # If no transposition, leave it off.
+                transposition = None  # Only add transposition once
+            retval.append(0xD0)  # Repeat 16 times
+            retval.append(pattern_number)
+            repeats -= 16
+
+        # Now do the last one if there are any left (usually this is the only part accessed)
+        if repeats > 0:
+            if transposition is not None:
+                retval.append(transposition)
+            if repeats != 1:  # If only one time, no need to put anything in.
+                retval.append(repeats - 1 + 0xD0)  # Repeat N times
+            retval.append(pattern_number)
+
+        assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
+        return retval
+
+
+    def export_parsed_gt_to_sng_file(self, rchirp_song, output_filename, \
+        end_with_repeat=False, pattern_len=126):
+        """
+        Convert rchirp into a goattracker .sng file.
+        
+        :param output_filename: Output path and filename
+        :type output_filename: string
+        :param rchirp_song: The rchirp song to convert
+        :type rchirp_song: RChirpSong
+        :param end_with_repeat: True if song should repeat when finished, defaults to False
+        :type end_with_repeat: bool, optional
+        :param pattern_len: Maximum pattern lengths to create
+        :type pattern_len: int, optional
+        """
+
+        binary = export_rchirp_to_gt_binary(rchirp_song, end_with_repeat, pattern_len)
+        with open(output_filename, 'wb') as out_file:
+            out_file.write(binary)
+
+
+    # TODO: Test this!!!!!!!!!!!!
+    def export_parsed_gt_to_gt_binary(self, end_with_repeat=False, pattern_len=126):
+        """
+        Convert parsed_gt into a goattracker .sng binary.
+        
+        :param end_with_repeat: True if song should repeat when finished, defaults to False
+        :type end_with_repeat: bool, optional
+        :param pattern_len: Maximum pattern lengths to create
+        :type pattern_len: int, optional
+        """
+
+        gt_binary = bytearray()
+
+        gt_binary += self.headers.to_bytes()
+
+        for subtune in self.subtune_orderlists:
+            for channel_orderlist in subtune:
+                gt_binary.append(len(channel_orderlist) - 1) # orderlist length minus 1, strange but true
+                gt_binary += bytes(channel_orderlist)
+
+        num_instruments =len(self.instruments)
+
+        # number of instruments (not counting NOP instrument 0)
+        gt_binary.append(num_instruments - 1)  
+
+        for i in range(1, num_instruments):
+            gt_binary += self.instruments[i].to_bytes()
+
+        gt_binary += self.wave_table.to_bytes()
+        gt_binary += self.pulse_table.to_bytes()
+        gt_binary += self.filter_table.to_bytes()
+        gt_binary += self.speed_table.to_bytes()
+
+        gt_binary.append(len(self.patterns))  # number of patterns
+
+        for pattern in self.patterns:
+            gt_binary.append(len(pattern))
+            for row in pattern:
+                gt_binary += row.to_bytes()
+
+        return gt_binary
 
 
 #
@@ -923,13 +1083,6 @@ def midi_note_to_pattern_note(midi_note, octave_offset=0):
     if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
         raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
     return gt_note_value
-
-
-# A Procrustean bed for GT text fields.  Can accept a string or bytes.
-def pad_or_truncate(to_pad, length):
-    if isinstance(to_pad, str):
-        to_pad = to_pad.encode('latin-1')
-    return to_pad.ljust(length, b'\0')[0:length]
 
 
 def instrument_to_bytes(instrument):

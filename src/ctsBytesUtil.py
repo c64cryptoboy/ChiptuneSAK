@@ -79,3 +79,8 @@ def read_binary_file(path_and_filename):
             return in_file.read()
     except FileNotFoundError:
         return None
+
+
+def write_binary_file(path_and_filename, binary):
+    with open(path_and_filename, 'wb') as out_file:
+        out_file.write(binary)

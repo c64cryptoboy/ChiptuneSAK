@@ -13,15 +13,6 @@ import_sng_file_to_rchirp
 
 .. autofunction:: import_sng_file_to_rchirp
 
-import_sng_file_to_parsed_gt
-++++++++++++++++++++++++++++
-
-.. autofunction:: import_sng_file_to_parsed_gt
-
-import_sng_binary_to_parsed_gt
-++++++++++++++++++++++++++++++
-
-.. autofunction:: import_sng_binary_to_parsed_gt
 
 import_parsed_gt_to_rchirp
 +++++++++++++++++++++++++++
