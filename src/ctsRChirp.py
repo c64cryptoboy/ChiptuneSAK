@@ -105,6 +105,21 @@ class RChirpVoice:
                 self.import_chirp_track(chirp_track)     
 
     @property
+    def jiffy_indexed_rows(self):
+        """
+        Returns dictionary of rows indexed by jiffy number
+
+        A voice holds onto a dictionary of rows keyed by row number.  This method returns
+        a dictionary of rows keyed by jiffy number. 
+
+        :return: A dictionary of rows keyed by jiffy number
+        :rtype: defaultdict
+        """
+        return_val = {v.jiffy_num: v for k, v in self.rows.items()}
+        return_val = collections.defaultdict(RChirpRow, return_val)
+        return return_val
+        
+    @property
     def sorted_rows(self):
         """
         Returns a list of row-number sorted rows for the voice
