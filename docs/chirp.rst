@@ -15,10 +15,12 @@ Chirp
 
 Chirp maps note events to a tick timeline.  This mapping is different than midi, which records events only and the ticks between events. Ticks are temporally unitless, and can be mapped to time by applying a tempo in BPM.  In MIDI, note_on and note_off events come with no particular identification of the note they are starting or ending. Chirp reinterprets these events to provide note starts and lengths, which is closer to the way that humans think about music content.
 
+Chirp notes are not necessarily quantized and polyphony is allowed.
+
 
 MChirp
 ######
-MChirp is Measure-Based Chirp.  It has many features in common with Chirp: the content consists of notes in a tick-based time framework.  However, MChirp requires that all notes must fall into measures with well-defined time signatures. Note start times and duration in MChirp must be quantized. All notes within a measure are contained within a MChirp Measure object.
+MChirp is Measure-Based Chirp.  It has many features in common with Chirp: the content consists of notes in a tick-based time framework.  However, MChirp requires that all notes must fall into measures with well-defined time signatures. Note start times and duration in MChirp are quantized, and channels have no polyphony. All notes within a measure are contained within a MChirp Measure object.
 
 Chirp can be converted to MChirp and vice-versa.  Because each format retains different details, the conversion is necessarily lossy.
 
