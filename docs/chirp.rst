@@ -20,23 +20,34 @@ Chirp notes are not necessarily quantized and polyphony is allowed.
 
 MChirp
 ######
-MChirp is Measure-Based Chirp.  It has many features in common with Chirp: the content consists of notes in a tick-based time framework.  However, MChirp requires that all notes must fall into measures with well-defined time signatures. Note start times and duration in MChirp are quantized, and channels have no polyphony. All notes within a measure are contained within a MChirp Measure object.
 
-Chirp can be converted to MChirp and vice-versa.  Because each format retains different details, the conversion is necessarily lossy.
+MChirp is Measure-Based Chirp.  It has many features in common with Chirp: the content consists of notes in a tick-based time framework.  However, MChirp requires that all notes must fall into measures with well-defined boundaries and time signatures.
+
+Note start times and durations in MChirp are quantized, and channels have no polyphony. All notes within a measure are contained within an MChirp Measure object.
+
+Chirp can be converted to MChirp and vice-versa.  Because each format retains different details, the conversion may be lossy.
 
 RChirp
 ######
-RChirp is Row-Based Chirp.  It represented the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.  RChirp is quantized, and has no single-channel polyphony.
 
-In RChirp, the row is the primary abstraction.  Directly supports patterns and orderlists of patterns.
+RChirp is Row-Based Chirp.  It represents the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.  RChirp is quantized, and has no single-channel polyphony.
+
+In RChirp, the row is the primary abstraction.  RChirp also directly represents patterns and orderlists of patterns.
 
 Chirp Workflows
 ###############
+
+This diagram illustrates the relationships between the various intermediate representations and external music formats.
 
 .. image:: chirpWorkflow.png
    :width: 500px
    :alt: chirp workflow diagram
    :align: center
+
+For example, a Goattracker .sng file can be imported to RChirp, which may then be converted to Chirp and finally to MChirp, from which sheet music can be generated using Lilypond.
+
+Most basic transformations of music (such as transposition, quantization, etc) are implemented for the Chirp representation.
+
 
 **************************************
 Concepts in chirp music representation
