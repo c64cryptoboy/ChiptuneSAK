@@ -4,10 +4,14 @@ from ctsChirp import ChirpSong
 from ctsBytesUtil import big_endian_int, little_endian_int
 
 class Ultima4Song:
+    """
+    This class represents an Ultima 4 song.
+    """
+
     def __init__(self, song_no, u4music):
-        self.sequences = []
-        self.voices = []
-        voices = self.voices
+        self.sequences = []     # Sequence offsets within music data
+        self.voices = []        # This song's voices
+        self.tempo = 0x429a     # Current tempo
         # TODO: check for valid song number
         self.u4music = u4music
         self.song_no = song_no
@@ -26,7 +30,7 @@ class Ultima4Song:
             # create voices
             start_position = little_endian_int(music_data[idx:idx+2]) + self.song_offset
             print("voice offset: ", start_position)
-            voices.append(Ultima4Voice(self, start_position))
+            self.voices.append(Ultima4Voice(self, start_position))
             idx += 2
 
         #idx += 2 * self.num_voices
@@ -36,36 +40,66 @@ class Ultima4Song:
 
         idx += 1
         for seq in range(num_sequences):
-            start_pos = little_endian_int(music_data[idx:idx+2])
+            start_pos = little_endian_int(music_data[idx:idx+2]) + self.song_offset
             self.sequences.append(start_pos)
             idx += 2
         print(self.sequences)
+
+        # init voices
+        for v in self.voices:
+            v.initialize()
 
         # extraction loop
         any_voice_played = True
         while any_voice_played:
             any_voice_played = False
-            for index, voice in enumerate(voices):
-                print("voice", index)
+            for index, voice in enumerate(self.voices):
+                #print("voice", index, " offset: ", voice.song_pos)
                 if voice.playback():
                     any_voice_played = True
                 
 
+    def set_tempo(self, tempo):
+        """
+        Set a new tempo.
+
+        :param int tempo: New tempo
+        """
+        self.tempo = tempo
+
 class Ultima4Voice:
+    """
+    This class represents a voice in an Ultima IV song.
+    The typical use case is to first construct the voice.
+    Next, the initialize function should be called with the
+    song's sequences as a parameter. Now, playback()
+    can be called repeatedly until the function returns False.
+    """
+
     def __init__(self, song, start_position):
         self.voice_on = False
         self.start_position = start_position
-        self.transpose = 0
+        self.transpose = 0      # Transpose voice, range -128 - +127
         self.freq_shift = 0
         self.voice_on = True
         self.tie_note = False
         self.seq_depth = 0
-        self.note_value = 0x3c
-        self.std_note_len = 3
-        self.note_len = 1
+        self.note_value = 0x3c  # The current note's value
+        self.std_note_len = 3   # Current note standard length
+        self.note_len = 1       # Current note's length
         self.note_on = 0
+        self.song = song        # Song owning this voice
         self.song_pos = self.start_position
         self.music_data = song.music_data
+        self.return_pos = []    # Return positions for sequences
+        print("voice start pos: ", self.start_position)
+
+    def initialize(self):
+        """
+        Initialize voice playback
+        """
+        self.return_pos = [0 for s in self.song.sequences]
+        print(self.return_pos)
 
     def fetch_data_byte(self):
         data = self.music_data[self.song_pos]
@@ -75,11 +109,11 @@ class Ultima4Voice:
     def fetch_data_word(self):
         idx = self.song_pos
         data = little_endian_int(self.music_data[idx:idx+2])
-        idx += 2
+        self.song_pos += 2
         return data
 
     def playback(self):
-        print("voice playback")
+        #print("voice playback")
         voice_played = False
 
         if not self.voice_on:
@@ -90,15 +124,14 @@ class Ultima4Voice:
         voice_played = True
         self.note_len -= 1
         if self.note_len == 0:
-            print("note finished")
             voice_finished = False
             while not voice_finished:
                 music_data = self.music_data
                 song_byte = self.fetch_data_byte()
                 if song_byte == 0:
                     # command mode
-                    command_mode = True
-                    while command_mode:
+                    self.command_mode = True
+                    while self.command_mode:
                         song_byte = music_data[self.song_pos]
                         self.song_pos += 1
                         cmd_switch = {
@@ -116,8 +149,8 @@ class Ultima4Voice:
                             0x83: self.set_tempo
                         }
                         if song_byte not in cmd_switch.keys():
-                            print("Ultima4Voice error: unknown command:", song_byte)
-                            command_mode = False
+                            print("unknown command:", song_byte)
+                            self.command_mode = False
                         else:
                             cmd_switch[song_byte]()
                 elif song_byte < 0x80:
@@ -142,8 +175,8 @@ class Ultima4Voice:
         self.adsr_release_time = self.fetch_data_byte()
 
     def set_transpose(self):
-        print("set transpose")
         self.transpose = self.fetch_data_byte()
+        print("set transpose:", self.transpose)
 
     def set_pitchbend(self):
         print("set pitchbend")
@@ -170,21 +203,31 @@ class Ultima4Voice:
         self.adsr_attack_level = self.fetch_data_word()
 
     def start_sequence(self):
-        sequence = self.fetch_data_byte()
-        print("start sequence:", sequence)
+        seq = self.fetch_data_byte()
+        print("start sequence:", seq)
+        if seq < len(self.song.sequences):
+            self.return_pos[seq] = self.song_pos
+            self.song_pos = self.song.sequences[seq]
+            self.song_pos += 2 * len(self.song.voices)
+        self.command_mode = False
 
     def return_from_sequence(self):
-        sequence = self.fetch_data_byte()
-        print("return from sequence:", sequence)
+        seq = self.fetch_data_byte()
+        print("return from sequence:", seq)
+        self.song_pos = self.return_pos[seq]
+        self.command_mode = False
 
     def end_voice(self):
         self.voice_on = False
         print("end voice")
+        self.command_mode = False
+        voice_finished = True
 
     def set_tempo(self):
         tempo = self.fetch_data_word()
         print("set tempo: ", tempo)
-
+        self.song.set_tempo(tempo)
+        self.command_mode = False
 
     def play_note(self, song_byte, new_tie, is_extra_note):
         if (song_byte > 0):
