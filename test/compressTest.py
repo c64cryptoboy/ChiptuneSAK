@@ -8,7 +8,10 @@ import ctsMidi
 
 COMPRESS_TEST_SONG = project_to_absolute_path('test/data/BWV_799.mid')
 
+
 class TestCompression(unittest.TestCase):
+    def setUp(self):
+        pass
 
     def test_gt_compression(self):
         self.compress_test_song = ctsMidi.import_midi_to_chirp(COMPRESS_TEST_SONG)
@@ -29,16 +32,18 @@ class TestCompression(unittest.TestCase):
 
         self.assertTrue(ctsGtCompress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
-        #ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/gt_test_out.sng')
+        # ctsGoatTracker.export_rchirp_to_gt(rchirp_song, '../test/data/gt_test_out.sng')
 
         # Now delete a row from a pattern which should cause compressed song not to work.
         rchirp_song.patterns[0].rows.pop()
         self.assertFalse(rchirp_song.validate_compression())
 
-        # print(f'{len(rchirp_song.patterns)} total patterns with a total of {sum(len(p.rows) for p in rchirp_song.patterns)} rows')
+        # print(f'{len(rchirp_song.patterns)} total patterns with a total of
+        #     {sum(len(p.rows) for p in rchirp_song.patterns)} rows')
         #
         # print('%d total orderlist entries' % sum(len(v.orderlist) for v in rchirp_song.voices))
-        # print('%d bytes estimated orderlist size' % sum(ctsGtCompress.get_gt_orderlist_length(v.orderlist) for v in rchirp_song.voices))
+        # print('%d bytes estimated orderlist size' %
+        #     sum(ctsGtCompress.get_gt_orderlist_length(v.orderlist) for v in rchirp_song.voices))
         # for i, v in enumerate(rchirp_song.voices):
         #     print(f'Voice {i+1}:')
         #     print(f'{len(v.orderlist)} orderlist entries')
@@ -52,7 +57,7 @@ class TestCompression(unittest.TestCase):
 
         # Convert goattracker sng to an rchirp
         rchirp_song = ctsGoatTracker.import_sng_file_to_rchirp(
-            project_to_absolute_path('test/data/gtTestData.sng'))
+            str(project_to_absolute_path('test/data/gtTestData.sng')))
 
         # create patterns and orderlists
         rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song)
@@ -63,6 +68,7 @@ class TestCompression(unittest.TestCase):
         parsed_gt.export_parsed_gt_to_sng_file(project_to_absolute_path('test/data/test_out.sng'))
 
         self.assertTrue(True)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -20,14 +20,15 @@ MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_
 
 @dataclass
 class SongMetadata:
-    ppq: int = DEFAULT_MIDI_PPQN #: PPQ = Pulses Per Quarter = ticks/quarter note
-    name: str = '' #: Song name
-    composer: str = '' #: Composer
-    copyright: str = '' #: Copyright statement
-    time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4) #: Starting time signature
-    key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C')) #: Starting key signature
-    qpm: int = 112 #: Tmpo in Quarter Notes per Minute (QPM)
-    extensions: dict = field(default_factory=dict) #: Allows arbitrary state to be passed
+    ppq: int = DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
+    name: str = ''  #: Song name
+    composer: str = ''  #: Composer
+    copyright: str = ''  #: Copyright statement
+    time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)  #: Starting time signature
+    key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C'))  #: Starting key signature
+    qpm: int = 112  #: Tmpo in Quarter Notes per Minute (QPM)
+    extensions: dict = field(default_factory=dict)  #: Allows arbitrary state to be passed
+
 
 class Triplet:
     def __init__(self, start_time=0, duration=0, notes=None):

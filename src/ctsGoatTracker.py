@@ -867,7 +867,7 @@ class GTSong:
 
         TRUNCATE_IF_TOO_BIG = True
 
-        self.__init__() # clear out anything that might be in this GTSong instance
+        self.__init__()  # clear out anything that might be in this GTSong instance
 
         headers = GtHeader(
             song_name = rchirp_song.metadata.name[:32],
@@ -1044,7 +1044,6 @@ class GTSong:
             self.pulse_table = GtTable.from_bytes(extensions["gt.pulse_table"])
             self.filter_table = GtTable.from_bytes(extensions["gt.filter_table"])
             self.speed_table = GtTable.from_bytes(extensions["gt.speed_table"])
-
 
         # special instrument number that can be used for global tempo settings (rarely seen):
         ignore = GT_MAX_INSTR_PER_SONG - 1
