@@ -373,7 +373,6 @@ class GTSong:
 
         self.instruments = instruments
 
-
     def get_orderlist(self, an_index, file_bytes):
         # Note: orderlist length byte is length -1
         #    e.g. orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
@@ -388,7 +387,6 @@ class GTSong:
 
         return orderlist
 
-
     # If a 3-channel orderlist is found, returns the byte after the end, else return -1
     def has_3_channel_orderlist(self, file_index, sng_bytes):
         for _ in range(3):
@@ -397,7 +395,6 @@ class GTSong:
                 return -1
             file_index += index_of_ff + 2
         return file_index
-
 
     # Returns true if a 6-channel orderlist is found, evidence that this is a goattracker stereo sng file
     def is_2sid(self, index_at_start_of_orderlist, sng_bytes):
@@ -417,7 +414,6 @@ class GTSong:
             sng_bytes = f.read()
 
         self.import_sng_binary_to_parsed_gt(sng_bytes)
-
 
     def import_sng_binary_to_parsed_gt(self, sng_bytes):
         """
@@ -571,7 +567,6 @@ class GTSong:
 
         assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
 
-
     def midi_note_to_pattern_note(self, midi_note, octave_offset=0):
         """
         Convert midi note value to pattern note value
@@ -678,7 +673,6 @@ class GTSong:
                 gt_binary += row.to_bytes()
 
         return gt_binary
-
 
     def import_parsed_gt_to_rchirp(self, subtune_num=0):
         """
