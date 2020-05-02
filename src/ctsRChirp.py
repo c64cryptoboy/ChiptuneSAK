@@ -3,9 +3,7 @@
 # RChirp is a row-based verison of chirp, useful for export from and to trackers,
 # and other jiffy-based music players.
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
-#
-# TODO:
-# - create proper docstrings on class defs (methods already done)
+# Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
 import copy
 from functools import reduce
@@ -14,7 +12,6 @@ import ctsChirp
 from ctsBase import *
 from ctsConstants import DEFAULT_MIDI_PPQN
 from dataclasses import dataclass
-
 
 @dataclass(order=True)
 class RChirpRow:
@@ -62,7 +59,7 @@ class RChirpOrderEntry:
 
 class RChirpOrderList(list):
     """
-    An order list made up of a set of patterns
+    An orderlist is a list of RChirpOrderEntry instances
     """
     pass
 
@@ -378,6 +375,10 @@ class RChirpSong:
             else:
                 self.import_chirp_song(chirp_song)
 
+    # If true, RChirp was compressed or created from a source that uses patterns, etc.
+    def has_order_lists(self):
+        return len(self.patterns) > 0 # This should be a good enough check?
+
     @property
     def voice_count(self):
         """
@@ -424,6 +425,21 @@ class RChirpSong:
         :raises AssertionError: Various integrity failure assertions possible
         """    
         return all(voice.integrity_check() for voice in self.voices)
+
+    def set_row_delta_values(self):
+        # RChirpRow has some delta fields that are only set when there's a change from previous rows.
+        for debug_voice_index, voice in enumerate(self.voices):
+            prev_tempo = prev_instr = -1
+            for rchirp_row in voice.sorted_rows:
+                if rchirp_row.instr_num is not None and rchirp_row.instr_num != prev_instr:
+                    rchirp_row.new_instrument = rchirp_row.instr_num
+                    prev_instr = rchirp_row.instr_num
+
+                # This can can lead to lots of tempo changes when a tracker import is unrolling a global
+                # funk tempo (tempo that alternates with each row to achieve swing)
+                if rchirp_row.jiffy_len is not None and rchirp_row.jiffy_len != prev_tempo:
+                    rchirp_row.new_jiffy_tempo = rchirp_row.jiffy_len
+                    prev_tempo = rchirp_row.jiffy_len
 
     @property
     def jiffy_indexed_voices(self):

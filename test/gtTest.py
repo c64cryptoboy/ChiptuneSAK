@@ -55,6 +55,7 @@ EXPECTED_CHANNELS = (
 class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):
         self.gt_binary = read_binary_file(SNG_TEST_FILE)
+
         self.parsed_gt = ctsGoatTracker.GTSong()
         self.parsed_gt.import_sng_binary_to_parsed_gt(self.gt_binary)
 
@@ -78,7 +79,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         return True
 
 
-    # Test that .sng file to GTSong back to .sng file binary is lossless
+    # Test that .sng binary to parsed back to sng binary is lossless
     def test_sng_to_parsed_to_sng(self):
         gt_binary2 = self.parsed_gt.export_parsed_gt_to_gt_binary()
 
@@ -86,29 +87,71 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         self.assertTrue(self.gt_binary == gt_binary2)
 
 
-    # @unittest.skip("GT import testing not working now...")
-    # Test that .sng file to rchirp has expected note content
+    # Test that .sng binary to rchirp has expected note content after conversion
     def test_sng_to_rchirp(self):
         rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp(0)
 
-        self.assertTrue(self.found_expected_note_content(rchirp_song))
+        self.assertTrue(self.found_expected_note_content(rchirp_song)) 
 
-        # Uncomment out to make the gt sng file for playback:
-        # ctsGoatTracker.export_rchirp_to_gt('test/data/deleteme.sng', \
-        #    rchirp_song, end_with_repeat = False, compress = False, pattern_len = 126)
 
-    # Test that .sng file to rchirp back to .sng binary to rchirp has expected note content
+    # Tests for consistency under transformations
+    # This ASCII art chart (below) shows a sequence of 6 transformations, which will allow
+    # for a number of consistency tests
+    #
+    #  . . . . . . . . . . . . rchirp -> . . . . . . . . . . . . . . . . . .  rchirp3
+    #  . . . . . . . parsed -> . . . . . parsed2 ->  . . . . . . . parsed3 -> . . . .
+    #  sng binary -> . . . . . . . . . . . . . . .  sng binary2 ->  . . . . . . . . .
+    #
+    #  (Yup, there's nothing named rchirp2)
+    #
     def test_sng_to_rchirp_to_sng_to_rchirp(self):
-        rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp(0)
+        # convert parsed sng file into rchirp
+        rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp()
 
-        gt_binary2 = ctsGoatTracker.export_rchirp_to_gt_binary(rchirp_song,
-            end_with_repeat=False, pattern_len=126)
-        parsed_gt_2 = ctsGoatTracker.GTSong()
-        parsed_gt_2.import_sng_binary_to_parsed_gt(gt_binary2)
-        rchirp_song_2 = parsed_gt_2.import_parsed_gt_to_rchirp(0)
+        # convert rchirp back to a second parsed sng file
+        parsed_gt2 = ctsGoatTracker.GTSong()
+        parsed_gt2.export_rchirp_to_parsed_gt(rchirp_song, end_with_repeat=False, max_pattern_len=126)
 
+        # Test that instrument data survived these conversions
+        # (this is not a situation where default instruments will be auto-appended)
+        self.assertTrue(self.parsed_gt.get_instruments_bytes() == parsed_gt2.get_instruments_bytes())
+        self.assertTrue(self.parsed_gt.wave_table.to_bytes() == parsed_gt2.wave_table.to_bytes())
+        self.assertTrue(self.parsed_gt.pulse_table.to_bytes() == parsed_gt2.pulse_table.to_bytes())
+        self.assertTrue(self.parsed_gt.filter_table.to_bytes() == parsed_gt2.filter_table.to_bytes())
+        self.assertTrue(self.parsed_gt.speed_table.to_bytes() == parsed_gt2.speed_table.to_bytes())
+
+        gt_binary2 = parsed_gt2.export_parsed_gt_to_gt_binary()
+
+        parsed_gt3 = ctsGoatTracker.GTSong()
+        parsed_gt3.import_sng_binary_to_parsed_gt(gt_binary2)
+
+        # convert second parsed sng file into a second rchirp file
+        rchirp_song_2 = parsed_gt3.import_parsed_gt_to_rchirp()
+
+        # test if the note/timing content from original file survived 6 transformations
+        # (shown in ascii diagram above)
         self.assertTrue(self.found_expected_note_content(rchirp_song_2))
 
+
+    # Test adding an instrument.
+    # FUTURE:  Judging success only by how much each table gets extended, so more could be
+    # added at some point
+    def test_add_instrument(self):
+        rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp()
+        extensions = rchirp_song.metadata.extensions
+        self.assertTrue(
+            extensions["gt.wave_table"][0] == 2 and
+            extensions["gt.pulse_table"][0] == 0 and
+            extensions["gt.filter_table"][0] == 0 and
+            extensions["gt.speed_table"][0] == 0)
+
+        ctsGoatTracker.add_gt_instrument_to_rchirp(rchirp_song, "SlepBass", 'test/data/')
+
+        self.assertTrue(
+            extensions["gt.wave_table"][0] == 2 + 4 and # adds 4
+            extensions["gt.pulse_table"][0] == 5 and    # adds 5
+            extensions["gt.filter_table"][0] == 6 and   # adds 6
+            extensions["gt.speed_table"][0] == 1)       # adds 1
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()
