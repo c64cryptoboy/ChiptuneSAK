@@ -3,6 +3,8 @@
 # Notes:
 # - This code ignores multispeed (for now)
 #
+# TODOs:
+# - RChirp refactoring done.  Need to make sure new/updated methods are all documented.
 
 from os import path
 import sys
@@ -20,10 +22,9 @@ import ctsRChirp
 import ctsMidi
 from ctsErrors import *
 
-# Generalized instrument handling when creating new goattracker binaries is not supported yet.
-# So this constant is used so it's easy to look through the code to see where hardcoded assumptions
-# are being made.
 DEFAULT_INSTRUMENT = 1
+
+DEFAULT_MAX_PAT_LEN = 126
 
 # GoatTracker constants
 GT_FILE_HEADER = b'GTS5'
@@ -100,6 +101,14 @@ PATTERN_EMPTY_ROW = GtPatternRow(note_data=GT_REST)
 
 @dataclass
 class GtInstrument:
+    """
+    Holds the parsed values from the 25-byte instrument data
+
+    Note: the wave, pulse, fiter, and speed table pointers are 1-based indexing.
+    0 is reserved to mean "not pointing to anything".  However, the table bytes
+    to which they point are 0-based, except for in the GoatTracker GUI where they're
+    displayed as 1-based.
+    """
     instr_num: int = 0
     attack_decay: int = 0
     sustain_release: int = 0
@@ -213,6 +222,15 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     return rchirp
 
 
+def export_rchirp_to_sng_file(path_and_filename, rchirp_song, \
+    end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN):
+
+    parsed_gt = GTSong()
+    parsed_gt.export_rchirp_to_parsed_gt(
+        rchirp_song, end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN)
+    parsed_gt.export_parsed_gt_to_sng_file(path_and_filename)
+
+
 def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     """
     Convert pattern note byte value into midi note value
@@ -303,27 +321,41 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = 'res/gtInstrum
         tables.append(a_table)
         file_index += a_table.row_cnt * 2 + 1
 
-    extensions["gt.instruments"] += an_instrument.to_bytes()
-
+    # FUTURE: processing updates to these four tables and table pointers could be
+    # loop-generalized instead of processed separately
     tmp_wave_table = GtTable.from_bytes(extensions["gt.wave_table"])
-    an_instrument.wave_ptr = tmp_wave_table.row_cnt
+    if tables[0].row_cnt == 0:
+        an_instrument.wave_ptr = 0
+    else:
+        an_instrument.wave_ptr = tmp_wave_table.row_cnt + 1
     tmp_wave_table.append_table(tables[0])
     extensions["gt.wave_table"] = tmp_wave_table.to_bytes()
 
     tmp_pulse_table = GtTable.from_bytes(extensions["gt.pulse_table"])
-    an_instrument.pulse_ptr = tmp_pulse_table.row_cnt
+    if tables[1].row_cnt == 0:
+        an_instrument.pulse_ptr = 0
+    else:
+        an_instrument.pulse_ptr = tmp_pulse_table.row_cnt + 1
     tmp_pulse_table.append_table(tables[1])
     extensions["gt.pulse_table"] = tmp_pulse_table.to_bytes()
 
     tmp_filter_table = GtTable.from_bytes(extensions["gt.filter_table"])
-    an_instrument.filter_ptr = tmp_filter_table.row_cnt
+    if tables[2].row_cnt == 0:
+        an_instrument.filter_ptr = 0
+    else:
+        an_instrument.filter_ptr = tmp_filter_table.row_cnt + 1
     tmp_filter_table.append_table(tables[2])
     extensions["gt.filter_table"] = tmp_filter_table.to_bytes()
 
     tmp_speed_table = GtTable.from_bytes(extensions["gt.speed_table"])
-    an_instrument.vib_speedtable_ptr = tmp_speed_table.row_cnt
+    if tables[3].row_cnt == 0:
+        an_instrument.vib_speedtable_ptr = 0
+    else:
+        an_instrument.vib_speedtable_ptr = tmp_speed_table.row_cnt + 1
     tmp_speed_table.append_table(tables[3])
     extensions["gt.speed_table"] = tmp_speed_table.to_bytes()
+
+    extensions["gt.instruments"] += an_instrument.to_bytes()
 
     return an_instrument.instr_num
 
@@ -681,15 +713,13 @@ class GTSong:
         In GoatTracker any channel can change all the channels' tempos or just its own tempo
         at any time.  This is too complex for RChirp representation.  So this code simulates
         the playback on a jiffy (aka frame)-by-jiffy basis, "unrolling" the tempos.
-        What's left is consistent (at any point in time) tempos across all channels.
-        So that each channel knows its tempo, global tempo changes are turned into per-channel
-        tempo changes, but again, the tempos are globally consistent.
+        What's left is only per-channel tempo changes, which can be different from the other
+        channels (an important tracker feature worth preserving).
 
-        Because of this tempo unrolling, the patterns and voice orderlists found in the original
-        GoatTracker song cannot be directly imported into the rchirp.patterns and
-        rchirp.voices[].orderlist representations.  However, playback engines with only global
-        tempo changes (such as found in many C64 games) should be able to have their music
-        patterns.orderlists directly loaded into RChirp.
+        The patterns and voice orderlists found in the original GoatTracker song cannot be
+        mapped 1-to-1 with rchirp.patterns and rchirp.voices[].orderlist without all of this
+        complex processing.  However, we expect many C64 game music engines to have patterns
+        and orderlists that can be directly mapped without much effort.
         
         :param sng_data: Parsed goattracker file
         :type sng_data: GTSong
@@ -841,7 +871,7 @@ class GTSong:
         return rchirp_song
 
 
-    def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=126):
+    def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
         """
         Populate GTSong instance from RChirp data.
 
