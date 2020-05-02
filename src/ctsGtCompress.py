@@ -367,7 +367,7 @@ def compress_gt_global(rchirp_song, min_pattern_length=8):
     rchirp_song.patterns = []  # Get rid of any patterns from previous compression
     last_pattern_count = 0
     for iv, v in enumerate(rchirp_song.voices):
-        filled_rows = v.get_filled_rows()
+        filled_rows = v.make_filled_rows()
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
         order = {}
@@ -431,7 +431,7 @@ def compress_gt_lr(rchirp_song, min_pattern_length=8):
 
     rchirp_song.patterns = []  # Get rid of any patterns from previous compression
     for iv, v in enumerate(rchirp_song.voices):
-        filled_rows = v.get_filled_rows()
+        filled_rows = v.make_filled_rows()
         used = [False for r in filled_rows]
         n_rows = len(filled_rows)
         order = {}

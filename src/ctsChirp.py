@@ -334,6 +334,7 @@ class ChirpTrack:
     def truncate(self, max_tick):
         """
         Truncate the track to max_tick
+
         :param max_tick:  maximum tick number for events to start (track will play to end of any notes started)
         :type max_tick: int
         """
@@ -631,6 +632,7 @@ class ChirpSong:
     def truncate(self, max_tick):
         """
         Truncate the song to max_tick
+
         :param max_tick:  maximum tick number for events to start (song will play to end of any notes started)
         :type max_tick: int
         """
@@ -645,6 +647,7 @@ class ChirpSong:
     def transpose(self, semitones, minimize_accidentals=True):
         """
         Transposes the song by semitones
+
         :param semitones:  number of semitones to transpose by.  Positive transposes to higher pitch.
         :type semitones: int
         :param minimize_accidentals: True to choose key signature to minimize number of accidentals
@@ -776,6 +779,7 @@ class ChirpSong:
     def set_qpm(self, qpm):
         """
         Sets the tempo in BPM for the entire song.  Any existing tempo events will be removed.
+
         :param qpm: quarter-notes per minute tempo
         :type qpm: int
         """

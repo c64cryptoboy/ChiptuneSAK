@@ -3,9 +3,7 @@
 # RChirp is a row-based verison of chirp, useful for export from and to trackers,
 # and other jiffy-based music players.
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
-#
-# TODO:
-# - create proper docstrings on class defs (methods already done)
+# Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
 import copy
 from functools import reduce
@@ -14,7 +12,6 @@ import ctsChirp
 from ctsBase import *
 from ctsConstants import DEFAULT_MIDI_PPQN
 from dataclasses import dataclass
-
 
 @dataclass(order=True)
 class RChirpRow:
@@ -62,7 +59,7 @@ class RChirpOrderEntry:
 
 class RChirpOrderList(list):
     """
-    An order list made up of a set of patterns
+    An orderlist is a list of RChirpOrderEntry instances
     """
     pass
 
@@ -118,7 +115,7 @@ class RChirpVoice:
         return_val = {v.jiffy_num: v for k, v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
-
+        
     @property
     def sorted_rows(self):
         """
@@ -216,9 +213,9 @@ class RChirpVoice:
         if len(self.rows) == 0:
             return 0
         else:
-            return self.get_last_row().row_num
+            return self.last_row.row_num
 
-    def get_filled_rows(self):
+    def make_filled_rows(self):
         ret_rows = []
         max_row = max(self.rows[rn].row_num for rn in self.rows)
         assert 0 in self.rows, "No row 0 in rows"  # Row 0 should exist!
@@ -289,7 +286,7 @@ class RChirpVoice:
         return ret_rows
 
     def validate_orderlist(self):
-        filled_rows = self.get_filled_rows()
+        filled_rows = self.make_filled_rows()
         compressed_rows = self.orderlist_to_rows()
         if len(filled_rows) != len(compressed_rows):
             return False
@@ -378,10 +375,15 @@ class RChirpSong:
             else:
                 self.import_chirp_song(chirp_song)
 
+    # If true, RChirp was compressed or created from a source that uses patterns, etc.
+    def has_order_lists(self):
+        return len(self.patterns) > 0 # This should be a good enough check?
+
     @property
     def voice_count(self):
         """
         Returns the number of voices (channels)
+
         :return:
         :rtype:
         """
@@ -424,6 +426,21 @@ class RChirpSong:
         """    
         return all(voice.integrity_check() for voice in self.voices)
 
+    def set_row_delta_values(self):
+        # RChirpRow has some delta fields that are only set when there's a change from previous rows.
+        for debug_voice_index, voice in enumerate(self.voices):
+            prev_tempo = prev_instr = -1
+            for rchirp_row in voice.sorted_rows:
+                if rchirp_row.instr_num is not None and rchirp_row.instr_num != prev_instr:
+                    rchirp_row.new_instrument = rchirp_row.instr_num
+                    prev_instr = rchirp_row.instr_num
+
+                # This can can lead to lots of tempo changes when a tracker import is unrolling a global
+                # funk tempo (tempo that alternates with each row to achieve swing)
+                if rchirp_row.jiffy_len is not None and rchirp_row.jiffy_len != prev_tempo:
+                    rchirp_row.new_jiffy_tempo = rchirp_row.jiffy_len
+                    prev_tempo = rchirp_row.jiffy_len
+
     @property
     def jiffy_indexed_voices(self):
         """
@@ -450,7 +467,7 @@ class RChirpSong:
         def _str_with_null_handling(a_value):
             return str(a_value) if a_value is not None else ''
 
-        max_tick = max(self.voices[i].get_last_row().jiffy_num for i in range(self.voice_count))
+        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(self.voice_count))
 
         channels_time_events = self.jiffy_indexed_voices
 
@@ -502,7 +519,7 @@ class RChirpSong:
         song.metadata.ppq = DEFAULT_MIDI_PPQN
         song.name = song_name
 
-        channels_time_events = self.jiffy_indexed_voices()
+        channels_time_events = self.jiffy_indexed_voices
         all_ticks = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
         note_ticks = sorted([t for t in all_ticks if any(channels_time_events[i].get(t, None) 
                         and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])

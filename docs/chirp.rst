@@ -8,34 +8,46 @@ ChiptuneSAK Intermediate Representations
 Chirp Formats
 *************
 
-Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  chirp (general), mchrip (sheetmusic aware), and rchirp (tracker aware).
+Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  Chirp (abstraction is notes and durations), MChirp (abstractioh is measures) and RChirp (abstracton is tracker rows).
 
 Chirp
 #####
 
-Chirp maps note events to a tick timeline.  This is different than midi, which records the ticks between events.  Ticks are temporally unitless, and can be mapped to time by applying a BPM.  This has parallels to other music formats such as GoatTracker sng files, in which rows show order and proportion, but are not tied to time until a tempo is applied (number of jiffies per row).
+Chirp maps note events to a tick timeline.  This mapping is different than midi, which records events only and the ticks between events. Ticks are temporally unitless, and can be mapped to time by applying a tempo in BPM.  In MIDI, note_on and note_off events come with no particular identification of the note they are starting or ending. Chirp reinterprets these events to provide note starts and lengths, which is closer to the way that humans think about music content.
+
+Chirp notes are not necessarily quantized and polyphony is allowed.
+
 
 MChirp
 ######
-MChirp is Measure-Based Chirp.  It is closely related to chirp, but is measure aware, and is designed to aid reasoning about measures and bars, as is often the case when dealing with sheet music.  MChirp is quantized, and has no single-channel polyphony (polyphony across channels is expected).
 
-In MChirp, the measure (aka bar) is the primary abstraction.  Everything is forced to fit into measures and notes that extend beyond measure boundaries become tied notes, etc.
+MChirp is Measure-Based Chirp.  It has many features in common with Chirp: the content consists of notes in a tick-based time framework.  However, MChirp requires that all notes must fall into measures with well-defined boundaries and time signatures.
 
-Chirp can be converted to MChirp and vise versa.  Because each format retains different details, the conversion is necessarily lossy.
+Note start times and durations in MChirp are quantized, and channels have no polyphony. All notes within a measure are contained within an MChirp Measure object.
+
+Chirp can be converted to MChirp and vice-versa.  Because each format retains different details, the conversion may be lossy.
 
 RChirp
 ######
-RChirp is Row-Based Chirp.  It represented the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.  RChirp is quantized, and has no single-channel polyphony.
 
-In RChirp, the row is the primary abstraction.  Directly supports patterns and orderlists of patterns.
+RChirp is Row-Based Chirp.  It represents the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.  RChirp is quantized, and has no single-channel polyphony.
+
+In RChirp, the row is the primary abstraction.  RChirp also directly represents patterns and orderlists of patterns.
 
 Chirp Workflows
 ###############
+
+This diagram illustrates the relationships between the various intermediate representations and external music formats.
 
 .. image:: chirpWorkflow.png
    :width: 500px
    :alt: chirp workflow diagram
    :align: center
+
+For example, a Goattracker .sng file can be imported to RChirp, which may then be converted to Chirp and finally to MChirp, from which sheet music can be generated using Lilypond.
+
+Most basic transformations of music (such as transposition, quantization, etc) are implemented for the Chirp representation.
+
 
 **************************************
 Concepts in chirp music representation

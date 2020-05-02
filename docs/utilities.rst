@@ -13,30 +13,6 @@ import_sng_file_to_rchirp
 
 .. autofunction:: import_sng_file_to_rchirp
 
-import_sng_file_to_parsed_gt
-++++++++++++++++++++++++++++
-
-.. autofunction:: import_sng_file_to_parsed_gt
-
-import_sng_binary_to_parsed_gt
-++++++++++++++++++++++++++++++
-
-.. autofunction:: import_sng_binary_to_parsed_gt
-
-import_parsed_gt_to_rchirp
-+++++++++++++++++++++++++++
-
-.. autofunction:: import_parsed_gt_to_rchirp
-
-export_rchirp_to_gt
-+++++++++++++++++++
-
-.. autofunction:: export_rchirp_to_gt
-
-export_rchirp_to_gt_binary
-++++++++++++++++++++++++++
-
-.. autofunction:: export_rchirp_to_gt_binary
 
 GoatTracker Classes
 -------------------
