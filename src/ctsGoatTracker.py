@@ -1023,17 +1023,17 @@ class GTSong:
             patterns.append(loop_pattern)
             loop_pattern_num = len(patterns) - 1
             for i in range(num_channels):
-                orderlists[i].append(loop_pattern_num) # pattern caps all voices' orderlists
+                orderlists[i].append(loop_pattern_num)  # pattern caps all voices' orderlists
 
         for i in range(num_channels):
             orderlists[i].append(GT_OL_RST)  # all patterns end with restart indicator
-            if end_with_repeat: # if each voice starts completely over...
+            if end_with_repeat:  # if each voice starts completely over...
                 orderlists[i].append(0)  # index of start of channel order list
             else:
                 orderlists[i].append(len(orderlists[i]) - 2)  # index of the empty loop pattern
 
         self.patterns = patterns
-        self.subtune_orderlists = [orderlists] # only one subtune, so nested in a pair of list brackets
+        self.subtune_orderlists = [orderlists]  # only one subtune, so nested in a pair of list brackets
 
         extensions = rchirp_song.metadata.extensions
 
