@@ -1,22 +1,40 @@
 import os
 import ctsMidi
-from ctsChirp import ChirpSong
+from ctsBase import *
+from ctsChirp import ChirpSong, ChirpTrack, Note
 from ctsBytesUtil import big_endian_int, little_endian_int
+from ctsMidi import export_chirp_to_midi
 
 class Ultima4Song:
     """
     This class represents an Ultima 4 song.
+    Ultima note values range from 0x00-0x7f.
+    0x00 represents an 'A0', the lowest key on a piano (MIDI: 21)
+    Ultima: middle C is 39, concert pitch A (A4) is 48
+    MIDI: middle C (C4) is 60, concert pitch A (A4) is 69
+    MIDI pitch = Ultima pitch + 21
+
     """
+
+    MIDI_NOTE_OFFSET = 21
+    TICKS_PER_QUARTER = 24
 
     def __init__(self, song_no, u4music):
         self.sequences = []     # Sequence offsets within music data
         self.voices = []        # This song's voices
         self.tempo = 0x429a     # Current tempo
+        self.chirp_song = ChirpSong()   # Chirp song associated with this song
         # TODO: check for valid song number
         self.u4music = u4music
         self.song_no = song_no
         self.music_data = u4music.music_data
         music_data = self.music_data
+
+        self.chirp_song.reset_all()
+        self.chirp_song.metadata.ppq = self.TICKS_PER_QUARTER
+        self.chirp_song.qticks_notes = self.TICKS_PER_QUARTER
+        self.chirp_song.qticks_durations = self.TICKS_PER_QUARTER
+
         idx = song_no * 2 + 1
         self.song_offset = little_endian_int(music_data[idx:idx+2])
         print("song_offset: ", self.song_offset)
@@ -30,7 +48,9 @@ class Ultima4Song:
             # create voices
             start_position = little_endian_int(music_data[idx:idx+2]) + self.song_offset
             print("voice offset: ", start_position)
-            self.voices.append(Ultima4Voice(self, start_position))
+            voice = Ultima4Voice(self, start_position)
+            self.voices.append(voice)
+            self.chirp_song.tracks.append(voice.chirp_track)
             idx += 2
 
         #idx += 2 * self.num_voices
@@ -59,13 +79,18 @@ class Ultima4Song:
                     any_voice_played = True
                 
 
-    def set_tempo(self, tempo):
+    def set_tempo(self, ticks, tempo):
         """
         Set a new tempo.
 
         :param int tempo: New tempo
         """
         self.tempo = tempo
+        # calculate qpm (quarter notes per minute)
+        qpm = int(60 * 1023000 / (tempo * self.TICKS_PER_QUARTER) + 0.5)
+        print("tempo event:", 60 * 1023000 / (tempo * self.TICKS_PER_QUARTER))
+        tempo_event = TempoEvent(ticks, qpm)
+        self.chirp_song.tempo_changes.append(tempo_event)
 
 class Ultima4Voice:
     """
@@ -77,22 +102,22 @@ class Ultima4Voice:
     """
 
     def __init__(self, song, start_position):
-        self.voice_on = False
-        self.start_position = start_position
+        self.voice_on = True    # Voice is still playing back: True
+        self.start_position = start_position  # Voice start position in music data
         self.transpose = 0      # Transpose voice, range -128 - +127
         self.freq_shift = 0
-        self.voice_on = True
         self.tie_note = False
-        self.seq_depth = 0
         self.note_value = 0x3c  # The current note's value
         self.std_note_len = 3   # Current note standard length
         self.note_len = 1       # Current note's length
-        self.note_on = 0
         self.song = song        # Song owning this voice
         self.song_pos = self.start_position
         self.music_data = song.music_data
         self.return_pos = []    # Return positions for sequences
-        print("voice start pos: ", self.start_position)
+        self.ticks = 0          # Current playback time in ticks
+        #self.chirp_track = None # Chirp track associated with voice
+        self.chirp_track = ChirpTrack(self.song.chirp_song)
+        self.voice_finished = False
 
     def initialize(self):
         """
@@ -100,9 +125,12 @@ class Ultima4Voice:
         """
         self.return_pos = [0 for s in self.song.sequences]
         print(self.return_pos)
+        self.ticks = 0
 
-    def fetch_data_byte(self):
-        data = self.music_data[self.song_pos]
+    def fetch_data_byte(self, signed=False):
+        #data = self.music_data[self.song_pos]
+        idx = self.song_pos
+        data = little_endian_int(self.music_data[idx:idx+1], signed=signed)
         self.song_pos += 1
         return data
 
@@ -124,8 +152,8 @@ class Ultima4Voice:
         voice_played = True
         self.note_len -= 1
         if self.note_len == 0:
-            voice_finished = False
-            while not voice_finished:
+            self.voice_finished = False
+            while not self.voice_finished:
                 music_data = self.music_data
                 song_byte = self.fetch_data_byte()
                 if song_byte == 0:
@@ -158,15 +186,21 @@ class Ultima4Voice:
                     self.note_len = self.std_note_len
                     value = song_byte + self.transpose
                     print("start note {} len {}".format(value, self.note_len))
-                    voice_finished = True
+                    if value > 120:
+                        print("value: ", value)
+                        #quit()
+                    note = Note(self.ticks, value + Ultima4Song.MIDI_NOTE_OFFSET, self.note_len)
+                    self.chirp_track.notes.append(note)
+                    self.voice_finished = True
                 elif song_byte == 0x80:
                     self.adsr_phase = 4
                     self.note_len = self.std_note_len
                     print("play rest:", self.note_len)
-                    voice_finished = True
+                    self.voice_finished = True
                 else:   # song byte > 0x80
                     self.std_note_len = song_byte & 0x7f
                     print("set new standard length:", self.std_note_len)
+        self.ticks += 1
         return voice_played
 
 
@@ -221,12 +255,12 @@ class Ultima4Voice:
         self.voice_on = False
         print("end voice")
         self.command_mode = False
-        voice_finished = True
+        self.voice_finished = True
 
     def set_tempo(self):
         tempo = self.fetch_data_word()
         print("set tempo: ", tempo)
-        self.song.set_tempo(tempo)
+        self.song.set_tempo(self.ticks, tempo)
         self.command_mode = False
 
     def play_note(self, song_byte, new_tie, is_extra_note):
@@ -257,9 +291,9 @@ class Ultima4Music:
 
         :param input_filename: Ultima IV filename.
         """
-        chirp_song = ChirpSong()
+        #chirp_song = ChirpSong()
         # Clear everything
-        chirp_song.reset_all()
+        # chirp_song.reset_all()
         song = Ultima4Song(song_no, self)
         #idx = songno * 2 + 1
         #song_offset = little_endian_int(self.music_data[idx:idx+2])
@@ -270,7 +304,7 @@ class Ultima4Music:
         #for v in range(num_voices):
         #    print("extracting voice ", v)
 
-        return chirp_song
+        return song.chirp_song
 
 # Open the Ultima IV music file
 music = Ultima4Music("../res/muso")
@@ -279,6 +313,7 @@ print(music.name)
 print(music)
 #chirp_song = music.import_song_to_chirp(0)
 chirp_song = music.import_song_to_chirp(1)
+midi_track = export_chirp_to_midi(chirp_song, "u4song.mid")
 #chirp_song = music.import_song_to_chirp(2)
 #chirp_song = music.import_song_to_chirp(3)
 print(chirp_song)
