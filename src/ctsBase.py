@@ -37,6 +37,17 @@ class Triplet:
         self.content = []               #: The notes that go inside the triplet
 
 
+class ChiptuneSAKExporter:
+    def __init__(self):
+        self.options = {}
+
+
+class ChiptuneSAKImporter:
+    def __init__(self):
+        self.options = {}
+
+
+
 # --------------------------------------------------------------------------------------
 #
 #  Utility functions
