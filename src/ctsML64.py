@@ -173,8 +173,7 @@ class ML64Exporter(ChiptuneSAKExporter):
         chirp_song.stats['ML64'] = stats
         return '\n'.join(output)
 
-
-    def export_mchirp_to_ml64(self,mchirp_song):
+    def export_mchirp_to_ml64(self, mchirp_song):
         """
         Export the song in ML64 format, grouping notes into measures.  The measure comments are guaranteed to
         appear at the beginning of each measure; tied notes will be split to accommodate the measure markers.
