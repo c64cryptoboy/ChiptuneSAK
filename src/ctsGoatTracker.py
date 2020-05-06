@@ -323,7 +323,6 @@ def get_table(an_index, file_bytes):
     return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
 
 
-
 def pad_or_truncate(to_pad, length):
     """
     Truncate or pad (with zeros) a GT text field

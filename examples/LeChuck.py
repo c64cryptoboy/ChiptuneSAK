@@ -11,7 +11,7 @@ input_file = 'MonkeyIsland_LechuckTheme.mid'
 output_midi_file = 'LeChuck.mid'
 output_gt_file = 'LeChuck.sng'
 
-chirp_song = ctsMidi.import_midi_to_chirp(input_dir + input_file)
+chirp_song = ctsMidi.MIDI().to_chirp(input_dir + input_file)
 
 print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
@@ -87,7 +87,7 @@ chirp_song.remove_polyphony()  # There is one place in the bass line that made a
 
 # Now export the modified chirp to a new midi file, which can be viewed and should look nice and neat
 print(f'Writing {output_midi_file}...')
-ctsMidi.export_chirp_to_midi(chirp_song, input_dir + output_midi_file)
+ctsMidi.MIDI().to_file(chirp_song, input_dir + output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.  Use some of our standard pre-defined instruments
 print(f'Setting goattracker instruments...')
@@ -105,4 +105,4 @@ rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song, 16)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing {output_gt_file}')
-ctsGoatTracker.export_rchirp_to_gt(rchirp_song, input_dir + output_gt_file)
+ctsGoatTracker.export_rchirp_to_sng_file(input_dir + output_gt_file, rchirp_song)
