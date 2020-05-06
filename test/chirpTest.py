@@ -11,9 +11,11 @@ from ctsConstants import project_to_absolute_path
 SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
 TRACK_TEST_SONG = project_to_absolute_path('test/data/BWV_799.mid')
 
+
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.import_midi_to_chirp(SONG_TEST_SONG)
+        midi = ctsMidi.MIDI()
+        self.test_song = midi.to_chirp(SONG_TEST_SONG)
 
     def test_notes(self):
         """
@@ -91,7 +93,8 @@ class SongTestCase(unittest.TestCase):
 
 class TrackTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.import_midi_to_chirp(TRACK_TEST_SONG)
+        midi = ctsMidi.MIDI()
+        self.test_song = midi.to_chirp(TRACK_TEST_SONG)
 
     def test_quantization(self):
         for i in range(len(self.test_song.tracks)):
@@ -125,5 +128,5 @@ class TrackTestCase(unittest.TestCase):
             t.set_min_note_len(test_duration * 2)
 
         total_notes_test = sum(len(t.notes) for t in tmp_song.tracks)
-        expected_lost = short_notes // 2  #  In this piece, the short notes come in pairs
+        expected_lost = short_notes // 2  # In this piece, the short notes come in pairs
         self.assertEqual(total_notes_test + expected_lost, total_notes)

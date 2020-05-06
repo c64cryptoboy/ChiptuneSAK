@@ -12,6 +12,7 @@ ml64_durations = {
     Fraction(1, 4): '16'
 }
 
+
 def pitch_to_ml64_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
@@ -136,8 +137,6 @@ class ML64(ChiptuneSAKIO):
         as small as possible.
         :param chirp_song:
         :type chirp_song:
-        :param ml64_format:
-        :type ml64_format: str
         """
         output = []
         if not chirp_song.is_quantized():
@@ -208,4 +207,3 @@ class ML64(ChiptuneSAKIO):
         output.append('ML64(-)')
         mchirp_song.stats['ML64'] = stats
         return '\n'.join(output)
-

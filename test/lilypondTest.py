@@ -13,7 +13,7 @@ class TestExportLilypond(unittest.TestCase):
     def test_lilypond_(self):
         known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(KNOWN_GOOD_LY_FILE_CLIP)
 
-        song = ctsMidi.import_midi_to_chirp(MIDI_TEST_FILE)
+        song = ctsMidi.MIDI().to_chirp(MIDI_TEST_FILE)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
 
