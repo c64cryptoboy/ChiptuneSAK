@@ -70,18 +70,27 @@ def avg_pitch(track):
     return total / number
 
 
-class LilypondExporter(ChiptuneSAKExporter):
+class Lilypond(ChiptuneSAKIO):
     def __init__(self):
-        ChiptuneSAKExporter.__init__(self)
+        ChiptuneSAKIO.__init__(self)
+        self.options['format'] = 'song'
         self.current_pitch_set = lp_pitches['sharps']
         self.current_clef = 'treble'
         self.current_ottava = 0
 
-    def export_str(self, mchirp_song):
+    @property
+    def format(self):
+        return self.options['format'][0].lower()
+
+    def to_bin(self, mchirp_song):
+        if self.format == 'c':
+            measures = list(self.options['measures'])
+            return self.export_clip_to_lilypond(mchirp_song, measures)
         return self.export_song_to_lilypond(mchirp_song)
 
-    def export_clip_str(self, mchirp_song, measures):
-        return self.export_clip_to_lilypond(mchirp_song, measures)
+    def to_file(self, mchirp_song, filename):
+        with open(filename, 'w') as f:
+            f.write(self.to_bin(mchirp_song))
 
     def clef(self, t_range):
         avg = sum(t_range) / len(t_range)

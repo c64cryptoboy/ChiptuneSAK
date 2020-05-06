@@ -94,16 +94,21 @@ def events_to_ml64(events, song, last_continue=False):
     return (content, stats, last_continue)
 
 
-class ML64Exporter(ChiptuneSAKExporter):
+class ML64(ChiptuneSAKIO):
+
+    @classmethod
+    def io_type(cls):
+        return "ML64"
+
     def __init__(self):
-        ChiptuneSAKExporter.__init__(self)
-        self.options['Format'] = 'Standard'
+        ChiptuneSAKIO.__init__(self)
+        self.options['format'] = 'standard'
 
     @property
     def format(self):
-        return self.options['Format'][0].lower()
+        return self.options['format'][0].lower()
 
-    def export_str(self, song):
+    def to_bin(self, song):
         tmp_type = str(type(song))
         if tmp_type == "<class 'ctsChirp.ChirpSong'>":
             if self.format == 'm':
@@ -119,6 +124,10 @@ class ML64Exporter(ChiptuneSAKExporter):
                 return self.export_mchirp_to_ml64(song)
         else:
             raise ChiptuneSAKTypeError("Cannot export object of type {tmp_type} to ML64")
+
+    def to_file(self, song, filename):
+        with open(filename, 'w') as f:
+            f.write(self.to_bin(song))
 
     def export_chirp_to_ml64(self, chirp_song):
         """
@@ -159,7 +168,7 @@ class ML64Exporter(ChiptuneSAKExporter):
             track_events.extend(t.program_changes)
             if mode == 's':  # Add measures for standard format
                 last_note_end = max(n.start_time + n.duration for t in chirp_song.tracks for n in t.notes)
-                measures = [m.start_time for m in chirp_song.measure_beats if m.beat == 1]
+                measures = [m.start_time for m in chirp_song.measures_and_beats() if m.beat == 1]
                 for im, m in enumerate(measures):
                     if m < last_note_end:
                         track_events.append(MeasureMarker(m, im + 1))

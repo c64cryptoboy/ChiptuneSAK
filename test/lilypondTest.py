@@ -19,9 +19,11 @@ class TestExportLilypond(unittest.TestCase):
 
         m_song = ctsMChirp.MChirpSong(song)
 
-        exporter = ctsLilypond.LilypondExporter()
+        lilypond = ctsLilypond.Lilypond()
 
-        test_ly = exporter.export_clip_str(m_song, m_song.tracks[0].measures[3:8])
+        lilypond.options['format'] = 'clip'
+        lilypond.options['measures'] = m_song.tracks[0].measures[3:8]
+        test_ly = lilypond.to_bin(m_song)
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 
         #with open('data/test.ly', 'w') as f:

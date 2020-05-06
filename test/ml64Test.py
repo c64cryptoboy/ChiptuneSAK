@@ -14,8 +14,8 @@ class TestExportML64(unittest.TestCase):
         Test ML64 export using "measures" mode against known good files made with our previous tools.
         """
 
-        exporter = ctsML64.ML64Exporter()
-        exporter.options['Format'] = 'Measures'
+        ml64 = ctsML64.ML64()
+        ml64.options['format'] = 'measures'
 
         midi_file = project_to_absolute_path('test/data/jingleBellsSDG.mid')
         known_good_ml64_file = project_to_absolute_path('test/data/jingleBellsSDG_good.ml64')
@@ -25,7 +25,7 @@ class TestExportML64(unittest.TestCase):
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         m_song = ctsMChirp.MChirpSong(song)
-        test_ml64 = exporter.export_str(m_song)
+        test_ml64 = ml64.to_bin(m_song)
         test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
@@ -38,17 +38,37 @@ class TestExportML64(unittest.TestCase):
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         m_song = ctsMChirp.MChirpSong(song)
-        test_ml64 = exporter.export_str(m_song)
+        test_ml64 = ml64.to_bin(m_song)
         test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
+
+    def test_ML64_standard(self):
+        """
+        Test ML64 export using "standard" mode against a known good file.
+        """
+        ml64 = ctsML64.ML64()
+        ml64.options['format'] = 'standard'
+
+        midi_file = project_to_absolute_path('test/data/bach_invention_4.mid')
+        known_good_ml64_file = project_to_absolute_path('test/data/bach_invention_4_good_std.ml64')
+        known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
+
+        song = ctsMidi.import_midi_to_chirp(midi_file)
+        song.quantize_from_note_name('16')  # Quantize to sixteenth notes
+        song.remove_polyphony()
+        test_ml64 = ml64.to_bin(song)
+        test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
+
+        self.assertEqual(known_good_ml64_hash, test_ml64_hash)
+
 
     def test_ML64_compact_modulation(self):
         """
         Test ML64 export using "compact" mode against a known good file.
         """
-        exporter = ctsML64.ML64Exporter()
-        exporter.options['Format'] = 'Compact'
+        ml64 = ctsML64.ML64()
+        ml64.options['format'] = 'compact'
 
         midi_file = project_to_absolute_path('test/data/tripletTest.mid')
         known_good_ml64_file = project_to_absolute_path('test/data/tripletTest_good.ml64')
@@ -58,11 +78,8 @@ class TestExportML64(unittest.TestCase):
         song.modulate(3, 2)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
-        test_ml64 = exporter.export_str(song)
+        test_ml64 = ml64.to_bin(song)
         test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
-
-        # with open(known_good_ml64_file, 'w') as f:
-        #    f.write(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 

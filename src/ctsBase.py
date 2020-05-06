@@ -37,15 +37,47 @@ class Triplet:
         self.content = []               #: The notes that go inside the triplet
 
 
-class ChiptuneSAKExporter:
+class ChiptuneSAKBase:
+    pass
+
+
+class ChiptuneSAKIR(ChiptuneSAKBase):
+    @classmethod
+    def ir_type(cls):
+        return 'IR'
+
+    def to_chirp(self):
+        pass
+
+    def to_rchirp(self):
+        pass
+
+    def to_mchirp(self):
+        pass
+
+
+class ChiptuneSAKIO(ChiptuneSAKBase):
+    @classmethod
+    def io_type(cls):
+        return 'IO'
+
     def __init__(self):
         self.options = {}
 
+    def to_chirp(self, filename):
+        raise ChiptuneSAKIOError(f"Not implemented")
 
-class ChiptuneSAKImporter:
-    def __init__(self):
-        self.options = {}
+    def to_rchirp(self, filename):
+        raise ChiptuneSAKIOError(f"Not implemented")
 
+    def to_mchirp(self, filename):
+        raise ChiptuneSAKIOError(f"Not implemented")
+
+    def to_bin(self, ir_song):
+        raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
+
+    def to_file(self, ir_song, filename):
+        raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
 
 
 # --------------------------------------------------------------------------------------
