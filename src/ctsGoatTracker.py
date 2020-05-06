@@ -1207,12 +1207,13 @@ class GTSong:
             self.pulse_table = GtTable.from_bytes(extensions["gt.pulse_table"])
             self.filter_table = GtTable.from_bytes(extensions["gt.filter_table"])
             self.speed_table = GtTable.from_bytes(extensions["gt.speed_table"])
-
+        else:
+            rchirp_song.metadata.extensions["gt.instruments"] = bytearray()
         # special instrument number that can be used for global tempo settings (rarely seen):
         ignore = GT_MAX_INSTR_PER_SONG - 1
 
         # find all instrument numbers for which an instrument binary is not already defined
-        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )
+        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )            
         rchirp_inst_count = len(rchirp_song.metadata.extensions["gt.instruments"])
         unmapped_inst_nums = [x for x in instrument_nums_seen if x > rchirp_inst_count and x != ignore]
 
@@ -1221,7 +1222,7 @@ class GTSong:
         if len(unmapped_inst_nums) > 0:
             # TODO: NOT YET TESTED
             for i in range(rchirp_inst_count, max(unmapped_inst_nums)+1):
-                rchirp_song.add_gt_instrument_to_rchirp("SimpleTriangle")
+                add_gt_instrument_to_rchirp(rchirp_song, "SimpleTriangle")
 
 
 # Used when "running" the channels to convert them to note on/off events in time
