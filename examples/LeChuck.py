@@ -5,11 +5,12 @@ import ctsMidi
 import ctsRChirp
 import ctsGtCompress
 import ctsGoatTracker
+from ctsConstants import project_to_absolute_path
 
 input_dir = 'data/'
-input_file = 'MonkeyIsland_LechuckTheme.mid'
-output_midi_file = 'LeChuck.mid'
-output_gt_file = 'LeChuck.sng'
+input_file = project_to_absolute_path('examples/data/MonkeyIsland_LechuckTheme.mid')
+output_midi_file = project_to_absolute_path('examples/data/LeChuck.mid')
+output_gt_file = project_to_absolute_path('examples/data/LeChuck.sng')
 
 chirp_song = ctsMidi.MIDI().to_chirp(input_dir + input_file)
 
