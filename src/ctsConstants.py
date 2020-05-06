@@ -117,6 +117,7 @@ ARCH = {
                                  visible_lines=284),
 }
 
+
 def project_to_absolute_path(file_path) -> Path:
     """Returns project root folder"""
     return os.path.normpath(os.path.join(Path(__file__).parent.parent.absolute(), file_path))
