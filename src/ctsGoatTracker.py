@@ -367,6 +367,79 @@ def get_ins_filenames():
     return ins_files
 
 
+def create_gt_metadata_if_missing(rchirp_song):
+    """
+    Create empty GoatTracker metadata structions on rchirp if they're not present
+
+    :param rchirp_song: an rchirp song instance
+    :type rchirp_song: RChirpSong
+    """
+    extensions = rchirp_song.metadata.extensions
+
+    if "gt.instruments" not in extensions:
+        extensions["gt.instruments"] = bytearray()
+
+    # stub in tables with a single entry
+    if "gt.wave_table" not in extensions:
+        extensions["gt.wave_table"] = bytearray(b'\x00')
+    if "gt.pulse_table" not in extensions:
+        extensions["gt.pulse_table"] = bytearray(b'\x00')
+    if "gt.filter_table" not in extensions:
+        extensions["gt.filter_table"] = bytearray(b'\x00')       
+    if "gt.speed_table" not in extensions:
+        extensions["gt.speed_table"] = bytearray(b'\x00')
+
+
+def instrument_appender(gt_inst_name, new_instr_num, in_wave_table, in_pulse_table, \
+    in_filter_table, in_speed_table, path = DEFAULT_INSTR_PATH):
+
+    ins_bytes = read_binary_file(project_to_absolute_path(path + gt_inst_name + '.ins'))
+
+    if ins_bytes[0:4] != b'GTI5':
+        raise ChiptuneSAKValueError("Invalid instrument file structure")
+    file_index = 4
+
+    # Strange, the wave/pulse/filter/vib_speedtable pointers come in with unrelocated values,
+    # (seems like they'd be set to zero or something) but that's ok, since they'll be relocated
+    # later in this method
+    an_instrument = GtInstrument.from_bytes(new_instr_num, ins_bytes, file_index)
+    file_index += GT_INSTR_BYTE_LEN
+
+    tables = []
+    for _ in range(4):
+        a_table = get_table(file_index, ins_bytes)
+        tables.append(a_table)
+        file_index += a_table.row_cnt * 2 + 1
+
+    # FUTURE: processing updates to these four tables and table pointers could be
+    # loop-generalized instead of processed separately
+    if tables[0].row_cnt == 0:
+        an_instrument.wave_ptr = 0
+    else:
+        an_instrument.wave_ptr = in_wave_table.row_cnt + 1
+    in_wave_table.append_table(tables[0])
+
+    if tables[1].row_cnt == 0:
+        an_instrument.pulse_ptr = 0
+    else:
+        an_instrument.pulse_ptr = in_pulse_table.row_cnt + 1
+    in_pulse_table.append_table(tables[1])
+
+    if tables[2].row_cnt == 0:
+        an_instrument.filter_ptr = 0
+    else:
+        an_instrument.filter_ptr = in_filter_table.row_cnt + 1
+    in_filter_table.append_table(tables[2])
+
+    if tables[3].row_cnt == 0:
+        an_instrument.vib_speedtable_ptr = 0
+    else:
+        an_instrument.vib_speedtable_ptr = in_speed_table.row_cnt + 1
+    in_speed_table.append_table(tables[3])
+
+    return (an_instrument, in_wave_table, in_pulse_table, in_filter_table, in_speed_table)
+
+
 # load GoatTracker v2 instrument (.ins file) and append to song
 def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_PATH):
     """
@@ -387,68 +460,28 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_
     :type gt_inst_name: string
     :param path: path from project root, defaults to 'res/gtInstruments/'
     :type path: string, optional
-    :return: The GTSong instrument number (one greater than previous count of instruments)
-    :rtype: int
     """
-
+    create_gt_metadata_if_missing(rchirp_song)
     extensions = rchirp_song.metadata.extensions
 
-    ins_bytes = read_binary_file(project_to_absolute_path(path + gt_inst_name + '.ins'))
+    new_instr_num = (len(extensions["gt.instruments"]) // GT_INSTR_BYTE_LEN) + 1
 
-    if ins_bytes[0:4] != b'GTI5':
-        raise ChiptuneSAKValueError("Invalid instrument file structure")
-    file_index = 4
+    (instr, wt, pt, ft, st) = instrument_appender(
+        gt_inst_name,
+        new_instr_num,
+        GtTable.from_bytes(extensions["gt.wave_table"]),
+        GtTable.from_bytes(extensions["gt.pulse_table"]),
+        GtTable.from_bytes(extensions["gt.filter_table"]),
+        GtTable.from_bytes(extensions["gt.speed_table"]))
 
-    # Strange, the wave/pulse/filter/vib_speedtable pointers come in with unrelocated values,
-    # (seems like they'd be set to zero or something) but that's ok, since they'll be relocated
-    # below
-    an_instrument = GtInstrument.from_bytes(
-        (len(extensions["gt.instruments"]) // GT_INSTR_BYTE_LEN) + 1, ins_bytes, file_index)
-    file_index += GT_INSTR_BYTE_LEN
+    # append instrument
+    extensions["gt.instruments"] += instr.to_bytes()
 
-    tables = []
-    for _ in range(4):
-        a_table = get_table(file_index, ins_bytes)
-        tables.append(a_table)
-        file_index += a_table.row_cnt * 2 + 1
-
-    # FUTURE: processing updates to these four tables and table pointers could be
-    # loop-generalized instead of processed separately
-    tmp_wave_table = GtTable.from_bytes(extensions["gt.wave_table"])
-    if tables[0].row_cnt == 0:
-        an_instrument.wave_ptr = 0
-    else:
-        an_instrument.wave_ptr = tmp_wave_table.row_cnt + 1
-    tmp_wave_table.append_table(tables[0])
-    extensions["gt.wave_table"] = tmp_wave_table.to_bytes()
-
-    tmp_pulse_table = GtTable.from_bytes(extensions["gt.pulse_table"])
-    if tables[1].row_cnt == 0:
-        an_instrument.pulse_ptr = 0
-    else:
-        an_instrument.pulse_ptr = tmp_pulse_table.row_cnt + 1
-    tmp_pulse_table.append_table(tables[1])
-    extensions["gt.pulse_table"] = tmp_pulse_table.to_bytes()
-
-    tmp_filter_table = GtTable.from_bytes(extensions["gt.filter_table"])
-    if tables[2].row_cnt == 0:
-        an_instrument.filter_ptr = 0
-    else:
-        an_instrument.filter_ptr = tmp_filter_table.row_cnt + 1
-    tmp_filter_table.append_table(tables[2])
-    extensions["gt.filter_table"] = tmp_filter_table.to_bytes()
-
-    tmp_speed_table = GtTable.from_bytes(extensions["gt.speed_table"])
-    if tables[3].row_cnt == 0:
-        an_instrument.vib_speedtable_ptr = 0
-    else:
-        an_instrument.vib_speedtable_ptr = tmp_speed_table.row_cnt + 1
-    tmp_speed_table.append_table(tables[3])
-    extensions["gt.speed_table"] = tmp_speed_table.to_bytes()
-
-    extensions["gt.instruments"] += an_instrument.to_bytes()
-
-    return an_instrument.instr_num
+    # assign updated wavetables
+    extensions["gt.wave_table"] = wt.to_bytes()
+    extensions["gt.pulse_table"] = pt.to_bytes()
+    extensions["gt.filter_table"] = ft.to_bytes()    
+    extensions["gt.speed_table"] = st.to_bytes()
 
 
 class GTSong:
@@ -1010,6 +1043,28 @@ class GTSong:
         return rchirp_song
 
 
+    def add_gt_instrument_to_parsed_gt(self, gt_inst_name, path = DEFAULT_INSTR_PATH):
+        """
+        Append instrument to parsed gt instance.
+
+        Recommend using add_gt_instrument_to_rchirp() when adding instruments
+        outside of this module (not adding instruments directly to GTSong).
+
+        :param gt_inst_name: Filename of GoatTracker instrument (without path or .ins extension)
+        :type gt_inst_name: string
+        :param path: path from project root, defaults to 'res/gtInstruments/'
+        :type path: string, optional
+
+        """
+        new_instr_num = len(self.instruments) # no +1 here
+
+        (instr, self.wave_table, self.pulse_table, self.filter_table, self.speed_table) = \
+            instrument_appender(gt_inst_name, new_instr_num, self.wave_table, \
+            self.pulse_table, self.filter_table, self.speed_table)
+
+        self.instruments.append(instr)
+
+
     def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
         """
         Populate GTSong instance from RChirp data.
@@ -1198,6 +1253,7 @@ class GTSong:
         self.patterns = patterns
         self.subtune_orderlists = [orderlists]  # only one subtune, so nested in a pair of list brackets
 
+        create_gt_metadata_if_missing(rchirp_song)
         extensions = rchirp_song.metadata.extensions
 
         # See if there's any instrument data to import from the RChirp
@@ -1207,8 +1263,7 @@ class GTSong:
             self.pulse_table = GtTable.from_bytes(extensions["gt.pulse_table"])
             self.filter_table = GtTable.from_bytes(extensions["gt.filter_table"])
             self.speed_table = GtTable.from_bytes(extensions["gt.speed_table"])
-        else:
-            rchirp_song.metadata.extensions["gt.instruments"] = bytearray()
+
         # special instrument number that can be used for global tempo settings (rarely seen):
         ignore = GT_MAX_INSTR_PER_SONG - 1
 
@@ -1219,10 +1274,14 @@ class GTSong:
 
         # since we're in an instrument append-only world (at least for now), just append
         # simple triangle instrument up to the max unmatched instrument
+        # TODO:  This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
+        # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
+        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive 
+        # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
+        # exist here.
         if len(unmapped_inst_nums) > 0:
-            # TODO: NOT YET TESTED
             for i in range(rchirp_inst_count, max(unmapped_inst_nums)+1):
-                add_gt_instrument_to_rchirp(rchirp_song, "SimpleTriangle")
+                self.add_gt_instrument_to_parsed_gt("SimpleTriangle")
 
 
 # Used when "running" the channels to convert them to note on/off events in time
