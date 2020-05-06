@@ -6,7 +6,8 @@
 # TODOs:
 # - RChirp refactoring done.  Need to make sure new/updated methods are all documented.
 
-from os import path
+from os import path, listdir
+from os.path import isfile, join
 import sys
 import argparse
 import copy
@@ -23,6 +24,7 @@ import ctsMidi
 from ctsErrors import *
 
 
+DEFAULT_INSTR_PATH = 'res/gtInstruments/'
 DEFAULT_MAX_PAT_LEN = 126
 
 # GoatTracker constants
@@ -354,8 +356,20 @@ def get_chars(in_bytes, trim_nulls=True):
     return result
 
 
+def get_ins_filenames():
+    """
+    Get the .ins GoatTracker instrument filenames
+
+    :return: list of filenames
+    :rtype: list
+    """
+    dir = project_to_absolute_path(DEFAULT_INSTR_PATH)
+    ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == '.ins']
+    return ins_files
+
+
 # load GoatTracker v2 instrument (.ins file) and append to song
-def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = 'res/gtInstruments/'):
+def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_PATH):
     """
     Appends a instrument binary to the RChirp metadata extensions.
 
@@ -372,7 +386,7 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = 'res/gtInstrum
     :type rchirp_song: RChirpSong
     :param gt_inst_name: Filename of GoatTracker instrument (without path or .ins extension)
     :type gt_inst_name: string
-    :param path: path to override search location, defaults to 'res/gtInstruments/'
+    :param path: path from project root, defaults to 'res/gtInstruments/'
     :type path: string, optional
     :return: The GTSong instrument number (one greater than previous count of instruments)
     :rtype: int
@@ -1458,3 +1472,7 @@ class GtChannelState:
                 break  # found one, done parsing
 
             raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
+
+
+#if __name__ == "__main__":
+#    pass
