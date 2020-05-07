@@ -1,6 +1,6 @@
 import copy
 from ctsBase import *
-from ctsChirp import Note
+import ctsChirp
 import more_itertools as moreit
 
 """ Definition and methods for ctsMChirp.MChirpSong representation """
@@ -18,7 +18,7 @@ class Measure:
             Other MIDI message(s)
             Notes and rests
         """
-        if isinstance(c, Note):
+        if isinstance(c, ctsChirp.Note):
             return (c.start_time, 10)
         elif isinstance(c, Triplet):
             return (c.start_time, 10)
@@ -72,7 +72,7 @@ class Measure:
             if carry.duration <= 0:
                 raise ChiptuneSAKValueError("Illegal carry note duration %d" % carry.duration, str(carry))
             if carry_end > end:  # Does the carried note extend past the end of this measure?
-                self.events.append(Note(self.start_time, carry.note_num, end - self.start_time, 100,
+                self.events.append(ctsChirp.Note(self.start_time, carry.note_num, end - self.start_time, 100,
                                         tied_from=True, tied_to=True))
                 carry.duration -= end - self.start_time
                 last_note_end = end
@@ -225,10 +225,10 @@ class Measure:
         return carry
 
     def count_notes(self):
-        return sum(1 for e in self.events if isinstance(e, Note))
+        return sum(1 for e in self.events if isinstance(e, ctsChirp.Note))
 
     def get_notes(self):
-        return [e for e in self.events if isinstance(e, Note)]
+        return [e for e in self.events if isinstance(e, ctsChirp.Note)]
 
     def get_rests(self):
         return [e for e in self.events if isinstance(e, Rest)]
@@ -275,6 +275,10 @@ class MChirpTrack:
 
 
 class MChirpSong:
+    @classmethod
+    def ir_type(cls):
+        return 'mchirp'
+
     def __init__(self, chirp_song=None):
         self.tracks = []
         self.metadata = SongMetadata()  #: Metadata
@@ -286,6 +290,9 @@ class MChirpSong:
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
             else:
                 self.import_chirp_song(chirp_song)
+
+    def to_chirp(self):
+        return ctsChirp.ChirpSong(self)
 
     def import_chirp_song(self, chirp_song):
         """

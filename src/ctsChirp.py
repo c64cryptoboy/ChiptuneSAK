@@ -11,6 +11,8 @@ import copy
 import bisect
 import more_itertools as moreit
 from ctsBase import *
+import ctsMChirp
+import ctsRChirp
 from ctsConstants import DEFAULT_MIDI_PPQN
 
 
@@ -421,6 +423,9 @@ class ChirpSong:
     approximates traditional music notation (as pitch-duration).  It also stores other
     information, such as time signatures and tempi, in a similar way.
     """
+    @classmethod
+    def ir_type(cls):
+        return 'Chirp'
 
     def __init__(self, mchirp_song=None):
         self.metadata = SongMetadata()
@@ -458,6 +463,12 @@ class ChirpSong:
         self.key_signature_changes = []  #: List of key signature changes
         self.tempo_changes = []  #: List of tempo changes
         self.stats = {}  #: Statistics about the song
+
+    def to_rchirp(self):
+        return ctsRChirp.RChirpSong(self)
+
+    def to_mchirp(self):
+        return ctsMChirp.MChirpSong(self)
 
     def import_mchirp_song(self, mchirp_song):
         """

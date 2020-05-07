@@ -1113,7 +1113,7 @@ class GTSong:
         # those should be used.  These could have come about by chiptuneSAK compression (aka
         # pattern discovery), or from having created RChirp from a source that uses patterns.
         # If no orderlists/patterns are present, the lowerer will have to create them.
-        if rchirp_song.has_order_lists():
+        if rchirp_song.has_patterns():
             # Convert the patterns to goattracker patterns
             for ip, p in enumerate(rchirp_song.patterns):
                 pattern = []  # initialize new empty pattern

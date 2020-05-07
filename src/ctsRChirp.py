@@ -355,6 +355,10 @@ class RChirpSong:
     """
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
+    @classmethod
+    def ir_type(cls):
+        return 'rchirp'
+
     def __init__(self, chirp_song=None):
         self.update_freq = ARCH['NTSC-C64'].frame_rate  #: Update frequency expressed as frame rate
         self.voices = []                                #: List of RChirpVoice instances
@@ -375,9 +379,12 @@ class RChirpSong:
             else:
                 self.import_chirp_song(chirp_song)
 
+    def to_chirp(self):
+        return self.convert_to_chirp()
+
     # If true, RChirp was compressed or created from a source that uses patterns, etc.
-    def has_order_lists(self):
-        return len(self.patterns) > 0 # This should be a good enough check?
+    def has_patterns(self):
+        return len(self.patterns) > 0  # This should be a good enough check?
 
     @property
     def voice_count(self):
@@ -506,7 +513,7 @@ class RChirpSong:
    
         return spreadsheet
 
-    def convert_to_chirp(self, song_name='TODO: GET FROM METADATA INSTEAD'):
+    def convert_to_chirp(self):
         """
         Convert rchirp song to chirp
         
@@ -516,8 +523,9 @@ class RChirpSong:
         :rtype: ChirpSong
         """
         song = ctsChirp.ChirpSong()
+        song.metadata = copy.deepcopy(self.metadata)
         song.metadata.ppq = DEFAULT_MIDI_PPQN
-        song.name = song_name
+        song.name = self.metadata.name
 
         channels_time_events = self.jiffy_indexed_voices
         all_ticks = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
