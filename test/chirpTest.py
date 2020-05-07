@@ -1,11 +1,9 @@
 import sys
 import copy
-import os
 sys.path.append('../src/')
 import unittest
 import ctsMidi
 import ctsChirp
-from ctsKey import ChirpKey
 from ctsConstants import project_to_absolute_path
 
 SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')

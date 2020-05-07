@@ -517,8 +517,6 @@ class RChirpSong:
         """
         Convert rchirp song to chirp
         
-        :param song_name: Name of song.  TODO: Get this from metadata instead below?
-        :type song_name: str, optional
         :return: chirp conversion
         :rtype: ChirpSong
         """
@@ -533,7 +531,7 @@ class RChirpSong:
                         and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])
         notes_offset = note_ticks[0]
         # TODO: Should the two "100"s be parameterized?
-        ticks_per_note = reduce(math.gcd, (note_ticks[i] - notes_offset for i in range(100)))
+        ticks_per_note = reduce(math.gcd, (t - notes_offset for t in note_ticks[:100]))
         if ticks_per_note < 3:  # no decent gcd for this data
             ticks_per_note = 6
         notes_per_minute = 60 * 60 / ticks_per_note
