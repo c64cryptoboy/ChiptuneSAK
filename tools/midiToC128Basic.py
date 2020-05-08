@@ -26,16 +26,27 @@ def main():
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
     # midi -> mchirp
-    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
+
+    #song = ctsMidi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
+    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+
     song.remove_keyswitches(8)
     song.quantize_from_note_name('16')
     # transformMidi.py -q 32 -k Am ..\test\BWV_799.mid ..\test\BWV_799_q.mid
     # song.quantize_from_note_name('32')
     song.remove_polyphony()
+
     ctsC128Basic.trim_note_lengths(song)
+
     if len(song.metadata.name) == 0:
         song.metadata.name = args.midi_in_file.split(os.sep)[-1].lower()
-    mchirp_song = MChirpSong(song)
+
+    # chirp -> mchirp
+
+    #mchirp_song = MChirpSong(song) # TODO remove this line
+    mchirp_song = song.to_mchirp()
+
+    # mchirp -> C128 Basic
 
     instruments = ('piano', 'piano', 'piano')
     if args.instruments:
@@ -45,15 +56,20 @@ def main():
     if args.arch:
         arch = args.arch
 
-    # mchirp -> basic (ascii)
-    program = ctsC128Basic.export_midi_to_C128_BASIC(mchirp_song, instruments, arch)
-
     # if -t flag not used, look at output filename extension
     if args.type is None:
         if args.basic_out_file.lower().endswith('.bas'):
             args.type = 'bas'
         else:
             args.type = 'prg'
+
+    basic_converter = ctsC128Basic.C128Basic()
+    basic_converter.set_arch(arch).set_format(args.type).set_instruments(instruments)
+    basic_converter.to_file(mchirp_song, args.basic_out_file)
+
+    """
+
+    program = ctsC128Basic.export_midi_to_C128_BASIC(mchirp_song, instruments, arch)
 
     if args.type == 'bas':
         with open(args.basic_out_file, 'w') as out_file:
@@ -62,6 +78,7 @@ def main():
         with open(args.basic_out_file, 'wb') as out_file:
             tokenized_program = ctsGenPrg.ascii_to_prg_c128(program)
             out_file.write(tokenized_program)
+    """
 
     print("\ndone")
 
