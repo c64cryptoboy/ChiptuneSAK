@@ -45,7 +45,7 @@ class ChirpConversionTestCase(unittest.TestCase):
         # RChirp has no concept of a quarter note, so it gives its best guess about note lengths
         ratio = before_notes[0].duration / after_notes[0].duration
         for n in after_notes:
-            n.duration = int(n.duration * ratio + 0.5)
+            n.duration = int(round(n.duration * ratio))
 
         n_notes = len(before_notes)
         matched_notes = sum(1 for n1, n2 in zip(before_notes, after_notes) if n1 == n2)

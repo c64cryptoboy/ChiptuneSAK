@@ -194,7 +194,7 @@ def export_midi_to_C128_BASIC(mchirp_song, instrum=('piano', 'piano', 'piano'), 
     current_line += 10
     # Tempo 1 is slowest, and 255 is fastest
     tempo = mchirp_song.metadata.qpm * WHOLE_NOTE / ARCH[arch].frame_rate / 60 / 4
-    tempo = int(tempo + 0.5)
+    tempo = int(round(tempo))
     result.append('%d tempo %d' % (current_line, tempo))
 
     current_line = 100

@@ -315,12 +315,13 @@ class RChirpVoice:
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to generate RChirp.")
 
         self.name = chirp_track.name
+
         # Right now don't allow tempo variations; just use the initial tempo
         ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
                             / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate)
         jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
-        rows_per_quarter = int(self.rchirp_song.metadata.ppq / ticks_per_row + 0.5)
+        rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
         jiffies_per_quarter = rows_per_quarter * jiffies_per_row
         jiffies_per_row = jiffies_per_quarter * chirp_track.qticks_notes // self.rchirp_song.metadata.ppq
         ticks_per_row = chirp_track.qticks_notes
@@ -342,11 +343,12 @@ class RChirpVoice:
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
 
-        # Program changes will only occur on rows tat already have note content.  SO no new rows will be created.
+        # Program changes will only occur on rows that already have note content.
+        # MIDI instruments are mapped to RChirp instruments via the song's program_map
         for p in sorted(chirp_track.program_changes):
             n_row = self._find_closest_row_after(p.start_time / ticks_per_row)
-            new_instrument = (p.program % 13)
-            tmp_rows[n_row].new_instrument = int(new_instrument)  # TODO: Map midi instruments into tracker instruments
+            new_instrument = self.rchirp_song.program_map[p.program]
+            tmp_rows[n_row].new_instrument = int(new_instrument)
 
         self.rows = tmp_rows
         self._fixup_rows()
@@ -369,6 +371,7 @@ class RChirpSong:
         self.metadata = None                            #: Song metadata (author, copyright, etc.)
         self.other = None                               #: Other meta-events in song
         self.compressed = False                         #: Has song been through compression algorithm?
+        self.program_map = {}                           #: Midi-to-RChirp instrument map
 
         if chirp_song is None:
             self.metadata = SongMetadata()
@@ -410,11 +413,22 @@ class RChirpSong:
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")
         if chirp_song.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
+        self.program_map = self.make_program_map(chirp_song)
         for t in chirp_song.tracks:
             self.voices.append(RChirpVoice(self, t))
         self.metadata = copy.deepcopy(chirp_song.metadata)
         self.other = copy.deepcopy(chirp_song.other)
         self.compressed = False
+
+    def make_program_map(self, chirp_song):
+        program_map = self.program_map
+        instrument_num = 1
+        for t in chirp_song.tracks:
+            for p in t.program_changes:
+                if p.program not in program_map:
+                    program_map[p.program] = instrument_num
+                    instrument_num += 1
+        return program_map
 
     def is_contiguous(self):
         """
@@ -531,10 +545,11 @@ class RChirpSong:
         note_jiffy_nums = sorted([t for t in all_jiffy_nums if any(channels_time_events[i].get(t, None)
                         and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])
         notes_offset_jiffies = note_jiffy_nums[0]
-        # TODO: Should the two "100"s be parameterized?
-        jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums[:100]))
 
-        # We arbitrarily set the ticks_per_note velue to a sixteenth note.
+        # find the minimum divisor for note length
+        jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums))
+
+        # We arbitrarily set he minimum divisor to be a sixteenth note.
         midi_ticks_per_quarter = ctsConstants.DEFAULT_MIDI_PPQN
         jiffies_per_quarter = 4 * jiffies_per_note
         qpm = ctsConstants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
