@@ -540,7 +540,8 @@ class RChirpSong:
         song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
 
-        note_jiffy_nums = sorted([v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None])
+        note_jiffy_nums = [v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None]
+        note_jiffy_nums.sort()
         notes_offset_jiffies = note_jiffy_nums[0]
 
         # find the minimum divisor for note length
