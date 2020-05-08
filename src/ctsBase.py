@@ -1,10 +1,10 @@
 import re
 import collections
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from ctsErrors import *
-from ctsConstants import *
-from ctsKey import ChirpKey
+import ctsConstants
+import ctsKey
 
 
 # Named tuple types for several lists throughout
@@ -20,18 +20,18 @@ MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_
 
 @dataclass
 class SongMetadata:
-    ppq: int = DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
+    ppq: int = ctsConstants.DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
     name: str = ''  #: Song name
     composer: str = ''  #: Composer
     copyright: str = ''  #: Copyright statement
     time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)  #: Starting time signature
-    key_signature: KeySignatureEvent = KeySignatureEvent(0, ChirpKey('C'))  #: Starting key signature
+    key_signature: KeySignatureEvent = KeySignatureEvent(0, ctsKey.ChirpKey('C'))  #: Starting key signature
     qpm: int = 112  #: Tmpo in Quarter Notes per Minute (QPM)
     extensions: dict = field(default_factory=dict)  #: Allows arbitrary state to be passed
 
 
 class Triplet:
-    def __init__(self, start_time=0, duration=0, notes=None):
+    def __init__(self, start_time=0, duration=0):
         self.start_time = start_time    #: Start time for the triplet as a whole
         self.duration = duration        #: Duration for the entire triplet
         self.content = []               #: The notes that go inside the triplet
@@ -47,13 +47,13 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         return 'IR'
 
     def to_chirp(self):
-        pass
-
-    def to_rchirp(self):
-        pass
+        raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
     def to_mchirp(self):
-        pass
+        raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
+
+    def to_rchirp(self):
+        raise ChiptuneSAKNotImplemented("Conversion to RChirp not implemented")
 
 
 class ChiptuneSAKIO(ChiptuneSAKBase):
@@ -80,145 +80,23 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
 
 
+class ChiptuneSAKCompress(ChiptuneSAKBase):
+    @classmethod
+    def compress_type(cls):
+        return 'Compress'
+
+    def __init__(self):
+        self.options = {}
+
+    def compress(self, rchirp_song):
+        raise ChiptuneSAKIOError(f"Not implemented")
+
+
 # --------------------------------------------------------------------------------------
 #
 #  Utility functions
 #
 # --------------------------------------------------------------------------------------
-
-def quantization_error(t_ticks, q_ticks):
-    """
-    Calculate the error, in ticks, for the given time for a quantization of q ticks.
-    :param t_ticks:
-    :type t_ticks:
-    :param q_ticks:
-    :type q_ticks:
-    :return:
-    :rtype:
-    """
-    j = t_ticks // q_ticks
-    return int(min(abs(t_ticks - q_ticks * j), abs(t_ticks - q_ticks * (j + 1))))
-
-
-def objective_error(notes, test_quantization):
-    """
-    This is the objective function for getting the error for the entire set of notes for a
-    given quantization in ticks.  The function used here could be a sum, RMS, or other
-    statistic, but empirical tests indicate that the max used here works well and is robust.
-    :param notes:
-    :type notes:
-    :param test_quantization:
-    :type test_quantization:
-    :return:
-    :rtype:
-    """
-    return max(quantization_error(n, test_quantization) for n in notes)
-
-
-def find_quantization(time_series, ppq):
-    """
-    Find the optimal quantization in ticks to use for a given set of times.  The algorithm given
-    here is by no means universal or guaranteed, but it usually gives a sensible answer.
-
-    The algorithm works as follows:
-    - Starting with quarter notes, obtain the error from quantization of the entire set of times.
-    - Then obtain the error from quantization by 2/3 that value (i.e. triplets).
-    - Then go to the next power of two (e.g. 8th notes, a6th notes, etc.) and repeat
-
-    A minimum in quantization error will be observed at the "right" quantization.  In either case
-    above, the next quantization tested will be incommensurate (either a factor of 2/3 or a factor
-    of 3/4) which will make the quantization error worse.
-
-    Thus, the first minimum that appears will be the correct value.
-
-    The algorithm does not seem to work as well for note durations as it does for note starts, probably
-    because performed music rarely has clean note cutoffs.
-
-    :param time_series:
-    :type time_series:
-    :param ppq:
-    :type ppq:
-    :return:
-    :rtype:
-    """
-    last_err = len(time_series) * ppq
-    last_q = ppq
-    note_value = 4
-    while note_value <= 128:  # We have arbitrarily chosen 128th notes as the fastest possible
-        test_quantization = ppq * 4 // note_value
-        e = objective_error(time_series, test_quantization)
-        # print(test_quantization, e) # This was useful for observing the behavior of real-world music
-        if e == 0:  # Perfect quantization!  We are done.
-            return test_quantization
-        # If this is worse than the last one, the last one was the right one.
-        elif e > last_err:
-            return last_q
-        last_q = test_quantization
-        last_err = e
-
-        # Now test the quantization for triplets of the current note value.
-        test_quantization = test_quantization * 2 // 3
-        e = objective_error(time_series, test_quantization)
-        # print(test_quantization, e) # This was useful for observing the behavior of real-world music
-        if e == 0:  # Perfect quantization!  We are done.
-            return test_quantization
-            # If this is worse than the last one, the last one was the right one.
-        elif e > last_err:
-            return last_q
-        last_q = test_quantization
-        last_err = e
-
-        # Try the next power of two
-        note_value *= 2
-    return 1  # Return a 1 for failed quantization means 1 tick resolution
-
-
-def find_duration_quantization(durations, qticks_note):
-    """
-    The duration quantization is determined from the shortest note length.
-    The algorithm starts from the estimated quantization for note starts.
-    :param durations:
-    :type durations:
-    :param qticks_note:
-    :type qticks_note:
-    :return:
-    :rtype:
-    """
-    min_length = min(durations)
-    if not (min_length > 0):
-        raise ChiptuneSAKQuantizationError("Illegal minimum note length (%d)" % min_length)
-    current_q = qticks_note
-    ratio = min_length / current_q
-    while ratio < 0.9:
-        # Try a triplet
-        tmp_q = current_q
-        current_q = current_q * 3 // 2
-        ratio = min_length / current_q
-        if ratio > 0.9:
-            break
-        current_q = tmp_q // 2
-        ratio = min_length / current_q
-    return current_q
-
-
-def quantize_fn(t, qticks):
-    """
-    This function quantizes a time to a certain number of ticks.
-    :param t:
-    :type t:
-    :param qticks:
-    :type qticks:
-    :return:
-    :rtype:
-    """
-    current = t // qticks
-    next = current + 1
-    current *= qticks
-    next *= qticks
-    if abs(t - current) <= abs(next - t):
-        return current
-    else:
-        return next
 
 
 def duration_to_note_name(duration, ppq, locale='US'):
@@ -235,7 +113,7 @@ def duration_to_note_name(duration, ppq, locale='US'):
     :rtype:
     """
     f = Fraction(duration / ppq).limit_denominator(64)
-    return DURATIONS[locale.upper()].get(f, '<unknown>')
+    return ctsConstants.DURATIONS[locale.upper()].get(f, '<unknown>')
 
 
 def pitch_to_note_name(note_num, octave_offset=0):
@@ -252,7 +130,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave = (note_num // 12) + octave_offset - 1
     pitch = note_num % 12
-    return "%s%d" % (PITCHES[pitch], octave)
+    return "%s%d" % (ctsConstants.PITCHES[pitch], octave)
 
 
 # Regular expression for matching note names
@@ -277,7 +155,7 @@ def note_name_to_pitch(note_name, octave_offset=0):
     note_name = m.group(1)
     accidentals = m.group(2)
     octave = int(m.group(3)) - octave_offset + 1
-    note_num = PITCHES.index(note_name) + 12 * octave
+    note_num = ctsConstants.PITCHES.index(note_name) + 12 * octave
     if accidentals is not None:
         note_num += accidentals.count('#')
         note_num -= accidentals.count('b')
@@ -346,7 +224,7 @@ def start_beat_type(time, ppq):
     return f.denominator
 
 
-def freq_for_midi_num(midi_num, tuning = CONCERT_A):
+def freq_for_midi_num(midi_num, tuning=ctsConstants.CONCERT_A):
     """
     Convert a midi number into its frequency
 
@@ -357,10 +235,10 @@ def freq_for_midi_num(midi_num, tuning = CONCERT_A):
     :return: frequency for midi number
     :rtype: float
     """
-    return tuning * pow(2, (midi_num - A4_MIDI_NUM) / 12)
+    return tuning * pow(2, (midi_num - ctsConstants.A4_MIDI_NUM) / 12)
 
 
-def get_arch_freq_for_midi_num(midi_num, architecture, tuning=CONCERT_A):
+def get_arch_freq_for_midi_num(midi_num, architecture, tuning=ctsConstants.CONCERT_A):
     """
     Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
     
@@ -372,8 +250,8 @@ def get_arch_freq_for_midi_num(midi_num, architecture, tuning=CONCERT_A):
     :rtype: int    
     """
     if architecture not in ('NTSC-C64', 'PAL-C64'):
-        raise ChiptuneSAKTypeError("Error: arch type not supported for freq conversion")
+        raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
 
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
     # SID oscillator is 24-bit (phase-accumulating design)
-    return round((pow(256,3) / ARCH[architecture].system_clock) * freq_for_midi_num(midi_num, tuning))
+    return round((0x1000000 / ctsConstants.ARCH[architecture].system_clock) * freq_for_midi_num(midi_num, tuning))

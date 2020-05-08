@@ -185,7 +185,7 @@ class MIDI(ChiptuneSAKIO):
             elif msg.type == 'set_tempo':
                 chirp_song.tempo_changes.append(TempoEvent(current_time, int(mido.tempo2bpm(msg.tempo) + 0.5)))
             elif msg.type == 'key_signature':
-                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, ChirpKey(msg.key)))
+                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, ctsKey.ChirpKey(msg.key)))
             elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
                 chirp_song.metadata.name = msg.name.strip()
                 is_name_set = True

@@ -79,6 +79,7 @@ class GtHeader:
     def __eq__(self, other):
         return self.to_bytes() == other.to_bytes()
 
+
 @dataclass
 class GtPatternRow:
     note_data: int = GT_REST
@@ -102,8 +103,10 @@ class GtPatternRow:
             assert self.instr_num is not None, "None instrument number"
             return bytes([self.note_data, self.instr_num, self.command, self.command_data])
 
+
 PATTERN_END_ROW = GtPatternRow(note_data=GT_PAT_END)
 PATTERN_EMPTY_ROW = GtPatternRow(note_data=GT_REST)
+
 
 @dataclass
 class GtInstrument:
@@ -1063,7 +1066,6 @@ class GTSong:
             self.pulse_table, self.filter_table, self.speed_table)
 
         self.instruments.append(instr)
-
 
     def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
         """

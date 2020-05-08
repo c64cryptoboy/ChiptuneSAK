@@ -10,8 +10,9 @@ from functools import reduce
 import math
 import ctsChirp
 from ctsBase import *
-from ctsConstants import DEFAULT_MIDI_PPQN
+import ctsConstants
 from dataclasses import dataclass
+
 
 @dataclass(order=True)
 class RChirpRow:
@@ -316,7 +317,7 @@ class RChirpVoice:
         self.name = chirp_track.name
         # Right now don't allow tempo variations; just use the initial tempo
         ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
-                            / self.rchirp_song.update_freq)
+                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate)
         jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(self.rchirp_song.metadata.ppq / ticks_per_row + 0.5)
@@ -360,7 +361,7 @@ class RChirpSong:
         return 'rchirp'
 
     def __init__(self, chirp_song=None):
-        self.update_freq = ARCH['NTSC-C64'].frame_rate  #: Update frequency expressed as frame rate
+        self.arch = 'NTSC-C64'                          #: Architecture
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
         self.patterns = []                              #: Patterns to be shared among the voices
@@ -522,22 +523,23 @@ class RChirpSong:
         """
         song = ctsChirp.ChirpSong()
         song.metadata = copy.deepcopy(self.metadata)
-        song.metadata.ppq = DEFAULT_MIDI_PPQN
+        song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
 
         channels_time_events = self.jiffy_indexed_voices
-        all_ticks = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
-        note_ticks = sorted([t for t in all_ticks if any(channels_time_events[i].get(t, None) 
+        all_jiffy_nums = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
+        note_jiffy_nums = sorted([t for t in all_jiffy_nums if any(channels_time_events[i].get(t, None)
                         and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])
-        notes_offset = note_ticks[0]
+        notes_offset_jiffies = note_jiffy_nums[0]
         # TODO: Should the two "100"s be parameterized?
-        ticks_per_note = reduce(math.gcd, (t - notes_offset for t in note_ticks[:100]))
-        if ticks_per_note < 3:  # no decent gcd for this data
-            ticks_per_note = 6
-        notes_per_minute = 60 * 60 / ticks_per_note
-        tmp = notes_per_minute // 100
-        tempo = int(notes_per_minute // tmp)
-        tick_factor = int(song.metadata.ppq // tempo * tmp)
+        jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums[:100]))
+
+        # We arbitrarily set the ticks_per_note velue to a sixteenth note.
+        midi_ticks_per_quarter = ctsConstants.DEFAULT_MIDI_PPQN
+        jiffies_per_quarter = 4 * jiffies_per_note
+        qpm = ctsConstants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
+        song.set_qpm(qpm)
+        midi_ticks_per_jiffy = midi_ticks_per_quarter / jiffies_per_quarter
 
         midi_tick = 0
         for it, channel_data in enumerate(channels_time_events):
@@ -545,9 +547,9 @@ class RChirpSong:
             track.name = 'Track %d' % (it + 1)
             track.channel = it
             current_note = None
-            for tick in sorted(channel_data):
-                midi_tick = (tick - notes_offset) * tick_factor
-                event = channel_data[tick]
+            for jiffy_num in sorted(channel_data):
+                midi_tick = int(round((jiffy_num - notes_offset_jiffies) * midi_ticks_per_jiffy))
+                event = channel_data[jiffy_num]
                 if event.gate:
                     if current_note:
                         new_note = ctsChirp.Note(
