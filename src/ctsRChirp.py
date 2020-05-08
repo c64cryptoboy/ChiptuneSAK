@@ -467,7 +467,7 @@ class RChirpSong:
     def jiffy_indexed_voices(self):
         """
         Returns a list of lists, where many voices hold onto many rows.  Rows indexed by jiffy number.
-        
+
         :return: a list of lists (voices->rows)
         :rtype: list
         """
@@ -540,10 +540,7 @@ class RChirpSong:
         song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
 
-        channels_time_events = self.jiffy_indexed_voices
-        all_jiffy_nums = sorted(set(int(t) for i in range(self.voice_count) for t in channels_time_events[i].keys()))
-        note_jiffy_nums = sorted([t for t in all_jiffy_nums if any(channels_time_events[i].get(t, None)
-                        and (channels_time_events[i][t].gate is not None) for i in range(self.voice_count))])
+        note_jiffy_nums = sorted([v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None])
         notes_offset_jiffies = note_jiffy_nums[0]
 
         # find the minimum divisor for note length
@@ -557,23 +554,23 @@ class RChirpSong:
         midi_ticks_per_jiffy = midi_ticks_per_quarter / jiffies_per_quarter
 
         midi_tick = 0
-        for it, channel_data in enumerate(channels_time_events):
+        for iv, v in enumerate(self.voices):
             track = ctsChirp.ChirpTrack(song)
-            track.name = 'Track %d' % (it + 1)
-            track.channel = it
+            track.name = 'Track %d' % (iv + 1)
+            track.channel = iv
             current_note = None
-            for jiffy_num in sorted(channel_data):
-                midi_tick = int(round((jiffy_num - notes_offset_jiffies) * midi_ticks_per_jiffy))
-                event = channel_data[jiffy_num]
-                if event.gate:
+            for r in sorted(v.rows):
+                row = v.rows[r]
+                midi_tick = int(round((row.jiffy_num - notes_offset_jiffies) * midi_ticks_per_jiffy))
+                if row.gate:
                     if current_note:
                         new_note = ctsChirp.Note(
                             current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
-                    current_note = ctsChirp.Note(midi_tick, event.note_num, 1)
-                elif event.gate is False:
+                    current_note = ctsChirp.Note(midi_tick, row.note_num, 1)
+                elif row.gate is False:
                     if current_note:
                         new_note = ctsChirp.Note(
                             current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
