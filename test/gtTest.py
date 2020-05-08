@@ -153,6 +153,10 @@ class TestGoatTrackerFunctions(unittest.TestCase):
             extensions["gt.filter_table"][0] == 6 and   # adds 6
             extensions["gt.speed_table"][0] == 1)       # adds 1
 
+        # Code to check out result in GoatTracker:
+        # ctsGoatTracker.export_rchirp_to_sng_file(
+        #     project_to_absolute_path('test/data/deleteMe.sng'), rchirp_song)
+
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()
     unittest.main(failfast=True)  # Lots of asserts (in a loop), so stop after first fail

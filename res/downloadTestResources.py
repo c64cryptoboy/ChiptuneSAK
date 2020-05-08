@@ -1,6 +1,7 @@
 # Download additional resources that could be used in testing / demonstrations
 # that don't belong in the github code base 
 
+import resourcePath
 import os
 import time
 import requests
@@ -28,7 +29,8 @@ def manage_resources(resources):
 
         # pathlib would have been better (can build full dir paths), but didn't work for me
         # pathlib.Path(local_path).parent.mkdir(parents=True, exist_ok=True)
-        # this approach assumes parent dir exists, which is fine
+        # TODO: this approach assumes parent dir exists.  Make a nested directory creator routine
+        # and use it here.
         os.makedirs(local_path, exist_ok=True)
 
         local_file = os.path.normpath(os.path.join(local_path, resource.local_name))
@@ -114,6 +116,21 @@ def main():
 
     resources.append(ResourceFile(
         an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid','test/sid')) 
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/appleii/u4/must','examples/data/appleii_u4')) 
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/appleii/u4/muso','examples/data/appleii_u4')) 
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/appleii/u4/musd','examples/data/appleii_u4')) 
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/appleii/u4/musc','examples/data/appleii_u4')) 
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/appleii/u4/musb','examples/data/appleii_u4')) 
 
     manage_resources(resources)
 

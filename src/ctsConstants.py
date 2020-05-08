@@ -89,6 +89,7 @@ class ArchDescription:
     def blank_lines(self):
         return self.lines_per_frame - self.visible_lines
 
+
 # Someday this will hopefully have settings for Atari Pokey chip, the NES RP2A03 (NTSC) and RP2A07
 # (PAL) chips, etc.
 ARCH = {
@@ -116,6 +117,7 @@ ARCH = {
                                  lines_per_frame=312,
                                  visible_lines=284),
 }
+
 
 def project_to_absolute_path(file_path) -> Path:
     """Returns project root folder"""

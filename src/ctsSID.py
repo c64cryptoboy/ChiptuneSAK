@@ -2,6 +2,7 @@
 
 from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsConstants import project_to_absolute_path
+from ctsErrors import ChiptuneSAKValueError
 
 class SidFile:
     def __init__(self):
@@ -45,21 +46,21 @@ class SidFile:
         # at all)."
         self.magic_id = sid_binary[0:4]
         if self.magic_id not in (b'PSID', b'RSID'):
-            raise Exception("Error: unexpected sid magic id")
+            raise ChiptuneSAKValueError("Error: unexpected sid magic id")
 
         # version is 0x0001 to 0x0004.  IFF >= 0x0002 means PSID v2NG or RSID
         self.version = big_endian_int(sid_binary[4:6])
         if not (1 <= self.version <= 4):
-            raise Exception("Error: unexpected SID version number")
+            raise ChiptuneSAKValueError("Error: unexpected SID version number")
         if self.magic_id == 'RSID' and self.version == 1:
-            raise Exception("Error: RSID can't be SID version number")
+            raise ChiptuneSAKValueError("Error: RSID can't be SID version 1")
 
         # Offset from the start of the file to the C64 binary data area
         self.dataoffset = big_endian_int(sid_binary[6:8])
         if self.version == 1 and self.dataoffset != 0x76:
-            raise Exception("Error: invalid dataoffset for v1 SID")
+            raise ChiptuneSAKValueError("Error: invalid dataoffset for v1 SID")
         if self.version > 1 and self.dataoffset != 0x7C:
-            raise Exception("Error: invalid dataoffset for v2+ SID")
+            raise ChiptuneSAKValueError("Error: invalid dataoffset for v2+ SID")
 
         # load address is the starting memory location for the C64 payload.  0x0000 indicates
         # that the first two bytes of the payload contain the little-endian load address (which
@@ -69,7 +70,7 @@ class SidFile:
         # must be zero.
         self.loadaddress = big_endian_int(sid_binary[8:10])
         if self.magic_id == 'RSID' and self.loadaddress < 2024: # < $07E8
-            raise Exception("Error: invalid RSID load address")
+            raise ChiptuneSAKValueError("Error: invalid RSID load address")
 
         # init address is the entry point for the song initialization.
         # If PSID and 0, will be set to the loading address
@@ -83,19 +84,19 @@ class SidFile:
         # some place. This must always be true for RSID files.""
         self.playaddress = big_endian_int(sid_binary[12:14])
         if self.magic_id == 'RSID' and self.playaddress != 0:
-            raise Exception("Error: RSIDs don't specify a play address")
+            raise ChiptuneSAKValueError("Error: RSIDs don't specify a play address")
 
         # From documentation:
         # The number of songs (or sound effects) that can be initialized by calling the
         # init address. The minimum is 1. The maximum is 256. (0x0001 - 0x0100)
         self.num_subtunes = big_endian_int(sid_binary[14:16])
         if not (1 <= self.num_subtunes <= 256):
-            raise Exception("Error: number of songs out of range")
+            raise ChiptuneSAKValueError("Error: number of songs out of range")
 
         # the song number to be played by default
         self.start_song = big_endian_int(sid_binary[16:18])
         if not (1 <= self.start_song <= 256):
-            raise Exception("Error: starting song number out of range")    
+            raise ChiptuneSAKValueError("Error: starting song number out of range")    
 
         # From documentation:
         # "For version 1 and 2 and for version 2NG, 3 and 4 with PlaySID specific flag
@@ -125,7 +126,7 @@ class SidFile:
 
         self.speed = big_endian_int(sid_binary[18:22])
         if self.magic_id == 'RSID' and self.speed != 0:
-            raise Exception("Error: RSIDs don't specify a speed setting")
+            raise ChiptuneSAKValueError("Error: RSIDs don't specify a speed setting")
 
         # name, author, and released (formerally copyright) fields.  From the docs:
         # These are 32 byte long Extended ASCII encoded (Windows-1252 code page) character
@@ -182,13 +183,13 @@ class SidFile:
             if self.magic_id == 'RSID':
                 if self.initaddress == 0:
                     if self.flag_1 == 0:
-                        raise Exception("Error: RSID can't have init address zero unless BASIC included")
+                        raise ChiptuneSAKValueError("Error: RSID can't have init address zero unless BASIC included")
                 else:
                     if self.flag_1 == 1:
-                        raise Exception("Error: RSID flag 1 can't be set (BASIC) if init address != 0")
+                        raise ChiptuneSAKValueError("Error: RSID flag 1 can't be set (BASIC) if init address != 0")
                     # Now we can finally confirm allowed RSID init address ranges ($07E8 - $9FFF, $C000 - $CFFF)
                     if not ((2024 <= self.initaddress <= 40959) or (49152 <= self.initaddress <= 53247)): 
-                        raise Exception("Error: invalid RSID init address")
+                        raise ChiptuneSAKValueError("Error: invalid RSID init address")
 
             # From documentation:
             # "- Bits 2-3 specify the video standard (clock):

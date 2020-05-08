@@ -14,7 +14,7 @@ class TestCompression(unittest.TestCase):
         pass
 
     def test_gt_compression(self):
-        self.compress_test_song = ctsMidi.import_midi_to_chirp(COMPRESS_TEST_SONG)
+        self.compress_test_song = ctsMidi.MIDI().to_chirp(COMPRESS_TEST_SONG)
         self.compress_test_song.quantize_from_note_name('16')
         for i, program in enumerate([11, 10, 6]):
             self.compress_test_song.tracks[i].set_program(program)

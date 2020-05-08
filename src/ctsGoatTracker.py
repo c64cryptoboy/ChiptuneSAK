@@ -3,8 +3,11 @@
 # Notes:
 # - This code ignores multispeed (for now)
 #
+# TODOs:
+# - RChirp refactoring done.  Need to make sure new/updated methods are all documented.
 
-from os import path
+from os import path, listdir
+from os.path import isfile, join
 import sys
 import argparse
 import copy
@@ -20,16 +23,15 @@ import ctsRChirp
 import ctsMidi
 from ctsErrors import *
 
-# Generalized instrument handling when creating new goattracker binaries is not supported yet.
-# So this constant is used so it's easy to look through the code to see where hardcoded assumptions
-# are being made.
-DEFAULT_INSTRUMENT = 1
+
+DEFAULT_INSTR_PATH = 'res/gtInstruments/'
+DEFAULT_MAX_PAT_LEN = 126
 
 # GoatTracker constants
 GT_FILE_HEADER = b'GTS5'
 GT_INSTR_BYTE_LEN = 25
 GT_DEFAULT_TEMPO = 6
-GT_DEFAULT_FUNKTEMPOS = [9, 6]  # default alternating tempos, from gplay.c
+GT_DEFAULT_FUNKTEMPOS = [9, 6]  # default alternating tempos, from GT's gplay.c
 
 # All these MAXes are the same for goattracker 2 (1SID) and goattracker 2 stereo (2SID)
 # (Note: MAXes vary in the SID-Wizard 1SID, 2SID, and 3SID engines)
@@ -61,6 +63,11 @@ class GtHeader:
     num_subtunes: int = 0
 
     def to_bytes(self):
+        """
+        Converts header information into GT bytes.
+        :return: bytes that represet the header fields
+        :rtype: bytes
+        """        
         result = bytearray()
         result += GT_FILE_HEADER
         result += pad_or_truncate(self.song_name, 32)
@@ -71,6 +78,7 @@ class GtHeader:
 
     def __eq__(self, other):
         return self.to_bytes() == other.to_bytes()
+
 
 @dataclass
 class GtPatternRow:
@@ -95,11 +103,21 @@ class GtPatternRow:
             assert self.instr_num is not None, "None instrument number"
             return bytes([self.note_data, self.instr_num, self.command, self.command_data])
 
+
 PATTERN_END_ROW = GtPatternRow(note_data=GT_PAT_END)
 PATTERN_EMPTY_ROW = GtPatternRow(note_data=GT_REST)
 
+
 @dataclass
 class GtInstrument:
+    """
+    Holds the parsed values from the 25-byte instrument data
+
+    Note: the wave, pulse, filter, and speed table pointers are 1-based indexing.
+    0 is reserved to mean "not pointing to anything".  However, the table bytes
+    to which they point are 0-based, except for in the GoatTracker GUI where they're
+    displayed as 1-based.
+    """
     instr_num: int = 0
     attack_decay: int = 0
     sustain_release: int = 0
@@ -113,6 +131,11 @@ class GtInstrument:
     inst_name: str = ''
 
     def to_bytes(self):
+        """
+        Converts an instrument instance into GT bytes.
+        :return: bytes that represet the instrument
+        :rtype: bytes
+        """        
         result = bytearray()
         result += bytes([self.attack_decay, self.sustain_release,
                         self.wave_ptr, self.pulse_ptr, self.filter_ptr,
@@ -126,8 +149,20 @@ class GtInstrument:
 
     @classmethod
     def from_bytes(cls, instr_num, bytes, starting_index = 0):
+        """
+        Constructor that builds instrument (not supporting tables) from GT bytes
+
+        :param instr_num: The GTSong instrument number
+        :type instr_num: int
+        :param bytes: Raw GT bytes
+        :type bytes: bytes
+        :param starting_index: starting index in bytes from which to start parsing, defaults to 0
+        :type starting_index: int, optional
+        :return: new GtInstrument instance
+        :rtype: GtInstrument
+        """
         if starting_index+GT_INSTR_BYTE_LEN-1 > len(bytes):
-            raise Exception("Error: index out of range when instantiating GTInstrument")
+            raise ChiptuneSAKValueError("Error: index out of range when instantiating GTInstrument")
 
         result = cls()
         result.instr_num = instr_num        
@@ -152,13 +187,24 @@ class GtTable:
     right_col: bytes = b''
 
     def append_table(self, a_table):
+        """
+        Extend this table with another
+
+        :param a_table: A GtTable instance of one of the four GT table types
+        :type a_table: GtTable
+        """
         self.row_cnt += a_table.row_cnt
         if self.row_cnt >= GT_MAX_TABLE_LEN:
-            raise Exception("Error: max goattracker table size exceeded")
+            raise ChiptuneSAKValueError("Error: max goattracker table size exceeded")
         self.left_col += a_table.left_col
         self.right_col += a_table.right_col
 
     def to_bytes(self):
+        """
+        Converts a table into GT bytes.
+        :return: bytes that represet the table
+        :rtype: bytes
+        """        
         result = bytearray()
         result.append(self.row_cnt)
         result += self.left_col
@@ -166,10 +212,18 @@ class GtTable:
         return result
 
     @classmethod   
-    def from_bytes(cls, bytes):        
+    def from_bytes(cls, bytes):
+        """
+        Constructor that builds a table from GT bytes
+
+        :param bytes: table in raw GT bytes format
+        :type bytes: bytes
+        :return: new GtTable instance
+        :rtype: GtTable
+        """
         col_len = bytes[0]
         if len(bytes) != (col_len * 2) + 1:
-            raise Exception("Error: malformed table bytes in construction of GtTable instance") 
+            raise ChiptuneSAKValueError("Error: malformed table bytes in construction of GtTable instance") 
 
         result = cls()
         result.row_cnt = col_len
@@ -213,6 +267,25 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     return rchirp
 
 
+def export_rchirp_to_sng_file(path_and_filename, rchirp_song, \
+    end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN):
+    """
+    Helper method to convert RChirp into a GoatTracker sng file
+
+    :param path_and_filename: path and filename for saved sng file
+    :type path_and_filename: string
+    :param rchirp_song: RChirp data to convert and save
+    :type rchirp_song: RChirpSong
+    :param max_pattern_len: max pattern length if no orderlists found, defaults to DEFAULT_MAX_PAT_LEN
+    :type max_pattern_len: int, optional
+    """
+
+    parsed_gt = GTSong()
+    parsed_gt.export_rchirp_to_parsed_gt(
+        rchirp_song, end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN)
+    parsed_gt.export_parsed_gt_to_sng_file(path_and_filename)
+
+
 def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     """
     Convert pattern note byte value into midi note value
@@ -230,8 +303,17 @@ def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     return midi_note
 
 
-# Parse the wave, pulse, filter, or speed table
 def get_table(an_index, file_bytes):
+    """
+    Used to parse wave, pulse, filter, and speed tables from raw GT bytes
+
+    :param an_index: index for where to start parsing the file_bytes
+    :type an_index: int
+    :param file_bytes: bytes containing table data
+    :type file_bytes: bytes
+    :return: A new GtTable instance
+    :rtype: GtTable
+    """
     rows = file_bytes[an_index]
     # no point in checking rows > GT_MAX_TABLE_LEN, since GT_MAX_TABLE_LEN is a $FF (max byte val)
     an_index += 1
@@ -244,22 +326,125 @@ def get_table(an_index, file_bytes):
     return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
 
 
-# A Procrustean bed for GT text fields.  Can accept a string or bytes.
 def pad_or_truncate(to_pad, length):
+    """
+    Truncate or pad (with zeros) a GT text field
+    :param to_pad: text to pad
+    :type to_pad: either string or bytes
+    :param length: grow or shrink input to this length ("Procrustean bed")
+    :type length: int
+    :return: processed text field
+    :rtype: 
+    """
     if isinstance(to_pad, str):
         to_pad = to_pad.encode('latin-1')
     return to_pad.ljust(length, b'\0')[0:length]
 
 
 def get_chars(in_bytes, trim_nulls=True):
+    """
+    Convert zero-padded GT text field into string
+
+    :param in_bytes: gt text field in bytes
+    :type in_bytes: bytes
+    :param trim_nulls: if true, trim off the zero-padding, defaults to True
+    :type trim_nulls: bool, optional
+    :return: String conversion
+    :rtype: string
+    """
     result = in_bytes.decode('Latin-1')
     if trim_nulls:
         result = result.strip('\0')  # no interpretation, preserve encoding
     return result
 
 
+def get_ins_filenames():
+    """
+    Get the .ins GoatTracker instrument filenames
+
+    :return: list of filenames
+    :rtype: list
+    """
+    dir = project_to_absolute_path(DEFAULT_INSTR_PATH)
+    ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == '.ins']
+    return ins_files
+
+
+def create_gt_metadata_if_missing(rchirp_song):
+    """
+    Create empty GoatTracker metadata structions on rchirp if they're not present
+
+    :param rchirp_song: an rchirp song instance
+    :type rchirp_song: RChirpSong
+    """
+    extensions = rchirp_song.metadata.extensions
+
+    if "gt.instruments" not in extensions:
+        extensions["gt.instruments"] = bytearray()
+
+    # stub in tables with a single entry
+    if "gt.wave_table" not in extensions:
+        extensions["gt.wave_table"] = bytearray(b'\x00')
+    if "gt.pulse_table" not in extensions:
+        extensions["gt.pulse_table"] = bytearray(b'\x00')
+    if "gt.filter_table" not in extensions:
+        extensions["gt.filter_table"] = bytearray(b'\x00')       
+    if "gt.speed_table" not in extensions:
+        extensions["gt.speed_table"] = bytearray(b'\x00')
+
+
+def instrument_appender(gt_inst_name, new_instr_num, in_wave_table, in_pulse_table, \
+    in_filter_table, in_speed_table, path = DEFAULT_INSTR_PATH):
+
+    ins_bytes = read_binary_file(project_to_absolute_path(path + gt_inst_name + '.ins'))
+
+    if ins_bytes[0:4] != b'GTI5':
+        raise ChiptuneSAKValueError("Invalid instrument file structure")
+    file_index = 4
+
+    # Strange, the wave/pulse/filter/vib_speedtable pointers come in with unrelocated values,
+    # (seems like they'd be set to zero or something) but that's ok, since they'll be relocated
+    # later in this method
+    an_instrument = GtInstrument.from_bytes(new_instr_num, ins_bytes, file_index)
+    file_index += GT_INSTR_BYTE_LEN
+
+    tables = []
+    for _ in range(4):
+        a_table = get_table(file_index, ins_bytes)
+        tables.append(a_table)
+        file_index += a_table.row_cnt * 2 + 1
+
+    # FUTURE: processing updates to these four tables and table pointers could be
+    # loop-generalized instead of processed separately
+    if tables[0].row_cnt == 0:
+        an_instrument.wave_ptr = 0
+    else:
+        an_instrument.wave_ptr = in_wave_table.row_cnt + 1
+    in_wave_table.append_table(tables[0])
+
+    if tables[1].row_cnt == 0:
+        an_instrument.pulse_ptr = 0
+    else:
+        an_instrument.pulse_ptr = in_pulse_table.row_cnt + 1
+    in_pulse_table.append_table(tables[1])
+
+    if tables[2].row_cnt == 0:
+        an_instrument.filter_ptr = 0
+    else:
+        an_instrument.filter_ptr = in_filter_table.row_cnt + 1
+    in_filter_table.append_table(tables[2])
+
+    if tables[3].row_cnt == 0:
+        an_instrument.vib_speedtable_ptr = 0
+    else:
+        an_instrument.vib_speedtable_ptr = in_speed_table.row_cnt + 1
+    in_speed_table.append_table(tables[3])
+
+    return (an_instrument, in_wave_table, in_pulse_table, in_filter_table, in_speed_table)
+
+
 # load GoatTracker v2 instrument (.ins file) and append to song
-def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = 'res/gtInstruments/'):
+def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_PATH):
     """
     Appends a instrument binary to the RChirp metadata extensions.
 
@@ -272,66 +457,39 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = 'res/gtInstrum
     2) In practice, GoatTracker composers tend to use instrument numbers in order, so
        an append-only approach is flexible enough.
 
-    :param rchirp_song: [description]
-    :type rchirp_song: [type]
-    :param gt_inst_name: [description]
-    :type gt_inst_name: [type]
-    :raises Exception: [description]
-    :raises Exception: [description]
-    :return: [description]
-    :rtype: [type]
+    :param rchirp_song: An RChirpSong instance
+    :type rchirp_song: RChirpSong
+    :param gt_inst_name: Filename of GoatTracker instrument (without path or .ins extension)
+    :type gt_inst_name: string
+    :param path: path from project root, defaults to 'res/gtInstruments/'
+    :type path: string, optional
     """
-
+    create_gt_metadata_if_missing(rchirp_song)
     extensions = rchirp_song.metadata.extensions
 
-    ins_bytes = read_binary_file(project_to_absolute_path(path + gt_inst_name + '.ins'))
+    new_instr_num = (len(extensions["gt.instruments"]) // GT_INSTR_BYTE_LEN) + 1
 
-    if ins_bytes[0:4] != b'GTI5':
-        raise Exception("Invalid instrument file structure")
-    file_index = 4
+    (instr, wt, pt, ft, st) = instrument_appender(
+        gt_inst_name,
+        new_instr_num,
+        GtTable.from_bytes(extensions["gt.wave_table"]),
+        GtTable.from_bytes(extensions["gt.pulse_table"]),
+        GtTable.from_bytes(extensions["gt.filter_table"]),
+        GtTable.from_bytes(extensions["gt.speed_table"]))
 
-    # Strange, the wave/pulse/filter/vib_speedtable pointers come in with unrelocated values,
-    # (seems like they'd be set to zero or something) but that's ok, since they'll be relocated
-    # below
-    an_instrument = GtInstrument.from_bytes(
-        (len(extensions["gt.instruments"]) // GT_INSTR_BYTE_LEN) + 1, ins_bytes, file_index)
-    file_index += GT_INSTR_BYTE_LEN
+    # append instrument
+    extensions["gt.instruments"] += instr.to_bytes()
 
-    tables = []
-    for _ in range(4):
-        a_table = get_table(file_index, ins_bytes)
-        tables.append(a_table)
-        file_index += a_table.row_cnt * 2 + 1
-
-    extensions["gt.instruments"] += an_instrument.to_bytes()
-
-    tmp_wave_table = GtTable.from_bytes(extensions["gt.wave_table"])
-    an_instrument.wave_ptr = tmp_wave_table.row_cnt
-    tmp_wave_table.append_table(tables[0])
-    extensions["gt.wave_table"] = tmp_wave_table.to_bytes()
-
-    tmp_pulse_table = GtTable.from_bytes(extensions["gt.pulse_table"])
-    an_instrument.pulse_ptr = tmp_pulse_table.row_cnt
-    tmp_pulse_table.append_table(tables[1])
-    extensions["gt.pulse_table"] = tmp_pulse_table.to_bytes()
-
-    tmp_filter_table = GtTable.from_bytes(extensions["gt.filter_table"])
-    an_instrument.filter_ptr = tmp_filter_table.row_cnt
-    tmp_filter_table.append_table(tables[2])
-    extensions["gt.filter_table"] = tmp_filter_table.to_bytes()
-
-    tmp_speed_table = GtTable.from_bytes(extensions["gt.speed_table"])
-    an_instrument.vib_speedtable_ptr = tmp_speed_table.row_cnt
-    tmp_speed_table.append_table(tables[3])
-    extensions["gt.speed_table"] = tmp_speed_table.to_bytes()
-
-    return an_instrument.instr_num
+    # assign updated wavetables
+    extensions["gt.wave_table"] = wt.to_bytes()
+    extensions["gt.pulse_table"] = pt.to_bytes()
+    extensions["gt.filter_table"] = ft.to_bytes()    
+    extensions["gt.speed_table"] = st.to_bytes()
 
 
 class GTSong:
     """
-    Contains parsed .sng data.
-    Can convert an sng binary into a parsed form, and parsed form into an sng binary.
+    Contains parsed version of .sng file binary data.
     """
 
     def __init__(self):
@@ -354,17 +512,28 @@ class GTSong:
         """
         return self.num_channels >= 4
 
-    def get_instruments_bytes(self):        
+    def get_instruments_bytes(self):
+        """
+        Create native GT bytes for all the instruments (not including supporting tables)
+
+        :return: byte represtation of all instruments
+        :rtype: bytes
+        """
+
         result = bytearray()
         for i in range(1, len(self.instruments)):
             result += self.instruments[i].to_bytes()
         return result
 
     def set_instruments_from_bytes(self, bytes):
-        # Note:  Supporting tables must be handled separately
+        """
+        Set GTSong's instruments from raw bytes (not including supporting tables)
 
+        :param bytes: bytes containing instruments' data
+        :type bytes: bytes
+        """
         if len(bytes) % GT_INSTR_BYTE_LEN != 0:
-            raise Exception("Error: malformed instrument bytes")
+            raise ChiptuneSAKValueError("Error: malformed instrument bytes")
 
         instruments = [GtInstrument()]  # start with empty instrument number 0
         for i in range(len(bytes) // GT_INSTR_BYTE_LEN):
@@ -374,21 +543,44 @@ class GTSong:
         self.instruments = instruments
 
     def get_orderlist(self, an_index, file_bytes):
-        # Note: orderlist length byte is length -1
-        #    e.g. orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
-        #    length-1 (06), followed by 7 bytes
+        """
+        Parse out an orderlist from file_bytes starting at an_index
+
+        Note: orderlist length byte is length -1
+            e.g., orderlist CHN1: "00 04 07 0d 09 RST00" in file as 06 00 04 07 0d 09 FF 00
+            length-1 (06), followed by 7 bytes
+
+        :param an_index: index in file_bytes from which to start parsing
+        :type an_index: int
+        :param file_bytes: bytes containing orderlist
+        :type file_bytes: bytes
+        :return: an orderlist
+        :rtype: bytes
+        """
         length = file_bytes[an_index] + 1  # add one for restart
         an_index += 1
 
         orderlist = file_bytes[an_index:an_index + length]
         an_index += length
         # check that next-to-last byte is $FF
-        assert file_bytes[an_index - 2] == 255, "Error: Did not find expected $FF RST endmark in channel's orderlist"
+        assert file_bytes[an_index - 2] == 255, \
+            "Error: Did not find expected $FF RST endmark in channel's orderlist"
 
         return orderlist
 
-    # If a 3-channel orderlist is found, returns the byte after the end, else return -1
     def has_3_channel_orderlist(self, file_index, sng_bytes):
+        """
+        Given bytes and a starting index, if a grouping of 3 orderlists is found, the index
+        after the last byte is returned.  If not -1 is returned.
+        Note: a stereo GoatTracker file will have two of these structures back to back.
+
+        :param file_index: start point from which to look in sng_bytes
+        :type file_index: int
+        :param sng_bytes: bytes that contain orderlists
+        :type sng_bytes: bytes
+        :return: index after three orderlists, or -1 if not found
+        :rtype: int
+        """
         for _ in range(3):
             index_of_ff = sng_bytes[file_index]
             if sng_bytes[file_index + index_of_ff] != 0xff:
@@ -396,8 +588,17 @@ class GTSong:
             file_index += index_of_ff + 2
         return file_index
 
-    # Returns true if a 6-channel orderlist is found, evidence that this is a goattracker stereo sng file
     def is_2sid(self, index_at_start_of_orderlist, sng_bytes):
+        """
+        Hueristic to determine if .sng binary is 1SID or 2SID (aka "stereo")
+
+        :param index_at_start_of_orderlist: index of start of orderlists in sng_bytes
+        :type index_at_start_of_orderlist: int
+        :param sng_bytes: bytes containing orderlists
+        :type sng_bytes: bytes
+        :return: True if 2SID, False if 1SID
+        :rtype: bool
+        """
         file_index = self.has_3_channel_orderlist(index_at_start_of_orderlist, sng_bytes)
         assert file_index != -1, "Error: could not parse orderlist"
         return self.has_3_channel_orderlist(file_index, sng_bytes) != -1
@@ -571,7 +772,7 @@ class GTSong:
         """
         Convert midi note value to pattern note value
 
-        :param midi_note: midi note number (NOTE: Lowest midi note allowed = 12 (C0_MIDI_NUM)
+        :param midi_note: midi note number (Note: Lowest midi note allowed = 12 (C0_MIDI_NUM)
         :type midi_note: int
         :param octave_offset: Should always be zero unless some weird midi offset exists
         :type octave_offset: int
@@ -634,6 +835,12 @@ class GTSong:
 
 
     def export_parsed_gt_to_sng_file(self, path_and_filename):
+        """
+        Write a .sng GoatTracker file
+
+        :param path_and_filename: path and filename for output file
+        :type path_and_filename: string
+        """
         gt_binary = self.export_parsed_gt_to_gt_binary()
         write_binary_file(path_and_filename, gt_binary)
 
@@ -681,15 +888,13 @@ class GTSong:
         In GoatTracker any channel can change all the channels' tempos or just its own tempo
         at any time.  This is too complex for RChirp representation.  So this code simulates
         the playback on a jiffy (aka frame)-by-jiffy basis, "unrolling" the tempos.
-        What's left is consistent (at any point in time) tempos across all channels.
-        So that each channel knows its tempo, global tempo changes are turned into per-channel
-        tempo changes, but again, the tempos are globally consistent.
+        What's left is only per-channel tempo changes, which can be different from the other
+        channels (an important tracker feature worth preserving).
 
-        Because of this tempo unrolling, the patterns and voice orderlists found in the original
-        GoatTracker song cannot be directly imported into the rchirp.patterns and
-        rchirp.voices[].orderlist representations.  However, playback engines with only global
-        tempo changes (such as found in many C64 games) should be able to have their music
-        patterns.orderlists directly loaded into RChirp.
+        The patterns and voice orderlists found in the original GoatTracker song cannot be
+        mapped 1-to-1 with rchirp.patterns and rchirp.voices[].orderlist without all of this
+        complex processing.  However, we expect many C64 game music engines to have patterns
+        and orderlists that can be directly mapped without much effort.
         
         :param sng_data: Parsed goattracker file
         :type sng_data: GTSong
@@ -841,7 +1046,28 @@ class GTSong:
         return rchirp_song
 
 
-    def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=126):
+    def add_gt_instrument_to_parsed_gt(self, gt_inst_name, path = DEFAULT_INSTR_PATH):
+        """
+        Append instrument to parsed gt instance.
+
+        Recommend using add_gt_instrument_to_rchirp() when adding instruments
+        outside of this module (not adding instruments directly to GTSong).
+
+        :param gt_inst_name: Filename of GoatTracker instrument (without path or .ins extension)
+        :type gt_inst_name: string
+        :param path: path from project root, defaults to 'res/gtInstruments/'
+        :type path: string, optional
+
+        """
+        new_instr_num = len(self.instruments) # no +1 here
+
+        (instr, self.wave_table, self.pulse_table, self.filter_table, self.speed_table) = \
+            instrument_appender(gt_inst_name, new_instr_num, self.wave_table, \
+            self.pulse_table, self.filter_table, self.speed_table)
+
+        self.instruments.append(instr)
+
+    def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
         """
         Populate GTSong instance from RChirp data.
 
@@ -889,7 +1115,7 @@ class GTSong:
         # those should be used.  These could have come about by chiptuneSAK compression (aka
         # pattern discovery), or from having created RChirp from a source that uses patterns.
         # If no orderlists/patterns are present, the lowerer will have to create them.
-        if rchirp_song.has_order_lists():
+        if rchirp_song.has_patterns():
             # Convert the patterns to goattracker patterns
             for ip, p in enumerate(rchirp_song.patterns):
                 pattern = []  # initialize new empty pattern
@@ -1029,6 +1255,7 @@ class GTSong:
         self.patterns = patterns
         self.subtune_orderlists = [orderlists]  # only one subtune, so nested in a pair of list brackets
 
+        create_gt_metadata_if_missing(rchirp_song)
         extensions = rchirp_song.metadata.extensions
 
         # See if there's any instrument data to import from the RChirp
@@ -1043,16 +1270,20 @@ class GTSong:
         ignore = GT_MAX_INSTR_PER_SONG - 1
 
         # find all instrument numbers for which an instrument binary is not already defined
-        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )
+        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )            
         rchirp_inst_count = len(rchirp_song.metadata.extensions["gt.instruments"])
         unmapped_inst_nums = [x for x in instrument_nums_seen if x > rchirp_inst_count and x != ignore]
 
         # since we're in an instrument append-only world (at least for now), just append
         # simple triangle instrument up to the max unmatched instrument
+        # TODO:  This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
+        # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
+        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive 
+        # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
+        # exist here.
         if len(unmapped_inst_nums) > 0:
-            # TODO: NOT YET TESTED
             for i in range(rchirp_inst_count, max(unmapped_inst_nums)+1):
-                rchirp_song.add_gt_instrument_to_rchirp("SimpleTriangle")
+                self.add_gt_instrument_to_parsed_gt("SimpleTriangle")
 
 
 # Used when "running" the channels to convert them to note on/off events in time
@@ -1302,3 +1533,7 @@ class GtChannelState:
                 break  # found one, done parsing
 
             raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
+
+
+#if __name__ == "__main__":
+#    pass

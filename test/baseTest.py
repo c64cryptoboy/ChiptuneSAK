@@ -3,6 +3,7 @@ import unittest
 from ctsConstants import *
 from ctsBase import *
 
+
 class BaseTestCase(unittest.TestCase):
     def test_note_name_to_midi_note(self):
         last_note = 11
