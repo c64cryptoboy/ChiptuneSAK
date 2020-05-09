@@ -154,8 +154,9 @@ class TestGoatTrackerFunctions(unittest.TestCase):
             extensions["gt.speed_table"][0] == 1)       # adds 1
 
         # Code to check out result in GoatTracker:
-        # ctsGoatTracker.export_rchirp_to_sng_file(
-        #     project_to_absolute_path('test/data/deleteMe.sng'), rchirp_song)
+        #converter = ctsGoatTracker.GoatTracker()
+        #converter.set_instruments(['HarpsiSolo', 'FluteVibro', 'SawtoothLegato'])
+        #converter.to_file(rchirp_song, project_to_absolute_path('test/data/deleteMe.sng'))
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()

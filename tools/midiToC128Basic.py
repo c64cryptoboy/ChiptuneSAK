@@ -67,19 +67,6 @@ def main():
     basic_converter.set_arch(arch).set_format(args.type).set_instruments(instruments)
     basic_converter.to_file(mchirp_song, args.basic_out_file)
 
-    """
-
-    program = ctsC128Basic.export_midi_to_C128_BASIC(mchirp_song, instruments, arch)
-
-    if args.type == 'bas':
-        with open(args.basic_out_file, 'w') as out_file:
-            out_file.write(program)
-    else:  # 'prg'
-        with open(args.basic_out_file, 'wb') as out_file:
-            tokenized_program = ctsGenPrg.ascii_to_prg_c128(program)
-            out_file.write(tokenized_program)
-    """
-
     print("\ndone")
 
 if __name__ == "__main__":

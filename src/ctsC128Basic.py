@@ -133,7 +133,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :rtype: string or bytearray
         """
         if mchirp_song.ir_type() != 'mchirp':
-            raise Exception("Error: C128Basic to_bin only supports mchirp so far")
+            raise Exception("Error: C128Basic to_bin() only supports mchirp so far")
 
         ascii_prog = self.export_mchirp_to_C128_BASIC(mchirp_song)
 
