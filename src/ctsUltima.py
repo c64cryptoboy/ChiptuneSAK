@@ -3,7 +3,8 @@ import ctsMidi
 from ctsBase import *
 from ctsChirp import ChirpSong, ChirpTrack, Note
 from ctsBytesUtil import big_endian_int, little_endian_int
-from ctsMidi import export_chirp_to_midi
+#from ctsMidi import export_chirp_to_midi
+from ctsMidi import MIDI
 
 class Ultima4Song:
     """
@@ -291,32 +292,15 @@ class Ultima4Music:
 
         :param input_filename: Ultima IV filename.
         """
-        #chirp_song = ChirpSong()
-        # Clear everything
-        # chirp_song.reset_all()
         song = Ultima4Song(song_no, self)
-        #idx = songno * 2 + 1
-        #song_offset = little_endian_int(self.music_data[idx:idx+2])
-        #print("song_offset: ", song_offset)
-        #idx = song_offset
-        #num_voices = self.music_data[idx]
-        #print("number of voices: ", num_voices)
-        #for v in range(num_voices):
-        #    print("extracting voice ", v)
-
         return song.chirp_song
 
 # Open the Ultima IV music file
-music = Ultima4Music("../res/muso")
+musicPath = "../examples/data/appleii_u4/"
+music = Ultima4Music(musicPath + "muso")
 print("Number of songs in file: ", music.num_songs)
 print(music.name)
 print(music)
-#chirp_song = music.import_song_to_chirp(0)
 chirp_song = music.import_song_to_chirp(1)
-midi_track = export_chirp_to_midi(chirp_song, "u4song.mid")
-#chirp_song = music.import_song_to_chirp(2)
-#chirp_song = music.import_song_to_chirp(3)
-print(chirp_song)
-
-
-
+midi_song = MIDI()
+midi_song.export_chirp_to_midi(chirp_song, "u4song.mid")
