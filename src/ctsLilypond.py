@@ -77,7 +77,7 @@ class Lilypond(ChiptuneSAKIO):
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
-        self.options['format'] = 'song'
+        self.options.update({'format': 'song'})
         self.current_pitch_set = lp_pitches['sharps']
         self.current_clef = 'treble'
         self.current_ottava = 0
