@@ -40,6 +40,11 @@ basic_durations = {
 
 
 class C128Basic(ctsBase.ChiptuneSAKIO):
+    """
+    The IO interface for C128BASIC
+    Supports to_bin() and to_file() conversions from mchirp to C128 BASIC
+    options: format, arch, instruments
+    """
     @classmethod
     def io_type(cls):
         return 'C128Basic'
@@ -54,11 +59,21 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     def format(self):
         return self.options['format']
 
-    # avoiding property setters, since I want to chain
     def set_format(self, value):
+        """
+        Sets the format of the generated C128 BASIC program
+        - 'bas' (or 'ascii') will create an ascii version
+        - 'prg' will created a (tokenized) C64 BASIC program
+
+        :param value: type of file to create
+        :type value: string
+        :rtype: self
+        """
         self.options['format'] = value.lower()
         if self.format == 'ascii':
             self.options['format'] = 'bas'
+        if self.format not in ['prg', 'bas']:
+            raise Exception("invalid format setting")
 
         return self
 
@@ -67,6 +82,17 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         return self.options['arch']
 
     def set_arch(self, value):
+        """
+        Sets the type of Commdore 128 for the generated C128 BASIC program
+        i.e., NTSC/PAL affects how tempo is computed
+        Default 'NTSC-C64' (used for NTSC C64 and NTSC C128 in 1Mhz mode)
+
+        :param value: architecture type
+        :type value: string
+        :rtype: self
+        """
+        if value not in ctsConstants.ARCH.keys():
+            raise Exception("invalid arch setting")
         self.options['arch'] = value
         return self
 
@@ -75,23 +101,37 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         return self.options['instruments']
 
     def set_instruments(self, a_list):
-        self.options['instruments'] = list(i.lower() for i in a_list)
-        return self
+        """
+        Sets the list of 3 instruments to be used for the three voices (in order)
+        default ['piano', 'piano', 'piano']
+        Supports the default C128 BASIC instruments:
+            0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute', 5:'guitar',
+            6:'harpsichord', 7:'organ', 8:'trumpet', and 9:'xylophone'
 
-    def validate(self):
-        if self.format not in ['prg', 'bas']:
-            raise Exception("invalid format setting")
-        if self.arch not in ctsConstants.ARCH.keys():
-            raise Exception("invalid arch setting")
+        :param a_list: list of three instrument names
+        :type a_list: list of strings
+        :return: self
+        """
         if len(self.instruments) != 3:
             raise Exception("invalid instruments setting, not 3 instruments")
+
+        self.options['instruments'] = list(i.lower() for i in a_list)
+
         for instrument in self.instruments:
             if instrument not in C128_INSTRUMENTS.keys():
                 raise Exception("invalid instrument in instruments setting")               
 
-    def to_bin(self, mchirp_song):
-        self.validate()
+        return self
 
+    def to_bin(self, mchirp_song):
+        """
+        Convert an MChirpSong into a C128 BASIC music program
+
+        :param mchirp_song: mchirp data
+        :type mchirp_song: MChirpSong
+        :return: C128 BASIC program
+        :rtype: string or bytearray
+        """
         if mchirp_song.ir_type() != 'mchirp':
             raise Exception("Error: C128Basic to_bin only supports mchirp so far")
 
@@ -104,8 +144,14 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         return tokenized_program
 
     def to_file(self, mchirp_song, filename):
-        self.validate()
+        """
+        Converts and saves MChirpSong as a C128 BASIC music program
 
+        :param mchirp_song: mchirp data
+        :type mchirp_song: MChirpSong
+        :param filename: path and filename
+        :type filename: string
+        """
         if mchirp_song.ir_type() != 'mchirp':
             raise Exception("Error: C128Basic to_bin only supports mchirp so far")
 
@@ -121,6 +167,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     def export_mchirp_to_C128_BASIC(self, mchirp_song):
         """
         Convert mchirp into a C128 Basic program that plays the song.
+        This method is invoked via the C128Basic ChiptuneSAKIO class
 
         :param mchirp_song: An mchirp song
         :type mchirp_song: MChirpSong
@@ -194,6 +241,9 @@ def sort_order(c):
     """
     Sort function for measure contents.
     Items are sorted by time and then, for equal times, by duration (decreasing) and voice
+
+    :return: 3-tuple used for sorting
+    :rtype: tuple
     """
     if isinstance(c, BasicNote):
         return (c.start_time, -c.duration, c.voice)
@@ -204,6 +254,9 @@ def sort_order(c):
 def pitch_to_basic_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
+
+    :return: note name string and ocatave number
+    :rtype: string, int
     """
     note_name = ctsBase.pitch_to_note_name(note_num)
 
@@ -219,6 +272,13 @@ def pitch_to_basic_note_name(note_num, octave_offset=0):
 def duration_to_basic_name(duration, ppq):
     """
     Gets a note duration name for a given duration.
+
+    :param duration: duration
+    :type duration: int
+    :param ppq: ppq (midi pulses per quarter note)
+    :type ppq: int
+    :return: C128 BASIC name for the duration
+    :rtype: string
     """
     f = ctsConstants.Fraction(duration/ppq).limit_denominator(16)
     if f not in basic_durations:
@@ -324,8 +384,17 @@ def measures_to_basic(mchirp_song):
     return commands
 
 
-# Convert measure number to a BASIC string name
 def num_to_str_name(num, upper=False):
+    """
+    Convert measure number to a BASIC variable name
+
+    :param num: index for a BASIC variable name
+    :type num: int
+    :param upper: return upper case, defaults to False
+    :type upper: bool, optional
+    :return: C128 BASIC variable name
+    :rtype: string
+    """
     if num < 0 or num > 675:
         raise ChiptuneSAKValueError("number to convert to str var name out of range")
     if upper:
