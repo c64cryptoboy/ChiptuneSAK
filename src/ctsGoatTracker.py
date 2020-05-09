@@ -2,10 +2,10 @@
 # 
 # Notes:
 # - This code ignores multispeed (for now)
-#
-# TODOs:
-# - RChirp refactoring done.  Need to make sure new/updated methods are all documented.
 
+# Note:  Many of these are wholesale imports, instead of using more selective
+# from / import constructs.  This is intentional, as it can avoid many code-breaking
+# circular imports
 from os import path, listdir
 from os.path import isfile, join
 import sys
@@ -16,7 +16,8 @@ from fractions import Fraction
 from functools import reduce
 from dataclasses import dataclass
 from collections import defaultdict
-from ctsConstants import ARCH, C0_MIDI_NUM, project_to_absolute_path
+import ctsConstants #import ARCH, C0_MIDI_NUM, project_to_absolute_path
+import ctsBase
 from ctsBytesUtil import read_binary_file, write_binary_file
 import ctsChirp
 import ctsRChirp
@@ -41,7 +42,8 @@ GT_MAX_SUBTUNES_PER_SONG = 32  # Each subtune gets its own orderlist of patterns
 GT_MAX_ELM_PER_ORDERLIST = 255  # at minimum, it must contain the endmark and following byte
 GT_MAX_INSTR_PER_SONG: int = 63
 GT_MAX_PATTERNS_PER_SONG = 208  # patterns can be shared across channels and subtunes
-GT_MAX_ROWS_PER_PATTERN = 128  # and min rows (not including end marker) is 1  ! Does 128 include end marker?
+# Can populate rows 0-127, 128 is end marker.  Min row count allowed is 1.
+GT_MAX_ROWS_PER_PATTERN = 128
 GT_MAX_TABLE_LEN = 255
 
 GT_REST = 0xBD  # A rest in goattracker means NOP, not rest
@@ -52,6 +54,111 @@ GT_KEY_ON = 0xBF
 GT_OL_RST = 0xFF  # order list restart marker
 GT_PAT_END = 0xFF  # pattern end
 GT_TEMPO_CHNG_CMD = 0x0F
+
+
+class GoatTracker(ctsBase.ChiptuneSAKIO):
+    """
+    The IO interface for GoatTracker and GoatTracker Stereo
+    Supports to_bin() and to_file() conversions from rchirp to GoatTracker sng format
+    options: max_pattern_len, end_with_repeat, instruments
+    """
+    @classmethod
+    def io_type(cls):
+        return 'GoatTracker'
+
+    def __init__(self):
+        ctsBase.ChiptuneSAKIO.__init__(self)
+        self.options['max_pattern_len'] = DEFAULT_MAX_PAT_LEN # max pattern length if no given patterns
+        self.options['instruments'] = []  # gt instrument assingments, in order
+        self.options['end_with_repeat'] = False  # default is to stop GoatTracker from repeating music
+
+    @property
+    def max_pattern_len(self):
+        return self.options['max_pattern_len']
+
+    def set_max_pattern_len(self, val):
+        """
+        If there's no orderlists/patterns found, they'll be created with row counts up
+        to max_pattern_len
+
+        :param val: maximum pattern length to create
+        :type val: int
+        :return: self
+        """
+        if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
+            raise Exception("Error: max rows for a pattern out of range")
+        self.options['max_pattern_len'] = val   
+        return self
+    
+    @property
+    def end_with_repeat(self):
+        return self.options['end_with_repeat']
+
+    def set_end_with_repeat(self, bool_val):
+        """
+        GoatTracker voices do some kind of repeat when they reach their end.
+        Setting this to False injects an infinite loop pattern at end of each voice
+        to stop repeats.
+
+        :param bool_val: True lets GT song repeat, False injects infinite loop at end
+        :type bool_val: boolean
+        :return: self
+        """
+        self.options['end_with_repeat'] = bool_val
+        return self
+
+    @property
+    def instruments(self):
+        return self.options['instruments']
+
+    def set_instruments(self, list_val):
+        """
+        List of GoatTracker instrument names to load and append to the rfile in the given order 
+
+        :param list_val: list of instrument names (case sensitive, without '.ins extension))
+        :type list_val: list of strings
+        :return: self
+        """
+        self.options['instruments'] = list_val   
+        return self
+
+    def append_instruments_to_rchirp(self, rchirp_song):
+        for instrument in list(self.instruments):
+            add_gt_instrument_to_rchirp(rchirp_song, instrument)
+
+    def to_bin(self, rchirp_song):
+        """
+        Convert an RChirpSong into a GoatTracker sng file format
+
+        :param rchirp_song: rchirp data
+        :type rchirp_song: MChirpSong
+        :return: sng binary file format
+        :rtype: bytearray
+        """
+        if rchirp_song.ir_type() != 'rchirp':
+            raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")    
+
+        self.append_instruments_to_rchirp(rchirp_song)
+
+        parsed_gt = GTSong()
+        parsed_gt.export_rchirp_to_parsed_gt(rchirp_song, self.end_with_repeat, self.max_pattern_len)
+        return parsed_gt.export_parsed_gt_to_gt_binary()
+
+    def to_file(self, rchirp_song, filename):
+        """
+        Convert and save an RChirpSong as a GoatTracker sng file
+
+        :param rchirp_song: rchirp data
+        :type rchirp_song: MChirpSong
+        :param filename: output path and file name
+        :type filename: string
+        """
+        if rchirp_song.ir_type() != 'rchirp':
+            raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")    
+
+        self.append_instruments_to_rchirp(rchirp_song)
+
+        export_rchirp_to_sng_file(filename, rchirp_song, self.end_with_repeat, self.max_pattern_len)
 
 
 @dataclass
@@ -270,6 +377,7 @@ def export_rchirp_to_sng_file(path_and_filename, rchirp_song, \
     end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN):
     """
     Helper method to convert RChirp into a GoatTracker sng file
+    Consider using GoatTracker.to_file() instead of directly calling this method
 
     :param path_and_filename: path and filename for saved sng file
     :type path_and_filename: string
@@ -296,7 +404,7 @@ def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     :return: Midi note number
     :rtype: int
     """
-    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - C0_MIDI_NUM) + (octave_offset * 12)
+    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (octave_offset * 12)
     if not (0 <= midi_note < 128):
         raise ChiptuneSAKValueError(f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}")
     return midi_note
@@ -364,7 +472,7 @@ def get_ins_filenames():
     :return: list of filenames
     :rtype: list
     """
-    dir = project_to_absolute_path(DEFAULT_INSTR_PATH)
+    dir = ctsConstants.project_to_absolute_path(DEFAULT_INSTR_PATH)
     ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == '.ins']
     return ins_files
 
@@ -394,8 +502,11 @@ def create_gt_metadata_if_missing(rchirp_song):
 
 def instrument_appender(gt_inst_name, new_instr_num, in_wave_table, in_pulse_table, \
     in_filter_table, in_speed_table, path = DEFAULT_INSTR_PATH):
+    """
+    Load the named instrument's ins file and generate updated wavetables
+    """
 
-    ins_bytes = read_binary_file(project_to_absolute_path(path + gt_inst_name + '.ins'))
+    ins_bytes = read_binary_file(ctsConstants.project_to_absolute_path(path + gt_inst_name + '.ins'))
 
     if ins_bytes[0:4] != b'GTI5':
         raise ChiptuneSAKValueError("Invalid instrument file structure")
@@ -778,7 +889,7 @@ class GTSong:
         :return: GT note value
         :rtype: int
         """
-        gt_note_value = midi_note + (GT_NOTE_OFFSET - C0_MIDI_NUM) + (-1 * octave_offset * 12)
+        gt_note_value = midi_note + (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (-1 * octave_offset * 12)
         if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
             raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
         return gt_note_value
@@ -1275,7 +1386,7 @@ class GTSong:
 
         # since we're in an instrument append-only world (at least for now), just append
         # simple triangle instrument up to the max unmatched instrument
-        # TODO:  This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
+        # This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
         # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
         # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive 
         # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will

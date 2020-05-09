@@ -3,7 +3,7 @@ import examplesPath
 import copy
 import ctsMidi
 import ctsRChirp
-import ctsGtCompress
+import ctsOnePassCompress
 import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
@@ -91,7 +91,8 @@ ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.  Use some of our standard pre-defined instruments
 print(f'Setting goattracker instruments...')
-for i, program in enumerate([9, 10, 10, 10, 6]):
+#for i, program in enumerate([9, 10, 10, 10, 6]):
+for i, program in enumerate([1, 2, 2, 2, 3]):
     chirp_song.tracks[i].set_program(program)
 
 # Now that everything is C64 compatible, we convert the song to goattracker format.
@@ -101,8 +102,15 @@ rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
-rchirp_song = ctsGtCompress.compress_gt_lr(rchirp_song, 16)
+#rchirp_song = ctsOnePassCompress.compress_gt_lr(rchirp_song, 16)
+compressor = ctsOnePassCompress.OnePassLeftToRight()
+compressor.options['min_length'] = 16
+rchirp_song = compressor.compress(rchirp_song)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing {output_gt_file}')
-ctsGoatTracker.export_rchirp_to_sng_file(output_gt_file, rchirp_song)
+#ctsGoatTracker.export_rchirp_to_sng_file(output_gt_file, rchirp_song)
+converter = ctsGoatTracker.GoatTracker()
+converter.set_instruments(['Lead2', 'Harpsichord', 'Bass3'])
+converter.to_file(rchirp_song, output_gt_file)
+
