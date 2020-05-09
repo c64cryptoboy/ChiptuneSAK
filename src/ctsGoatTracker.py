@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 import ctsConstants #import ARCH, C0_MIDI_NUM, project_to_absolute_path
 import ctsBase
-from ctsBytesUtil import read_binary_file, write_binary_file
+from ctsBytesUtil import read_binary_file
 import ctsChirp
 import ctsRChirp
 import ctsMidi
@@ -135,7 +135,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :return: sng binary file format
         :rtype: bytearray
         """
-        if rchirp_song.ir_type() != 'rchirp':
+        if rchirp_song.cts_type() != 'RChirp':
             raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")    
 
         self.append_instruments_to_rchirp(rchirp_song)
@@ -153,12 +153,8 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :param filename: output path and file name
         :type filename: string
         """
-        if rchirp_song.ir_type() != 'rchirp':
-            raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")    
-
-        self.append_instruments_to_rchirp(rchirp_song)
-
-        export_rchirp_to_sng_file(filename, rchirp_song, self.end_with_repeat, self.max_pattern_len)
+        with open(filename, 'wb') as f:
+            f.write(self.to_bin(rchirp_song))
 
 
 @dataclass
@@ -942,17 +938,6 @@ class GTSong:
 
         assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
         return retval
-
-
-    def export_parsed_gt_to_sng_file(self, path_and_filename):
-        """
-        Write a .sng GoatTracker file
-
-        :param path_and_filename: path and filename for output file
-        :type path_and_filename: string
-        """
-        gt_binary = self.export_parsed_gt_to_gt_binary()
-        write_binary_file(path_and_filename, gt_binary)
 
 
     def export_parsed_gt_to_gt_binary(self):

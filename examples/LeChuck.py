@@ -7,9 +7,9 @@ import ctsOnePassCompress
 import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
-input_file = project_to_absolute_path('examples/data/MonkeyIsland_LechuckTheme.mid')
-output_midi_file = project_to_absolute_path('examples/data/LeChuck.mid')
-output_gt_file = project_to_absolute_path('examples/data/LeChuck.sng')
+input_file = str(project_to_absolute_path('examples/data/MonkeyIsland_LechuckTheme.mid'))
+output_midi_file = str(project_to_absolute_path('examples/data/LeChuck.mid'))
+output_gt_file = str(project_to_absolute_path('examples/data/LeChuck.sng'))
 
 chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 
@@ -89,9 +89,9 @@ chirp_song.remove_polyphony()  # There is one place in the bass line that made a
 print(f'Writing {output_midi_file}...')
 ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
 
-# Now set the instrument numbers for the goattracker song.  Use some of our standard pre-defined instruments
+# Now set the instrument numbers for the goattracker song.
+# Since we want control over the instruments we specify the GT ones in order.
 print(f'Setting goattracker instruments...')
-#for i, program in enumerate([9, 10, 10, 10, 6]):
 for i, program in enumerate([1, 2, 2, 2, 3]):
     chirp_song.tracks[i].set_program(program)
 
@@ -102,15 +102,12 @@ rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
-#rchirp_song = ctsOnePassCompress.compress_gt_lr(rchirp_song, 16)
 compressor = ctsOnePassCompress.OnePassLeftToRight()
 compressor.options['min_length'] = 16
 rchirp_song = compressor.compress(rchirp_song)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing {output_gt_file}')
-#ctsGoatTracker.export_rchirp_to_sng_file(output_gt_file, rchirp_song)
 converter = ctsGoatTracker.GoatTracker()
 converter.set_instruments(['Lead2', 'Harpsichord', 'Bass3'])
 converter.to_file(rchirp_song, output_gt_file)
-
