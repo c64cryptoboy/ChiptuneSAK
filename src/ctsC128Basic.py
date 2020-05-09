@@ -50,21 +50,16 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         self.options['arch'] = 'NTSC-C64' # allowed string literals specified in ctsConstants.py
         self.options['instruments'] = ['piano', 'piano', 'piano']
 
-    # TODO:  I'm copying the dictionary options approach.
-    # Q: What benefit are we getting from using a dictionary?  So far, it's
-    # creating boilerplate in the getters / setters section, and makes it harder to consolidate
-    # data normalization and validation.
-    # Q: Will it help with future automatic rst file documentation generation or something?
-    # If not, could we just put the options into the class docstring instead?
-
     @property
     def format(self):
         return self.options['format']
 
     # avoiding property setters, since I want to chain
     def set_format(self, value):
-        self.options['format'] = value
-        # self.options['format'] = value.lower()
+        self.options['format'] = value.lower()
+        if self.format == 'ascii':
+            self.options['format'] = 'bas'
+
         return self
 
     @property
@@ -80,20 +75,10 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         return self.options['instruments']
 
     def set_instruments(self, a_list):
-        self.options['instruments'] = a_list
-        #self.options['instruments'] = (i.lower() for i in a_list)
+        self.options['instruments'] = list(i.lower() for i in a_list)
         return self
 
-    # since settings can be set either by the dictionary or by the setters, I should put
-    # the validations in a single place
-    def norm_and_validate(self):
-        # normalize
-        self.set_format(self.format.lower())
-        if self.format == 'ascii':
-            self.set_format('bas')
-        self.set_instruments(list(i.lower() for i in self.instruments))
-        
-        # validate
+    def validate(self):
         if self.format not in ['prg', 'bas']:
             raise Exception("invalid format setting")
         if self.arch not in ctsConstants.ARCH.keys():
@@ -105,7 +90,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
                 raise Exception("invalid instrument in instruments setting")               
 
     def to_bin(self, mchirp_song):
-        self.norm_and_validate()
+        self.validate()
 
         if mchirp_song.ir_type() != 'mchirp':
             raise Exception("Error: C128Basic to_bin only supports mchirp so far")
@@ -119,7 +104,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         return tokenized_program
 
     def to_file(self, mchirp_song, filename):
-        self.norm_and_validate()
+        self.validate()
 
         if mchirp_song.ir_type() != 'mchirp':
             raise Exception("Error: C128Basic to_bin only supports mchirp so far")
@@ -216,20 +201,22 @@ def sort_order(c):
         return (c.start_time, -c.duration, c.voice)
 
 
-def basic_pitch_to_note_name(note_num, octave_offset=0):
+def pitch_to_basic_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
     """
-    if not 0 <= note_num <= 127:
-        raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave = (note_num // 12) + octave_offset
-    octave = max(octave, 0)
-    octave = min(octave, 6)
-    pitch = note_num % 12
-    return (ctsConstants.PITCHES[pitch][::-1], octave)  # Accidentals come BEFORE note name so reverse standard
+    note_name = ctsBase.pitch_to_note_name(note_num)
 
+    if len(note_name) == 3:  # if there's an accidental
+        note = note_name[1] + note_name[0]  # in C128 BASIC, accidentals come before the note name
+        octave = int(note_name[2])
+    else:
+        note = note_name[0]
+        octave = int(note_name[1])
 
-def basic_duration_to_name(duration, ppq):
+    return note, octave
+
+def duration_to_basic_name(duration, ppq):
     """
     Gets a note duration name for a given duration.
     """
@@ -303,8 +290,8 @@ def measures_to_basic(mchirp_song):
         for e in contents:
             #  We only care about notes and rests.  For now.
             if isinstance(e, BasicNote):
-                d_name = basic_duration_to_name(e.duration, mchirp_song.metadata.ppq)
-                note_name, octave = basic_pitch_to_note_name(e.note_num)
+                d_name = duration_to_basic_name(e.duration, mchirp_song.metadata.ppq)
+                note_name, octave = pitch_to_basic_note_name(e.note_num)
                 current_command = []  # Build the command for this note
                 if e.voice != last_voice:
                     current_command.append(' v%d' % e.voice)
@@ -319,7 +306,7 @@ def measures_to_basic(mchirp_song):
                 last_octave = octave
                 last_duration = e.duration
             elif isinstance(e, BasicRest):
-                d_name = basic_duration_to_name(e.duration, mchirp_song.metadata.ppq)
+                d_name = duration_to_basic_name(e.duration, mchirp_song.metadata.ppq)
                 current_command = []
                 if e.voice != last_voice:
                     current_command.append(' v%d' % e.voice)
