@@ -276,8 +276,8 @@ class MChirpTrack:
 
 class MChirpSong:
     @classmethod
-    def ir_type(cls):
-        return 'mchirp'
+    def cts_type(cls):
+        return 'MChirp'
 
     def __init__(self, chirp_song=None):
         self.tracks = []

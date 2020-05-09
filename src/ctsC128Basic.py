@@ -4,7 +4,7 @@ import collections
 import ctsConstants
 import ctsBase
 import ctsGenPrg
-from ctsChirp import Note
+import ctsChirp
 from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
 WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
@@ -41,18 +41,18 @@ basic_durations = {
 
 class C128Basic(ctsBase.ChiptuneSAKIO):
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return 'C128Basic'
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
         self.options['format'] = 'prg'  # 'prg' or 'ascii' (aka 'bas')
-        self.options['arch'] = 'NTSC-C64' # allowed string literals specified in ctsConstants.py
+        self.options['arch'] = 'NTSC-C64'  # allowed string literals specified in ctsConstants.py
         self.options['instruments'] = ['piano', 'piano', 'piano']
 
     @property
     def format(self):
-        return self.options['format']
+        return self.options['format'].lower()
 
     # avoiding property setters, since I want to chain
     def set_format(self, value):
@@ -115,7 +115,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
             with open(filename, 'w') as out_file:
                 out_file.write(prog)
         else:  # 'prg'
-             with open(filename, 'wb') as out_file:
+            with open(filename, 'wb') as out_file:
                 out_file.write(prog)
 
     def export_mchirp_to_C128_BASIC(self, mchirp_song):
@@ -205,16 +205,9 @@ def pitch_to_basic_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
     """
-    note_name = ctsBase.pitch_to_note_name(note_num)
+    note_name = ctsBase.pitch_to_note_name(note_num)[::-1]  # Reverse the note name
+    return note_name[1:], note_name[0]
 
-    if len(note_name) == 3:  # if there's an accidental
-        note = note_name[1] + note_name[0]  # in C128 BASIC, accidentals come before the note name
-        octave = int(note_name[2])
-    else:
-        note = note_name[0]
-        octave = int(note_name[1])
-
-    return note, octave
 
 def duration_to_basic_name(duration, ppq):
     """
@@ -259,13 +252,13 @@ def measures_to_basic(mchirp_song):
         for v in range(min(3, len(mchirp_song.tracks))):
             m = mchirp_song.tracks[v].measures[im]
             # If the voice doesn't have any notes in the measure, just ignore it.
-            note_count = sum(1 for e in m.events if isinstance(e, Note))
+            note_count = sum(1 for e in m.events if isinstance(e, ctsChirp.Note))
             if note_count == 0:
                 continue
 
             # Extract the notes and rests and put them into a list.
             for e in m.events:
-                if isinstance(e, Note):
+                if isinstance(e, ctsChirp.Note):
                     if not e.tied_to:
                         start_time = e.start_time
                         for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):

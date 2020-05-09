@@ -4,7 +4,6 @@ import unittest
 import ctsMidi
 import ctsRChirp
 import ctsGoatTracker
-import ctsGtCompress
 from ctsConstants import project_to_absolute_path
 
 

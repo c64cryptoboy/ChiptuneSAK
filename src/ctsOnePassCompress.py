@@ -93,7 +93,7 @@ def apply_xform(row, xform):
 
 class OnePass(ChiptuneSAKCompress):
     @classmethod
-    def compress_type(cls):
+    def cts_type(cls):
         return 'OnePass'
 
     def __init__(self):
@@ -282,7 +282,7 @@ class OnePass(ChiptuneSAKCompress):
 
 class OnePassGlobal(OnePass):
     @classmethod
-    def compress_type(cls):
+    def cts_type(cls):
         return 'OnePassGlobal'
 
     def __init__(self):
@@ -388,7 +388,7 @@ class OnePassGlobal(OnePass):
 
 class OnePassLeftToRight(OnePass):
     @classmethod
-    def compress_type(cls):
+    def cts_type(cls):
         return 'OnePassLeftToRight'
 
     def __init__(self):

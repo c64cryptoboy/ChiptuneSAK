@@ -359,8 +359,8 @@ class RChirpSong:
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
     @classmethod
-    def ir_type(cls):
-        return 'rchirp'
+    def cts_type(cls):
+        return 'RChirp'
 
     def __init__(self, chirp_song=None):
         self.arch = 'NTSC-C64'                          #: Architecture

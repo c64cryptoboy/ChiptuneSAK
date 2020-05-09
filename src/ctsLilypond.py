@@ -72,7 +72,7 @@ def avg_pitch(track):
 
 class Lilypond(ChiptuneSAKIO):
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return 'Lilypond'
 
     def __init__(self):

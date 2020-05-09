@@ -38,12 +38,14 @@ class Triplet:
 
 
 class ChiptuneSAKBase:
-    pass
+    @classmethod
+    def cts_type(cls):
+        return 'ChiptuneSAKBase'
 
 
 class ChiptuneSAKIR(ChiptuneSAKBase):
     @classmethod
-    def ir_type(cls):
+    def cts_type(cls):
         return 'IR'
 
     def to_chirp(self):
@@ -58,7 +60,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
 
 class ChiptuneSAKIO(ChiptuneSAKBase):
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return 'IO'
 
     def __init__(self):
@@ -82,7 +84,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
 class ChiptuneSAKCompress(ChiptuneSAKBase):
     @classmethod
-    def compress_type(cls):
+    def cts_type(cls):
         return 'Compress'
 
     def __init__(self):

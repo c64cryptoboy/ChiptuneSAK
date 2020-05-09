@@ -424,7 +424,7 @@ class ChirpSong:
     information, such as time signatures and tempi, in a similar way.
     """
     @classmethod
-    def ir_type(cls):
+    def cts_type(cls):
         return 'Chirp'
 
     def __init__(self, mchirp_song=None):
