@@ -231,7 +231,6 @@ class GtTable:
         result.right_col = bytes[col_len+1:]
         return result
 
-
     def __eq__(self, other):
         return self.to_bytes() == other.to_bytes()
 
