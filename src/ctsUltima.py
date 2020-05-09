@@ -1,5 +1,6 @@
 import os
 import ctsMidi
+import ctsConstants
 from ctsBase import *
 from ctsChirp import ChirpSong, ChirpTrack, Note
 from ctsBytesUtil import big_endian_int, little_endian_int
@@ -296,8 +297,8 @@ class Ultima4Music:
         return song.chirp_song
 
 # Open the Ultima IV music file
-musicPath = "../examples/data/appleii_u4/"
-music = Ultima4Music(musicPath + "muso")
+musicPath = ctsConstants.project_to_absolute_path('examples/data/appleii_u4/')
+music = Ultima4Music(os.path.join(musicPath, 'muso'))
 print("Number of songs in file: ", music.num_songs)
 print(music.name)
 print(music)
