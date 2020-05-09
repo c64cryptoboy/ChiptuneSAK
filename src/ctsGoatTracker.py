@@ -68,19 +68,23 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        # If creating orderlist/patterns, sets the maximum pattern lengths
-        self.options['max_pattern_len'] = DEFAULT_MAX_PAT_LEN
-        # instrument names (filenames without '.ins' extension) to append in order        
-        self.options['instruments'] = []
-        # If True, inject infinite loop pattern at end to stop repeat
-        # If False, let the GoatTracker orderlists perform their repeats
-        self.options['end_with_repeat'] = False
+        self.options['max_pattern_len'] = DEFAULT_MAX_PAT_LEN # max pattern length if no given patterns
+        self.options['instruments'] = []  # gt instrument assingments, in order
+        self.options['end_with_repeat'] = False  # default is to stop GoatTracker from repeating music
 
     @property
     def max_pattern_len(self):
         return self.options['max_pattern_len']
 
     def set_max_pattern_len(self, val):
+        """
+        If there's no orderlists/patterns found, they'll be created with row counts up
+        to max_pattern_len
+
+        :param val: maximum pattern length to create
+        :type val: int
+        :return: self
+        """
         if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
             raise Exception("Error: max rows for a pattern out of range")
         self.options['max_pattern_len'] = val   
@@ -91,6 +95,15 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         return self.options['end_with_repeat']
 
     def set_end_with_repeat(self, bool_val):
+        """
+        GoatTracker voices do some kind of repeat when they reach their end.
+        Setting this to False injects an infinite loop pattern at end of each voice
+        to stop repeats.
+
+        :param bool_val: True lets GT song repeat, False injects infinite loop at end
+        :type bool_val: boolean
+        :return: self
+        """
         self.options['end_with_repeat'] = bool_val
         return self
 
@@ -99,6 +112,13 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         return self.options['instruments']
 
     def set_instruments(self, list_val):
+        """
+        List of GoatTracker instrument names to load and append to the rfile in the given order 
+
+        :param list_val: list of instrument names (case sensitive, without '.ins extension))
+        :type list_val: list of strings
+        :return: self
+        """
         self.options['instruments'] = list_val   
         return self
 
@@ -1366,7 +1386,7 @@ class GTSong:
 
         # since we're in an instrument append-only world (at least for now), just append
         # simple triangle instrument up to the max unmatched instrument
-        # TODO:  This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
+        # This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
         # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
         # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive 
         # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
