@@ -149,12 +149,25 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         Convert and save an RChirpSong as a GoatTracker sng file
 
         :param rchirp_song: rchirp data
-        :type rchirp_song: MChirpSong
+        :type rchirp_song: RChirpSong
         :param filename: output path and file name
         :type filename: string
         """
         with open(filename, 'wb') as f:
             f.write(self.to_bin(rchirp_song))
+
+    def to_rchirp(self, filename):
+        """
+        Import a GoatTracker sng file to RChirp
+        :param filename: File name of .sng file
+        :type filename: string
+        :return: rchirp song
+        :rtype: RChirpSong
+        """
+        subtune = 0
+        if 'subtune' in self.options:
+            subtune = int(self.options['subtune'])
+        return import_sng_file_to_rchirp(filename, subtune_number=subtune)
 
 
 @dataclass
