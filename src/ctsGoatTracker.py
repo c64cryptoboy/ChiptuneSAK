@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 import ctsConstants #import ARCH, C0_MIDI_NUM, project_to_absolute_path
 import ctsBase
-from ctsBytesUtil import read_binary_file
+from ctsBytesUtil import read_binary_file, write_binary_file
 import ctsChirp
 import ctsRChirp
 import ctsMidi
@@ -938,6 +938,17 @@ class GTSong:
 
         assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
         return retval
+
+
+    def export_parsed_gt_to_sng_file(self, path_and_filename):
+        """
+        Write a .sng GoatTracker file
+
+        :param path_and_filename: path and filename for output file
+        :type path_and_filename: string
+        """
+        gt_binary = self.export_parsed_gt_to_gt_binary()
+        write_binary_file(path_and_filename, gt_binary)
 
 
     def export_parsed_gt_to_gt_binary(self):
