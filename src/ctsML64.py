@@ -106,7 +106,7 @@ class ML64(ChiptuneSAKIO):
 
     @property
     def format(self):
-        return self.get_option('format')[0]
+        return self.get_option('format')[0].lower()
 
     def to_bin(self, song, **kwargs):
         self.set_options(**kwargs)

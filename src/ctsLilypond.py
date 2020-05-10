@@ -84,7 +84,7 @@ class Lilypond(ChiptuneSAKIO):
 
     @property
     def format(self):
-        return self.get_option('format')[0]
+        return self.get_option('format')[0].lower()
 
     def to_bin(self, mchirp_song, **kwargs):
         self.set_options(**kwargs)

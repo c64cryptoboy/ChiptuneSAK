@@ -44,10 +44,7 @@ class ChiptuneSAKBase:
 
     def get_option(self, arg):
         if arg in self._options:
-            retval = self._options[arg]
-            if isinstance(retval, str):
-                retval = retval.lower()
-            return retval
+            return self._options[arg]
         return None
 
     def get_options(self):
