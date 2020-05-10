@@ -2,11 +2,11 @@ import testingPath
 import unittest
 import ctsGoatTracker
 import ctsOnePassCompress
-from ctsConstants import project_to_absolute_path
+import ctsConstants
 import ctsRChirp
 import ctsMidi
 
-COMPRESS_TEST_SONG = project_to_absolute_path('test/data/BWV_799.mid')
+COMPRESS_TEST_SONG = ctsConstants.project_to_absolute_path('test/data/BWV_799.mid')
 
 
 class TestCompression(unittest.TestCase):
@@ -36,7 +36,8 @@ class TestCompression(unittest.TestCase):
         compressor.disable_transposition()
         rchirp_song = compressor.compress(rchirp_song)
 
-        ctsGoatTracker.export_rchirp_to_sng_file('../test/data/gt_test_out.sng', rchirp_song)
+        exporter = ctsGoatTracker.GoatTracker()
+        exporter.to_file(rchirp_song, '../test/data/gt_test_out.sng')
 
         self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
@@ -48,19 +49,17 @@ class TestCompression(unittest.TestCase):
     # This in no way tests data validity, so it's just a placeholder for real testing
     def test_runtime_exceptions_only_superlame(self):
 
+        gt_io = ctsGoatTracker.GoatTracker()
+
         # Convert goattracker sng to an rchirp
-        rchirp_song = ctsGoatTracker.import_sng_file_to_rchirp(
-            str(project_to_absolute_path('test/data/gtTestData.sng')))
+        rchirp_song = gt_io.to_rchirp(str(ctsConstants.project_to_absolute_path('test/data/gtTestData.sng')))
 
         # create patterns and orderlists
         compressor = ctsOnePassCompress.OnePassLeftToRight()
         rchirp_song = compressor.compress(rchirp_song)
 
         # convert rchirp back to goattracker sng
-        parsed_gt = ctsGoatTracker.GTSong()
-        parsed_gt.export_rchirp_to_parsed_gt(rchirp_song, False, 126)
-        parsed_gt.export_parsed_gt_to_sng_file(project_to_absolute_path('test/data/test_out.sng'))
-
+        sng = gt_io.to_bin(rchirp_song)
         self.assertTrue(True)
 
 
