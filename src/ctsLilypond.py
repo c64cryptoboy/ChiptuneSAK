@@ -86,15 +86,16 @@ class Lilypond(ChiptuneSAKIO):
     def format(self):
         return self.get_option('format')[0]
 
-    def to_bin(self, mchirp_song):
+    def to_bin(self, mchirp_song, **kwargs):
+        self.set_options(**kwargs)
         if self.format == 'c':
             measures = list(self.get_option('measures'))
             return self.export_clip_to_lilypond(mchirp_song, measures)
         return self.export_song_to_lilypond(mchirp_song)
 
-    def to_file(self, mchirp_song, filename):
+    def to_file(self, mchirp_song, filename, **kwargs):
         with open(filename, 'w') as f:
-            f.write(self.to_bin(mchirp_song))
+            f.write(self.to_bin(mchirp_song, **kwargs))
 
     def clef(self, t_range):
         avg = sum(t_range) / len(t_range)

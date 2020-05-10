@@ -126,7 +126,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         for instrument in list(self.instruments):
             add_gt_instrument_to_rchirp(rchirp_song, instrument)
 
-    def to_bin(self, rchirp_song):
+    def to_bin(self, rchirp_song, **kwargs):
         """
         Convert an RChirpSong into a GoatTracker sng file format
 
@@ -144,7 +144,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         parsed_gt.export_rchirp_to_parsed_gt(rchirp_song, self.end_with_repeat, self.max_pattern_len)
         return parsed_gt.export_parsed_gt_to_gt_binary()
 
-    def to_file(self, rchirp_song, filename):
+    def to_file(self, rchirp_song, filename, **kwargs):
         """
         Convert and save an RChirpSong as a GoatTracker sng file
 
@@ -156,7 +156,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         with open(filename, 'wb') as f:
             f.write(self.to_bin(rchirp_song))
 
-    def to_rchirp(self, filename):
+    def to_rchirp(self, filename, **kwargs):
         """
         Import a GoatTracker sng file to RChirp
         :param filename: File name of .sng file

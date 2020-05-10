@@ -59,7 +59,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         self.parsed_gt = ctsGoatTracker.GTSong()
         self.parsed_gt.import_sng_binary_to_parsed_gt(self.gt_binary)
 
-
     def found_expected_note_content(self, rchirp_song):
         """
         Compare actual note content to expected note content
@@ -78,7 +77,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
                     self.assertEqual(actual_note, expected_note)
         return True
 
-
     # Test that .sng binary to parsed back to sng binary is lossless
     def test_sng_to_parsed_to_sng(self):
         gt_binary2 = self.parsed_gt.export_parsed_gt_to_gt_binary()
@@ -86,13 +84,11 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         #write_binary_file(project_to_absolute_path('test/data/gtTestData_deleteMe.sng'), gt_binary2)
         self.assertTrue(self.gt_binary == gt_binary2)
 
-
     # Test that .sng binary to rchirp has expected note content after conversion
     def test_sng_to_rchirp(self):
         rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp(0)
 
         self.assertTrue(self.found_expected_note_content(rchirp_song)) 
-
 
     # Tests for consistency under transformations
     # This ASCII art chart (below) shows a sequence of 6 transformations, which will allow
@@ -131,7 +127,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         # test if the note/timing content from original file survived 6 transformations
         # (shown in ascii diagram above)
         self.assertTrue(self.found_expected_note_content(rchirp_song_2))
-
 
     # Test adding an instrument.
     # FUTURE:  Judging success only by how much each table gets extended, so more could be

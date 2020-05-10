@@ -288,7 +288,8 @@ class OnePassGlobal(OnePass):
     def __init__(self):
         OnePass.__init__(self)
 
-    def compress(self, chirp_song):
+    def compress(self, chirp_song, **kwargs):
+        self.set_options(**kwargs)
         return self.compress_global(chirp_song)
 
     def find_all_repeats(self, rows):
@@ -394,7 +395,8 @@ class OnePassLeftToRight(OnePass):
     def __init__(self):
         OnePass.__init__(self)
 
-    def compress(self, chirp_song):
+    def compress(self, chirp_song, **kwargs):
+        self.set_options(**kwargs)
         return self.compress_lr(chirp_song)
 
     def find_repeats_starting_at(self, index, rows):

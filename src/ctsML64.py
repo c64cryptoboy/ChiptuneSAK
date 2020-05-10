@@ -108,7 +108,8 @@ class ML64(ChiptuneSAKIO):
     def format(self):
         return self.get_option('format')[0]
 
-    def to_bin(self, song):
+    def to_bin(self, song, **kwargs):
+        self.set_options(**kwargs)
         tmp_type = str(type(song))
         if tmp_type == "<class 'ctsChirp.ChirpSong'>":
             if self.format == 'm':
@@ -125,9 +126,9 @@ class ML64(ChiptuneSAKIO):
         else:
             raise ChiptuneSAKTypeError("Cannot export object of type {tmp_type} to ML64")
 
-    def to_file(self, song, filename):
+    def to_file(self, song, filename, **kwargs):
         with open(filename, 'w') as f:
-            f.write(self.to_bin(song))
+            f.write(self.to_bin(song, **kwargs))
 
     def export_chirp_to_ml64(self, chirp_song):
         """

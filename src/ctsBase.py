@@ -86,19 +86,19 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
     def __init__(self):
         ChiptuneSAKBase.__init__(self)
 
-    def to_chirp(self, filename):
+    def to_chirp(self, filename, **kwargs):
         raise ChiptuneSAKIOError(f"Not implemented")
 
-    def to_rchirp(self, filename):
+    def to_rchirp(self, filename, **kwargs):
         raise ChiptuneSAKIOError(f"Not implemented")
 
-    def to_mchirp(self, filename):
+    def to_mchirp(self, filename, **kwargs):
         raise ChiptuneSAKIOError(f"Not implemented")
 
-    def to_bin(self, ir_song):
+    def to_bin(self, ir_song, **kwargs):
         raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
 
-    def to_file(self, ir_song, filename):
+    def to_file(self, ir_song, filename, **kwargs):
         raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
 
 
@@ -110,7 +110,7 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
     def __init__(self):
         ChiptuneSAKBase.__init__(self)
 
-    def compress(self, rchirp_song):
+    def compress(self, rchirp_song, **kwargs):
         raise ChiptuneSAKIOError(f"Not implemented")
 
 

@@ -122,7 +122,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
 
         return self
 
-    def to_bin(self, mchirp_song):
+    def to_bin(self, mchirp_song, **kwargs):
         """
         Convert an MChirpSong into a C128 BASIC music program
 
@@ -131,6 +131,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :return: C128 BASIC program
         :rtype: string or bytearray
         """
+        self.set_options(**kwargs)
         if mchirp_song.cts_type() != 'MChirp':
             raise Exception("Error: C128Basic to_bin() only supports mchirp so far")
 
@@ -142,7 +143,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         tokenized_program = ctsGenPrg.ascii_to_prg_c128(ascii_prog)
         return tokenized_program
 
-    def to_file(self, mchirp_song, filename):
+    def to_file(self, mchirp_song, filename, **kwargs):
         """
         Converts and saves MChirpSong as a C128 BASIC music program
 
@@ -151,10 +152,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :param filename: path and filename
         :type filename: string
         """
-        if mchirp_song.ir_type() != 'mchirp':
-            raise Exception("Error: C128Basic to_bin only supports mchirp so far")
-
-        prog = self.to_bin(mchirp_song)
+        prog = self.to_bin(mchirp_song, **kwargs)
 
         if self.format == 'bas':
             with open(filename, 'w') as out_file:
