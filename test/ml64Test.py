@@ -15,7 +15,7 @@ class TestExportML64(unittest.TestCase):
         """
 
         ml64 = ctsML64.ML64()
-        ml64.options['format'] = 'measures'
+        ml64.set_options(format='measures')
 
         midi_file = project_to_absolute_path('test/data/jingleBellsSDG.mid')
         known_good_ml64_file = project_to_absolute_path('test/data/jingleBellsSDG_good.ml64')
@@ -48,7 +48,7 @@ class TestExportML64(unittest.TestCase):
         Test ML64 export using "standard" mode against a known good file.
         """
         ml64 = ctsML64.ML64()
-        ml64.options['format'] = 'standard'
+        ml64.set_options(format='standard')
 
         midi_file = project_to_absolute_path('test/data/bach_invention_4.mid')
         known_good_ml64_file = project_to_absolute_path('test/data/bach_invention_4_good_std.ml64')
@@ -67,7 +67,7 @@ class TestExportML64(unittest.TestCase):
         Test ML64 export using "compact" mode against a known good file.
         """
         ml64 = ctsML64.ML64()
-        ml64.options['format'] = 'compact'
+        ml64.set_options(format='compact')
 
         midi_file = project_to_absolute_path('test/data/tripletTest.mid')
         known_good_ml64_file = project_to_absolute_path('test/data/tripletTest_good.ml64')

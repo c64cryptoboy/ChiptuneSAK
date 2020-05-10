@@ -51,13 +51,13 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        self.options['format'] = 'prg'  # 'prg' or 'ascii' (aka 'bas')
-        self.options['arch'] = 'NTSC-C64'  # allowed string literals specified in ctsConstants.py
-        self.options['instruments'] = ['piano', 'piano', 'piano']
+        self.set_options(format='prg',
+                         arch='NTSC-C64',
+                         instruments=['piano', 'piano', 'piano'])
 
     @property
     def format(self):
-        return self.options['format'].lower()
+        return self.get_option('format')
 
     def set_format(self, value):
         """
@@ -69,9 +69,8 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :type value: string
         :rtype: self
         """
-        self.options['format'] = value.lower()
         if self.format == 'ascii':
-            self.options['format'] = 'bas'
+            self.set_options(format='bas')
         if self.format not in ['prg', 'bas']:
             raise Exception("invalid format setting")
 
@@ -79,7 +78,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
 
     @property
     def arch(self):
-        return self.options['arch']
+        return self.get_option('arch')
 
     def set_arch(self, value):
         """
@@ -93,12 +92,12 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         """
         if value not in ctsConstants.ARCH.keys():
             raise Exception("invalid arch setting")
-        self.options['arch'] = value
+        self.set_options(arch=value)
         return self
 
     @property
     def instruments(self):
-        return self.options['instruments']
+        return self.get_option('instruments')
 
     def set_instruments(self, a_list):
         """
@@ -115,10 +114,10 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         if len(self.instruments) != 3:
             raise Exception("invalid instruments setting, not 3 instruments")
 
-        self.options['instruments'] = list(i.lower() for i in a_list)
+        self.set_options(instruments=[i.lower() for i in a_list])
 
         for instrument in self.instruments:
-            if instrument not in C128_INSTRUMENTS.keys():
+            if instrument not in C128_INSTRUMENTS:
                 raise Exception("invalid instrument in instruments setting")               
 
         return self
@@ -132,7 +131,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :return: C128 BASIC program
         :rtype: string or bytearray
         """
-        if mchirp_song.ir_type() != 'mchirp':
+        if mchirp_song.cts_type() != 'MChirp':
             raise Exception("Error: C128Basic to_bin() only supports mchirp so far")
 
         ascii_prog = self.export_mchirp_to_C128_BASIC(mchirp_song)

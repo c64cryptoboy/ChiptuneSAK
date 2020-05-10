@@ -68,13 +68,13 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        self.options['max_pattern_len'] = DEFAULT_MAX_PAT_LEN # max pattern length if no given patterns
-        self.options['instruments'] = []  # gt instrument assingments, in order
-        self.options['end_with_repeat'] = False  # default is to stop GoatTracker from repeating music
+        self._options['max_pattern_len'] = DEFAULT_MAX_PAT_LEN  # max pattern length if no given patterns
+        self._options['instruments'] = []  # gt instrument assingments, in order
+        self._options['end_with_repeat'] = False  # default is to stop GoatTracker from repeating music
 
     @property
     def max_pattern_len(self):
-        return self.options['max_pattern_len']
+        return self._options['max_pattern_len']
 
     def set_max_pattern_len(self, val):
         """
@@ -87,12 +87,12 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         """
         if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
             raise Exception("Error: max rows for a pattern out of range")
-        self.options['max_pattern_len'] = val   
+        self._options['max_pattern_len'] = val
         return self
     
     @property
     def end_with_repeat(self):
-        return self.options['end_with_repeat']
+        return self._options['end_with_repeat']
 
     def set_end_with_repeat(self, bool_val):
         """
@@ -104,12 +104,12 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :type bool_val: boolean
         :return: self
         """
-        self.options['end_with_repeat'] = bool_val
+        self._options['end_with_repeat'] = bool_val
         return self
 
     @property
     def instruments(self):
-        return self.options['instruments']
+        return self._options['instruments']
 
     def set_instruments(self, list_val):
         """
@@ -119,7 +119,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :type list_val: list of strings
         :return: self
         """
-        self.options['instruments'] = list_val   
+        self._options['instruments'] = list_val
         return self
 
     def append_instruments_to_rchirp(self, rchirp_song):
@@ -165,8 +165,8 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :rtype: RChirpSong
         """
         subtune = 0
-        if 'subtune' in self.options:
-            subtune = int(self.options['subtune'])
+        if 'subtune' in self._options:
+            subtune = int(self._options['subtune'])
         return import_sng_file_to_rchirp(filename, subtune_number=subtune)
 
 

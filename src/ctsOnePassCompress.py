@@ -99,15 +99,15 @@ class OnePass(ChiptuneSAKCompress):
     def __init__(self):
         ChiptuneSAKCompress.__init__(self)
         self.used = []
-        self.options.update({'min_transposition': -15, 'max_transposition': 14, 'min_pattern_length': 16})
+        self.set_options(min_transposition=-15, max_transposition=14, min_pattern_length=16)
 
     @property
     def min_length(self):
-        return int(self.options['min_pattern_length'])
+        return int(self.get_option('min_pattern_length'))
 
     @property
     def tranposition_limits(self):
-        return (int(self.options['min_transposition']), int(self.options['max_transposition']))
+        return (int(self.get_option('min_transposition')), int(self.get_option('max_transposition')))
 
     @staticmethod
     def objective_function(repeats, possible):
@@ -116,7 +116,7 @@ class OnePass(ChiptuneSAKCompress):
         return nloops * r0.length + 5 * r0.length
 
     def disable_transposition(self):
-        self.options.update({'min_transposition': 0, 'max_transposition': 0})
+        self.set_options(min_transposition=0, max_transposition=0)
 
     def find_best_repeats(self, repeats):
         """

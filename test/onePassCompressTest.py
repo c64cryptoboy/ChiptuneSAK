@@ -24,7 +24,7 @@ class TestCompression(unittest.TestCase):
         rchirp_song = ctsRChirp.RChirpSong(self.compress_test_song)
 
         compressor = ctsOnePassCompress.OnePassLeftToRight()
-        compressor.options['min_length'] = 32
+        compressor.set_options(min_length=32)
         rchirp_song = compressor.compress(rchirp_song)
 
         # TODO: add test for pattern lengths to see that it obeyed limit
@@ -32,7 +32,7 @@ class TestCompression(unittest.TestCase):
         self.assertTrue(rchirp_song.validate_compression())
 
         compressor = ctsOnePassCompress.OnePassGlobal()
-        compressor.options['min_length'] = 8
+        compressor.set_options(min_length=8)
         compressor.disable_transposition()
         rchirp_song = compressor.compress(rchirp_song)
 

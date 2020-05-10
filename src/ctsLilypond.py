@@ -77,18 +77,18 @@ class Lilypond(ChiptuneSAKIO):
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
-        self.options.update({'format': 'song'})
+        self.set_options(format='song')
         self.current_pitch_set = lp_pitches['sharps']
         self.current_clef = 'treble'
         self.current_ottava = 0
 
     @property
     def format(self):
-        return self.options['format'][0].lower()
+        return self.get_option('format')[0]
 
     def to_bin(self, mchirp_song):
         if self.format == 'c':
-            measures = list(self.options['measures'])
+            measures = list(self.get_option('measures'))
             return self.export_clip_to_lilypond(mchirp_song, measures)
         return self.export_song_to_lilypond(mchirp_song)
 

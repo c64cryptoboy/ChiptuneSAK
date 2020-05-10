@@ -22,8 +22,7 @@ class TestExportLilypond(unittest.TestCase):
 
         lilypond = ctsLilypond.Lilypond()
 
-        lilypond.options['format'] = 'clip'
-        lilypond.options['measures'] = m_song.tracks[0].measures[3:8]
+        lilypond.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
         test_ly = lilypond.to_bin(m_song)
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 

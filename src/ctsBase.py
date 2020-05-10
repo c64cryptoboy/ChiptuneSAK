@@ -42,11 +42,31 @@ class ChiptuneSAKBase:
     def cts_type(cls):
         return 'ChiptuneSAKBase'
 
+    def get_option(self, arg):
+        if arg in self._options:
+            retval = self._options[arg]
+            if isinstance(retval, str):
+                retval = retval.lower()
+            return retval
+        return None
+
+    def get_options(self):
+        return self._options
+
+    def set_options(self, **kwargs):
+        self._options.update(kwargs)
+
+    def __init__(self):
+        self._options = {}
+
 
 class ChiptuneSAKIR(ChiptuneSAKBase):
     @classmethod
     def cts_type(cls):
         return 'IR'
+
+    def __init__(self):
+        ChiptuneSAKBase.__init__(self)
 
     def to_chirp(self):
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
@@ -64,7 +84,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         return 'IO'
 
     def __init__(self):
-        self.options = {}
+        ChiptuneSAKBase.__init__(self)
 
     def to_chirp(self, filename):
         raise ChiptuneSAKIOError(f"Not implemented")
@@ -88,7 +108,7 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         return 'Compress'
 
     def __init__(self):
-        self.options = {}
+        ChiptuneSAKBase.__init__(self)
 
     def compress(self, rchirp_song):
         raise ChiptuneSAKIOError(f"Not implemented")

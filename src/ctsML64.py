@@ -102,11 +102,11 @@ class ML64(ChiptuneSAKIO):
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
-        self.options['format'] = 'standard'
+        self.set_options(format='standard')
 
     @property
     def format(self):
-        return self.options['format'][0].lower()
+        return self.get_option('format')[0]
 
     def to_bin(self, song):
         tmp_type = str(type(song))
