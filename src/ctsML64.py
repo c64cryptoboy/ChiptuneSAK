@@ -1,6 +1,6 @@
 from ctsBase import *
 import ctsChirp
-from ctsConstants import PITCHES
+import ctsConstants
 
 '''
 This file contains functions required to export MidiSimple songs to ML64 format.
@@ -21,7 +21,7 @@ def pitch_to_ml64_note_name(note_num, octave_offset=0):
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave_num = ((note_num - ctsConstants.C0_MIDI_NUM) // 12) + octave_offset
     pitch = note_num % 12
-    return "%s%d" % (PITCHES[pitch], octave_num)
+    return "%s%d" % (ctsConstants.PITCHES[pitch], octave_num)
 
 
 def make_ml64_notes(note_name, duration, ppq):
