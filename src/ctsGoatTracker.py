@@ -63,68 +63,48 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
     options: max_pattern_len, end_with_repeat, instruments
     """
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return 'GoatTracker'
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        self._options['max_pattern_len'] = DEFAULT_MAX_PAT_LEN  # max pattern length if no given patterns
-        self._options['instruments'] = []  # gt instrument assingments, in order
-        self._options['end_with_repeat'] = False  # default is to stop GoatTracker from repeating music
+        self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
+                         instruments=[],          # gt instrument assignments, in order
+                         end_with_repeat=False)   # default is to stop GoatTracker from repeating music
+
+    def set_options(self, **kwargs):
+        """
+        Sets options for this module, with validation when required
+        :param kwargs: keyword arguments for options
+        :type kwargs: keyword arguments
+        """
+        for op, val in kwargs.items():
+            # Check for legal maximum pattern length
+            if op == 'max_pattern_len':
+                if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
+                    raise Exception("Error: max rows for a pattern out of range")
+                self._options['max_pattern_len'] = val
+            elif op == 'instruments':
+                # Check to be sure instrument names don't include extensions
+                for i, ins_name in enumerate(val):
+                    if ins_name[-4:] == '.ins':
+                        val[i] = ins_name[:-4]
+                self._options['instruments'] = val
+            # For everything else, just set the option
+            else:
+                self._options[op] = val
 
     @property
     def max_pattern_len(self):
-        return self._options['max_pattern_len']
+        return int(self.get_option('max_pattern_len'))
 
-    def set_max_pattern_len(self, val):
-        """
-        If there's no orderlists/patterns found, they'll be created with row counts up
-        to max_pattern_len
-
-        :param val: maximum pattern length to create
-        :type val: int
-        :return: self
-        """
-        if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
-            raise Exception("Error: max rows for a pattern out of range")
-        self._options['max_pattern_len'] = val
-        return self
-    
     @property
     def end_with_repeat(self):
-        return self._options['end_with_repeat']
-
-    def set_end_with_repeat(self, bool_val):
-        """
-        GoatTracker voices do some kind of repeat when they reach their end.
-        Setting this to False injects an infinite loop pattern at end of each voice
-        to stop repeats.
-
-        :param bool_val: True lets GT song repeat, False injects infinite loop at end
-        :type bool_val: boolean
-        :return: self
-        """
-        self._options['end_with_repeat'] = bool_val
-        return self
+        return self.get_option('end_with_repeat')
 
     @property
     def instruments(self):
-        return self._options['instruments']
-
-    def set_instruments(self, list_val):
-        """
-        List of GoatTracker instrument names to load and append to the rfile in the given order 
-
-        :param list_val: list of instrument names (case sensitive, without '.ins extension))
-        :type list_val: list of strings
-        :return: self
-        """
-        self._options['instruments'] = list_val
-        return self
-
-    def append_instruments_to_rchirp(self, rchirp_song):
-        for instrument in list(self.instruments):
-            add_gt_instrument_to_rchirp(rchirp_song, instrument)
+        return self.get_option('instruments')
 
     def to_bin(self, rchirp_song, **kwargs):
         """
@@ -136,7 +116,9 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :rtype: bytearray
         """
         if rchirp_song.cts_type() != 'RChirp':
-            raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")    
+            raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")
+
+        self.set_options(**kwargs)
 
         self.append_instruments_to_rchirp(rchirp_song)
 
@@ -154,7 +136,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :type filename: string
         """
         with open(filename, 'wb') as f:
-            f.write(self.to_bin(rchirp_song))
+            f.write(self.to_bin(rchirp_song, **kwargs))
 
     def to_rchirp(self, filename, **kwargs):
         """
@@ -164,10 +146,13 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :return: rchirp song
         :rtype: RChirpSong
         """
-        subtune = 0
-        if 'subtune' in self._options:
-            subtune = int(self._options['subtune'])
+        self.set_options(**kwargs)
+        subtune = int(self.get_option('subtune', 0))
         return import_sng_file_to_rchirp(filename, subtune_number=subtune)
+
+    def append_instruments_to_rchirp(self, rchirp_song):
+        for instrument in list(self.instruments):
+            add_gt_instrument_to_rchirp(rchirp_song, instrument)
 
 
 @dataclass
@@ -264,7 +249,7 @@ class GtInstrument:
         return self.to_bytes() == other.to_bytes()
 
     @classmethod
-    def from_bytes(cls, instr_num, bytes, starting_index = 0):
+    def from_bytes(cls, instr_num, bytes, starting_index=0):
         """
         Constructor that builds instrument (not supporting tables) from GT bytes
 
@@ -291,7 +276,7 @@ class GtInstrument:
         result.vib_delay = bytes[starting_index + 6]
         result.gateoff_timer = bytes[starting_index + 7]
         result.hard_restart_1st_frame_wave = bytes[starting_index + 8]
-        result.inst_name = get_chars(bytes[starting_index + 9 : starting_index + GT_INSTR_BYTE_LEN])
+        result.inst_name = get_chars(bytes[starting_index + 9: starting_index + GT_INSTR_BYTE_LEN])
 
         return result
 
@@ -382,8 +367,8 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     return rchirp
 
 
-def export_rchirp_to_sng_file(path_and_filename, rchirp_song, \
-    end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN):
+def export_rchirp_to_sng_file(path_and_filename, rchirp_song,
+    end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
     """
     Helper method to convert RChirp into a GoatTracker sng file
     Consider using GoatTracker.to_file() instead of directly calling this method
@@ -398,7 +383,7 @@ def export_rchirp_to_sng_file(path_and_filename, rchirp_song, \
 
     parsed_gt = GTSong()
     parsed_gt.export_rchirp_to_parsed_gt(
-        rchirp_song, end_with_repeat = False, max_pattern_len = DEFAULT_MAX_PAT_LEN)
+        rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN)
     parsed_gt.export_parsed_gt_to_sng_file(path_and_filename)
 
 
@@ -952,18 +937,6 @@ class GTSong:
         assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
         return retval
 
-
-    def export_parsed_gt_to_sng_file(self, path_and_filename):
-        """
-        Write a .sng GoatTracker file
-
-        :param path_and_filename: path and filename for output file
-        :type path_and_filename: string
-        """
-        gt_binary = self.export_parsed_gt_to_gt_binary()
-        write_binary_file(path_and_filename, gt_binary)
-
-
     def export_parsed_gt_to_gt_binary(self):
         """
         Convert parsed_gt into a goattracker .sng binary.
@@ -1164,8 +1137,7 @@ class GTSong:
 
         return rchirp_song
 
-
-    def add_gt_instrument_to_parsed_gt(self, gt_inst_name, path = DEFAULT_INSTR_PATH):
+    def add_gt_instrument_to_parsed_gt(self, gt_inst_name, path=DEFAULT_INSTR_PATH):
         """
         Append instrument to parsed gt instance.
 
@@ -1209,10 +1181,10 @@ class GTSong:
         self.__init__()  # clear out anything that might be in this GTSong instance
 
         headers = GtHeader(
-            song_name = rchirp_song.metadata.name[:32],
-            author_name = rchirp_song.metadata.composer[:32],
-            copyright = rchirp_song.metadata.copyright[:32],
-            num_subtunes = 1)
+            song_name=rchirp_song.metadata.name[:32],
+            author_name=rchirp_song.metadata.composer[:32],
+            copyright=rchirp_song.metadata.copyright[:32],
+            num_subtunes=1)
         self.headers = headers
 
         is_stereo = len(rchirp_song.voices) >= 4

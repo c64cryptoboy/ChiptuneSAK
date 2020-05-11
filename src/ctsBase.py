@@ -42,10 +42,10 @@ class ChiptuneSAKBase:
     def cts_type(cls):
         return 'ChiptuneSAKBase'
 
-    def get_option(self, arg):
+    def get_option(self, arg, default=None):
         if arg in self._options:
             return self._options[arg]
-        return None
+        return default
 
     def get_options(self):
         return self._options
