@@ -97,6 +97,15 @@ class TestGoatTrackerFunctions(unittest.TestCase):
 
         self.assertTrue(self.found_expected_note_content(rchirp_song))
 
+    def test_sng_to_rchirp_to_chirp_to_rchirp(self):
+        rchirp_song = self.GoatTrackerIO.to_rchirp(SNG_TEST_FILE, subtune=0)
+        self.assertTrue(self.found_expected_note_content(rchirp_song))
+        chirp_song = rchirp_song.to_chirp()
+        chirp_song.quantize(*chirp_song.estimate_quantization())
+        test_rchirp = chirp_song.to_rchirp()
+        self.assertTrue(self.found_expected_note_content(test_rchirp))
+
+
     # Tests for consistency under transformations
     # This ASCII art chart (below) shows a sequence of 6 transformations, which will allow
     # for a number of consistency tests

@@ -317,9 +317,9 @@ class RChirpVoice:
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
-                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate)
-        jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
+        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
+                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
+        jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
         jiffies_per_quarter = rows_per_quarter * jiffies_per_row
