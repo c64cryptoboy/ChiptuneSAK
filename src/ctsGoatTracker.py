@@ -116,9 +116,9 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :rtype: bytearray
 
         :Keyword Options:
-            * end_with_repeat (bool) - True if song should repeat when finished
-            * max_pattern_len (int) - Maximum pattern length to use. Must be <= 127
-            * instruments (list of str) - Instrument names
+            * **end_with_repeat** (bool) - True if song should repeat when finished
+            * **max_pattern_len** (int) - Maximum pattern length to use. Must be <= 127
+            * **instruments** (list of str) - Instrument names
         """
         if rchirp_song.cts_type() != 'RChirp':
             raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")
@@ -140,10 +140,8 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :param filename: output path and file name
         :type filename: string
 
-        :Keyword Options:
-            * end_with_repeat (bool) - True if song should repeat when finished
-            * max_pattern_len (int) - Maximum pattern length to use. Must be <= 127
-            * instruments (list of str) - Instrument names
+        :Keyword Options:  see `to_bin()`
+
         """
         with open(filename, 'wb') as f:
             f.write(self.to_bin(rchirp_song, **kwargs))
@@ -158,7 +156,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :rtype: RChirpSong
 
         :Keyword Options:
-            * subtune (int) - The subtune numer to import.  Defaults to 0
+            * **subtune** (int) - The subtune numer to import.  Defaults to 0
         """
         self.set_options(**kwargs)
         subtune = int(self.get_option('subtune', 0))

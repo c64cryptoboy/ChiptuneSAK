@@ -130,6 +130,15 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :type mchirp_song: MChirpSong
         :return: C128 BASIC program
         :rtype: string or bytearray
+
+        :Keyword Options:
+            * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
+            * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
+              Default is ['piano', 'piano', 'piano']
+              Supports the default C128 BASIC instruments:
+                0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute',
+                5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
+
         """
         self.set_options(**kwargs)
         if mchirp_song.cts_type() != 'MChirp':
@@ -151,6 +160,9 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :type mchirp_song: MChirpSong
         :param filename: path and filename
         :type filename: string
+
+        :Keyword Options:  see `to_bin()`
+
         """
         prog = self.to_bin(mchirp_song, **kwargs)
 

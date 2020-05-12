@@ -109,6 +109,21 @@ class ML64(ChiptuneSAKIO):
         return self.get_option('format')[0].lower()
 
     def to_bin(self, song, **kwargs):
+        """
+        Generates an ML64 string for a song
+
+        :param song: song
+        :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: ML64 encoding of song
+        :rtype: string
+
+        :Keyword Options:
+            * **format** (string) - 'compact', 'standard', or 'measures';
+              'measures' requires MChirp; the others convert from Chirp
+
+        """
         self.set_options(**kwargs)
         tmp_type = str(type(song))
         if tmp_type == "<class 'ctsChirp.ChirpSong'>":
@@ -127,6 +142,19 @@ class ML64(ChiptuneSAKIO):
             raise ChiptuneSAKTypeError("Cannot export object of type {tmp_type} to ML64")
 
     def to_file(self, song, filename, **kwargs):
+        """
+        Writes ML64 to a file
+
+        :param song: song
+        :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: ML64 encoding of song
+        :rtype: string
+
+        :Keyword Options:  see `to_bin()`
+
+        """
         with open(filename, 'w') as f:
             f.write(self.to_bin(song, **kwargs))
 

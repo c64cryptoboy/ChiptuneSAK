@@ -24,7 +24,6 @@ Export functions
 
 
 
-
 GoatTracker
 ---------------------
 
@@ -34,48 +33,32 @@ GoatTracker
     :members: to_rchirp, to_bin, to_file
     :show-inheritance:
 
-import_sng_file_to_rchirp
-+++++++++++++++++++++++++
 
-.. autofunction:: import_sng_file_to_rchirp
-
-
-GoatTracker Classes
--------------------
-
-.. autoclass:: GTSong
-    :members:
-
-----
-
-C128 BASIC Play Functions
--------------------------
+C128 BASIC
+----------
 
 .. currentmodule:: ctsC128Basic
 
-.. autofunction:: export_midi_to_C128_BASIC
+.. autoclass:: C128Basic
+    :members: to_bin, to_file
+    :show-inheritance:
 
-.. currentmodule:: ctsGenPrg
-
-.. autofunction:: ascii_to_prg_c128
-
+ML64
 ----
-
-ML64 Functions
---------------
 
 .. currentmodule:: ctsML64
 
-.. autofunction:: export_mchirp_to_ml64
+.. autoclass:: ML64
+    :members: to_bin, to_file
+    :show-inheritance:
 
-----
 
-Lilypond sheetmusic Functions
------------------------------
+Lilypond
+--------
 
 .. currentmodule:: ctsLilypond
 
-.. autofunction:: export_song_to_lilypond
-
-.. autofunction:: export_clip_to_lilypond
+.. autoclass:: Lilypond
+    :members: to_bin, to_file
+    :show-inheritance:
 
