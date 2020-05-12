@@ -19,18 +19,20 @@ def sort_midi_events(msg):
 
 class MIDI(ChiptuneSAKIO):
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return "MIDI"
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
         self.midi_song = mido.MidiFile()
 
-    def to_file(self, song, filename):
-        return self.export_chirp_to_midi(song, filename)
-
-    def to_chirp(self, filename):
+    def to_chirp(self, filename, **kwargs):
+        self.set_options(**kwargs)
         return self.import_midi_to_chirp(filename)
+
+    def to_file(self, song, filename, **kwargs):
+        self.set_options(**kwargs)
+        return self.export_chirp_to_midi(song, filename)
 
     def midi_track_to_chirp_track(self, chirp_song, midi_track):
         """
@@ -212,7 +214,6 @@ class MIDI(ChiptuneSAKIO):
         chirp_song.metadata.qpm = chirp_song.tempo_changes[0].qpm
 
         return chirp_song
-
 
     def split_midi_zero_into_tracks(self, midi_song):
         """

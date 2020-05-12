@@ -388,20 +388,6 @@ class RChirpSong(ChiptuneSAKBase):
         self.set_options(**kwargs)
         return self.convert_to_chirp()
 
-    # If true, RChirp was compressed or created from a source that uses patterns, etc.
-    def has_patterns(self):
-        return len(self.patterns) > 0  # This should be a good enough check?
-
-    @property
-    def voice_count(self):
-        """
-        Returns the number of voices (channels)
-
-        :return:
-        :rtype:
-        """
-        return len(self.voices)
-
     def import_chirp_song(self, chirp_song):
         """
         Imports a ChirpSong
@@ -425,6 +411,10 @@ class RChirpSong(ChiptuneSAKBase):
         self.metadata = copy.deepcopy(chirp_song.metadata)
         self.other = copy.deepcopy(chirp_song.other)
         self.compressed = False
+
+    # If true, RChirp was compressed or created from a source that uses patterns, etc.
+    def has_patterns(self):
+        return len(self.patterns) > 0  # This should be a good enough check?
 
     def make_program_map(self, chirp_song):
         program_map = self.program_map
@@ -495,24 +485,24 @@ class RChirpSong(ChiptuneSAKBase):
         def _str_with_null_handling(a_value):
             return str(a_value) if a_value is not None else ''
 
-        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(self.voice_count))
+        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(len(self.voices)))
 
         channels_time_events = self.jiffy_indexed_voices
 
         csv_header = ["jiffy"]
-        for i in range(self.voice_count):
+        for i in range(len(self.voices)):
             csv_header.append("v%d row #" % (i+1))
             csv_header.append("v%d note" % (i+1))
             csv_header.append("v%d on/off/none" % (i+1))
             csv_header.append("v%d tempo update" % (i+1))
  
         csv_rows = []
-        prev_tempo = [-1] * self.voice_count
+        prev_tempo = [-1] * len(self.voices)
         for tick in range(max_tick+1):
             # if any channel has a entry at this tick, create a row for all channels
-            if any(tick in channels_time_events[i] for i in range(self.voice_count)):
+            if any(tick in channels_time_events[i] for i in range(len(self.voices))):
                 a_csv_row = ["%d" % tick]
-                for i in range(self.voice_count):
+                for i in range(len(self.voices)):
                     if tick in channels_time_events[i]:
                         event = channels_time_events[i][tick]
                         a_csv_row.append("%s" % event.row_num)
@@ -545,6 +535,7 @@ class RChirpSong(ChiptuneSAKBase):
         song.metadata = copy.deepcopy(self.metadata)
         song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
+        song.set_options(arch=self.arch)  # So that round-trip will return the same arch
 
         note_jiffy_nums = [v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None]
         note_jiffy_nums.sort()

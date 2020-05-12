@@ -174,7 +174,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: binary
         :rtype: either str or bytearray, depending on the output
         """
-        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.ir_type()}")
+        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.cts_type()}")
 
     def to_file(self, ir_song, filename, **kwargs):
         """
@@ -187,7 +187,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: True on success
         :rtype: boolean
         """
-        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.ir_type()}")
+        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.cts_type()}")
 
 
 class ChiptuneSAKCompress(ChiptuneSAKBase):

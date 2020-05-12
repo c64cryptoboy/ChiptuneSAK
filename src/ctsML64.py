@@ -97,7 +97,7 @@ def events_to_ml64(events, song, last_continue=False):
 
 class ML64(ChiptuneSAKIO):
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return "ML64"
 
     def __init__(self):
