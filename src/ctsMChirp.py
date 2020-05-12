@@ -240,6 +240,8 @@ class MChirpTrack:
         self.name = ''      #: Track name
         self.channel = 0    #: Midi channel number
         self.mchirp_song = mchirp_song  #: parent MChirpSong
+        self.qticks_notes = mchirp_song.qticks_notes  #: Inherit quantization from song
+        self.qticks_durations = mchirp_song.qticks_durations  #: Inherit quantization from song
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
@@ -259,6 +261,8 @@ class MChirpTrack:
             raise ChiptuneSAKQuantizationError("Track must be quantized to populate measures.")
         if chirp_track.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to populate measures.")
+        self.qticks_notes = chirp_track.qticks_notes
+        self.qticks_durations = chirp_track.qticks_durations
         measures_list = []
         measure_starts = chirp_track.chirp_song.measure_starts()
         # Artificially add an extra measure on the end to finish processing the notes in the last measure.
@@ -282,6 +286,8 @@ class MChirpSong:
     def __init__(self, chirp_song=None):
         self.tracks = []
         self.metadata = SongMetadata()  #: Metadata
+        self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
+        self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.other = []  #: Other MIDI events not used in measures
         self.stats = {}
         if chirp_song is not None:
@@ -308,6 +314,7 @@ class MChirpSong:
         for t in chirp_song.tracks:
             self.tracks.append(MChirpTrack(self, t))
         self.metadata = copy.deepcopy(chirp_song.metadata)
+        self.qticks_notes, self.qticks_durations = chirp_song.qticks_notes, chirp_song.qticks_durations
         self.other = copy.deepcopy(chirp_song.other)
         self.trim()
 

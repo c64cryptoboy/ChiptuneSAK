@@ -102,6 +102,8 @@ class ChirpTrack:
 
         self.name = mchirp_track.name
         self.channel = mchirp_track.channel
+        # Preserve the quantization from the MChirp
+        self.qticks_notes, self.qticks_durations = mchirp_track.qticks_notes, mchirp_track.qticks_durations
         temp_notes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Note)]
         temp_triplets = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Triplet)]
         temp_notes.extend([e for tp in temp_triplets for e in tp.content if isinstance(e, Note)])
@@ -815,7 +817,7 @@ class ChirpSong:
         :param new_key: Key signature.  String such as 'A#' or 'Abm'
         :type new_key: str
         """
-        self.key_signature_changes = [KeySignatureEvent(0, ChirpKey(new_key))]
+        self.key_signature_changes = [KeySignatureEvent(0, ctsKey.ChirpKey(new_key))]
 
     def end_time(self):
         """

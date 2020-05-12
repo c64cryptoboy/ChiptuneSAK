@@ -587,4 +587,6 @@ class RChirpSong:
                     track.notes.append(new_note)
             song.tracks.append(track)
 
+        # The song is guaranteed to be quantized, so mark it as such.
+        song.quantize(*song.estimate_quantization())
         return song

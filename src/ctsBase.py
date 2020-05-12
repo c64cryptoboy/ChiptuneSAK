@@ -66,12 +66,30 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         ChiptuneSAKBase.__init__(self)
 
     def to_chirp(self):
+        """
+        Converts a song to Chirp IR
+
+        :return: chirp song
+        :rtype: ctsChirp.ChirpSong
+        """
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
     def to_mchirp(self):
+        """
+        Converts a song to MChirp IR
+
+        :return: chirp song
+        :rtype: ctsMChirp.MChirpSong
+        """
         raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
 
     def to_rchirp(self):
+        """
+        Converts a song to RChirp IR
+
+        :return: chirp song
+        :rtype: ctsRChirp.RChirpSong
+        """
         raise ChiptuneSAKNotImplemented("Conversion to RChirp not implemented")
 
 
@@ -84,19 +102,69 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         ChiptuneSAKBase.__init__(self)
 
     def to_chirp(self, filename, **kwargs):
-        raise ChiptuneSAKIOError(f"Not implemented")
+        """
+        Imports a file into a ChirpSong
+
+        :param filename: filename to import
+        :type filename: str
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: Chirp song
+        :rtype: ctsChirp.ChirpSong object
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
     def to_rchirp(self, filename, **kwargs):
-        raise ChiptuneSAKIOError(f"Not implemented")
+        """
+        Imports a file into an RChirpSong
+
+        :param filename: filename to import
+        :type filename: str
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: RChirp song
+        :rtype: ctsRChirp.RChirpSong object
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
     def to_mchirp(self, filename, **kwargs):
-        raise ChiptuneSAKIOError(f"Not implemented")
+        """
+        Imports a file into a ChirpSong
+
+        :param filename: filename to import
+        :type filename: str
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: MChirp song
+        :rtype: ctsMChirp.MChirpSong object
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
     def to_bin(self, ir_song, **kwargs):
-        raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
+        """
+        Outputs a song into the desired binary format (which may be ASCII text)
+
+        :param ir_song: song to export
+        :type ir_song: ChirpSong, MChirpSong, or RChirpSong
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: binary
+        :rtype: either str or bytearray, depending on the output
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.ir_type()}")
 
     def to_file(self, ir_song, filename, **kwargs):
-        raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
+        """
+        Writes a song to a file
+
+        :param ir_song: song to export
+        :type ir_song: ChirpSong, MChirpSong, or RChirpSong
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: True on success
+        :rtype: boolean
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.ir_type()}")
 
 
 class ChiptuneSAKCompress(ChiptuneSAKBase):
@@ -108,7 +176,17 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         ChiptuneSAKBase.__init__(self)
 
     def compress(self, rchirp_song, **kwargs):
-        raise ChiptuneSAKIOError(f"Not implemented")
+        """
+        Compresses an rchirp song
+
+        :param rchirp_song: song to compress
+        :type rchirp_song: ctsRChirp.RChirpSong
+        :param kwargs: options
+        :type kwargs: keyword options
+        :return: rchirp_song with compression
+        :rtype: ctsRChirp.RChirpSong
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
 
 # --------------------------------------------------------------------------------------

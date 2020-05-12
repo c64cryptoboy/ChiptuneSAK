@@ -59,8 +59,7 @@ GT_TEMPO_CHNG_CMD = 0x0F
 class GoatTracker(ctsBase.ChiptuneSAKIO):
     """
     The IO interface for GoatTracker and GoatTracker Stereo
-    Supports to_bin() and to_file() conversions from rchirp to GoatTracker sng format
-    options: max_pattern_len, end_with_repeat, instruments
+    Supports conversions between RChirp and GoatTracker .sng format
     """
     @classmethod
     def cts_type(cls):
@@ -75,6 +74,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
     def set_options(self, **kwargs):
         """
         Sets options for this module, with validation when required
+
         :param kwargs: keyword arguments for options
         :type kwargs: keyword arguments
         """
@@ -108,12 +108,17 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
 
     def to_bin(self, rchirp_song, **kwargs):
         """
-        Convert an RChirpSong into a GoatTracker sng file format
+        Convert an RChirpSong into a GoatTracker .sng file format
 
         :param rchirp_song: rchirp data
         :type rchirp_song: MChirpSong
         :return: sng binary file format
         :rtype: bytearray
+
+        :Keyword Options:
+            * end_with_repeat (bool) - True if song should repeat when finished
+            * max_pattern_len (int) - Maximum pattern length to use. Must be <= 127
+            * instruments (list of str) - Instrument names
         """
         if rchirp_song.cts_type() != 'RChirp':
             raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")
@@ -134,6 +139,11 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :type rchirp_song: RChirpSong
         :param filename: output path and file name
         :type filename: string
+
+        :Keyword Options:
+            * end_with_repeat (bool) - True if song should repeat when finished
+            * max_pattern_len (int) - Maximum pattern length to use. Must be <= 127
+            * instruments (list of str) - Instrument names
         """
         with open(filename, 'wb') as f:
             f.write(self.to_bin(rchirp_song, **kwargs))
@@ -141,10 +151,14 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
     def to_rchirp(self, filename, **kwargs):
         """
         Import a GoatTracker sng file to RChirp
+
         :param filename: File name of .sng file
         :type filename: string
         :return: rchirp song
         :rtype: RChirpSong
+
+        :Keyword Options:
+            * subtune (int) - The subtune numer to import.  Defaults to 0
         """
         self.set_options(**kwargs)
         subtune = int(self.get_option('subtune', 0))
