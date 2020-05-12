@@ -42,19 +42,77 @@ class ChiptuneSAKBase:
     def cts_type(cls):
         return 'ChiptuneSAKBase'
 
+    def __init__(self):
+        self._options = {}
+
+    def get_option(self, arg, default=None):
+        """
+        Get an option
+
+        :param arg: option name
+        :type arg: string
+        :param default: default value
+        :type default: type of option
+        :return: value of option
+        :rtype: option type
+        """
+        if arg in self._options:
+            return self._options[arg]
+        return default
+
+    def get_options(self):
+        """
+        Get a dictionary of all current options
+
+        :return: options
+        :rtype: dict
+        """
+        return self._options
+
+    def set_options(self, **kwargs):
+        """
+        Set options.  All option keywords are converted to lowercase.
+
+        :param kwargs: options
+        :type kwargs: keyword options
+        """
+        for op, val in kwargs.items():
+            self._options[op.lower()] = val
+
 
 class ChiptuneSAKIR(ChiptuneSAKBase):
     @classmethod
     def cts_type(cls):
         return 'IR'
 
-    def to_chirp(self):
+    def __init__(self):
+        ChiptuneSAKBase.__init__(self)
+
+    def to_chirp(self, **kwargs):
+        """
+        Converts a song to Chirp IR
+
+        :return: chirp song
+        :rtype: ctsChirp.ChirpSong
+        """
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
-    def to_mchirp(self):
+    def to_mchirp(self, **kwargs):
+        """
+        Converts a song to MChirp IR
+
+        :return: chirp song
+        :rtype: ctsMChirp.MChirpSong
+        """
         raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
 
-    def to_rchirp(self):
+    def to_rchirp(self, **kwargs):
+        """
+        Converts a song to RChirp IR
+
+        :return: chirp song
+        :rtype: ctsRChirp.RChirpSong
+        """
         raise ChiptuneSAKNotImplemented("Conversion to RChirp not implemented")
 
 
@@ -64,22 +122,62 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         return 'IO'
 
     def __init__(self):
-        self.options = {}
+        ChiptuneSAKBase.__init__(self)
 
-    def to_chirp(self, filename):
-        raise ChiptuneSAKIOError(f"Not implemented")
+    def to_chirp(self, filename, **kwargs):
+        """
+        Imports a file into a ChirpSong
 
-    def to_rchirp(self, filename):
-        raise ChiptuneSAKIOError(f"Not implemented")
+        :param filename: filename to import
+        :type filename: str
+        :return: Chirp song
+        :rtype: ctsChirp.ChirpSong object
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
-    def to_mchirp(self, filename):
-        raise ChiptuneSAKIOError(f"Not implemented")
+    def to_rchirp(self, filename, **kwargs):
+        """
+        Imports a file into an RChirpSong
 
-    def to_bin(self, ir_song):
-        raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
+        :param filename: filename to import
+        :type filename: str
+        :return: RChirp song
+        :rtype: ctsRChirp.RChirpSong object
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
-    def to_file(self, ir_song, filename):
-        raise ChiptuneSAKIOError(f"Not implemented for type {ir_song.ir_type()}")
+    def to_mchirp(self, filename, **kwargs):
+        """
+        Imports a file into a ChirpSong
+
+        :param filename: filename to import
+        :type filename: str
+        :return: MChirp song
+        :rtype: ctsMChirp.MChirpSong object
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
+
+    def to_bin(self, ir_song, **kwargs):
+        """
+        Outputs a song into the desired binary format (which may be ASCII text)
+
+        :param ir_song: song to export
+        :type ir_song: ChirpSong, MChirpSong, or RChirpSong
+        :return: binary
+        :rtype: either str or bytearray, depending on the output
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.cts_type()}")
+
+    def to_file(self, ir_song, filename, **kwargs):
+        """
+        Writes a song to a file
+
+        :param ir_song: song to export
+        :type ir_song: ChirpSong, MChirpSong, or RChirpSong
+        :return: True on success
+        :rtype: boolean
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.cts_type()}")
 
 
 class ChiptuneSAKCompress(ChiptuneSAKBase):
@@ -88,10 +186,18 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         return 'Compress'
 
     def __init__(self):
-        self.options = {}
+        ChiptuneSAKBase.__init__(self)
 
-    def compress(self, rchirp_song):
-        raise ChiptuneSAKIOError(f"Not implemented")
+    def compress(self, rchirp_song, **kwargs):
+        """
+        Compresses an rchirp song
+
+        :param rchirp_song: song to compress
+        :type rchirp_song: ctsRChirp.RChirpSong
+        :return: rchirp_song with compression
+        :rtype: ctsRChirp.RChirpSong
+        """
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
 
 # --------------------------------------------------------------------------------------

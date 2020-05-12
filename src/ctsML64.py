@@ -1,6 +1,6 @@
 from ctsBase import *
 import ctsChirp
-from ctsConstants import PITCHES
+import ctsConstants
 
 '''
 This file contains functions required to export MidiSimple songs to ML64 format.
@@ -21,7 +21,7 @@ def pitch_to_ml64_note_name(note_num, octave_offset=0):
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave_num = ((note_num - ctsConstants.C0_MIDI_NUM) // 12) + octave_offset
     pitch = note_num % 12
-    return "%s%d" % (PITCHES[pitch], octave_num)
+    return "%s%d" % (ctsConstants.PITCHES[pitch], octave_num)
 
 
 def make_ml64_notes(note_name, duration, ppq):
@@ -97,18 +97,32 @@ def events_to_ml64(events, song, last_continue=False):
 
 class ML64(ChiptuneSAKIO):
     @classmethod
-    def io_type(cls):
+    def cts_type(cls):
         return "ML64"
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
-        self.options['format'] = 'standard'
+        self.set_options(format='standard')
 
     @property
     def format(self):
-        return self.options['format'][0].lower()
+        return self.get_option('format')[0].lower()
 
-    def to_bin(self, song):
+    def to_bin(self, song, **kwargs):
+        """
+        Generates an ML64 string for a song
+
+        :param song: song
+        :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
+        :return: ML64 encoding of song
+        :rtype: string
+
+        :keyword options:
+            * **format** (string) - 'compact', 'standard', or 'measures';
+              'measures' requires MChirp; the others convert from Chirp
+
+        """
+        self.set_options(**kwargs)
         tmp_type = str(type(song))
         if tmp_type == "<class 'ctsChirp.ChirpSong'>":
             if self.format == 'm':
@@ -125,9 +139,20 @@ class ML64(ChiptuneSAKIO):
         else:
             raise ChiptuneSAKTypeError("Cannot export object of type {tmp_type} to ML64")
 
-    def to_file(self, song, filename):
+    def to_file(self, song, filename, **kwargs):
+        """
+        Writes ML64 to a file
+
+        :param song: song
+        :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
+        :return: ML64 encoding of song
+        :rtype: string
+
+        :keyword options:  see `to_bin()`
+
+        """
         with open(filename, 'w') as f:
-            f.write(self.to_bin(song))
+            f.write(self.to_bin(song, **kwargs))
 
     def export_chirp_to_ml64(self, chirp_song):
         """

@@ -317,9 +317,9 @@ class RChirpVoice:
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = int((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
-                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate)
-        jiffies_per_row = chirp_track.qticks_notes // ticks_per_jiffy
+        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
+                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
+        jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
         jiffies_per_quarter = rows_per_quarter * jiffies_per_row
@@ -354,7 +354,7 @@ class RChirpVoice:
         self._fixup_rows()
 
 
-class RChirpSong:
+class RChirpSong(ChiptuneSAKBase):
     """
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
@@ -363,6 +363,7 @@ class RChirpSong:
         return 'RChirp'
 
     def __init__(self, chirp_song=None):
+        ChiptuneSAKBase.__init__(self)
         self.arch = 'NTSC-C64'                          #: Architecture
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
@@ -383,22 +384,9 @@ class RChirpSong:
             else:
                 self.import_chirp_song(chirp_song)
 
-    def to_chirp(self):
+    def to_chirp(self, **kwargs):
+        self.set_options(**kwargs)
         return self.convert_to_chirp()
-
-    # If true, RChirp was compressed or created from a source that uses patterns, etc.
-    def has_patterns(self):
-        return len(self.patterns) > 0  # This should be a good enough check?
-
-    @property
-    def voice_count(self):
-        """
-        Returns the number of voices (channels)
-
-        :return:
-        :rtype:
-        """
-        return len(self.voices)
 
     def import_chirp_song(self, chirp_song):
         """
@@ -409,16 +397,27 @@ class RChirpSong:
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
+        if chirp_song.cts_type() != 'Chirp':
+            raise ChiptuneSAKTypeError("RChirp can only import ChirpSong objects")
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")
         if chirp_song.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
+        arch = chirp_song.get_option('arch', self.arch)
+        if arch not in ctsConstants.ARCH:
+            raise ChiptuneSAKValueError("Illegal architecture name {self.arch}")
+        self.arch = arch
+
         self.program_map = self.make_program_map(chirp_song)
         for t in chirp_song.tracks:
             self.voices.append(RChirpVoice(self, t))
         self.metadata = copy.deepcopy(chirp_song.metadata)
         self.other = copy.deepcopy(chirp_song.other)
         self.compressed = False
+
+    # If true, RChirp was compressed or created from a source that uses patterns, etc.
+    def has_patterns(self):
+        return len(self.patterns) > 0  # This should be a good enough check?
 
     def make_program_map(self, chirp_song):
         program_map = self.program_map
@@ -489,24 +488,24 @@ class RChirpSong:
         def _str_with_null_handling(a_value):
             return str(a_value) if a_value is not None else ''
 
-        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(self.voice_count))
+        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(len(self.voices)))
 
         channels_time_events = self.jiffy_indexed_voices
 
         csv_header = ["jiffy"]
-        for i in range(self.voice_count):
+        for i in range(len(self.voices)):
             csv_header.append("v%d row #" % (i+1))
             csv_header.append("v%d note" % (i+1))
             csv_header.append("v%d on/off/none" % (i+1))
             csv_header.append("v%d tempo update" % (i+1))
  
         csv_rows = []
-        prev_tempo = [-1] * self.voice_count
+        prev_tempo = [-1] * len(self.voices)
         for tick in range(max_tick+1):
             # if any channel has a entry at this tick, create a row for all channels
-            if any(tick in channels_time_events[i] for i in range(self.voice_count)):
+            if any(tick in channels_time_events[i] for i in range(len(self.voices))):
                 a_csv_row = ["%d" % tick]
-                for i in range(self.voice_count):
+                for i in range(len(self.voices)):
                     if tick in channels_time_events[i]:
                         event = channels_time_events[i][tick]
                         a_csv_row.append("%s" % event.row_num)
@@ -539,6 +538,7 @@ class RChirpSong:
         song.metadata = copy.deepcopy(self.metadata)
         song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
+        song.set_options(arch=self.arch)  # So that round-trip will return the same arch
 
         note_jiffy_nums = [v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None]
         note_jiffy_nums.sort()
@@ -587,4 +587,6 @@ class RChirpSong:
                     track.notes.append(new_note)
             song.tracks.append(track)
 
+        # The song is guaranteed to be quantized, so mark it as such.
+        song.quantize(*song.estimate_quantization())
         return song

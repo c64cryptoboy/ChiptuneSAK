@@ -59,6 +59,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         self.parsed_gt = ctsGoatTracker.GTSong()
         self.parsed_gt.import_sng_binary_to_parsed_gt(self.gt_binary)
 
+        self.GoatTrackerIO = ctsGoatTracker.GoatTracker()
 
     def found_expected_note_content(self, rchirp_song):
         """
@@ -78,7 +79,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
                     self.assertEqual(actual_note, expected_note)
         return True
 
-
     # Test that .sng binary to parsed back to sng binary is lossless
     def test_sng_to_parsed_to_sng(self):
         gt_binary2 = self.parsed_gt.export_parsed_gt_to_gt_binary()
@@ -86,12 +86,23 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         #write_binary_file(project_to_absolute_path('test/data/gtTestData_deleteMe.sng'), gt_binary2)
         self.assertTrue(self.gt_binary == gt_binary2)
 
-
     # Test that .sng binary to rchirp has expected note content after conversion
     def test_sng_to_rchirp(self):
         rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp(0)
 
-        self.assertTrue(self.found_expected_note_content(rchirp_song)) 
+        self.assertTrue(self.found_expected_note_content(rchirp_song))
+
+        # Now do it with the new interface
+        rchirp_song = self.GoatTrackerIO.to_rchirp(SNG_TEST_FILE, subtune=0)
+
+        self.assertTrue(self.found_expected_note_content(rchirp_song))
+
+    def test_sng_to_rchirp_to_chirp_to_rchirp(self):
+        rchirp_song = self.GoatTrackerIO.to_rchirp(SNG_TEST_FILE, subtune=0)
+        self.assertTrue(self.found_expected_note_content(rchirp_song))
+        chirp_song = rchirp_song.to_chirp()
+        test_rchirp = chirp_song.to_rchirp()
+        self.assertTrue(self.found_expected_note_content(test_rchirp))
 
 
     # Tests for consistency under transformations
@@ -132,7 +143,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         # (shown in ascii diagram above)
         self.assertTrue(self.found_expected_note_content(rchirp_song_2))
 
-
     # Test adding an instrument.
     # FUTURE:  Judging success only by how much each table gets extended, so more could be
     # added at some point
@@ -148,15 +158,16 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         ctsGoatTracker.add_gt_instrument_to_rchirp(rchirp_song, "SlepBass", 'test/data/')
 
         self.assertTrue(
-            extensions["gt.wave_table"][0] == 2 + 4 and # adds 4
-            extensions["gt.pulse_table"][0] == 5 and    # adds 5
-            extensions["gt.filter_table"][0] == 6 and   # adds 6
-            extensions["gt.speed_table"][0] == 1)       # adds 1
+            extensions["gt.wave_table"][0] == 2 + 4 and  # adds 4
+            extensions["gt.pulse_table"][0] == 5 and     # adds 5
+            extensions["gt.filter_table"][0] == 6 and    # adds 6
+            extensions["gt.speed_table"][0] == 1)        # adds 1
 
         # Code to check out result in GoatTracker:
         #converter = ctsGoatTracker.GoatTracker()
         #converter.set_instruments(['HarpsiSolo', 'FluteVibro', 'SawtoothLegato'])
         #converter.to_file(rchirp_song, project_to_absolute_path('test/data/deleteMe.sng'))
+
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()

@@ -102,6 +102,8 @@ class ChirpTrack:
 
         self.name = mchirp_track.name
         self.channel = mchirp_track.channel
+        # Preserve the quantization from the MChirp
+        self.qticks_notes, self.qticks_durations = mchirp_track.qticks_notes, mchirp_track.qticks_durations
         temp_notes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Note)]
         temp_triplets = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Triplet)]
         temp_notes.extend([e for tp in temp_triplets for e in tp.content if isinstance(e, Note)])
@@ -417,7 +419,7 @@ class ChirpTrack:
         return ret_val + '\n'.join(str(n) for n in self.notes)
 
 
-class ChirpSong:
+class ChirpSong(ChiptuneSAKBase):
     """
     This class represents a song. It stores notes in an intermediate representation that
     approximates traditional music notation (as pitch-duration).  It also stores other
@@ -428,6 +430,7 @@ class ChirpSong:
         return 'Chirp'
 
     def __init__(self, mchirp_song=None):
+        ChiptuneSAKBase.__init__(self)
         self.metadata = SongMetadata()
         self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
@@ -441,8 +444,7 @@ class ChirpSong:
         self.tempo_changes = []  #: List of tempo changes
         self.stats = {}  #: Statistics about the song
         if mchirp_song is not None:
-            tmp = str(type(mchirp_song))
-            if tmp != "<class 'ctsMChirp.MChirpSong'>":
+            if mchirp_song.cts_type() != 'MChirp':
                 raise ChiptuneSAKTypeError("ChirpSong init can only import MChirpSong objects")
             else:
                 self.import_mchirp_song(mchirp_song)
@@ -464,10 +466,12 @@ class ChirpSong:
         self.tempo_changes = []  #: List of tempo changes
         self.stats = {}  #: Statistics about the song
 
-    def to_rchirp(self):
+    def to_rchirp(self, **kwargs):
+        self.set_options(**kwargs)
         return ctsRChirp.RChirpSong(self)
 
-    def to_mchirp(self):
+    def to_mchirp(self, **kwargs):
+        self.set_options(**kwargs)
         return ctsMChirp.MChirpSong(self)
 
     def import_mchirp_song(self, mchirp_song):
@@ -815,7 +819,7 @@ class ChirpSong:
         :param new_key: Key signature.  String such as 'A#' or 'Abm'
         :type new_key: str
         """
-        self.key_signature_changes = [KeySignatureEvent(0, ChirpKey(new_key))]
+        self.key_signature_changes = [KeySignatureEvent(0, ctsKey.ChirpKey(new_key))]
 
     def end_time(self):
         """

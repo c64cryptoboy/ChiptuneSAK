@@ -51,79 +51,33 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        self.options['format'] = 'prg'  # 'prg' or 'ascii' (aka 'bas')
-        self.options['arch'] = 'NTSC-C64'  # allowed string literals specified in ctsConstants.py
-        self.options['instruments'] = ['piano', 'piano', 'piano']
+        self.set_options(format='prg',
+                         arch='NTSC-C64',
+                         instruments=['piano', 'piano', 'piano'])
 
-    @property
-    def format(self):
-        return self.options['format'].lower()
-
-    def set_format(self, value):
+    def set_options(self, **kwargs):
         """
-        Sets the format of the generated C128 BASIC program
-        - 'bas' (or 'ascii') will create an ascii version
-        - 'prg' will created a (tokenized) C64 BASIC program
-
-        :param value: type of file to create
-        :type value: string
-        :rtype: self
+        Sets the options for commodore export
         """
-        self.options['format'] = value.lower()
-        if self.format == 'ascii':
-            self.options['format'] = 'bas'
-        if self.format not in ['prg', 'bas']:
-            raise Exception("invalid format setting")
+        for op, value in kwargs.items():
+            op = op.lower()  # All option names must be lowercase
+            if op == 'arch':
+                if value not in ctsConstants.ARCH.keys():
+                    raise ChiptuneSAKValueError(f"Invalid architecture setting {value}")
+            elif op == 'format':
+                if value == 'ascii':
+                    value = 'bas'
+                if value not in ['prg', 'bas']:
+                    ChiptuneSAKValueError(f"Invalid format setting {value}")
+            elif op == 'instruments':
+                if len(value) != 3:
+                    raise ChiptuneSAKValueError("3 instruments required for C128")
+                value = [v.lower() for v in value]
+                if any(v not in C128_INSTRUMENTS for v in value):
+                    raise ChiptuneSAKValueError("Illegal instrument name(s)")
+            self._options[op] = value
 
-        return self
-
-    @property
-    def arch(self):
-        return self.options['arch']
-
-    def set_arch(self, value):
-        """
-        Sets the type of Commdore 128 for the generated C128 BASIC program
-        i.e., NTSC/PAL affects how tempo is computed
-        Default 'NTSC-C64' (used for NTSC C64 and NTSC C128 in 1Mhz mode)
-
-        :param value: architecture type
-        :type value: string
-        :rtype: self
-        """
-        if value not in ctsConstants.ARCH.keys():
-            raise Exception("invalid arch setting")
-        self.options['arch'] = value
-        return self
-
-    @property
-    def instruments(self):
-        return self.options['instruments']
-
-    def set_instruments(self, a_list):
-        """
-        Sets the list of 3 instruments to be used for the three voices (in order)
-        default ['piano', 'piano', 'piano']
-        Supports the default C128 BASIC instruments:
-            0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute', 5:'guitar',
-            6:'harpsichord', 7:'organ', 8:'trumpet', and 9:'xylophone'
-
-        :param a_list: list of three instrument names
-        :type a_list: list of strings
-        :return: self
-        """
-        if len(self.instruments) != 3:
-            raise Exception("invalid instruments setting, not 3 instruments")
-
-        self.options['instruments'] = list(i.lower() for i in a_list)
-
-        for instrument in self.instruments:
-            if instrument not in C128_INSTRUMENTS.keys():
-                raise Exception("invalid instrument in instruments setting")               
-
-        return self
-
-    def to_bin(self, mchirp_song):
+    def to_bin(self, mchirp_song, **kwargs):
         """
         Convert an MChirpSong into a C128 BASIC music program
 
@@ -131,19 +85,30 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :type mchirp_song: MChirpSong
         :return: C128 BASIC program
         :rtype: string or bytearray
+
+        :keyword options:
+            * **arch** (string) - architecture name (see ctsBase for complete list)
+            * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
+            * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
+              Default is ['piano', 'piano', 'piano']
+              Supports the default C128 BASIC instruments:
+                0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute',
+                5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
+
         """
-        if mchirp_song.ir_type() != 'mchirp':
+        self.set_options(**kwargs)
+        if mchirp_song.cts_type() != 'MChirp':
             raise Exception("Error: C128Basic to_bin() only supports mchirp so far")
 
         ascii_prog = self.export_mchirp_to_C128_BASIC(mchirp_song)
 
-        if self.format == 'bas':
+        if self.get_option('format') == 'bas':
             return ascii_prog
 
         tokenized_program = ctsGenPrg.ascii_to_prg_c128(ascii_prog)
         return tokenized_program
 
-    def to_file(self, mchirp_song, filename):
+    def to_file(self, mchirp_song, filename, **kwargs):
         """
         Converts and saves MChirpSong as a C128 BASIC music program
 
@@ -151,13 +116,13 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :type mchirp_song: MChirpSong
         :param filename: path and filename
         :type filename: string
+
+        :keyword options:  see `to_bin()`
+
         """
-        if mchirp_song.ir_type() != 'mchirp':
-            raise Exception("Error: C128Basic to_bin only supports mchirp so far")
+        prog = self.to_bin(mchirp_song, **kwargs)
 
-        prog = self.to_bin(mchirp_song)
-
-        if self.format == 'bas':
+        if self.get_option('format') == 'bas':
             with open(filename, 'w') as out_file:
                 out_file.write(prog)
         else:  # 'prg'
@@ -184,7 +149,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         
         # Tempo 1 is slowest, and 255 is fastest
         tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / 
-            ctsConstants.ARCH[self.arch].frame_rate / 60 / 4)
+            ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
         tempo = int(round(tempo))
 
         result.append('%d tempo %d' % (current_line, tempo))
@@ -208,7 +173,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         volume = 9
         # FUTURE: For each voice, provide a way to pick (or override) the default envelopes
         instr_assign = 'u%dv1t%dv2t%dv3t%d' % \
-            (volume, *(C128_INSTRUMENTS[inst] for inst in self.instruments))
+            (volume, *(C128_INSTRUMENTS[inst] for inst in self.get_option('instruments')))
         result.append('%d play"%s":rem init instruments' % (current_line, instr_assign))
         current_line += 10
 
