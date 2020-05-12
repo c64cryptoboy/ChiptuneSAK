@@ -114,12 +114,10 @@ class ML64(ChiptuneSAKIO):
 
         :param song: song
         :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: ML64 encoding of song
         :rtype: string
 
-        :Keyword Options:
+        :keyword options:
             * **format** (string) - 'compact', 'standard', or 'measures';
               'measures' requires MChirp; the others convert from Chirp
 
@@ -147,12 +145,10 @@ class ML64(ChiptuneSAKIO):
 
         :param song: song
         :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: ML64 encoding of song
         :rtype: string
 
-        :Keyword Options:  see `to_bin()`
+        :keyword options:  see `to_bin()`
 
         """
         with open(filename, 'w') as f:

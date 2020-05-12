@@ -130,8 +130,6 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param filename: filename to import
         :type filename: str
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: Chirp song
         :rtype: ctsChirp.ChirpSong object
         """
@@ -143,8 +141,6 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param filename: filename to import
         :type filename: str
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: RChirp song
         :rtype: ctsRChirp.RChirpSong object
         """
@@ -156,8 +152,6 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param filename: filename to import
         :type filename: str
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: MChirp song
         :rtype: ctsMChirp.MChirpSong object
         """
@@ -169,8 +163,6 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param ir_song: song to export
         :type ir_song: ChirpSong, MChirpSong, or RChirpSong
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: binary
         :rtype: either str or bytearray, depending on the output
         """
@@ -182,8 +174,6 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param ir_song: song to export
         :type ir_song: ChirpSong, MChirpSong, or RChirpSong
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: True on success
         :rtype: boolean
         """
@@ -204,8 +194,6 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
 
         :param rchirp_song: song to compress
         :type rchirp_song: ctsRChirp.RChirpSong
-        :param kwargs: options
-        :type kwargs: keyword options
         :return: rchirp_song with compression
         :rtype: ctsRChirp.RChirpSong
         """

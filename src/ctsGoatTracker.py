@@ -69,7 +69,8 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         ctsBase.ChiptuneSAKIO.__init__(self)
         self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
                          instruments=[],          # gt instrument assignments, in order
-                         end_with_repeat=False)   # default is to stop GoatTracker from repeating music
+                         end_with_repeat=False,   # default is to stop GoatTracker from repeating music
+                         arch='NTSC-C64')         # architecture (for import to RChirp)
 
     def set_options(self, **kwargs):
         """
@@ -84,16 +85,16 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
             if op == 'max_pattern_len':
                 if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
                     raise Exception("Error: max rows for a pattern out of range")
-                self._options['max_pattern_len'] = val
             elif op == 'instruments':
                 # Check to be sure instrument names don't include extensions
                 for i, ins_name in enumerate(val):
                     if ins_name[-4:] == '.ins':
                         val[i] = ins_name[:-4]
-                self._options['instruments'] = val
-            # For everything else, just set the option
-            else:
-                self._options[op] = val
+            elif op == 'arch':
+                if val not in ctsConstants.ARCH:
+                    raise ChiptuneSAKValueError(f'Unknown architecture {val}')
+            # Now set the option
+            self._options[op] = val
 
     def to_bin(self, rchirp_song, **kwargs):
         """
@@ -104,7 +105,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :return: sng binary file format
         :rtype: bytearray
 
-        :Keyword Options:
+        :keyword options:
             * **end_with_repeat** (bool) - True if song should repeat when finished
             * **max_pattern_len** (int) - Maximum pattern length to use. Must be <= 127
             * **instruments** (list of str) - Instrument names
@@ -118,7 +119,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
 
         parsed_gt = GTSong()
         parsed_gt.export_rchirp_to_parsed_gt(rchirp_song,
-                     self.get_option('end_wioth_repeat', False),
+                     self.get_option('end_with_repeat', False),
                      self.get_option('max_pattern_len', 126))
         return parsed_gt.export_parsed_gt_to_gt_binary()
 
@@ -131,7 +132,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :param filename: output path and file name
         :type filename: string
 
-        :Keyword Options:  see `to_bin()`
+        :keyword options:  see `to_bin()`
 
         """
         with open(filename, 'wb') as f:
@@ -146,12 +147,16 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :return: rchirp song
         :rtype: RChirpSong
 
-        :Keyword Options:
+        :keyword options:
             * **subtune** (int) - The subtune numer to import.  Defaults to 0
+            * **arch** (str) - architecture string. Must be one defined in ctsConstants.py
         """
         self.set_options(**kwargs)
         subtune = int(self.get_option('subtune', 0))
-        return import_sng_file_to_rchirp(filename, subtune_number=subtune)
+        arch = self.get_option('arch', 'NTSC-C64')
+        rchirp_song = import_sng_file_to_rchirp(filename, subtune_number=subtune)
+        rchirp_song.arch = arch
+        return rchirp_song
 
     def append_instruments_to_rchirp(self, rchirp_song):
         for instrument in list(self.get_option('instruments')):

@@ -87,13 +87,42 @@ class Lilypond(ChiptuneSAKIO):
         return self.get_option('format')[0].lower()
 
     def to_bin(self, mchirp_song, **kwargs):
+        """
+        Exports MChirp to lilypond text
+
+        :param mchirp_song: song to export
+        :type mchirp_song: MChirpSong
+        :return: lilypond text
+        :rtype: string
+
+        :keyword options:
+            * **format** (string) - format, either 'song' or 'clip'
+            * **measures** (list) - list of contiguous measures, from one track.
+              Required for 'clip' format, ignored otherwise.
+        """
         self.set_options(**kwargs)
         if self.format == 'c':
-            measures = list(self.get_option('measures'))
+            measures = list(self.get_option('measures', []))
             return self.export_clip_to_lilypond(mchirp_song, measures)
-        return self.export_song_to_lilypond(mchirp_song)
+        elif self.format == 's':
+            return self.export_song_to_lilypond(mchirp_song)
+        else:
+            raise ChiptuneSAKValueError(f"Unrecognized format {self.format}")
 
     def to_file(self, mchirp_song, filename, **kwargs):
+        """
+        Exports MChirp to lilypond source file
+
+        :param mchirp_song: song to export
+        :type mchirp_song: MChirpSong
+        :param filename:  filename to write
+        :type filename: string
+        :return: lilypond text
+        :rtype: string
+
+        :keyword options: see to_bin()
+        """
+        self.set_options(**kwargs)
         with open(filename, 'w') as f:
             f.write(self.to_bin(mchirp_song, **kwargs))
 
@@ -211,6 +240,8 @@ class Lilypond(ChiptuneSAKIO):
         :return: Lilypond markup ascii
         :rtype: str
         """
+        if len(measures) < 1:
+            raise ChiptuneSAKContentError("No measures to export!")
         # Set these to the default so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
         self.current_key_signature = ctsKey.ChirpKey('C').key_signature

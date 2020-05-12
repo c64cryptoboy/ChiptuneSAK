@@ -86,7 +86,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :return: C128 BASIC program
         :rtype: string or bytearray
 
-        :Keyword Options:
+        :keyword options:
             * **arch** (string) - architecture name (see ctsBase for complete list)
             * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
             * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
@@ -117,7 +117,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :param filename: path and filename
         :type filename: string
 
-        :Keyword Options:  see `to_bin()`
+        :keyword options:  see `to_bin()`
 
         """
         prog = self.to_bin(mchirp_song, **kwargs)
