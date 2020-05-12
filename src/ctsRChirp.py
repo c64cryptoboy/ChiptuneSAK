@@ -403,8 +403,11 @@ class RChirpSong(ChiptuneSAKBase):
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")
         if chirp_song.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
+        arch = chirp_song.get_option('arch', self.arch)
+        if arch not in ctsConstants.ARCH:
+            raise ChiptuneSAKValueError("Illegal architecture name {self.arch}")
+        self.arch = arch
 
-        self.arch = chirp_song.get_option('arch', 'NTSC-C64')
         self.program_map = self.make_program_map(chirp_song)
         for t in chirp_song.tracks:
             self.voices.append(RChirpVoice(self, t))
