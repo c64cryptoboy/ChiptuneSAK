@@ -419,7 +419,7 @@ class ChirpTrack:
         return ret_val + '\n'.join(str(n) for n in self.notes)
 
 
-class ChirpSong:
+class ChirpSong(ChiptuneSAKBase):
     """
     This class represents a song. It stores notes in an intermediate representation that
     approximates traditional music notation (as pitch-duration).  It also stores other
@@ -430,6 +430,7 @@ class ChirpSong:
         return 'Chirp'
 
     def __init__(self, mchirp_song=None):
+        ChiptuneSAKBase.__init__(self)
         self.metadata = SongMetadata()
         self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
@@ -443,8 +444,7 @@ class ChirpSong:
         self.tempo_changes = []  #: List of tempo changes
         self.stats = {}  #: Statistics about the song
         if mchirp_song is not None:
-            tmp = str(type(mchirp_song))
-            if tmp != "<class 'ctsMChirp.MChirpSong'>":
+            if mchirp_song.cts_type() != 'MChirp':
                 raise ChiptuneSAKTypeError("ChirpSong init can only import MChirpSong objects")
             else:
                 self.import_mchirp_song(mchirp_song)
@@ -466,10 +466,12 @@ class ChirpSong:
         self.tempo_changes = []  #: List of tempo changes
         self.stats = {}  #: Statistics about the song
 
-    def to_rchirp(self):
+    def to_rchirp(self, **kwargs):
+        self.set_options(**kwargs)
         return ctsRChirp.RChirpSong(self)
 
-    def to_mchirp(self):
+    def to_mchirp(self, **kwargs):
+        self.set_options(**kwargs)
         return ctsMChirp.MChirpSong(self)
 
     def import_mchirp_song(self, mchirp_song):

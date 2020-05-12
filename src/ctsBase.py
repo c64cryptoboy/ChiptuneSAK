@@ -42,19 +42,42 @@ class ChiptuneSAKBase:
     def cts_type(cls):
         return 'ChiptuneSAKBase'
 
+    def __init__(self):
+        self._options = {}
+
     def get_option(self, arg, default=None):
+        """
+        Get an option
+
+        :param arg: option name
+        :type arg: string
+        :param default: default value
+        :type default: type of option
+        :return: value of option
+        :rtype: option type
+        """
         if arg in self._options:
             return self._options[arg]
         return default
 
     def get_options(self):
+        """
+        Get a dictionary of all current options
+
+        :return: options
+        :rtype: dict
+        """
         return self._options
 
     def set_options(self, **kwargs):
-        self._options.update(kwargs)
+        """
+        Set options.  All option keywords are converted to lowercase.
 
-    def __init__(self):
-        self._options = {}
+        :param kwargs: options
+        :type kwargs: keyword options
+        """
+        for op, val in kwargs.items():
+            self._options[op.lower()] = val
 
 
 class ChiptuneSAKIR(ChiptuneSAKBase):
@@ -65,7 +88,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
     def __init__(self):
         ChiptuneSAKBase.__init__(self)
 
-    def to_chirp(self):
+    def to_chirp(self, **kwargs):
         """
         Converts a song to Chirp IR
 
@@ -74,7 +97,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         """
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
-    def to_mchirp(self):
+    def to_mchirp(self, **kwargs):
         """
         Converts a song to MChirp IR
 
@@ -83,7 +106,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         """
         raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
 
-    def to_rchirp(self):
+    def to_rchirp(self, **kwargs):
         """
         Converts a song to RChirp IR
 

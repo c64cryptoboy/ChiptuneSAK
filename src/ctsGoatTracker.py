@@ -79,6 +79,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :type kwargs: keyword arguments
         """
         for op, val in kwargs.items():
+            op = op.lower()  # All option names must be lowercase
             # Check for legal maximum pattern length
             if op == 'max_pattern_len':
                 if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):

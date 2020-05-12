@@ -354,7 +354,7 @@ class RChirpVoice:
         self._fixup_rows()
 
 
-class RChirpSong:
+class RChirpSong(ChiptuneSAKBase):
     """
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
@@ -363,6 +363,7 @@ class RChirpSong:
         return 'RChirp'
 
     def __init__(self, chirp_song=None):
+        ChiptuneSAKBase.__init__(self)
         self.arch = 'NTSC-C64'                          #: Architecture
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
@@ -383,7 +384,8 @@ class RChirpSong:
             else:
                 self.import_chirp_song(chirp_song)
 
-    def to_chirp(self):
+    def to_chirp(self, **kwargs):
+        self.set_options(**kwargs)
         return self.convert_to_chirp()
 
     # If true, RChirp was compressed or created from a source that uses patterns, etc.
@@ -409,10 +411,14 @@ class RChirpSong:
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
+        if chirp_song.cts_type() != 'Chirp':
+            raise ChiptuneSAKTypeError("RChirp can only import ChirpSong objects")
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")
         if chirp_song.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
+
+        self.arch = chirp_song.get_option('arch', 'NTSC-C64')
         self.program_map = self.make_program_map(chirp_song)
         for t in chirp_song.tracks:
             self.voices.append(RChirpVoice(self, t))

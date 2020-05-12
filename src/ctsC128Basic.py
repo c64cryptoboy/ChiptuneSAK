@@ -59,68 +59,35 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     def format(self):
         return self.get_option('format')
 
-    def set_format(self, value):
-        """
-        Sets the format of the generated C128 BASIC program
-        - 'bas' (or 'ascii') will create an ascii version
-        - 'prg' will created a (tokenized) C64 BASIC program
-
-        :param value: type of file to create
-        :type value: string
-        :rtype: self
-        """
-        if self.format == 'ascii':
-            self.set_options(format='bas')
-        if self.format not in ['prg', 'bas']:
-            raise Exception("invalid format setting")
-
-        return self
-
     @property
     def arch(self):
         return self.get_option('arch')
-
-    def set_arch(self, value):
-        """
-        Sets the type of Commdore 128 for the generated C128 BASIC program
-        i.e., NTSC/PAL affects how tempo is computed
-        Default 'NTSC-C64' (used for NTSC C64 and NTSC C128 in 1Mhz mode)
-
-        :param value: architecture type
-        :type value: string
-        :rtype: self
-        """
-        if value not in ctsConstants.ARCH.keys():
-            raise Exception("invalid arch setting")
-        self.set_options(arch=value)
-        return self
 
     @property
     def instruments(self):
         return self.get_option('instruments')
 
-    def set_instruments(self, a_list):
+    def set_options(self, **kwargs):
         """
-        Sets the list of 3 instruments to be used for the three voices (in order)
-        default ['piano', 'piano', 'piano']
-        Supports the default C128 BASIC instruments:
-            0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute', 5:'guitar',
-            6:'harpsichord', 7:'organ', 8:'trumpet', and 9:'xylophone'
-
-        :param a_list: list of three instrument names
-        :type a_list: list of strings
-        :return: self
+        Sets the options for commodore export
         """
-        if len(self.instruments) != 3:
-            raise Exception("invalid instruments setting, not 3 instruments")
-
-        self.set_options(instruments=[i.lower() for i in a_list])
-
-        for instrument in self.instruments:
-            if instrument not in C128_INSTRUMENTS:
-                raise Exception("invalid instrument in instruments setting")               
-
-        return self
+        for op, value in kwargs.items():
+            op = op.lower()  # All option names must be lowercase
+            if op == 'arch':
+                if value not in ctsConstants.ARCH.keys():
+                    raise ChiptuneSAKValueError(f"Invalid architecture setting {value}")
+            elif op == 'format':
+                if value == 'ascii':
+                    value = 'bas'
+                if value not in ['prg', 'bas']:
+                    ChiptuneSAKValueError(f"Invalid format setting {value}")
+            elif op == 'instruments':
+                if len(value) != 3:
+                    raise ChiptuneSAKValueError("3 instruments required for C128")
+                value = [v.lower() for v in value]
+                if any(v not in C128_INSTRUMENTS for v in value):
+                    raise ChiptuneSAKValueError("Illegal instrument name(s)")
+            self._options[op] = value
 
     def to_bin(self, mchirp_song, **kwargs):
         """
@@ -132,6 +99,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :rtype: string or bytearray
 
         :Keyword Options:
+            * **arch** (string) - architecture name (see ctsBase for complete list)
             * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
             * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
               Default is ['piano', 'piano', 'piano']

@@ -278,12 +278,13 @@ class MChirpTrack:
         self.channel = chirp_track.channel
 
 
-class MChirpSong:
+class MChirpSong(ChiptuneSAKBase):
     @classmethod
     def cts_type(cls):
         return 'MChirp'
 
     def __init__(self, chirp_song=None):
+        ChiptuneSAKBase.__init__(self)
         self.tracks = []
         self.metadata = SongMetadata()  #: Metadata
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
@@ -291,13 +292,13 @@ class MChirpSong:
         self.other = []  #: Other MIDI events not used in measures
         self.stats = {}
         if chirp_song is not None:
-            tmp = str(type(chirp_song))
-            if tmp != "<class 'ctsChirp.ChirpSong'>":
+            if chirp_song.cts_type() != 'Chirp':
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
             else:
                 self.import_chirp_song(chirp_song)
 
-    def to_chirp(self):
+    def to_chirp(self, **kwargs):
+        self.set_options(**kwargs)
         return ctsChirp.ChirpSong(self)
 
     def import_chirp_song(self, chirp_song):
