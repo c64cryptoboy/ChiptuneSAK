@@ -12,9 +12,7 @@ Compression routines the work for GoatTracker and may work for other formats
 
 """
 
-STARTING_MIN_LENGTH = 16
-PATTERN_LENGTH_MAX = 127
-GT_PATTERN_OVERHEAD = 5
+MAX_PATTERN_LENGTH = 120
 
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
@@ -101,14 +99,6 @@ class OnePass(ChiptuneSAKCompress):
         self.used = []
         self.set_options(min_transposition=-15, max_transposition=14, min_pattern_length=16)
 
-    @property
-    def min_length(self):
-        return int(self.get_option('min_pattern_length'))
-
-    @property
-    def tranposition_limits(self):
-        return (int(self.get_option('min_transposition')), int(self.get_option('max_transposition')))
-
     @staticmethod
     def objective_function(repeats, possible):
         r0 = repeats[0]
@@ -127,7 +117,8 @@ class OnePass(ChiptuneSAKCompress):
         :return: list of optimal repeats
         :rtype: list of Repeat objects
         """
-        lengths = list(sorted(set(r.length for r in repeats if r.length >= self.min_length), reverse=True))
+        min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
+        lengths = list(sorted(set(r.length for r in repeats if r.length >= min_length), reverse=True))
         available_rows = self.used.count(False)
         max_objective = 0
         best_repeats = []
@@ -184,6 +175,7 @@ class OnePass(ChiptuneSAKCompress):
         :return: list of valid repeats
         :rtype: list of Repeat objects
         """
+        min_length = self.get_option('min_pattern_length', 126)
         ret_repeats = []
         for r in repeats:
             if self.used[r.start_row] or self.used[r.repeat_start]:
@@ -192,7 +184,7 @@ class OnePass(ChiptuneSAKCompress):
             while l_tmp < r.length and not self.used[r.start_row + l_tmp] and not self.used[r.repeat_start + l_tmp]:
                 l_tmp += 1
             r.length = l_tmp
-            if r.length >= self.min_length:
+            if r.length >= min_length:
                 ret_repeats.append(r)
         return ret_repeats
 
@@ -300,12 +292,14 @@ class OnePassGlobal(OnePass):
         :return: list of all repeats found
         :rtype: list of Repeat
         """
+        min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
         n_rows = len(rows)
-        min_transpose, max_transpose = self.tranposition_limits
+        min_transpose = self.get_option('min_transpose', 0)
+        max_transpose = self.get_option('max_transpose', 0)
         repeats = []
-        for base_position in range(n_rows - self.min_length):
+        for base_position in range(n_rows - min_length):
             last_end = base_position
-            for trial_position in range(base_position, n_rows - self.min_length):
+            for trial_position in range(base_position, n_rows - min_length):
                 if trial_position < last_end:
                     continue
                 xf = get_xform(rows[base_position], rows[trial_position])
@@ -317,7 +311,7 @@ class OnePassGlobal(OnePass):
                 ib = base_position
                 it = trial_position
                 while it < n_rows \
-                        and pattern_length < PATTERN_LENGTH_MAX \
+                        and pattern_length < MAX_PATTERN_LENGTH \
                         and op_row_match(rows[ib], rows[it], xf) \
                         and not self.used[ib] \
                         and not self.used[it]:
@@ -326,7 +320,7 @@ class OnePassGlobal(OnePass):
                     pattern_length += 1
                     if ib >= trial_position:
                         break
-                if self.min_length <= pattern_length <= PATTERN_LENGTH_MAX:
+                if min_length <= pattern_length <= MAX_PATTERN_LENGTH:
                     repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
                     last_end = trial_position + pattern_length
         return repeats
@@ -371,7 +365,7 @@ class OnePassGlobal(OnePass):
                 gap_end = gap_start
                 while gap_end < n_rows and not self.used[gap_end]:
                     gap_end += 1
-                    if gap_end - gap_start >= PATTERN_LENGTH_MAX:
+                    if gap_end - gap_start >= MAX_PATTERN_LENGTH:
                         break
                 tmp_patt = RChirpPattern(filled_rows[gap_start: gap_end])
                 pattern_index = self.add_rchirp_pattern_to_song(rchirp_song, tmp_patt)
@@ -400,12 +394,14 @@ class OnePassLeftToRight(OnePass):
         return self.compress_lr(chirp_song)
 
     def find_repeats_starting_at(self, index, rows):
+        min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
         n_rows = len(rows)
-        min_transpose, max_transpose = self.tranposition_limits
+        min_transpose = self.get_option('min_transpose', 0)
+        max_transpose = self.get_option('max_transpose', 0)
         repeats = []
         base_position = index
         last_end = base_position
-        for trial_position in range(base_position, n_rows - self.min_length):
+        for trial_position in range(base_position, n_rows - min_length):
             if self.used[trial_position] or trial_position < last_end:
                 continue
             xf = get_xform(rows[base_position], rows[trial_position])
@@ -417,7 +413,7 @@ class OnePassLeftToRight(OnePass):
             ib = base_position
             it = trial_position
             while it < n_rows \
-                    and pattern_length < PATTERN_LENGTH_MAX \
+                    and pattern_length < MAX_PATTERN_LENGTH \
                     and op_row_match(rows[ib], rows[it], xf) \
                     and not self.used[ib] \
                     and not self.used[it]:
@@ -426,7 +422,7 @@ class OnePassLeftToRight(OnePass):
                 pattern_length += 1
                 if ib >= trial_position:
                     break
-            if self.min_length <= pattern_length <= PATTERN_LENGTH_MAX:
+            if min_length <= pattern_length <= MAX_PATTERN_LENGTH:
                 repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
                 last_end = trial_position + pattern_length
         return repeats
@@ -447,14 +443,14 @@ class OnePassLeftToRight(OnePass):
         :return: rchirp_song with compression information added
         :rtype: ctsRChirp.RChirpSong
         """
-
+        min_length = self.get_option('min_pattern_length', 126)
         rchirp_song.patterns = []  # Get rid of any patterns from previous compression
         for iv, v in enumerate(rchirp_song.voices):
             filled_rows = v.make_filled_rows()
             self.used = [False for r in filled_rows]
             n_rows = len(filled_rows)
             order = {}
-            for i in range(n_rows - self.min_length):
+            for i in range(n_rows - min_length):
                 if self.used[i]:
                     continue
                 repeats = self.find_repeats_starting_at(i, filled_rows)
@@ -475,7 +471,7 @@ class OnePassLeftToRight(OnePass):
                 gap_end = gap_start
                 while gap_end < n_rows and not self.used[gap_end]:
                     gap_end += 1
-                    if gap_end - gap_start >= PATTERN_LENGTH_MAX:
+                    if gap_end - gap_start >= MAX_PATTERN_LENGTH:
                         break
                 tmp_patt = RChirpPattern(filled_rows[gap_start: gap_end])
                 pattern_index = self.add_rchirp_pattern_to_song(rchirp_song, tmp_patt)
@@ -534,6 +530,8 @@ def get_gt_orderlist_length(orderlist):
                 retval += 1
     return retval
 
+
+GT_PATTERN_OVERHEAD = 5
 
 def estimate_song_size(rchirp_song):
     total = GT_PATTERN_OVERHEAD * len(rchirp_song.patterns)

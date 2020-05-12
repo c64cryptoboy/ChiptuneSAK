@@ -55,18 +55,6 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
                          arch='NTSC-C64',
                          instruments=['piano', 'piano', 'piano'])
 
-    @property
-    def format(self):
-        return self.get_option('format')
-
-    @property
-    def arch(self):
-        return self.get_option('arch')
-
-    @property
-    def instruments(self):
-        return self.get_option('instruments')
-
     def set_options(self, **kwargs):
         """
         Sets the options for commodore export
@@ -114,7 +102,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
 
         ascii_prog = self.export_mchirp_to_C128_BASIC(mchirp_song)
 
-        if self.format == 'bas':
+        if self.get_option('format') == 'bas':
             return ascii_prog
 
         tokenized_program = ctsGenPrg.ascii_to_prg_c128(ascii_prog)
@@ -134,7 +122,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         """
         prog = self.to_bin(mchirp_song, **kwargs)
 
-        if self.format == 'bas':
+        if self.get_option('format') == 'bas':
             with open(filename, 'w') as out_file:
                 out_file.write(prog)
         else:  # 'prg'
@@ -161,7 +149,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         
         # Tempo 1 is slowest, and 255 is fastest
         tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / 
-            ctsConstants.ARCH[self.arch].frame_rate / 60 / 4)
+            ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
         tempo = int(round(tempo))
 
         result.append('%d tempo %d' % (current_line, tempo))
@@ -185,7 +173,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         volume = 9
         # FUTURE: For each voice, provide a way to pick (or override) the default envelopes
         instr_assign = 'u%dv1t%dv2t%dv3t%d' % \
-            (volume, *(C128_INSTRUMENTS[inst] for inst in self.instruments))
+            (volume, *(C128_INSTRUMENTS[inst] for inst in self.get_option('instruments')))
         result.append('%d play"%s":rem init instruments' % (current_line, instr_assign))
         current_line += 10
 

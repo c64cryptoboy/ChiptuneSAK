@@ -95,18 +95,6 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
             else:
                 self._options[op] = val
 
-    @property
-    def max_pattern_len(self):
-        return int(self.get_option('max_pattern_len'))
-
-    @property
-    def end_with_repeat(self):
-        return self.get_option('end_with_repeat')
-
-    @property
-    def instruments(self):
-        return self.get_option('instruments')
-
     def to_bin(self, rchirp_song, **kwargs):
         """
         Convert an RChirpSong into a GoatTracker .sng file format
@@ -129,7 +117,9 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         self.append_instruments_to_rchirp(rchirp_song)
 
         parsed_gt = GTSong()
-        parsed_gt.export_rchirp_to_parsed_gt(rchirp_song, self.end_with_repeat, self.max_pattern_len)
+        parsed_gt.export_rchirp_to_parsed_gt(rchirp_song,
+                     self.get_option('end_wioth_repeat', False),
+                     self.get_option('max_pattern_len', 126))
         return parsed_gt.export_parsed_gt_to_gt_binary()
 
     def to_file(self, rchirp_song, filename, **kwargs):
@@ -164,7 +154,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         return import_sng_file_to_rchirp(filename, subtune_number=subtune)
 
     def append_instruments_to_rchirp(self, rchirp_song):
-        for instrument in list(self.instruments):
+        for instrument in list(self.get_option('instruments')):
             add_gt_instrument_to_rchirp(rchirp_song, instrument)
 
 
