@@ -208,6 +208,14 @@ class RChirpVoice:
         return True
 
     def _find_closest_row_after(self, row):
+        """
+        Finds the first row in the sparse representation after a given time
+
+        :param row: row number of the given time
+        :type row: int
+        :return: row number of next row in sparse representation
+        :rtype: int
+        """
         for r in sorted(self.rows):
             if r >= row:
                 return r
@@ -217,6 +225,12 @@ class RChirpVoice:
             return self.last_row.row_num
 
     def make_filled_rows(self):
+        """
+        Creates a contiguous set of rows from a sparse row representation
+
+        :return: filled rows
+        :rtype: list of rows
+        """
         ret_rows = []
         max_row = max(self.rows[rn].row_num for rn in self.rows)
         assert 0 in self.rows, "No row 0 in rows"  # Row 0 should exist!
@@ -264,6 +278,12 @@ class RChirpVoice:
             self.rows[r] = row
 
     def orderlist_to_rows(self):
+        """
+        Convert an orderlist with patterns into rows
+
+        :return: rows
+        :rtype: list of rows
+        """
         ret_rows = []
         current_row = 0
         current_jiffy = 0
@@ -287,6 +307,12 @@ class RChirpVoice:
         return ret_rows
 
     def validate_orderlist(self):
+        """
+        Validate that the orderlist is self-consistent and generates the correct set of rows
+
+        :return:  True if consistent
+        :rtype: bool
+        """
         filled_rows = self.make_filled_rows()
         compressed_rows = self.orderlist_to_rows()
         if len(filled_rows) != len(compressed_rows):
@@ -385,6 +411,12 @@ class RChirpSong(ChiptuneSAKBase):
                 self.import_chirp_song(chirp_song)
 
     def to_chirp(self, **kwargs):
+        """
+        Converts the RChirpSong into a ChirpSong
+
+        :return: Chirp song
+        :rtype: ctsChirp.ChirpSong
+        """
         self.set_options(**kwargs)
         return self.convert_to_chirp()
 
@@ -417,9 +449,23 @@ class RChirpSong(ChiptuneSAKBase):
 
     # If true, RChirp was compressed or created from a source that uses patterns, etc.
     def has_patterns(self):
+        """
+        Does this RCHirp have patterns (and thus, presumably, orderlists)?
+
+        :return: True if there are patterns
+        :rtype: bool
+        """
         return len(self.patterns) > 0  # This should be a good enough check?
 
     def make_program_map(self, chirp_song):
+        """
+        Creates a program map of Chirp program numbers (patches) to instruments
+
+        :param chirp_song: chirp song
+        :type chirp_song: ctsChirp.ChirpSong
+        :return: program_map
+        :rtype: dict of {chirp_program:rchirp_instrument}
+        """
         program_map = self.program_map
         instrument_num = 1
         for t in chirp_song.tracks:
@@ -448,7 +494,12 @@ class RChirpSong(ChiptuneSAKBase):
         return all(voice.integrity_check() for voice in self.voices)
 
     def set_row_delta_values(self):
-        # RChirpRow has some delta fields that are only set when there's a change from previous rows.
+        """
+        RChirpRow has some delta fields that are only set when there's a change from previous rows.
+
+        This method goes through the rows, finds those changes and sets the appropriate fields
+
+        """
         for debug_voice_index, voice in enumerate(self.voices):
             prev_tempo = prev_instr = -1
             for rchirp_row in voice.sorted_rows:
