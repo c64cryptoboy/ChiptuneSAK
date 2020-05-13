@@ -52,7 +52,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
         self.set_options(format='prg',
-                         arch='NTSC-C64',
+                         arch=ctsConstants.DEFAULT_ARCH,
                          instruments=['piano', 'piano', 'piano'])
 
     def set_options(self, **kwargs):

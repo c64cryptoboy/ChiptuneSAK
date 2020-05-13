@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 CHIPTUNESAK_VERSION = "0.13"
+CHIPTUNESAK_RELEASE = "0.13"
 
 BIG_NUMBER = 0xFFFFFFFF
 
@@ -118,6 +119,7 @@ ARCH = {
                                  visible_lines=284),
 }
 
+DEFAULT_ARCH = 'NTSC-C64'
 
 def project_to_absolute_path(file_path):
     """Returns project root folder"""

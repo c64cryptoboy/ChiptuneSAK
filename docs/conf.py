@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(1, os.path.abspath('../tools'))
 sys.path.insert(1, os.path.abspath('../src'))
-
+import ctsConstants
 
 # -- Project information -----------------------------------------------------
 
@@ -24,8 +24,8 @@ copyright = '2020, David Youd and David Knapp'
 author = 'David Youd and David Knapp'
 
 # The full version, including alpha/beta/rc tags
-version = '0.1.15'
-release = '0.1'
+version = ctsConstants.CHIPTUNESAK_VERSION
+release = ctsConstants.CHIPTUNESAK_RELEASE
 
 # -- General configuration ---------------------------------------------------
 

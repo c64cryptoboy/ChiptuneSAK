@@ -390,7 +390,7 @@ class RChirpSong(ChiptuneSAKBase):
 
     def __init__(self, chirp_song=None):
         ChiptuneSAKBase.__init__(self)
-        self.arch = 'NTSC-C64'                          #: Architecture
+        self.arch = ctsConstants.DEFAULT_ARCH           #: Architecture
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
         self.patterns = []                              #: Patterns to be shared among the voices

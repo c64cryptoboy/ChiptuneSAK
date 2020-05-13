@@ -2,6 +2,7 @@
 
 import os
 import toolsPath
+import ctsConstants
 import argparse
 import ctsMidi
 from ctsMChirp import MChirpSong
@@ -52,7 +53,7 @@ def main():
     if args.instruments:
         instruments = (i.lower() for i in args.instruments)
 
-    arch = 'NTSC-C64'
+    arch = ctsConstants.DEFAULT_ARCH
     if args.arch:
         arch = args.arch
 

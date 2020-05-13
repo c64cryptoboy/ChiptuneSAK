@@ -9,19 +9,12 @@
 from os import path, listdir
 from os.path import isfile, join
 import sys
-import argparse
 import copy
-import math
-from fractions import Fraction
-from functools import reduce
 from dataclasses import dataclass
-from collections import defaultdict
 import ctsConstants #import ARCH, C0_MIDI_NUM, project_to_absolute_path
 import ctsBase
 from ctsBytesUtil import read_binary_file, write_binary_file
-import ctsChirp
 import ctsRChirp
-import ctsMidi
 from ctsErrors import *
 
 
@@ -70,7 +63,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
                          instruments=[],          # gt instrument assignments, in order
                          end_with_repeat=False,   # default is to stop GoatTracker from repeating music
-                         arch='NTSC-C64')         # architecture (for import to RChirp)
+                         arch=ctsConstants.DEFAULT_ARCH)  # architecture (for import to RChirp)
 
     def set_options(self, **kwargs):
         """
@@ -120,7 +113,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         parsed_gt = GTSong()
         parsed_gt.export_rchirp_to_parsed_gt(rchirp_song,
                      self.get_option('end_with_repeat', False),
-                     self.get_option('max_pattern_len', 126))
+                     self.get_option('max_pattern_len', DEFAULT_MAX_PAT_LEN))
         return parsed_gt.export_parsed_gt_to_gt_binary()
 
     def to_file(self, rchirp_song, filename, **kwargs):
@@ -153,7 +146,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         """
         self.set_options(**kwargs)
         subtune = int(self.get_option('subtune', 0))
-        arch = self.get_option('arch', 'NTSC-C64')
+        arch = self.get_option('arch', ctsConstants.DEFAULT_ARCH)
         rchirp_song = import_sng_file_to_rchirp(filename, subtune_number=subtune)
         rchirp_song.arch = arch
         return rchirp_song
@@ -373,26 +366,6 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     rchirp = parsed_gt.import_parsed_gt_to_rchirp(subtune_number)
     
     return rchirp
-
-
-def export_rchirp_to_sng_file(path_and_filename, rchirp_song,
-    end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
-    """
-    Helper method to convert RChirp into a GoatTracker sng file
-    Consider using GoatTracker.to_file() instead of directly calling this method
-
-    :param path_and_filename: path and filename for saved sng file
-    :type path_and_filename: string
-    :param rchirp_song: RChirp data to convert and save
-    :type rchirp_song: RChirpSong
-    :param max_pattern_len: max pattern length if no orderlists found, defaults to DEFAULT_MAX_PAT_LEN
-    :type max_pattern_len: int, optional
-    """
-
-    parsed_gt = GTSong()
-    parsed_gt.export_rchirp_to_parsed_gt(
-        rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN)
-    parsed_gt.export_parsed_gt_to_sng_file(path_and_filename)
 
 
 def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
