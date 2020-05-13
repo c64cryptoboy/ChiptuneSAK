@@ -5,10 +5,10 @@ ChiptuneSAK Intermediate Representations
 .. contents::
 
 
-Chirp Formats
--------------
+Intermediate Representations
+----------------------------
 
-Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  Chirp (abstraction is notes and durations), MChirp (abstractioh is measures) and RChirp (abstracton is tracker rows).
+Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  **Chirp** (abstraction is notes and durations), **MChirp** (abstractioh is measures) and **RChirp** (abstracton is tracker rows).
 
 Chirp
 #####
@@ -39,7 +39,7 @@ Chirp Workflows
 
 This diagram illustrates the relationships between the various intermediate representations and external music formats.
 
-.. image:: chirpWorkflow.png
+.. image:: _images/chirpWorkflow.png
    :width: 500px
    :alt: chirp workflow diagram
    :align: center
@@ -49,8 +49,8 @@ For example, a Goattracker .sng file can be imported to RChirp, which may then b
 Most basic transformations of music (such as transposition, quantization, etc) are implemented for the Chirp representation.
 
 
-Concepts in Chirp music representation
---------------------------------------
+Notes on Chirp music representation
+-----------------------------------
 
 Tempo (BPM and QPM)
 ###################

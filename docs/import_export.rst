@@ -2,6 +2,8 @@
 Import / Export
 =========================
 
+.. contents::
+
 I/O Base Class
 -------------------
 
@@ -15,14 +17,25 @@ Import functions
 
 .. autoclass:: ctsBase.ChiptuneSAKIO
     :members: to_chirp, to_rchirp, to_mchirp
+    :noindex:
 
 Export functions
 ++++++++++++++++
 
 .. autoclass:: ctsBase.ChiptuneSAKIO
     :members: to_bin, to_file
+    :noindex:
 
 
+MIDI
+----
+
+.. currentmodule:: ctsMidi
+
+.. autoclass:: MIDI
+    :members: to_chirp, to_file
+    :show-inheritance:
+    :noindex:
 
 GoatTracker
 ---------------------
@@ -32,26 +45,7 @@ GoatTracker
 .. autoclass:: GoatTracker
     :members: to_rchirp, to_bin, to_file
     :show-inheritance:
-
-
-C128 BASIC
-----------
-
-.. currentmodule:: ctsC128Basic
-
-.. autoclass:: C128Basic
-    :members: to_bin, to_file
-    :show-inheritance:
-
-ML64
-----
-
-.. currentmodule:: ctsML64
-
-.. autoclass:: ML64
-    :members: to_bin, to_file
-    :show-inheritance:
-
+    :noindex:
 
 Lilypond
 --------
@@ -61,4 +55,25 @@ Lilypond
 .. autoclass:: Lilypond
     :members: to_bin, to_file
     :show-inheritance:
+    :noindex:
+
+C128 BASIC
+----------
+
+.. currentmodule:: ctsC128Basic
+
+.. autoclass:: C128Basic
+    :members: to_bin, to_file
+    :show-inheritance:
+    :noindex:
+
+ML64
+----
+
+.. currentmodule:: ctsML64
+
+.. autoclass:: ML64
+    :members: to_bin, to_file
+    :show-inheritance:
+    :noindex:
 

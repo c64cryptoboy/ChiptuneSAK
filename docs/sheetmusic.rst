@@ -35,7 +35,7 @@ Then execute the Lilypond command:
      
 The result will be `bach.png` that looks like this:
  
-.. image:: bach.png
+.. image:: _images/bach.png
     :alt: alternate bachMusic
 
 Example 2:  Midi game music to sheet music

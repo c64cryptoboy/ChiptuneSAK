@@ -28,7 +28,7 @@ class Note:
         self.duration = duration    #: In ticks
         self.velocity = velocity    #: MIDI velocity 0-127
         self.tied_from = tied_from  #: Is the next note tied from this note?
-        self.tied_to = tied_to      #: Is this note ties from the previous note?
+        self.tied_to = tied_to      #: Is this note tied from the previous note?
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
@@ -58,8 +58,8 @@ class ChirpTrack:
         self.notes = []  #: The notes in the track
         self.program_changes = []  #: Program (patch) changes in the track
         self.other = []  #: Other events in the track (includes voice changes and pitchwheel)
-        self.qticks_notes = chirp_song.qticks_notes  #: Inherit quantization from song
-        self.qticks_durations = chirp_song.qticks_durations  #: Inherit quantization from song
+        self.qticks_notes = chirp_song.qticks_notes  #: Not start quantization from song
+        self.qticks_durations = chirp_song.qticks_durations  #: Note duration quantization
         if mchirp_track is not None:
             tmp = str(type(mchirp_track))
             if tmp != "<class 'ctsMChirp.MChirpTrack'>":
@@ -71,7 +71,7 @@ class ChirpTrack:
         """
         Imports an  MChirpTrack
 
-        :param mchirp_track:
+        :param mchirp_track: track to import
         :type mchirp_track: MChirpTrack
         """
         def _anneal_notes(notes):
@@ -123,6 +123,9 @@ class ChirpTrack:
         on the entire song instead. Many pieces have fairly well-defined note start spacing, but 
         no discernable duration quantization, so in that case the default is half the note start 
         quantization.  These values are easily overridden.
+
+        :return: tuple of quantization values for (start, duration)
+        :rtype: tuple of ints
         """
         tmpNotes = [n.start_time for n in self.notes]
         self.qticks_notes = find_quantization(tmpNotes, self.chirp_song.metadata.ppq)
@@ -182,8 +185,7 @@ class ChirpTrack:
 
         :param qticks: Quantization for notes and durations
         :type qticks: int
-        :return:
-        """
+         """
         min_length = qticks * 3 // 4
         for i, n in enumerate(self.notes):
             if n.duration >= min_length:

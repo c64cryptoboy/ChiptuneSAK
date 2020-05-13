@@ -6,14 +6,12 @@ ChiptuneSAK documentation
    :caption: Table of Contents
    :maxdepth: 2
 
-   Introduction
-   MusicConcepts
+   introduction
+   musical_concepts
    chirp
-   sheetmusic
-   c128BASIC
-   importexport
-   Classes
-
+   other_formats
+   import_export
+   classes
 
 ==================
 Indices and tables

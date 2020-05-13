@@ -3,9 +3,8 @@ Musical Concepts
 ================
 
 .. toctree::
-    :caption: Table of Contents
     :maxdepth: 2
 
-    musicIntro
-    metricModulation
+    music_intro
+    metric_modulation
 
