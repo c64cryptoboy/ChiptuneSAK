@@ -1,13 +1,21 @@
-***************************
-PDF Sheetmusic via Lilypond
-***************************
+*********************
+Sheet Music: Lilypond
+*********************
 
 .. contents::
 
-Lilypond description
-####################
+Lilypond
+########
 
-**TODO**
+
+`Lilypond <http://lilypond.org/index.html>`_ is a TeX-like markup language for sheet music.  It does an excellent job of generating professional-quality music engraving.
+
+ChiptuneSAK and Lilypond
+########################
+
+ChiptuneSAK can generate Lilypond markup for a very useful subset of cases with a limited number of voices and no in-voice polyphony.
+
+To use Lilypond with ChiptuneSAK, you will need to obtain and install Lilypond for your platform. The ChiptuneSAK Lilypond generator requires the MChirp intermediate format, in which the music has been interpreted as notes in measures.
 
 Examples
 ########
@@ -19,11 +27,13 @@ You'll need to write your own script to perform this workflow.  In your code, re
 
 ::    
 
-    song = ctsMidi.import_midi_to_chirp('bach_invention_4.mid')
+    song = ctsMidi.MIDI().to_chirp('bach_invention_4.mid')
     song.quantize_from_note_name('16')  # Quantize to sixteenth notes
     song.remove_polyphony()
-    m_song = ctsMChirp.MChirpSong(song)
-    ly = ctsLilypond.export_clip_to_lilypond(m_song, m_song.tracks[0].measures[3:8])
+    m_song = song.to_mchirp()
+    lp = ctsLilypond.Lilypond()
+    lp.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
+    ly = ctsLilypond.to_bin(m_song)
     with open('bach.ly', 'w') as f:
         f.write(ly)
           

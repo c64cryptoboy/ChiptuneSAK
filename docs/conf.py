@@ -61,7 +61,7 @@ html_theme_options = {
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     #'vcs_pageview_mode': '',
-    'style_nav_header_background': 'white',
+    'style_nav_header_background': 'cornflower blue',
     # Toc options
     'collapse_navigation': True,
     'sticky_navigation': True,
@@ -69,6 +69,8 @@ html_theme_options = {
     'includehidden': True,
     'titles_only': False
 }
+
+html_logo = '_images/ChiptuneSAKLogoSmall.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
