@@ -24,6 +24,7 @@ copyright = '2020, David Youd and David Knapp'
 author = 'David Youd and David Knapp'
 
 # The full version, including alpha/beta/rc tags
+version = '0.1.15'
 release = '0.1'
 
 # -- General configuration ---------------------------------------------------
