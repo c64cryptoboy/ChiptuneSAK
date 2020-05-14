@@ -10,21 +10,16 @@ from pathlib import Path
 # Version information.  Update BUILD_VERSION with every significant bugfix;
 # update MINOR_VERSION with every feature addition
 MAJOR_VERSION = 0
-MINOR_VERSION = 13
+MINOR_VERSION = 3
 BUILD_VERSION = 0
 
 CHIPTUNESAK_VERSION = f"{MAJOR_VERSION}.{MINOR_VERSION}.{BUILD_VERSION}"
 CHIPTUNESAK_RELEASE = f"{MAJOR_VERSION}.{MINOR_VERSION}"
 
-version_history = """
-* 0.3  2020-05-12  New interface with base classes for intermediate formats, i/o, and compression
-* 0.2  2020-04-08  GoatTracker import and export
-* 0.1  2020-01-30  import from MIDI, export to Lilypond, C128
-"""
-
 BIG_NUMBER = 0xFFFFFFFF
 
 DEFAULT_MIDI_PPQN = 960
+DEFAULT_ARCH = 'NTSC-C64'
 
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
@@ -131,7 +126,6 @@ ARCH = {
                                  visible_lines=284),
 }
 
-DEFAULT_ARCH = 'NTSC-C64'
 
 def project_to_absolute_path(file_path):
     """Returns project root folder"""

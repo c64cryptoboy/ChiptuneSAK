@@ -23,7 +23,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
     
-    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
     
     # generic approach (when quantizable):
     # song.estimate_quantization()
@@ -39,23 +39,19 @@ def main():
     song.quantize(60, 60)
     # song.quantize(120, 120)
 
-
     song.remove_polyphony()
 
     if len(song.tracks) > 6:
         raise ChiptuneSAKValueError("Error: GoatTracker doesn't support more than 6 channels")
-    tracks_to_include = list(range(1,len(song.tracks)+1))
+    tracks_to_include = list(range(1, len(song.tracks)+1))
 
     is_stereo = len(song.tracks) > 3
 
-    # TODO: this functionality is moving to rchirp, where it will be chirp->rchirp, then rchirp->gt
-    #gt_binary = ctsGoatTracker.chirp_to_GT(song, args.sng_out_file, tracks_to_include, is_stereo)
-    exit("Early exit, refactoring not done yet")
-
-    with open(args.sng_out_file, 'wb') as out_file:
-        out_file.write(gt_binary)
+    rchirp_song = song.to_rchirp()
+    ctsGoatTracker.GoatTracker().to_file(rchirp_song, args.sng_out_file)
 
     print("\ndone")
+
 
 if __name__ == "__main__":
     main()

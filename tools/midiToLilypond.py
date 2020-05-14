@@ -13,6 +13,7 @@ Prints a MIDI file to Lilypond sheet music.
 NOTE:  You must have lilypond in your path for this script to work. 
 """
 
+
 def main():
     parser = argparse.ArgumentParser(description="Convert song into Lilypond score")
     parser.add_argument('midi_in_file', help='midi filename to import')
@@ -21,35 +22,24 @@ def main():
 
     args = parser.parse_args()
 
-    exporter = ctsLilypond.LilypondExporter()
+    lp = ctsLilypond.Lilypond()
 
-    autosort = False
     if args.autosort:
-        exporter.options['Autosort'] = True
+        lp.set_options(autosort="True")
 
     print("Reading %s" % args.midi_in_file)
-    chirp_song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
-    print("Removing control notes...")
-    chirp_song.remove_keyswitches()
-    print("Quantizing...")
-    qticks_n, qticks_d = chirp_song.estimate_quantization()
-    print(qticks_n, qticks_d)
-    chirp_song.quantize(qticks_n, qticks_d)
-    print("Removing polyphony...")
-    chirp_song.remove_polyphony()
+    chirp_song = ctsMidi.MIDI().to_chirp(args.midi_in_file, quantization='auto', polyphony=False)
 
     print('Converting to measures...')
-    mchirp_song = MChirpSong(chirp_song)
+    mchirp_song = chirp_song.to_mchirp()
     print('Generating lilypond...')
-    ly_out = exporter.export_str(mchirp_song)
     ly_name = args.midi_in_file.replace('.mid', '.ly')
-    print("Writing lilypond to %s" % ly_name)
-    with open(ly_name, 'w') as f:
-        f.write(ly_out)
+    lp.to_file(mchirp_song, ly_name)
 
     subprocess.call('lilypond -o %s %s' % (args.out_folder, ly_name), shell=True)
 
     print("\ndone")
+
 
 if __name__ == '__main__':
     main()

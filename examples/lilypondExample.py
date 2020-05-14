@@ -39,4 +39,3 @@ ly_file = os.path.basename(output_ly_file)
 # Run lilypond
 args = ['lilypond', '-ddelete-intermediate-files', '-dbackend=eps', '-dresolution=600', '--png', ly_file]
 subprocess.call(args, shell=True)
-

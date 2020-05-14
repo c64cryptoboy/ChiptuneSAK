@@ -4,6 +4,7 @@ import argparse
 from os import path
 import ctsMidi
 
+
 def main():
     parser = argparse.ArgumentParser(description="Perform operations on individual tracks of MIDI files.",
                                      epilog="Operations are performed in the order given in this help.")
@@ -23,7 +24,6 @@ def main():
                                                                           ' possibly consuming portion of '
                                                                           'following note')
 
-
     args = parser.parse_args()
 
     if not (args.midi_in_file.lower().endswith(r'.mid') or args.midi_in_file.lower().endswith(r'.midi')):
@@ -31,7 +31,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
 
     track = None
     if all(t.isdigit() for t in args.track):
@@ -67,7 +67,7 @@ def main():
         track.merge_notes(args.merge)
 
     print("Exporting to MIDI...")
-    ctsMidi.export_chirp_to_midi(song, args.midi_out_file)
+    ctsMidi.MIDI().to_file(song, args.midi_out_file)
 
 
 if __name__ == '__main__':

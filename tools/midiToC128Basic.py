@@ -65,12 +65,12 @@ def main():
             args.type = 'prg'
 
     basic_converter = ctsC128Basic.C128Basic()
-    basic_converter.set_arch(arch).set_format(args.type).set_instruments(instruments)
+    basic_converter.set_options(arch=args.arch, format=args.type, instruments=instruments)
     basic_converter.to_file(mchirp_song, args.basic_out_file)
 
     print("\ndone")
 
+
 if __name__ == "__main__":
     main()
-
 
