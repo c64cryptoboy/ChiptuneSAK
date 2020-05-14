@@ -7,6 +7,17 @@ import ctsOnePassCompress
 import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
+"""
+This example processes a MIDI file captured from Secret of Monkey Island to a GoatTracker song.
+
+It shows the steps needed for this conversion:
+  1. Scale and adjust the note data to correspond to musical notes and durations
+  2. Split a track with chords into 3 separate tracks
+  3. Assign GoatTracker instruments to the voices
+  4. Export the GoatTracker .sng file 
+  
+"""
+
 input_file = str(project_to_absolute_path('examples/data/MonkeyIsland_LechuckTheme.mid'))
 output_midi_file = str(project_to_absolute_path('examples/data/LeChuck.mid'))
 output_gt_file = str(project_to_absolute_path('examples/data/LeChuck.sng'))
@@ -57,7 +68,7 @@ print('Adjusting ppq and tempo...')
 
 # We desire our new song to use a standard 960 ppq and 4 notes per measure, so we scale the ticks by 4
 # (assuming 9 quarter notes per measure)
-chirp_song.scale_ticks(4.)
+chirp_song.scale_ticks(4.0)
 chirp_song.metadata.ppq = 960  # The original ppq is meaningless; it was just the ppq of the midi capture program
 
 # New tempo: original tempo was 240 qpm where ppq was given as 192 which makes 240 * 192 / 60 = 768 ticks/sec
@@ -103,11 +114,10 @@ rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
 compressor = ctsOnePassCompress.OnePassLeftToRight()
-compressor.options['min_length'] = 16
-rchirp_song = compressor.compress(rchirp_song)
+rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing {output_gt_file}')
-converter = ctsGoatTracker.GoatTracker()
-converter.set_instruments(['Lead2', 'Harpsichord', 'Bass3'])
-converter.to_file(rchirp_song, output_gt_file)
+GT = ctsGoatTracker.GoatTracker()
+GT.set_options(instruments=['Lead2', 'Harpsichord', 'Bass3'])
+GT.to_file(rchirp_song, output_gt_file)
