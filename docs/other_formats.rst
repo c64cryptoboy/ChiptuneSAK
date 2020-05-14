@@ -8,3 +8,4 @@ ChirptuneSAK Music Formats
    midi
    sheetmusic
    c128BASIC
+   goatTracker
