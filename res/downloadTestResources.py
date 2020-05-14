@@ -11,13 +11,15 @@ from ctsConstants import project_to_absolute_path
 SKIP_IF_EXISTS = True
 last_site = None
 
+
 class ResourceFile:
-    def __init__(self, remote_url, local_path, local_name = None):
+    def __init__(self, remote_url, local_path, local_name=None):
         self.remote_url = remote_url 
         self.local_path = local_path
         self.local_name = local_name
-        if local_name is None: # if filename not specified, use filename from url
+        if local_name is None:  # if filename not specified, use filename from url
             self.local_name = remote_url.split('/')[-1]
+
 
 def manage_resources(resources):
     headers = {
@@ -59,7 +61,7 @@ def manage_resources(resources):
         with open(local_file, 'wb') as out_file:
             out_file.write(content)
 
-        time.sleep(uniform(1.5, 2.8)) # be friendly to web sites
+        time.sleep(uniform(1.5, 2.8))  # be friendly to web sites
         print()
 
 
@@ -97,44 +99,44 @@ def main():
     # https://www.sannic.nl/hvsc/?dir=C64Music/MUSICIANS
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid','test/sid')) 
+        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid','test/sid')) 
+        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid','test/sid')) 
+        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid','test/sid')) 
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps.sid','test/sid')) 
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid','test/sid')) 
+        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid','test/sid')) 
+        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/must','examples/data/appleii_u4')) 
+        'http://youdzone.com/testData/appleii/u4/must', 'examples/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/muso','examples/data/appleii_u4')) 
+        'http://youdzone.com/testData/appleii/u4/muso', 'examples/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musd','examples/data/appleii_u4')) 
+        'http://youdzone.com/testData/appleii/u4/musd', 'examples/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musc','examples/data/appleii_u4')) 
+        'http://youdzone.com/testData/appleii/u4/musc', 'examples/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musb','examples/data/appleii_u4')) 
+        'http://youdzone.com/testData/appleii/u4/musb', 'examples/data/appleii_u4'))
 
     manage_resources(resources)
 
-    print ("\nDone")
+    print("\nDone")
 
 
 if __name__ == "__main__":
