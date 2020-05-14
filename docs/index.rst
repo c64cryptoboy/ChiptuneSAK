@@ -6,6 +6,7 @@ ChiptuneSAK documentation
    :caption: Table of Contents
    :maxdepth: 2
 
+   changelog
    introduction
    musical_concepts
    chirp
