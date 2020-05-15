@@ -2,15 +2,16 @@
 GoatTracker (and GoatTracker Stereo)
 ************************************
 
-Introduction
-############
+`GoatTracker <https://cadaver.github.io/>`_ is a tracker for C64/C128 that runs on modern hardware.  Songs can be developed on modern computers and then moved to the retro machines to play the music.  GoatTracker allows control of all of the SID chip's capapbilities.
 
-TODO
+GoatTracker in ChiptuneSAK
+++++++++++++++++++++++++++
 
-Overview
-########
+ChiptuneSAK can import and export GoatTracker song files in the .sng format to the various native Chirp representations.  The :ref:`GoatTracker` class is designed to convert between the GoatTracker sng format and RChirp.
 
-TODO
+The GoatTracker sng file format does not contain information about the target architecture or whether the song requires multispeed. As a result, to take advantage of either, music should be exported to the sng file, opened in GoatTracker, and any adjustments made there.
+
+GoatTracker does not have separat frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will not be tuned to the standard A440 tuning of the rest of ChiptuneSAK. The notes will play at the desired pitch in PAL mode.
 
 Example:  2SID playback in VICE
 ###############################
@@ -39,7 +40,7 @@ Next, create a .d64 floppy disk image and write the lechuck.prg export to that i
 
 * If you plan to script some of the steps of creating disk images and placing generated files into them, you can use the python `subprocess module <https://docs.python.org/3/library/subprocess.html>`_ to automate calls to the `c1541(.exe) <https://vice-emu.sourceforge.io/vice_13.html>`_ command line utility.
 
-Copy 'n paste the following BASIC music driver program into a running C64 VICE instance:
+Copy-and-paste the following BASIC music driver program into a running C64 VICE instance:
 
 .. code-block::
 

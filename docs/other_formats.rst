@@ -6,6 +6,7 @@ ChirptuneSAK Music Formats
    :maxdepth: 2
 
    midi
+   goattracker
    sheetmusic
    c128BASIC
-   goatTracker
+
