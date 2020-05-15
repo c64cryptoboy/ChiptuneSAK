@@ -1,5 +1,5 @@
-Introduction
-------------
+Music Introduction
+------------------
 
 Use of ChiptunesSAK requires a basic understanding of musical concepts; we will not attempt to inclue that here.
 
