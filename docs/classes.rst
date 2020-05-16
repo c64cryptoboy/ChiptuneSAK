@@ -77,36 +77,36 @@ RChirpSong
 Input/Output Classes
 ####################
 
-MIDI
-----
+MIDI Class
+----------
 
 .. autoclass:: ctsMidi.MIDI
     :members:
     :show-inheritance:
 
-GoatTracker
------------
+GoatTracker Class
+-----------------
 
 .. autoclass:: ctsGoatTracker.GoatTracker
     :members:
     :show-inheritance:
 
-Lilypond
---------
+Lilypond Class
+--------------
 
 .. autoclass:: ctsLilypond.Lilypond
     :members:
     :show-inheritance:
 
-C128 Basic
-----------
+C128 Basic Class
+----------------
 
 .. autoclass:: ctsC128Basic.C128Basic
     :members:
     :show-inheritance:
 
-ML-64
------
+ML64 Class
+----------
 
 .. autoclass:: ctsML64.ML64
     :members:
@@ -115,23 +115,23 @@ ML-64
 Compression Classes
 ###################
 
-One-Pass
---------
+One-Pass Class
+--------------
 
 .. autoclass:: ctsOnePassCompress.OnePass
     :members:
     :show-inheritance:
 
-One-Pass Global
-+++++++++++++++
+One-Pass Global Class
++++++++++++++++++++++
 
 .. autoclass:: ctsOnePassCompress.OnePassGlobal
     :members:
     :show-inheritance:
 
 
-One-Pass Left-to-Right
-++++++++++++++++++++++
+One-Pass Left-to-Right Class
+++++++++++++++++++++++++++++
 
 .. autoclass:: ctsOnePassCompress.OnePassLeftToRight
     :members:

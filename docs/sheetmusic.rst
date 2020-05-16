@@ -4,8 +4,8 @@ Sheet Music: Lilypond
 
 .. contents::
 
-Lilypond
-########
+Lilypond Sheet Music Markup
+###########################
 
 
 `Lilypond <http://lilypond.org/index.html>`_ is a TeX-like markup language for sheet music.  It does an excellent job of generating professional-quality music engraving.

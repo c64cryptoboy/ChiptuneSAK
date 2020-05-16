@@ -4,9 +4,6 @@ C128 BASIC music programs
 
 .. contents::
 
-Introduction
-############
-
 The Commodore 128's BASIC 7.0 has commands for playing music.
 
 * SOUND - for quick-and-dirty sound effects

@@ -11,7 +11,7 @@ ChiptuneSAK can import and export GoatTracker song files in the .sng format to t
 
 The GoatTracker sng file format does not contain information about the target architecture or whether the song requires multispeed. As a result, to take advantage of either, music should be exported to the sng file, opened in GoatTracker, and any adjustments made there.
 
-GoatTracker does not have separat frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will not be tuned to the standard A440 tuning of the rest of ChiptuneSAK. The notes will play at the desired pitch in PAL mode.
+GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will not be tuned to the standard A440 tuning of the rest of ChiptuneSAK. The notes will play at the desired pitch in PAL mode.
 
 Example:  2SID playback in VICE
 ###############################
