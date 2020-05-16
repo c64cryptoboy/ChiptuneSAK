@@ -8,12 +8,12 @@ from ctsMChirp import MChirpSong, MChirpTrack
 from ctsChirp import ChirpSong, ChirpTrack
 from ctsConstants import project_to_absolute_path
 
+TEST_SONG = project_to_absolute_path('test/data/bach_invention_4.mid')
+
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.MIDI().to_chirp(project_to_absolute_path('test/data/bach_invention_4.mid'))
-        self.test_song.quantize_from_note_name('16')
-        self.test_song.remove_polyphony()
+        self.test_song = ctsMidi.MIDI().to_chirp(TEST_SONG, quantization='16', polyphony=False)
         self.test_mchirp_song = MChirpSong(self.test_song)
 
     def test_tracks(self):

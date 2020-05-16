@@ -2,6 +2,7 @@
 
 import os
 import toolsPath
+import ctsConstants
 import argparse
 import ctsMidi
 from ctsMChirp import MChirpSong
@@ -52,7 +53,7 @@ def main():
     if args.instruments:
         instruments = (i.lower() for i in args.instruments)
 
-    arch = 'NTSC-C64'
+    arch = ctsConstants.DEFAULT_ARCH
     if args.arch:
         arch = args.arch
 
@@ -64,12 +65,12 @@ def main():
             args.type = 'prg'
 
     basic_converter = ctsC128Basic.C128Basic()
-    basic_converter.set_arch(arch).set_format(args.type).set_instruments(instruments)
+    basic_converter.set_options(arch=args.arch, format=args.type, instruments=instruments)
     basic_converter.to_file(mchirp_song, args.basic_out_file)
 
     print("\ndone")
 
+
 if __name__ == "__main__":
     main()
-
 

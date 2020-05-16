@@ -3,6 +3,7 @@ import argparse
 import functools
 import toolsPath
 from ctsBase import *
+import ctsChirp
 from ctsConstants import DURATION_STR, DEFAULT_MIDI_PPQN
 import ctsMidi
 
@@ -20,7 +21,7 @@ def objective_function(notes, desired_q, offset, scale_factor):
     err = 0
     for n in notes:
         start = (n.start_time - offset) * scale_factor
-        delta = quantization_error(start, desired_q)
+        delta = ctsChirp.quantization_error(start, desired_q)
         err += abs(delta)
     return err / scale_factor
 
@@ -54,8 +55,8 @@ def main():
     parser = argparse.ArgumentParser(description="Fit best PPQ value for MIDI files.")
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
-    parser.add_argument('-p', '--ppq', type=int, default=DEFAULT_MIDI_PPQN, nargs='?', \
-        help='preferred PPQ (default = DEFAULT_MIDI_PPQN)')
+    parser.add_argument('-p', '--ppq', type=int, default=DEFAULT_MIDI_PPQN, nargs='?',
+                        help='preferred PPQ (default = DEFAULT_MIDI_PPQN)')
     parser.add_argument('-m', '--minnote', type=str, default='16', nargs='?',
                         help='minimum interval name (default = 16)')
     parser.add_argument('-s', '--scalefactor', type=float, help='estimated scale factor')
@@ -67,7 +68,7 @@ def main():
     desired_q = desired_ppq * DURATION_STR[args.minnote]
 
     print("Reading file %s" % args.midi_out_file)
-    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
     notes = [n for t in song.tracks for n in t.notes]
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
     f_max = f_min * 8.
@@ -115,9 +116,10 @@ def main():
     song.metadata.ppq = desired_ppq
     # song.quantize_from_note_name('16')
     print("Writing file %s" % args.midi_out_file)
-    ctsMidi.export_chirp_to_midi(song, args.midi_out_file)
+    ctsMidi.MIDI().to_file(song, args.midi_out_file)
 
     print("\ndone")
+
 
 if __name__ == '__main__':
     main()

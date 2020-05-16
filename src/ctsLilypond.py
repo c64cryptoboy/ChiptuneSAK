@@ -97,6 +97,7 @@ class Lilypond(ChiptuneSAKIO):
 
         :keyword options:
             * **format** (string) - format, either 'song' or 'clip'
+            * **autosort** (bool) - sort tracks from highest to lowest average pitch
             * **measures** (list) - list of contiguous measures, from one track.
               Required for 'clip' format, ignored otherwise.
         """
@@ -304,7 +305,7 @@ class Lilypond(ChiptuneSAKIO):
         output.append('}')
         #  ---- end of headers ----
         tracks = [t for t in mchirp_song.tracks]
-        if 'Autosort' in self.options and self.options['Autosort']:
+        if self.get_option('autosort', False):
             tracks = sorted([t for t in mchirp_song.tracks], key=avg_pitch, reverse=True)
         output.append('\\new StaffGroup <<')
         for it, t in enumerate(tracks):

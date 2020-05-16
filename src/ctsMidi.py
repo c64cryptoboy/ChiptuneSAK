@@ -18,6 +18,20 @@ def sort_midi_events(msg):
 
 
 class MIDI(ChiptuneSAKIO):
+    """
+    Import/Export MIDI files to and from Chirp songs.
+
+    The Chirp format is most closely tied to the MIDI standard.  As a result, conversion between MIDI
+    files and ChirpSong objects is one of the most common ways to import and export music using the
+    ChiptuneSAK framework.
+
+    The MIDI class does not implement the standard to_bin() method because it uses the `mido`_ library to
+    process low-level midi messages, and mido only deals with MIDI files.
+
+    The Chirp framework can import both MIDI type 0 and type 1 files.  It will only write MIDI type 1 files.
+
+    .. _mido: https://mido.readthedocs.io/en/latest/
+    """
     @classmethod
     def cts_type(cls):
         return "MIDI"
@@ -27,10 +41,33 @@ class MIDI(ChiptuneSAKIO):
         self.midi_song = mido.MidiFile()
 
     def to_chirp(self, filename, **kwargs):
+        """
+        Import a midi file to Chirp format
+
+        :param filename: filename to import
+        :type filename: str
+        :return: chirp song
+        :rtype: ctsChirp.ChirpSong
+        :keyword options:
+            * **keyswitch** (bool) Remove keyswitch notes with midi number <=8 (default True)
+            * **polyphony** (bool) Allow polyphony (removal occurs after any quantization) (default True)
+            * **quantize** (str)
+                - 'auto': automatically determines required quantization
+                - '8', '16', '32', etc. : quantize to the named duration
+        """
         self.set_options(**kwargs)
         return self.import_midi_to_chirp(filename)
 
     def to_file(self, song, filename, **kwargs):
+        """
+
+        :param song: chirp song
+        :type song: ctsChirpSong
+        :param filename: filename for export
+        :type filename: str
+        :return: True on success
+        :rtype: bool
+        """
         self.set_options(**kwargs)
         return self.export_chirp_to_midi(song, filename)
 
@@ -166,6 +203,17 @@ class MIDI(ChiptuneSAKIO):
         chirp_song.stats["Notes"] = sum(len(t.notes) for t in chirp_song.tracks)
         chirp_song.stats["Track names"] = [t.name for t in chirp_song.tracks]
 
+        if self.get_option('keyswitch', True):
+            chirp_song.remove_keyswitches(ks_max=8)
+        q_type = self.get_option('quantization', None)
+        if q_type is not None:
+            if q_type == 'auto':
+                chirp_song.quantize(*chirp_song.estimate_quantization())
+            elif isinstance(q_type, int) or all(c.isdigit() for c in q_type):
+                chirp_song.quantize_from_note_name(str(q_type))
+        if not self.get_option('polyphony', 'True'):
+            chirp_song.remove_polyphony()
+
         return chirp_song
 
     def get_meta(self, chirp_song, meta_track, is_zerotrack=False, is_metatrack=False):
@@ -183,7 +231,8 @@ class MIDI(ChiptuneSAKIO):
         for msg in meta_track:
             current_time += msg.time
             if msg.type == 'time_signature':
-                chirp_song.time_signature_changes.append(TimeSignatureEvent(current_time, msg.numerator, msg.denominator))
+                chirp_song.time_signature_changes.append(
+                    TimeSignatureEvent(current_time, msg.numerator, msg.denominator))
             elif msg.type == 'set_tempo':
                 chirp_song.tempo_changes.append(TempoEvent(current_time, int(round(mido.tempo2bpm(msg.tempo)))))
             elif msg.type == 'key_signature':
@@ -204,7 +253,7 @@ class MIDI(ChiptuneSAKIO):
 
         # Require initial time signature, key signature, and tempo values.
         if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
-            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, ChirpKey("C")))  # Default top key of C
+            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, ctsKey.ChirpKey("C")))  # Default top key of C
         chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
         if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
             chirp_song.time_signature_changes.insert(0, TimeSignatureEvent(0, 4, 4))  # Default to 4/4
@@ -319,9 +368,12 @@ class MIDI(ChiptuneSAKIO):
         Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
         is tied to many midi concepts and uses midid messages explicitly for some content.
         """
+        if chirp_song.cts_type() != 'Chirp':
+            raise ChiptuneSAKNotImplemented("Only ChirpSong objects can be exported to midi")
         out_midi_file = mido.MidiFile(ticks_per_beat=chirp_song.metadata.ppq)
         out_midi_file.tracks.append(self.meta_to_midi_track(chirp_song))
         for t in chirp_song.tracks:
             out_midi_file.tracks.append(self.chirp_track_to_midi_track(t))
         out_midi_file.save(output_filename)
+        return True
 

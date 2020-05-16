@@ -7,11 +7,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-CHIPTUNESAK_VERSION = "0.13"
+# Version information.  Update BUILD_VERSION with every significant bugfix;
+# update MINOR_VERSION with every feature addition
+MAJOR_VERSION = 0
+MINOR_VERSION = 3
+BUILD_VERSION = 0
+
+CHIPTUNESAK_VERSION = f"{MAJOR_VERSION}.{MINOR_VERSION}.{BUILD_VERSION}"
+CHIPTUNESAK_RELEASE = f"{MAJOR_VERSION}.{MINOR_VERSION}"
 
 BIG_NUMBER = 0xFFFFFFFF
 
 DEFAULT_MIDI_PPQN = 960
+DEFAULT_ARCH = 'NTSC-C64'
 
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60

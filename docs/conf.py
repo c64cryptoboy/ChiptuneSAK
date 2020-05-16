@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(1, os.path.abspath('../tools'))
 sys.path.insert(1, os.path.abspath('../src'))
-
+import ctsConstants
 
 # -- Project information -----------------------------------------------------
 
@@ -24,14 +24,16 @@ copyright = '2020, David Youd and David Knapp'
 author = 'David Youd and David Knapp'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+version = ctsConstants.CHIPTUNESAK_VERSION
+release = ctsConstants.CHIPTUNESAK_RELEASE
 
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc',]
+extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc',
+              'sphinx.ext.autosectionlabel']
 
 autodoc_member_order = 'bysource'
 
@@ -61,7 +63,7 @@ html_theme_options = {
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     #'vcs_pageview_mode': '',
-    'style_nav_header_background': 'white',
+    'style_nav_header_background': 'cornflower blue',
     # Toc options
     'collapse_navigation': True,
     'sticky_navigation': True,
@@ -69,6 +71,8 @@ html_theme_options = {
     'includehidden': True,
     'titles_only': False
 }
+
+html_logo = '_images/ChiptuneSAKLogoSmall.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

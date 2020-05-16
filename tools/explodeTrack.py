@@ -5,6 +5,7 @@ import toolsPath
 import ctsChirp
 import ctsMidi
 
+
 def main():
     parser = argparse.ArgumentParser(description="Explode MIDI track.")
     parser.add_argument('midi_in_file', help='midi filename to import')
@@ -20,7 +21,7 @@ def main():
     if not os.path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
 
     if args.tracknumber:
         print("Exploding track number %d" % args.tracknumber)
@@ -37,9 +38,8 @@ def main():
         print("No track specified")
         exit(1)
 
-    ctsMidi.export_chirp_to_midi(song, args.midi_out_file)
+    ctsMidi.MIDI().to_file(song, args.midi_out_file)
 
 
 if __name__ == '__main__':
     main()
-

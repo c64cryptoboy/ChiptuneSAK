@@ -16,7 +16,8 @@ def main():
     parser.add_argument('-x', '--moveticks', type=str, help='move ticks lXXXX for left and rXXXX for right')
     parser.add_argument('-p', '--ppq', type=int, help='set ppq')
     parser.add_argument('-m', '--modulate', type=str, help='modulate by n/d')
-    parser.add_argument('-t', '--transpose', type=str, help='transpose by semitones (uXX or dXX for up or down XX semitones)')
+    parser.add_argument('-t', '--transpose', type=str,
+                        help='transpose by semitones (uXX or dXX for up or down XX semitones)')
     quant_group = parser.add_mutually_exclusive_group(required=False)
     quant_group.add_argument('-a', '--quantizeauto', action="store_true", help='Auto-quantize')
     quant_group.add_argument('-q', '--quantizenote', type=str, help='quantize to a note value')
@@ -33,7 +34,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.import_midi_to_chirp(args.midi_in_file)
+    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
 
     # Print stats
     print('%d notes' % (sum(len(t.notes) for t in song.tracks)))
@@ -121,7 +122,7 @@ def main():
     # print('\n'.join("%24s %s" % (s, str(v)) for s, v in song.stats.items()))
 
     print("Exporting to MIDI...")
-    ctsMidi.export_chirp_to_midi(song, args.midi_out_file)
+    ctsMidi.MIDI().to_file(song, args.midi_out_file)
 
 
 if __name__ == '__main__':

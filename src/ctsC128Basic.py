@@ -52,7 +52,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
         self.set_options(format='prg',
-                         arch='NTSC-C64',
+                         arch=ctsConstants.DEFAULT_ARCH,
                          instruments=['piano', 'piano', 'piano'])
 
     def set_options(self, **kwargs):
@@ -90,11 +90,10 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
             * **arch** (string) - architecture name (see ctsBase for complete list)
             * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
             * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
-              Default is ['piano', 'piano', 'piano']
-              Supports the default C128 BASIC instruments:
-                0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute',
-                5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
-
+                - Default is ['piano', 'piano', 'piano']
+                - Supports the default C128 BASIC instruments:
+                  0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute',
+                  5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
         """
         self.set_options(**kwargs)
         if mchirp_song.cts_type() != 'MChirp':
