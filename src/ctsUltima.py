@@ -1,4 +1,5 @@
 import os
+import csv
 import ctsMidi
 import ctsConstants
 from ctsBase import *
@@ -211,7 +212,7 @@ class Ultima4Voice:
         self.adsr_release_time = self.fetch_data_byte()
 
     def set_transpose(self):
-        self.transpose = self.fetch_data_byte()
+        self.transpose = self.fetch_data_byte(signed=True)
         print("set transpose:", self.transpose)
 
     def set_pitchbend(self):
@@ -298,10 +299,19 @@ class Ultima4Music:
 
 # Open the Ultima IV music file
 musicPath = ctsConstants.project_to_absolute_path('examples/data/appleii_u4/')
-music = Ultima4Music(os.path.join(musicPath, 'muso'))
-print("Number of songs in file: ", music.num_songs)
-print(music.name)
-print(music)
-chirp_song = music.import_song_to_chirp(1)
-midi_song = MIDI()
-midi_song.export_chirp_to_midi(chirp_song, "u4song.mid")
+f_songinfo = os.path.join(musicPath, 'u4songs.csv')
+with open(f_songinfo, 'r') as csvfile:
+    csvreader = csv.reader(csvfile, delimiter=",")
+    rows = []
+    for row in csvreader:
+        rows.append(row)
+    info = [dict(zip(rows[0], row)) for row in rows[1:]]
+
+for song in info:
+    print("Extracting song:", song['title'])
+    music = Ultima4Music(os.path.join(musicPath, song['fname']))
+    print("Number of songs in file: ", music.num_songs)
+    chirp_song = music.import_song_to_chirp(int(song['songno']) - 1)
+    midi_song = MIDI()
+    midi_song.export_chirp_to_midi(chirp_song, song['title']+'.mid')
+
