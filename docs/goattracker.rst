@@ -2,7 +2,7 @@
 GoatTracker (and GoatTracker Stereo)
 ************************************
 
-`GoatTracker <https://cadaver.github.io/>`_ is a tracker for C64/C128 that runs on modern hardware.  Songs can be developed on modern computers and then moved to the retro machines to play the music.  GoatTracker allows control of all of the SID chip's capapbilities.
+`GoatTracker <https://cadaver.github.io/>`_ is a tracker for C64/C128 that runs on modern hardware.  Songs can be developed on modern computers and then moved to the retro machines to play the music.  GoatTracker allows control of many of the SID chip's capapbilities.
 
 GoatTracker in ChiptuneSAK
 ++++++++++++++++++++++++++
@@ -11,7 +11,10 @@ ChiptuneSAK can import and export GoatTracker song files in the .sng format to t
 
 The GoatTracker sng file format does not contain information about the target architecture or whether the song requires multispeed. As a result, to take advantage of either, music should be exported to the sng file, opened in GoatTracker, and any adjustments made there.
 
-GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will not be tuned to the standard A440 tuning of the rest of ChiptuneSAK. The notes will play at the desired pitch in PAL mode.
+**Note:** GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will not be tuned to the standard A440 tuning of the rest of ChiptuneSAK. To make the notes play at the desired pitch, the song must be encoded in PAL mode.
+
+GoatTracker comes in two versions: the original, which can play 3 voices with one SID, an a stereo version, which can play 6 voices using 2 SIDs. ChiptuneSAK supports both versions, automatically selecting the version based on the number of voices.
+
 
 Example:  2SID playback in VICE
 ###############################

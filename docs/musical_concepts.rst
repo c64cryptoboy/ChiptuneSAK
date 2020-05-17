@@ -6,5 +6,6 @@ Musical Concepts
     :maxdepth: 2
 
     music_intro
+    quantization
     metric_modulation
 
