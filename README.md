@@ -81,14 +81,12 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ## Requirements/Building
 * [Python 3.7+](https://www.python.org/downloads/)
   * pip install
-    * numpy
     * matplotlib
-    * more-itertools
-    * sphinx
     * mido
-    * ~~recordtype~~
-    * ~~sortedcontainers~~
-    * ~~cbmcodecs~~
+    * more-itertools
+    * numpy
+    * parameterized
+    * sphinx
  * [Lilypond](https://lilypond.org/download.html)
 
 ## Generating Documentation

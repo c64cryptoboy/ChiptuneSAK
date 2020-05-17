@@ -20,9 +20,8 @@
 # TODOs:
 # - Develop test cases for gaps in test coverage
 
-from ctsConstants import project_to_absolute_path
+from ctsConstants import project_to_absolute_path, ARCH
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
-from ctsConstants import ARCH
 
 DEBUG = False
 

@@ -10,8 +10,13 @@
 # -- $FFE4 (so that no there's no user keyboard interaction)
 # -- $FFD2 (so I can tell status without looking at screen memory)
 
-from parameterized import parameterized, parameterized_class
+import wolfgangTestPath
 import unittest
+import cts6502Emulator
+from parameterized import parameterized, parameterized_class
+from ctsBytesUtil import read_binary_file
+from ctsConstants import project_to_absolute_path
+
 
 binary_file_tests = [
     ("adca",  "adc absolute"),
@@ -279,24 +284,68 @@ binary_file_tests = [
     ("tyan", "tya")]
 
 
+
+class TestWolfgangLorenzPrograms(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    @parameterized.expand(binary_file_tests)
+    def test_wl(self, file_name, test_name):
+        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
+        print('DEBUG: Running test "%s"' %(test_name))
+        
+        cpuState = cts6502Emulator.Cpu6502Emulator()
+        cpuState.inject_bytes(2049, test_prg)
+        # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
+        # state gets reset between tests automaticlaly via each separate cpu instance
+        cpuState.init_cpu(2070)
+
+        # Code contains JMP ($A002), so a indirect jump to the warm start vector.  We shouldn't
+        # hit that, so no need to init $A002/$A003
+        # Code also sometimes exists to BASIC through $A474, which would result in another BRK exit
+        # if reached.
+
+        # Replace some missing routines with RTS instructions (so they're not BRKs)
+        cpuState.memory[65490] = 0x60 # $FFD2
+        cpuState.memory[32768] = 0x60 # $8000
+
+        # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
+        cpuState.inject_bytes(65508, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
+
+        output_text = ""
+        failed_test = False
+        while cpuState.runcpu():
+            # Capture petscii characters sent to screen print routine
+            if cpuState.pc == 65490: # $FFD2
+                output_text += chr(cpuState.a)
+
+            # Don't need test to load the next test, as this python is managing the test loading
+            if cpuState.pc == 57711: # load is $E168, skips entry point and jumps to $E16F
+                # debugging: pointer to next test name string (zero-terminated) is
+                #    mem($BC) << 8 | mem($BB)
+                break # we're done with this test
+
+            # if test program is asking for keyboard input from GETIN, that means we hit an error.
+            # we could stop, or we could gather up all the output text from all the errors for this case
+            if cpuState.pc == 65508: # $FFE4
+                failed_test = True
+
+            # test code makes calls to 32768, but it doesn't put anything there, so it's a
+            # BRK when testing in VICE.  This must be cartridge handling that we don't need.
+            if cpuState.pc == 32768: # $8000
+                exit("DEBUG: Shouldn't reach calls to $8000, handle this case")
+
+        # TODO:  Should look at the PC whenever a BRK was encountered to see what else needs
+        # to be hooked.
+
+        self.assertTrue(True)
+
 """
-Hints on how to stub out BASIC/KERNAL calls to run the tests in a light emulation:
+TODO: 
+
 http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html
 
-    - Check the filename for "trap17" and exit if it is, since this is 
-where testing of non-6510 stuff begins
-
-     - Read the starting address from the two first bytes of the file 
-(LO, HI)
-
-     - Load the rest of the file into memory at the specified starting 
-address
-
      - Initialize some memory locations:
-
-         $0002 = $00
-         $A002 = $00
-         $A003 = $80
          $FFFE = $48
          $FFFF = $FF
          $01FE = $FF
@@ -316,48 +365,9 @@ address
          FF55  6C 16 03  JMP    ($0316)
          FF58  6C 14 03  JMP    ($0314)
 
-     - Put trap instructions at $FFD2, $E16F, $FFE4, $8000 and $A474
-
-     - Set S to $FD, P to $04 and PC to $0801
-
-The trap handler does the following:
-
-if PC == $FFD2 (Print character):
-     Set $030C = 0
-     Print PETSCII character corresponding to value of A
-     Pop return address from stack
-     Set PC to return address
-     Re-start the CPU
-
-if PC == $E16F (Load):
-     $BB is PETSCII filename address, low byte
-     $BC is PETSCII filename address, high byte
-     $B7 is PETSCII filename lenght
-     Load the file
-     Pop return address from stack
-     Set PC to $0816
-     Re-start the CPU
-
-if PC == $FFE4 (Scan keyboard):
-     Set A to 3
-     Pop return address from stack
-     Set PC to return address
-     Re-start the CPU
-
-if PC == $8000:
-if PC == $A474:
-     Exit
 """
-
-class TestWolfgangLorenzPrograms(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    @parameterized.expand(binary_file_tests)
-    def test_wl(self, file_name, test_name):
-        self.assertTrue(True)
 
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()
-    unittest.main(failfast=False)
+    unittest.main(failfast=True)
