@@ -20,9 +20,8 @@
 # TODOs:
 # - Develop test cases for gaps in test coverage
 
-from ctsConstants import project_to_absolute_path
+from ctsConstants import project_to_absolute_path, ARCH
 from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
-from ctsConstants import ARCH
 
 DEBUG = False
 
@@ -61,7 +60,6 @@ cpucycles_table = [
 
 
 class Cpu6502Emulator:
-
     # Note: memory is integers, not bytes, because we want to be able to perform
     # arbitrary assignments
     def __init__(self):
@@ -69,7 +67,7 @@ class Cpu6502Emulator:
         self.a = 0  #: accumulator (byte)
         self.x = 0  #: x register (byte)
         self.y = 0  #: y register (byte)
-        self.flags = 0  #: flags (byte)
+        self.flags = FU  #: flags (byte)
         self.sp = 0  #: stack pointer (byte)
         self.pc = 0  #: program counter (16-bit)
         self.has_basic = False  #: True if BASIC ROM loaded
