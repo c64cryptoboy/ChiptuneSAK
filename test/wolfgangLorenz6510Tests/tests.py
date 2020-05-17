@@ -17,6 +17,7 @@ from parameterized import parameterized, parameterized_class
 from ctsBytesUtil import read_binary_file
 from ctsConstants import project_to_absolute_path
 
+cpuState = None
 
 binary_file_tests = [
     ("adca",  "adc absolute"),
@@ -284,30 +285,75 @@ binary_file_tests = [
     ("tyan", "tya")]
 
 
-
 class TestWolfgangLorenzPrograms(unittest.TestCase):
     def setUp(self):
-        pass
-
-    @parameterized.expand(binary_file_tests)
-    def test_wl(self, file_name, test_name):
-        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
-        print('DEBUG: Running test "%s"' %(test_name))
+        global cpuState
         
         cpuState = cts6502Emulator.Cpu6502Emulator()
-        cpuState.inject_bytes(2049, test_prg)
-        # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
-        # state gets reset between tests automaticlaly via each separate cpu instance
-        cpuState.init_cpu(2070)
 
         # Code contains JMP ($A002), so a indirect jump to the warm start vector.  We shouldn't
         # hit that, so no need to init $A002/$A003
         # Code also sometimes exists to BASIC through $A474, which would result in another BRK exit
         # if reached.
 
+        # set kernal ROM hardware vectors to their kernal entry points
+        # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
+        # - $FFFC system reset vector points to power-on routine $FCE2
+        # - $FFFE maskable interrupt request and break vector points to main IRQ handler $FF48
+        cpuState.inject_bytes(65530, [0x43, 0xfe, 0xe2, 0xfc, 0x48, 0xff])
+
+        # set RAM interrupt routine vectors
+        cpuState.inject_bytes(788, [0x31, 0xea, 0x66, 0xfe, 0x47, 0xfe])
+        # - $0314 (CINV) IRQ interrupt routine vector, defaults to $EA31
+        # - $0316 (CBINV) BRK instruction interrupt vector, defaults to $FE66
+        # - $0318 (NMINV) Non-maskable interrupt vector, default to $FE47
+
+        # patch $EA31 to jump to $EA81
+        cpuState.inject_bytes(59953, [0x4c, 0x81, 0xea])
+
+        # inject original kernal snippet into $EA81 (instructions PLA, TAY, PLA, TAX, PLA, RTI)
+        cpuState.inject_bytes(59953, [0x68, 0xa8, 0x68, 0xa4, 0x68, 0x40]) 
+
+        # inject original kernal snippet into $FF48 (ROM IRQ/BRK Interrupt Entry routine)
+        # FF48  48        PHA         ; put accumulator, x, and y on stack
+        # FF49  8A        TXA
+        # FF4A  48        PHA
+        # FF4B  98        TYA
+        # FF4C  48        PHA
+        # FF4D  BA        TSX         ; test flags
+        # FF4E  BD 04 01  LDA $0104,X
+        # FF51  29 10     AND #$10 
+        # FF53  F0 03     BEQ $FF58
+        # FF55  6C 16 03  JMP ($0316) ; break flag set (software irq)
+        # FF58  6C 14 03  JMP ($0314) ; hardware irq        
+        cpuState.inject_bytes(65352,
+            [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
+            0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
+
         # Replace some missing routines with RTS instructions (so they're not BRKs)
-        cpuState.memory[65490] = 0x60 # $FFD2
-        cpuState.memory[32768] = 0x60 # $8000
+        cpuState.memory[65490] = 0x60 # $FFD2 CHROUT
+        cpuState.memory[65091] = 0x60 # $FE43 NMI Interrupt Entry Point
+        cpuState.memory[64738] = 0x60 # $FCE2 power-on reset routine
+        cpuState.memory[65095] = 0x60 # $FE47 NMI handler
+        # normally inits stuff then cartrige warm start via JMP ($A002)
+        cpuState.memory[65126] = 0x60 # FE66
+
+        # no cartridge being emulated, so we'll point the $8000 cold start vector to good ol' 64738
+        # which we RTS stubbed above
+        cpuState.inject_bytes(32768, [0xe2, 0xfc])
+
+
+    @parameterized.expand(binary_file_tests)
+    def test_wl(self, file_name, test_name):
+        global cpuState
+
+        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
+        print('DEBUG: Running test "%s"' %(test_name))
+        
+        cpuState.inject_bytes(2049, test_prg)
+        # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
+        # state gets reset between tests automaticlaly via each separate cpu instance
+        cpuState.init_cpu(2070)
 
         # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
         cpuState.inject_bytes(65508, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
@@ -330,42 +376,13 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
             if cpuState.pc == 65508: # $FFE4
                 failed_test = True
 
-            # test code makes calls to 32768, but it doesn't put anything there, so it's a
-            # BRK when testing in VICE.  This must be cartridge handling that we don't need.
-            if cpuState.pc == 32768: # $8000
-                exit("DEBUG: Shouldn't reach calls to $8000, handle this case")
+            if cpuState.pc == 64738:
+                exit("DEBUG: We hit a reset?")
 
         # TODO:  Should look at the PC whenever a BRK was encountered to see what else needs
         # to be hooked.
 
         self.assertTrue(True)
-
-"""
-TODO: 
-
-http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html
-
-     - Initialize some memory locations:
-         $FFFE = $48
-         $FFFF = $FF
-         $01FE = $FF
-         $01FF = $7F
-
-     - Set up the KERNAL "IRQ handler" at $FF48:
-
-         FF48  48        PHA
-         FF49  8A        TXA
-         FF4A  48        PHA
-         FF4B  98        TYA
-         FF4C  48        PHA
-         FF4D  BA        TSX
-         FF4E  BD 04 01  LDA    $0104,X
-         FF51  29 10     AND    #$10
-         FF53  F0 03     BEQ    $FF58
-         FF55  6C 16 03  JMP    ($0316)
-         FF58  6C 14 03  JMP    ($0314)
-
-"""
 
 
 if __name__ == '__main__':
