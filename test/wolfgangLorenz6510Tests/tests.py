@@ -288,13 +288,8 @@ binary_file_tests = [
 class TestWolfgangLorenzPrograms(unittest.TestCase):
     def setUp(self):
         global cpuState
-        
-        cpuState = cts6502Emulator.Cpu6502Emulator()
 
-        # Code contains JMP ($A002), so a indirect jump to the warm start vector.  We shouldn't
-        # hit that, so no need to init $A002/$A003
-        # Code also sometimes exists to BASIC through $A474, which would result in another BRK exit
-        # if reached.
+        cpuState = cts6502Emulator.Cpu6502Emulator()
 
         # set kernal ROM hardware vectors to their kernal entry points
         # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
@@ -307,6 +302,11 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # - $0314 (CINV) IRQ interrupt routine vector, defaults to $EA31
         # - $0316 (CBINV) BRK instruction interrupt vector, defaults to $FE66
         # - $0318 (NMINV) Non-maskable interrupt vector, default to $FE47
+
+        # set yet more vectors
+        # - $A000, basic cold start vector, points to $E394
+        # = $A002, basic warm start / NMI entry vector, points to $E37B
+        cpuState.inject_bytes(40960, [0x94, 0xe3, 0x7b, 0xe3])       
 
         # patch $EA31 to jump to $EA81
         cpuState.inject_bytes(59953, [0x4c, 0x81, 0xea])
@@ -335,12 +335,9 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         cpuState.memory[65091] = 0x60 # $FE43 NMI Interrupt Entry Point
         cpuState.memory[64738] = 0x60 # $FCE2 power-on reset routine
         cpuState.memory[65095] = 0x60 # $FE47 NMI handler
-        # normally inits stuff then cartrige warm start via JMP ($A002)
-        cpuState.memory[65126] = 0x60 # FE66
-
-        # no cartridge being emulated, so we'll point the $8000 cold start vector to good ol' 64738
-        # which we RTS stubbed above
-        cpuState.inject_bytes(32768, [0xe2, 0xfc])
+        cpuState.memory[65126] = 0x60 # $FE66 (instead of init then JMP ($A002))
+        cpuState.memory[58260] = 0x60 # $E394 basic cold entry
+        cpuState.memory[58235] = 0x60 # $E37B basic warm entry / NMI entry
 
 
     @parameterized.expand(binary_file_tests)
@@ -354,6 +351,13 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
         cpuState.init_cpu(2070)
+
+        # TODO: should be no need to set the two cartridge vectors?
+        # $8000-$8001, 32768-32769: Execution address of cold reset.
+        # $8002-$8003, 32770-32771: Execution address of non-maskable interrupt service routine.
+
+        # TODO: Code also sometimes exits to BASIC through $A474, which would result in another BRK exit
+        # if reached.
 
         # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
         cpuState.inject_bytes(65508, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
