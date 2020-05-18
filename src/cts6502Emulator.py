@@ -432,6 +432,7 @@ class Cpu6502Emulator:
             self.flags |= FC
         else:
             self.flags &= (~FC & 0xff)
+        temp &= 0xff
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
     # #define LSR(data)                       \
@@ -572,6 +573,8 @@ class Cpu6502Emulator:
         self.flags = flags
         self.sp = 0xff
         self.cpucycles = 0
+
+    # ---------------------------------------------------------------------------
 
     # int runcpu(void)
     # {

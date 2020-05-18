@@ -124,7 +124,7 @@ binary_file_tests = [
     ("eorzx", "eor zeropage,x"),
     ("flipos", "flipos"),
     ("icr01", "icr01"),
-    ("imr", "imr                   TODO ?????"),
+    ("imr", "imr"),
     ("inca", "inc absolute"),
     ("incax", "inc absolute,x"),
     ("incz", "inc zeropage"),
@@ -324,8 +324,8 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # FF4E  BD 04 01  LDA $0104,X
         # FF51  29 10     AND #$10 
         # FF53  F0 03     BEQ $FF58
-        # FF55  6C 16 03  JMP ($0316) ; break flag set (software irq)
-        # FF58  6C 14 03  JMP ($0314) ; hardware irq        
+        # FF55  6C 16 03  JMP ($0316) ; if software irq (break flag set)
+        # FF58  6C 14 03  JMP ($0314) ; if hardware irq        
         cpuState.inject_bytes(65352,
             [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
             0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
@@ -335,7 +335,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         cpuState.memory[65091] = 0x60 # $FE43 NMI Interrupt Entry Point
         cpuState.memory[64738] = 0x60 # $FCE2 power-on reset routine
         cpuState.memory[65095] = 0x60 # $FE47 NMI handler
-        cpuState.memory[65126] = 0x60 # $FE66 (instead of init then JMP ($A002))
+        cpuState.memory[65126] = 0x60 # $FE66 init things then BASIC warm start using vec $A002
         cpuState.memory[58260] = 0x60 # $E394 basic cold entry
         cpuState.memory[58235] = 0x60 # $E37B basic warm entry / NMI entry
 
@@ -344,27 +344,47 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
     def test_wl(self, file_name, test_name):
         global cpuState
 
-        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
         print('DEBUG: Running test "%s"' %(test_name))
-        
+
+        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
+        test_prg = test_prg[2:]  # strip off load addr (it's always 2049)
+
         cpuState.inject_bytes(2049, test_prg)
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
-        cpuState.init_cpu(2070)
+        cpuState.init_cpu(2070) # $816
 
-        # TODO: should be no need to set the two cartridge vectors?
+        # This http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html says when loading
+        # a test yourself (instead of using test code's loader), do these settings:
+        #    P to $04 (Set interrupt flag?  I'm going to ignore that)
+        #    $0002 = $00 (done by default)
+        #    $A002 = $00; $A003 = $80
+        #    $FFFE = $48; $FFFF = $FF (done in setUp())
+        #    As for the stack, set S to $FD and set $01FE = $FF and $01FF = $7F
+        cpuState.inject_bytes(0xa002, [0x00, 0x80])  # override from setUp() 
+        # put an address on the stack
+        cpuState.sp = 0xfd
+        cpuState.memory[0x01FE] = 0xff
+        cpuState.memory[0x01FF] = 0x7f
+
+        # TODO: should be no need to set the two cartridge basic reset vectors?
         # $8000-$8001, 32768-32769: Execution address of cold reset.
         # $8002-$8003, 32770-32771: Execution address of non-maskable interrupt service routine.
 
-        # TODO: Code also sometimes exits to BASIC through $A474, which would result in another BRK exit
-        # if reached.
+        cpuState.memory[42100] = 0xea # Tests will sometimes exit to BASIC through $A474, trap it later
 
         # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
-        cpuState.inject_bytes(65508, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
+        cpuState.inject_bytes(0xffe4, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
 
         output_text = ""
-        failed_test = False
+        passed_test = True
         while cpuState.runcpu():
+
+            # current debug point
+            #if cpuState.cpucycles == 2149:
+            #    if (1==1):
+            #        pass
+
             # Capture petscii characters sent to screen print routine
             if cpuState.pc == 65490: # $FFD2
                 output_text += chr(cpuState.a)
@@ -375,10 +395,16 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
                 #    mem($BC) << 8 | mem($BB)
                 break # we're done with this test
 
+            if cpuState.pc == 42100: # if exit to BASIC
+                break
+
             # if test program is asking for keyboard input from GETIN, that means we hit an error.
             # we could stop, or we could gather up all the output text from all the errors for this case
             if cpuState.pc == 65508: # $FFE4
-                failed_test = True
+                passed_test = False
+
+            if cpuState.pc == 59953: # $EA31
+                print("DEBUG: software IRQ exit routine entered")
 
             if cpuState.pc == 64738:
                 exit("DEBUG: We hit a reset?")
@@ -386,7 +412,9 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # TODO:  Should look at the PC whenever a BRK was encountered to see what else needs
         # to be hooked.
 
-        self.assertTrue(True)
+        print("\ntest: %s, pass: %s, accumulated output: %s" %
+            (test_name, passed_test, output_text))
+        self.assertTrue(passed_test)
 
 
 if __name__ == '__main__':
