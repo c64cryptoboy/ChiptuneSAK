@@ -20,19 +20,43 @@ from ctsConstants import project_to_absolute_path
 
 cpuState = None
 
+# psuedo-op docs taken from http://www.ffd2.com/fridge/docs/6502-NMOS.extra.opcodes
 binary_file_tests = [
-    # These all work:
-    #("adca",  "adc absolute"),
-    #("adcax", "adc absolute,x"),
-    #("adcay", "adc absolute,y"),
-    #("adcb", "adc immediate"),
-    #("adcix", "adc (indirect,x)"),
-    #("adciy", "adc (indirect),y"),
-    #("adcz", "adc zeropage"),
-    # ("adczx", "adc zeropage,x"),
-    
-    ("alrb", "alr immediate"),
-    ("ancb", "anc immediate"),
+    # ADC tests
+    ("adca",  "adc absolute"),
+    ("adcax", "adc absolute,x"),
+    ("adcay", "adc absolute,y"),
+    ("adcb", "adc immediate"),
+    ("adcix", "adc (indirect,x)"),
+    ("adciy", "adc (indirect),y"),
+    ("adcz", "adc zeropage"),
+    ("adczx", "adc zeropage,x"),
+
+    # ALR    ***
+    # This opcode ANDs the contents of the A register with an immediate value and 
+    # then LSRs the result.
+    # One supported mode:
+    # ALR #ab         ;4B ab       ;No. Cycles= 2
+    # Example:
+    # ALR #$FE        ;4B FE
+    # Equivalent instructions:
+    # AND #$FE
+    # LSR A
+    #
+    #("alrb", "alr immediate"),  # not yet supported in our emulator
+
+    # ANC    ***
+    # ANC ANDs the contents of the A register with an immediate value and then 
+    # moves bit 7 of A into the Carry flag.  This opcode works basically 
+    # identically to AND #immed. except that the Carry flag is set to the same 
+    # state that the Negative flag is set to.
+    # One supported mode:
+    # ANC #ab         ;2B ab       ;No. Cycles= 2
+    # ANC #ab         ;0B ab
+    #
+    #("ancb", "anc immediate"),  # not yet supported in our emulator
+
+    # AND tests
     ("anda", "and absolute"),
     ("andax", "and absolute,x"),
     ("anday", "and absolute,y"),
@@ -41,7 +65,16 @@ binary_file_tests = [
     ("andiy", "and (indirect),y"),
     ("andz", "and zeropage"),
     ("andzx", "and zeropage,x"),
-    ("aneb", "ane immediate"),
+
+    # XAA    ***
+    # XAA transfers the contents of the X register to the A register and then 
+    # ANDs the A register with an immediate value.
+    # One supported mode:
+    # XAA #ab         ;8B ab       ;No. Cycles= 2
+    #
+    #("aneb", "xaa (aka ane) immediate"),  # not yet supported in our emulator
+    #    Note: the aneb test fails repeatedly in VICE, which I trust more
+
     ("arrb", "arr immediate"),
     ("asla", "asl absolute"),
     ("aslax", "asl absolute,x"),
@@ -287,6 +320,12 @@ binary_file_tests = [
     ("txsn", "txs"),
     ("tyan", "tya")]
 
+start_tests_at = 0 # start at the beginning
+# when debugging, start at the named test:
+start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('arrb')
+
+tests_to_run = binary_file_tests[start_tests_at:]
+
 
 # translate alphabet from mixed-case (mode) petscii to ascii
 # TODO:  This method is only compelte enough for these tests, it's not yet general
@@ -363,7 +402,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         cpuState.memory[58235] = 0x60 # $E37B basic warm entry / NMI entry
 
 
-    @parameterized.expand(binary_file_tests)
+    @parameterized.expand(tests_to_run)
     def test_wl(self, file_name, test_name):
         global cpuState
 
