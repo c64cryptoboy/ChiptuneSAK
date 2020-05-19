@@ -36,7 +36,7 @@ ChiptuneSAK defaults to a PPQ of 960, which allows fine-resolution playback of m
 MIDI Recordings and PPQ
 #######################
 
-Much game music, especially from DOS games, was stored and played back as MIDI commands to the sound cards. Many of these songs have been recorded by capturing the MIDI messages and saving them. While this technique allows simple reproduction of the music, the captured MIDI commands do not have any information about tempo or PPQ, and thus a great deal of information is lost.  ChiptuneSAK has tools that will help to recover that lost information to aid in transforming it to other forms, such as sheet music or tracker-based music.
+Much game music, especially from DOS games, was played as MIDI commands to the sound cards. The internal storage of the music was often not as MIDI files, however. Many of these songs have been recovered by capturing the MIDI messages and saving them. While this technique allows simple reproduction of the music, the captured MIDI commands do not have any information about tempo or PPQ, and thus a great deal of information is lost.  ChiptuneSAK has tools that will help to recover that lost information to aid in transforming it to other forms, such as sheet music or tracker-based music.
 
 MIDI Key Signatures and Time Signatures
 +++++++++++++++++++++++++++++++++++++++
@@ -51,3 +51,11 @@ MIDI File Encoding
 To save space, MIDI files store messages in what is known as *time-delta* format.  That is, the messages are stored as events along with the time in ticks between events. There is no concept of absolute time for MIDI messages.  A note is started with a note_on message and ended with a note_off message. The MIDI protocol is stateless and has no concept of note durations.
 
 Humans, on the other hand, do not perceive music in a stateless way.  We think of notes as starting and having a duration.  ChiptuneSAK converts the stateless MIDI messages to a human-friendly stateful representation to make editing, conversion, and display easier.
+
+MIDI Keyswitches
+++++++++++++++++
+
+Some modern virtual instruments (such as Garritan) use `keyswitches <https://blog.presonus.com/index.php/2018/11/30/friday-tips-keyswitching-made-easy/>`_ , specific (usually low) MIDI notes that trigger real-time modification of instrument sounds during performance. This practice violates the spirit of the MIDI standard, in that it uses  *notes* to trigger *effects*, something that was meant to be done via MIDI controllers and program messages.
+
+Whether or not it is a good idea, the practice exists and as a result MIDI files will often contain spurious notes that are meant as keyswitches and not meant to be played back.  ChiptuneSAK will, by default, remove the keyswitch notes when importing a MIDI file, but the option can be overridden.
+

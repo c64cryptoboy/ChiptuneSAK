@@ -278,7 +278,7 @@ class ChirpTrack:
         """
         This function eliminates polyphony, so that in each channel there is only one note
         active at a time. If a chord is struck all at the same time, it will retain the highest
-        note.
+        note. Otherwise, when a new note is started, the previous note is truncated.
 
         :return: (deleted, truncated)
         :rtype: (int, int)
@@ -582,7 +582,9 @@ class ChirpSong(ChiptuneSAKBase):
     def explode_polyphony(self, i_track):
         """
         'Explodes' a single track into multi-track polyphony.  The new tracks replace the old track in the
-        song's list of tracks, so later tracks may be pushed to higher indexes.
+        song's list of tracks, so later tracks will be pushed to higher indexes.  The new tracks are named
+        using the name of the original track with '_sx' appended, where x is a number for the split notes.
+        The polyphony is split using a first-available-track algorithm, which works well for splitting chords.
 
         :param i_track:  index of the track for the song
         :type i_track: int
