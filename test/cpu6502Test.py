@@ -204,6 +204,7 @@ class Test6502Emulator(unittest.TestCase):
             #print("%s" % (screen_code), end='')
         actual_screen_output = ''.join(screen_output)
 
+        #print(actual_screen_output)
         self.assertTrue(actual_screen_output == expected_screen_output)
 
 if __name__ == '__main__':
