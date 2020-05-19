@@ -13,6 +13,7 @@
 import wolfgangTestPath
 import unittest
 import cts6502Emulator
+import string
 from parameterized import parameterized, parameterized_class
 from ctsBytesUtil import read_binary_file
 from ctsConstants import project_to_absolute_path
@@ -20,14 +21,16 @@ from ctsConstants import project_to_absolute_path
 cpuState = None
 
 binary_file_tests = [
-    ("adca",  "adc absolute"),
-    ("adcax", "adc absolute,x"),
-    ("adcay", "adc absolute,y"),
-    ("adcb", "adc immediate"),
-    ("adcix", "adc (indirect,x)"),
-    ("adciy", "adc (indirect),y"),
-    ("adcz", "adc zeropage"),
-    ("adczx", "adc zeropage,x"),
+    # These all work:
+    #("adca",  "adc absolute"),
+    #("adcax", "adc absolute,x"),
+    #("adcay", "adc absolute,y"),
+    #("adcb", "adc immediate"),
+    #("adcix", "adc (indirect,x)"),
+    #("adciy", "adc (indirect),y"),
+    #("adcz", "adc zeropage"),
+    # ("adczx", "adc zeropage,x"),
+    
     ("alrb", "alr immediate"),
     ("ancb", "anc immediate"),
     ("anda", "and absolute"),
@@ -124,7 +127,7 @@ binary_file_tests = [
     ("eorzx", "eor zeropage,x"),
     ("flipos", "flipos"),
     ("icr01", "icr01"),
-    ("imr", "imr                   TODO ?????"),
+    ("imr", "imr"),
     ("inca", "inc absolute"),
     ("incax", "inc absolute,x"),
     ("incz", "inc zeropage"),
@@ -285,6 +288,26 @@ binary_file_tests = [
     ("tyan", "tya")]
 
 
+# translate alphabet from mixed-case (mode) petscii to ascii
+# TODO:  This method is only compelte enough for these tests, it's not yet general
+# TODO:  Someday, all petscii tools will live in one place
+def mixed_case_petscii_to_ascii(petscii_string):
+    result = []
+    for c in petscii_string:
+        c = ord(c)
+        # only doing letter conversions
+        if 193 <= c <= 218:
+            c -= 96 # convert lowercase letters
+        elif 65 <= c <= 90:
+            c += 32 # convert uppercase letters
+        elif chr(c) == '\r':
+            c = ord('\n')
+        elif chr(c) not in string.printable:
+            c = ord('?')
+        result.append(chr(c))
+    return ''.join(result)
+
+
 class TestWolfgangLorenzPrograms(unittest.TestCase):
     def setUp(self):
         global cpuState
@@ -320,12 +343,12 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # FF4A  48        PHA
         # FF4B  98        TYA
         # FF4C  48        PHA
-        # FF4D  BA        TSX         ; test flags
+        # FF4D  BA        TSX         ; look at flags put on the stack
         # FF4E  BD 04 01  LDA $0104,X
         # FF51  29 10     AND #$10 
         # FF53  F0 03     BEQ $FF58
-        # FF55  6C 16 03  JMP ($0316) ; break flag set (software irq)
-        # FF58  6C 14 03  JMP ($0314) ; hardware irq        
+        # FF55  6C 16 03  JMP ($0316) ; if software irq (break flag set)
+        # FF58  6C 14 03  JMP ($0314) ; if hardware irq        
         cpuState.inject_bytes(65352,
             [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
             0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
@@ -335,7 +358,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         cpuState.memory[65091] = 0x60 # $FE43 NMI Interrupt Entry Point
         cpuState.memory[64738] = 0x60 # $FCE2 power-on reset routine
         cpuState.memory[65095] = 0x60 # $FE47 NMI handler
-        cpuState.memory[65126] = 0x60 # $FE66 (instead of init then JMP ($A002))
+        cpuState.memory[65126] = 0x60 # $FE66 init things then BASIC warm start using vec $A002
         cpuState.memory[58260] = 0x60 # $E394 basic cold entry
         cpuState.memory[58235] = 0x60 # $E37B basic warm entry / NMI entry
 
@@ -344,27 +367,63 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
     def test_wl(self, file_name, test_name):
         global cpuState
 
-        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
         print('DEBUG: Running test "%s"' %(test_name))
-        
+
+        test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
+        test_prg = test_prg[2:]  # strip off load addr (it's always 2049)
+
         cpuState.inject_bytes(2049, test_prg)
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
-        cpuState.init_cpu(2070)
+        cpuState.init_cpu(2070) # $816
 
-        # TODO: should be no need to set the two cartridge vectors?
+        # This http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html says when loading
+        # a test yourself (instead of using test code's loader), do these settings:
+        #    P to $04 (Set interrupt flag?  I'm going to ignore that)
+        #    $0002 = $00 (done by default)
+        #    $A002 = $00; $A003 = $80
+        #    $FFFE = $48; $FFFF = $FF (done in setUp())
+        #    As for the stack, set S to $FD and set $01FE = $FF and $01FF = $7F
+        cpuState.inject_bytes(0xa002, [0x00, 0x80])  # override from setUp() 
+
+        # Stack
+        #
+        # In VICE, this is how the stack looks after the BASIC's SYS call:
+        # SP = f6 (which means $01f6)
+        # $01f7 to $01ff: 46 E1 E9 A7 A7 79 A6 9C E3
+        # - e146 return from SYS
+        # - e9a7 return from start new basic code
+        # - a7 some parameter?
+        # - a679 return from restore
+        # - e39c return from basic cold start
+        #
+        # The article did this:
+        # cpuState.memory[0x01FE] = 0xff
+        # cpuState.memory[0x01FF] = 0x7f  # $8000 minus 1
+        # cpuState.sp = 0xfd  # points to next free position
+        #
+        # I'm just going to try this:
+        cpuState.sp = 0xf6
+
+        # TODO: should be no need to set the two cartridge basic reset vectors?
         # $8000-$8001, 32768-32769: Execution address of cold reset.
         # $8002-$8003, 32770-32771: Execution address of non-maskable interrupt service routine.
 
-        # TODO: Code also sometimes exits to BASIC through $A474, which would result in another BRK exit
-        # if reached.
+        cpuState.memory[42100] = 0xea # Tests will sometimes exit to BASIC through $A474, trap it later
 
         # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
-        cpuState.inject_bytes(65508, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
+        cpuState.inject_bytes(0xffe4, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
 
         output_text = ""
-        failed_test = False
+        passed_test = True
         while cpuState.runcpu():
+
+            # current debug point
+            #if cpuState.cpucycles == 2149:
+            #    if (1==1):
+            #        pass
+
+
             # Capture petscii characters sent to screen print routine
             if cpuState.pc == 65490: # $FFD2
                 output_text += chr(cpuState.a)
@@ -375,10 +434,17 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
                 #    mem($BC) << 8 | mem($BB)
                 break # we're done with this test
 
+            if cpuState.pc == 42100: # if exit to BASIC
+                break
+
             # if test program is asking for keyboard input from GETIN, that means we hit an error.
             # we could stop, or we could gather up all the output text from all the errors for this case
-            if cpuState.pc == 65508: # $FFE4
-                failed_test = True
+            if cpuState.pc == 0xffe4: # $FFE4
+                passed_test = False
+                break # DEBUG: change this later
+
+            if cpuState.pc == 59953: # $EA31
+                print("DEBUG: software IRQ exit routine entered")
 
             if cpuState.pc == 64738:
                 exit("DEBUG: We hit a reset?")
@@ -386,7 +452,10 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # TODO:  Should look at the PC whenever a BRK was encountered to see what else needs
         # to be hooked.
 
-        self.assertTrue(True)
+        print("\nContext, data, accu, xreg, yreg, flags, sp")
+        print(mixed_case_petscii_to_ascii(output_text))
+
+        self.assertTrue(passed_test)
 
 
 if __name__ == '__main__':

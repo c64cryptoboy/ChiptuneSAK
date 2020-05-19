@@ -6,7 +6,7 @@ The `MIDI <https://en.wikipedia.org/wiki/MIDI>`_ (**M**\ usic **I**\ nstrument *
 
 MIDI hardware uses a TTL-level serial interface with optical isolation to communicate between a controller and instruments. The serial rate is about 33 kib/s, which is fast enough to communicate instructions to the instrument with no perceptual latency.
 
-The MIDI protocol defines defines messages for sending note on/off and control data. These messages are sent in real time from the controller to the instruments. Different instruments are controlled by specifying different *channels* for the MIDI messages.
+The MIDI protocol defines messages for sending note on/off and control data. These messages are sent in real time from the controller to the instruments. Different instruments are controlled by specifying different *channels* for the MIDI messages.
 
 The MIDI protocol is stateless -- every message is complete on its own and does not rely on any state in the instrument. The instrument, of course, must retain state (such as what notes are playing) but the protocol itself does not.
 

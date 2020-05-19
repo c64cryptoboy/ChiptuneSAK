@@ -214,6 +214,7 @@ class Cpu6502Emulator:
         else:
             # turn off flag's N and Z, then add in a_byte's N
             self.flags = (self.flags & ~(FN | FZ) & 0xff) | (a_byte & FN)
+        self.flags |= FU # might not need this here, but being safe
 
     # #define ASSIGNSETFLAGS(dest, data)      \
     # {                                       \
@@ -432,6 +433,7 @@ class Cpu6502Emulator:
             self.flags |= FC
         else:
             self.flags &= (~FC & 0xff)
+        temp &= 0xff
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
     # #define LSR(data)                       \
@@ -572,6 +574,8 @@ class Cpu6502Emulator:
         self.flags = flags
         self.sp = 0xff
         self.cpucycles = 0
+
+    # ---------------------------------------------------------------------------
 
     # int runcpu(void)
     # {
@@ -1763,6 +1767,7 @@ class Cpu6502Emulator:
         # PLP instruction
         if instruction == 0x28:  # $28/40 PLP
             self.flags = self.pop()  # no action taken on B flag
+            self.flags |= FU  # needed for Wolfgang Lorenz tests
             return 1
 
         # case 0x2a:
@@ -1883,6 +1888,7 @@ class Cpu6502Emulator:
             if self.sp == 0xff:
                 return 0
             self.flags = self.pop()  # no action taken on B flag
+            self.flags |= FU  # needed for Wolfgang Lorenz tests          
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             return 1

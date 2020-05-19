@@ -4,22 +4,20 @@ C128 BASIC music programs
 
 .. contents::
 
-The Commodore 128's BASIC 7.0 has the following commands for playing music:
+ChiptuneSAK has an engine that creates BASIC programs to play music on the Commodore 128.  These generated programs make use of C128's BASIC 7.0 music commands:
 
-* SOUND - for quick-and-dirty sound effects
+* PLAY - specify notes to be played by one or more voices
+* TEMPO - determines the playback speed for the PLAY commands
 * VOL - allows control of volume
-* PLAY - plays multiple notes
+* ENVELOPE - sets a voice's Attack, Decay, Sustain, Release (ADSR), waveform, and pulse
 * FILTER - controls the filters on the SID chip
-* ENVELOPE - sets the Attack, Decay, Sustain, and Release (ADSR) of a voice in the SID chip
-* TEMPO - determines the playback speed for the PLAY command
-
-ChiptuneSAK has an engine that creates BASIC programs to play music on C128 machines. It is based primarily on the PLAY command using the C128 standard pre-defined instruments.
+* SOUND - for quick-and-dirty sound effects
 
 
 Using the PLAY command
 ######################
 
-Very little music is available in C128 BASIC because it is extremely difficult to write by hand.
+Very little music is available in C128 BASIC because it is challenging to write by hand.
 
 What makes using the PLAY command so crazy difficult to program is that you have to order the voices' notes and rests in a particular way to get the expected rhythmic playback.  When note durations overlap between voices, the shorter duration notes must be declared *after* the longer notes into which they "nest".  This becomes quite complex and difficult to do manually for 3-part music.
 
@@ -35,7 +33,7 @@ TEMPO calculation
 
 The TEMPO command sets tempo to a value between 1 and 255, where 1 is the slowest and 255 is the fastest speed.
 
-Internally, the C128 assigns the following starting duration values to the following note types (see BASIC ROM disassembly starting at $6F07):
+Internally, the C128 assigns the following starting duration values to the following note types (refer to a BASIC ROM disassembly starting at $6F07):
 
 * Whole/Semibreve = 1152 (note: 1152 is 2^7 * 3^2)
 * Half/Minim = 576
