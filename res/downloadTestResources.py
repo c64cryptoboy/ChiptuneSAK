@@ -120,19 +120,19 @@ def main():
         an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'test/sid'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/must', 'examples/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/must', 'apps/ultima/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/muso', 'examples/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/muso', 'apps/ultima/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musd', 'examples/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/musd', 'apps/ultima/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musc', 'examples/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/musc', 'apps/ultima/data/appleii_u4'))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musb', 'examples/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/musb', 'apps/ultima/data/appleii_u4'))
 
     manage_resources(resources)
 

@@ -10,5 +10,6 @@ However, some key concepts are important to the understanding of music and how C
     :maxdepth: 2
 
     quantization
+    polyphony
     metric_modulation
 
