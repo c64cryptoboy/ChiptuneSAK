@@ -18,7 +18,7 @@ This example shows how to process a clip of a song into a PNG file using Lilypon
 """
 
 input_file = project_to_absolute_path('examples/data/bach_invention_4.mid')
-output_ly_file = project_to_absolute_path('examples/data/bach_invention_4.ly')
+output_ly_file = project_to_absolute_path('examples/data/lilypond/bach_invention_4.ly')
 
 # Read in the midi song and quantize
 chirp_song = ctsMidi.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
@@ -33,7 +33,8 @@ lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[3:8])
 lp.to_file(mchirp_song, output_ly_file)
 
 # Change directory to the data directory so we don't fill the source directory wiith intermediate files.
-os.chdir(project_to_absolute_path('examples/data'))
+os.chdir(project_to_absolute_path('examples/data/lilypond'))
+
 # Adjust the path the the file
 ly_file = os.path.basename(output_ly_file)
 # Run lilypond

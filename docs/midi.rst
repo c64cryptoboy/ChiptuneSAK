@@ -57,5 +57,5 @@ MIDI Keyswitches
 
 Some modern virtual instruments (such as Garritan) use `keyswitches <https://blog.presonus.com/index.php/2018/11/30/friday-tips-keyswitching-made-easy/>`_ , specific (usually low) MIDI notes that trigger real-time modification of instrument sounds during performance. This practice violates the spirit of the MIDI standard, in that it uses  *notes* to trigger *effects*, something that was meant to be done via MIDI controllers and program messages.
 
-Whether or not it is a good idea, the practice exists and as a result MIDI files will often contain spurious notes that are meant as keyswitches and not meant to be played back.  ChiptuneSAK will, by default, remove the keyswitch notes when importing a MIDI file, but the option can be overridden.
+Whether or not it is a good idea, the practice exists and as a result MIDI files will often contain spurious notes that are meant as keyswitches and not meant to be played back.  ChiptuneSAK will, by default, remove the keyswitch notes (noes with MIDI number <= 8) when importing a MIDI file, but the option can be overridden.
 

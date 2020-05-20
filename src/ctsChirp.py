@@ -389,6 +389,9 @@ class ChirpTrack:
         for i, (t, m) in enumerate(self.other):
             t = int(round(t * scale_factor, 0))
             self.other[i] = OtherMidiEvent(t, m)
+        for i, p in enumerate(self.program_changes):
+            t = int(round(p.start_time * scale_factor, 0))
+            self.program_changes[i] = ProgramEvent(t, p.program)
         # Change all the note start times and durations
         for i, n in enumerate(self.notes):
             n.start_time = int(round(n.start_time * scale_factor, 0))
@@ -408,6 +411,9 @@ class ChirpTrack:
         for i, (t, m) in enumerate(self.other):
             t = max(t + offset_ticks, 0)
             self.other[i] = OtherMidiEvent(t, m)
+        for i, p in enumerate(self.program_changes):
+            t = max(p.start_time + offset_ticks, 0)
+            self.program_changes[i] = ProgramEvent(t, p.program)
         # Change all the note start times and durations
         for i, n in enumerate(self.notes):
             n.start_time = max(n.start_time + offset_ticks, 0)
@@ -469,10 +475,22 @@ class ChirpSong(ChiptuneSAKBase):
         self.stats = {}  #: Statistics about the song
 
     def to_rchirp(self, **kwargs):
+        """
+        Convert to RChirp.  This calls the creation of an RChirp object
+
+        :return: new RChirp object
+        :rtype: ctsRChirp.RChirpSong
+        """
         self.set_options(**kwargs)
         return ctsRChirp.RChirpSong(self)
 
     def to_mchirp(self, **kwargs):
+        """
+        Convert to MChirp.  This calls the creation of an MChirp object
+
+        :return: new MChirp object
+        :rtype: ctsMChirp.MChirpSong
+        """
         self.set_options(**kwargs)
         return ctsMChirp.MChirpSong(self)
 
@@ -594,7 +612,7 @@ class ChirpSong(ChiptuneSAKBase):
             for it, n in enumerate(current_notes):
                 if note.start_time >= n.start_time + n.duration:
                     ret.append(it)
-            #ret.sort(key=lambda n: (-current_notes[n].note_num))
+            # ret.sort(key=lambda n: (-current_notes[n].note_num))
             return ret
         old_track = self.tracks.pop(i_track)
         old_track.notes.sort(key=lambda n: (n.start_time, -n.note_num))
@@ -661,7 +679,6 @@ class ChirpSong(ChiptuneSAKBase):
         self.other = [e for e in self.other if e.start_time <= max_tick]
         for t in self.tracks:
             t.truncate(max_tick)
-
 
     def transpose(self, semitones, minimize_accidentals=True):
         """

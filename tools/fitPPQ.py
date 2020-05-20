@@ -108,7 +108,7 @@ def main():
 
     # Average error in new ticks
     tick_error = min_e / len(notes) * best_f
-    print("scale_factor = %.5lf, offset = %d, total error = %.1lf ticks (%.2lf ticks/note for ppq = %d)"
+    print("scale_factor = %.12lf, offset = %d, total error = %.1lf ticks (%.2lf ticks/note for ppq = %d)"
           % (best_f, best_offset, min_e, tick_error, desired_ppq))
 
     song.move_ticks(-best_offset)

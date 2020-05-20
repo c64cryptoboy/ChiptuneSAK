@@ -60,6 +60,7 @@ class MIDI(ChiptuneSAKIO):
 
     def to_file(self, song, filename, **kwargs):
         """
+        Exports a ChirpSong to a midi file.
 
         :param song: chirp song
         :type song: ctsChirpSong
@@ -73,10 +74,11 @@ class MIDI(ChiptuneSAKIO):
 
     def midi_track_to_chirp_track(self, chirp_song, midi_track):
         """
-        Parse a MIDI track into notes.
+        Parse a MIDI track into notes, track name, and program changes.  This method uses the `mido`
+        library for MIDI messges within the track.
 
-        :param midi_track:
-        :type midi_track:
+        :param midi_track: midi track
+        :type midi_track: MIDO midi track
         """
         chirp_track = ChirpTrack(chirp_song)
         # Find the first note_on event and use its channel to set the channel for this track.

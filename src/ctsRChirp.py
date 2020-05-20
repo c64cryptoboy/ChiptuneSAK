@@ -369,6 +369,8 @@ class RChirpVoice:
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
 
+        self.rows = tmp_rows
+
         # Program changes will only occur on rows that already have note content.
         # MIDI instruments are mapped to RChirp instruments via the song's program_map
         for p in sorted(chirp_track.program_changes):
@@ -376,7 +378,6 @@ class RChirpVoice:
             new_instrument = self.rchirp_song.program_map[p.program]
             tmp_rows[n_row].new_instrument = int(new_instrument)
 
-        self.rows = tmp_rows
         self._fixup_rows()
 
 

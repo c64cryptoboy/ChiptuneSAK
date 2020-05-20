@@ -18,9 +18,9 @@ It shows the steps needed for this conversion:
   
 """
 
-input_file = str(project_to_absolute_path('examples/data/MonkeyIsland_LechuckTheme.mid'))
-output_midi_file = str(project_to_absolute_path('examples/data/LeChuck.mid'))
-output_gt_file = str(project_to_absolute_path('examples/data/LeChuck.sng'))
+input_file = str(project_to_absolute_path('examples/data/lechuck/MonkeyIsland_LechuckTheme.mid'))
+output_midi_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.mid'))
+output_gt_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.sng'))
 
 chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 
