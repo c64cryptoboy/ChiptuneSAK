@@ -95,6 +95,9 @@ chirp_song.remove_polyphony()
 #  The song is repetitive. Pick a spot to truncate.
 chirp_song.truncate(197280)
 
+# Set the key (D minor)
+chirp_song.set_key_signature('Dm')
+
 # Save the result to a MIDi file.
 ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
 
@@ -110,7 +113,7 @@ ly.to_file(mchirp_song, output_ly_file)
 subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=True)
 
 # Now convert the song to RChirp
-rchirp_song = chirp_song.to_rchirp()
+rchirp_song = chirp_song.to_rchirp(arch='PAL-C64')
 
 # Let's see what programs are used
 # print(rchirp_song.program_map)
