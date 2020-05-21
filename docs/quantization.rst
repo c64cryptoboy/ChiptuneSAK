@@ -1,6 +1,6 @@
-==================
-Music Quantization
-==================
+============
+Quantization
+============
 
 Written music on a page has notes of exact lengths and start times, but live performance of music is always a little imprecise; that is, in part, what makes a live performance feel *live*.
 

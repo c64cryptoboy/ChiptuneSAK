@@ -24,9 +24,11 @@ Of course this history is incomplete and lacks many important details, but it is
 Polyphony in ChiptuneSAK
 ------------------------
 
-The act of performing sheet music can increase the polyphony over what is indicated by the sheet music. For example, if a series of notes is played on a given channel, the previous note may not be released before the new note is struck, creating a short overlap in which polyphony is increased.
+The act of performing sheet music can increase the polyphony over what is indicated by the sheet music. For example, if a series of notes is played on a given channel, the previous note may not be released before the new note is struck, creating a short overlap in which polyphony is increased. Polyphony can also arise from effects such as sustain, which leaves notes on after their release.
 
-When representing performed music in computers that have a limited polyphonic specification, the additional polyphony due to performance must usually be removed, resulting in note onsets and durations that are more in line with a literal sheet music interpretation.  In general, for conversion to or from retro formats, ChiptuneSAK requires each individual channel (or track) to be monophonic.  ChiptuneSAK also requires each track to be monophonic for the generation of sheet music.  Fortunately, ChiptuneSAK offers a growing set of tools to help control polyphony for playback in constrained environments.
+Often, when adapting music for use in retro computers that can only support limited polyphony, much of the polyphony arising from performance or effects must be removed. In general, for conversion to or from retro formats, ChiptuneSAK requires each individual channel (or track) to be monophonic.  ChiptuneSAK also requires each track to be monophonic for the generation of sheet music.  Fortunately, ChiptuneSAK offers a growing set of tools to help control polyphony for playback in constrained environments.
+
+One can think of polyphony removal as removing any overlap between notes. Combined with :ref:`quantization`, it ensures that the music representation is the same as an exact literal reading of the sheet music.
 
 The :ref:`Chirp` intermediate representation has methods to eliminate polyphony in an intelligent manner, as well as to "explode" a polyphonic track into multiple monophonic tracks.
 
