@@ -1,17 +1,20 @@
 import sys
 import examplesPath
-import copy
+import subprocess
 from ctsBase import *
 import ctsMidi
-import ctsRChirp
+import ctsLilypond
 import ctsOnePassCompress
 import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
 """
-This example processes a MIDI file captured from Betrayal of Krondor to a GoatTracker song.
+This example processes a MIDI file captured from Betrayal at Krondor to both sheet music and
+a GoatTracker song.
 
-This is an example of extremely complex music processing, done entirely in ChiptuneSAK.
+It is an example of extremely complex music processing, done entirely in ChiptuneSAK. 
+One external tool, a windows program called Midi Editor, was used to inspect the MIDI file,
+evaluate and plan the required transformations, and verify the results.
 
 It shows the steps needed for this conversion:
  1. Remove unused tracks, reorder and rename tracks to use
@@ -19,17 +22,23 @@ It shows the steps needed for this conversion:
  3. Scale, move and adjust the note data to correspond to musical notes and durations
  4. Set minimum note lengths, quantize the song, and remove polyphony
  5. Truncate the captured song to a reasonable stopping point
- 6. Convert the ChirpSong to an RChirpSong  
- 7. Assign GoatTracker instruments to the voices
- 8. Find repeated loops and compress the song
- 9. Export the GoatTracker .sng file 
+ 6. Convert the ChirpSong to an MChirpSong
+ 7. Use the Lilypond I/O object to write lilypond markup for the piece
+ 8. Convert the ChirpSong to an RChirpSong  
+ 9. Assign GoatTracker instruments to the voices
+10. Find repeated loops and compress the song
+11. Export the GoatTracker .sng file 
 
 """
 
-input_file = str(project_to_absolute_path('examples/data/mercantile/betrayalKrondorMercantile.mid'))
-output_midi_file = str(project_to_absolute_path('examples/data/mercantile/mercantile.mid'))
-output_gt_file = str(project_to_absolute_path('examples/data/mercantile/mercantile.sng'))
+output_folder = str(project_to_absolute_path('examples\\data\\mercantile')) + '\\'
+input_folder = output_folder
+input_file = str(project_to_absolute_path(input_folder + 'betrayalKrondorMercantile.mid'))
+output_midi_file = str(project_to_absolute_path(output_folder + 'mercantile.mid'))
+output_ly_file = str(project_to_absolute_path(output_folder + 'mercantile.ly'))
+output_gt_file = str(project_to_absolute_path(output_folder + 'mercantile.sng'))
 
+# Read in the original MIDI to Chirp
 chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 
 # First thing, we rename the song
@@ -62,11 +71,11 @@ chirp_song.tracks[2].program_changes.append(new_program)
 # Now move the notes from track 4 into track 3
 chirp_song.tracks[2].notes.extend(chirp_song.tracks[3].notes)
 chirp_song.tracks = chirp_song.tracks[:3]
-chirp_song.tracks[0].name = 'Flute'
+chirp_song.tracks[0].name = 'Ocarina'
 chirp_song.tracks[1].name = 'Guitar'
 chirp_song.tracks[2].name = 'Strings/Bass'
 
-# At this point, with the tracks arranged, run the FitPPW.py program in the tools directory.
+# At this point, with the tracks arranged, run the FitPPQ.py program in the tools directory.
 
 # Result, after some fiddling (and FitPPQ is very fiddly):
 # scale_factor = 5.8904467169, offset = 2399, total error = 3136.3 ticks (21.79 ticks/note for ppq = 960)
@@ -89,17 +98,28 @@ chirp_song.truncate(197280)
 # Save the result to a MIDi file.
 ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
 
+# Convert to MChirp
+mchirp_song = chirp_song.to_mchirp()
+
+# Make sheet music output with Lilypond
+ly = ctsLilypond.Lilypond()
+ly.to_file(mchirp_song, output_ly_file)
+
+# If you have Lilypond installed, generate the pdf
+# If you do not have Lilypond installed, comment the following line out
+subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=True)
+
 # Now convert the song to RChirp
 rchirp_song = chirp_song.to_rchirp()
 
-# Let's see what prgrams are used
-print(rchirp_song.program_map)
-# This gives {79: 1, 24: 2, 48: 3, 32: 4}
+# Let's see what programs are used
+# print(rchirp_song.program_map)
+# Gives {79: 1, 24: 2, 48: 3, 32: 4}
 # From General Midi,
 # 79 = Ocarina                   Flute.ins
 # 24 = Acoustic Guitar (Nylon)   MuteGuitar.ins
 # 48 = String Ensemble 1         SimpleTriangle.ins
-# 32 = Acoustic Bass             BassGuitar.ins
+# 32 = Acoustic Bass             SoftBass.ins
 #
 instruments = ['Flute', 'MuteGuitar', 'SimpleTriangle', 'SoftBass']
 
