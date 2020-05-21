@@ -16,7 +16,7 @@ from ctsConstants import project_to_absolute_path
 
 cpuState = None
 
-# psuedo-op docs taken from http://www.ffd2.com/fridge/docs/6502-NMOS.extra.opcodes
+# psuedo-op docs reference http://www.ffd2.com/fridge/docs/6502-NMOS.extra.opcodes
 binary_file_tests = [
     # ADC tests
     ("adca",  "adc absolute"),
@@ -755,8 +755,8 @@ tests_to_run = binary_file_tests[start_tests_at:]
 
 # translate alphabet from mixed-case (mode) petscii to ascii
 # TODO:  This method is only complete enough for these tests, it's not yet general
-# TODO:  Someday, all petscii tools will live in one place and be general
-# We'll need ascii<->petscii upper case and ascii<->petscii mixed case converters
+#    Someday, all petscii tools will live in one place and be general
+#    We'll need ascii<->petscii upper case and ascii<->petscii mixed case converters
 def mixed_case_petscii_to_ascii(petscii_string):
     result = []
     for c in petscii_string:
@@ -843,7 +843,8 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
 
         print('\nRunning test "%s"' %(test_name))
 
-        test_prg = read_binary_file(project_to_absolute_path('test/emulatorTests/wolfgangLorenzTestsBin/'+file_name))
+        test_prg = read_binary_file(
+            project_to_absolute_path('test/emulatorTests/wolfgangLorenzTestsBin/'+file_name))
         test_prg = test_prg[2:]  # strip off load addr (it's always 2049)
 
         cpuState.inject_bytes(2049, test_prg)
@@ -857,7 +858,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         #    $0002 = $00 (done by default)
         #    $A002 = $00; $A003 = $80
         #    $FFFE = $48; $FFFF = $FF (done in setUp())
-        #    As for the stack, set S to $FD and set $01FE = $FF and $01FF = $7F
+        #    Set S to $FD and set $01FE = $FF and $01FF = $7F (going to ignore this)
         cpuState.inject_bytes(0xa002, [0x00, 0x80])  # override from setUp() 
 
         # Stack
@@ -870,11 +871,6 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # - a7 some parameter?
         # - a679 return from restore
         # - e39c return from basic cold start
-        #
-        # The article did this:
-        # cpuState.memory[0x01FE] = 0xff
-        # cpuState.memory[0x01FF] = 0x7f  # $8000 minus 1
-        # cpuState.sp = 0xfd  # points to next free position
         #
         # I'm just going to try this:
         cpuState.sp = 0xf6
@@ -907,7 +903,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
                 break # we're done with this test
 
             if cpuState.pc == 42100: # if exit to BASIC
-                break
+                print("DEBUG: exit to BASIC")
 
             # if test program is asking for keyboard input from GETIN, that means we hit an error.
             # It prints the error, and waits for a key press (which we stub in)
