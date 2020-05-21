@@ -1,15 +1,10 @@
 # This program runs Wolfgang Lorenz' C64 test suite (2002, public domain)
 # This standard set of tests for C64 emulators can take a LONG time to run
-# For now, I'm mostly ignoring C64-specific tests, and focusing on 6502 instruction tests
+# For now, I'm mostly ignoring C64-specific tests, and focusing on 6502
+# instruction tests
 #
 # to run: python -m unittest -v tests
-#
-# TODO:
-# - write code to load each test binary and run it.
-# - will need to stub out:
-# -- $E16F (so python unit tests can do the loading instead)
-# -- $FFE4 (so that no there's no user keyboard interaction)
-# -- $FFD2 (so I can tell status without looking at screen memory)
+# On my machine, it ran 181 tests in 64 minutes
 
 import wolfgangTestPath
 import unittest
@@ -439,13 +434,14 @@ binary_file_tests = [
     # Here's the same code using equivalent instructions.
     # LSR $C100,X
     # EOR $C100,X
-    ("lsea", "lse absolute"),
-    ("lseax", "lse absolute,x"),
-    ("lseay", "lse absolute,y"),
-    ("lseix", "lse (indirect,x)"),
-    ("lseiy", "lse (indirect),y"),
-    ("lsez", "lse zeropage"),
-    ("lsezx", "lse zeropage,x"),
+    #
+    #("lsea", "lse absolute"),
+    #("lseax", "lse absolute,x"),
+    #("lseay", "lse absolute,y"),
+    #("lseix", "lse (indirect,x)"),
+    #("lseiy", "lse (indirect),y"),
+    #("lsez", "lse zeropage"),
+    #("lsezx", "lse zeropage,x"),
 
     # OAL    *** (aka LXA)
     # This opcode ORs the A register with #$EE, ANDs the result with an immediate 
@@ -559,13 +555,13 @@ binary_file_tests = [
     # Equivalent instructions:
     # ROR $030C
     # ADC $030C
-    ("rraa", "rra absolute"),
-    ("rraax", "rra absolute,x"),
-    ("rraay", "rra absolute,y"),
-    ("rraix", "rra (indirect,x)"),
-    ("rraiy", "rra (indirect),y"),
-    ("rraz", "rra zeropage"),
-    ("rrazx", "rra zeropage,x"),
+    #("rraa", "rra absolute"),
+    #("rraax", "rra absolute,x"),
+    #("rraay", "rra absolute,y"),
+    #("rraix", "rra (indirect,x)"),
+    #("rraiy", "rra (indirect),y"),
+    #("rraz", "rra zeropage"),
+    #("rrazx", "rra zeropage,x"),
 
     # return tests (RTI, RTS)
     ("rtin", "rti"),
@@ -620,11 +616,93 @@ binary_file_tests = [
     ("sedn", "sed"),
     ("sein", "sei"),
 
-    ("shaay", "sha absolute,y"),
-    ("shaiy", "sha (indirect),y"),
-    ("shsay", "shs absolute,y"),
-    ("shxay", "shx absolute,y"),
-    ("shyax", "shy absolute,x"),
+    # illegal op not yet supported in our emulator
+    # 
+    # AXA    ***  (aka SHA)
+    # This opcode stores the result of A AND X AND the high byte of the target 
+    # address of the operand +1 in memory.
+    # Supported modes:
+    # AXA abcd,Y      ;9F cd ab    ;No. Cycles= 5
+    # AXA (ab),Y      ;93 ab       ;            6
+    # Example:
+    # AXA $7133,Y     ;9F 33 71
+    # Equivalent instructions:
+    # STX $02
+    # PHA
+    # AND $02
+    # AND #$72
+    # STA $7133,Y
+    # PLA
+    # LDX $02
+    # Note: Memory location $02 would not be altered by the AXA opcode.
+    #     
+    #("shaay", "sha absolute,y"),
+    #("shaiy", "sha (indirect),y"),
+
+    # illegal op not yet supported in our emulator
+    # 
+    # TAS    *** (aka SHS)
+    # This opcode ANDs the contents of the A and X registers (without changing 
+    # the contents of either register) and transfers the result to the stack 
+    # pointer.  It then ANDs that result with the contents of the high byte of 
+    # the target address of the operand +1 and stores that final result in 
+    # memory.  
+    # One supported mode:
+    # TAS abcd,Y      ;9B cd ab    ;No. Cycles= 5
+    # (Sub-instructions: STA, TXS)
+    # Here is an example of how you might use this opcode:
+    # TAS $7700,Y     ;9B 00 77
+    # Here is the same code using equivalent instructions.
+    # STX $02
+    # PHA
+    # AND $02
+    # TAX
+    # TXS
+    # AND #$78
+    # STA $7700,Y
+    # PLA
+    # LDX $02
+    # Note: Memory location $02 would not be altered by the TAS opcode.
+    #
+    #("shsay", "shs absolute,y"),
+
+    # illegal op not yet supported in our emulator
+    # 
+    # XAS    *** (aka SHX)
+    # This opcode ANDs the contents of the X register with <ab+1> and stores the 
+    # result in memory.
+    # One supported mode:
+    # XAS abcd,Y      ;9E cd ab    ;No. Cycles= 5
+    # Example:
+    # XAS $6430,Y     ;9E 30 64
+    # Equivalent instructions:
+    # PHA
+    # TXA
+    # AND #$65
+    # STA $6430,Y
+    # PLA
+    #
+    # ("shxay", "shx absolute,y"),
+
+    # illegal op not yet supported in our emulator
+    # 
+    # SAY    *** (aka SHY)
+    # This opcode ANDs the contents of the Y register with <ab+1> and stores the 
+    # result in memory.
+    # One supported mode:
+    # SAY abcd,X      ;9C cd ab    ;No. Cycles= 5
+    # Example:
+    # SAY $7700,X     ;9C 00 77
+    # Equivalent instructions:
+    # PHA
+    # TYA
+    # AND #$78
+    # STA $7700,X
+    # PLA
+    #
+    #("shyax", "shy absolute,x"),
+
+    # store tests (STA, STX, STY)
     ("staa", "sta absolute"),
     ("staax", "sta absolute,x"),
     ("staay", "sta absolute,y"),
@@ -638,8 +716,17 @@ binary_file_tests = [
     ("stya", "sty absolute"),
     ("styz", "sty zeropage"),
     ("styzx", "sty zeropage,x"),
+
+    # register transfer tests (TXS, TXA, TXS, TYA, TAX, TAY)
+    ("tsxn", "tsx"),
+    ("txan", "txa"),
+    ("txsn", "txs"),
+    ("tyan", "tya"),
     ("taxn", "tax"),
     ("tayn", "tay"),
+
+    # 6510 IO trap, page boundary, and wrap around tests
+    # TODO: They don't say they're failing, but I don't think they're working either...
     ("trap1", "trap1"),
     ("trap2", "trap2"),
     ("trap3", "trap3"),
@@ -657,14 +744,11 @@ binary_file_tests = [
     ("trap15", "trap15"),
     ("trap16", "trap16"),
     ("trap17", "trap17"),
-    ("tsxn", "tsx"),
-    ("txan", "txa"),
-    ("txsn", "txs"),
-    ("tyan", "tya")]
+    ]
 
 start_tests_at = 0 # start at the beginning
 # when debugging, start at the named test:
-start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('shaay')
+start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('adca')
 
 tests_to_run = binary_file_tests[start_tests_at:]
 
@@ -694,6 +778,9 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Skipping the first %d tests" % (start_tests_at))
+
+    @classmethod
+    def tearDownClass(cls):
         pass
 
     def setUp(self):
@@ -754,7 +841,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
     def test_wl(self, file_name, test_name):
         global cpuState
 
-        print('DEBUG: Running test "%s"' %(test_name))
+        print('\nRunning test "%s"' %(test_name))
 
         test_prg = read_binary_file(project_to_absolute_path('test/wolfgangLorenz6510Tests/'+file_name))
         test_prg = test_prg[2:]  # strip off load addr (it's always 2049)
@@ -792,7 +879,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # I'm just going to try this:
         cpuState.sp = 0xf6
 
-        # TODO: should be no need to set the two cartridge basic reset vectors?
+        # No need to set the two cartridge basic reset vectors
         # $8000-$8001, 32768-32769: Execution address of cold reset.
         # $8002-$8003, 32770-32771: Execution address of non-maskable interrupt service routine.
 
@@ -805,10 +892,9 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         passed_test = True
         while cpuState.runcpu():
 
-            # current debug point
-            #if cpuState.cpucycles == 2149:
-            #    if (1==1):
-            #        pass
+            #debugging:
+            #if cpuState.cpucycles == 3900:
+            #    print("breakpoint")
 
             # Capture petscii characters sent to screen print routine
             if cpuState.pc == 65490: # $FFD2
@@ -824,10 +910,13 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
                 break
 
             # if test program is asking for keyboard input from GETIN, that means we hit an error.
-            # we could stop, or we could gather up all the output text from all the errors for this case
+            # It prints the error, and waits for a key press (which we stub in)
             if cpuState.pc == 0xffe4: # $FFE4
                 passed_test = False
-                break # DEBUG: change this later
+                #print("\nContext, data, accu, xreg, yreg, flags, sp")
+                print('PRG output: "%s"' % (mixed_case_petscii_to_ascii(output_text)))
+                output_text = ""
+                #break
 
             if cpuState.pc == 59953: # $EA31
                 print("DEBUG: software IRQ exit routine entered")
@@ -835,15 +924,11 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
             if cpuState.pc == 64738:
                 exit("DEBUG: We hit a reset?")
 
-        # TODO:  Should look at the PC whenever a BRK was encountered to see what else needs
-        # to be hooked.
-
-        #print("\nContext, data, accu, xreg, yreg, flags, sp")
-        print('PRG output: "%s"' % (mixed_case_petscii_to_ascii(output_text)))
-
+        if output_text != "":
+            print(mixed_case_petscii_to_ascii(output_text))
         self.assertTrue(passed_test)
 
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()
-    unittest.main(failfast=True)
+    unittest.main(failfast=False)

@@ -1,9 +1,13 @@
 # Tests of 6502 Emulation
+#
+
 
 import testingPath
 import unittest
 import cts6502Emulator
 from ctsConstants import ARCH
+
+VERBOSE = False
 
 cpuState = None
 
@@ -204,7 +208,8 @@ class Test6502Emulator(unittest.TestCase):
             #print("%s" % (screen_code), end='')
         actual_screen_output = ''.join(screen_output)
 
-        #print(actual_screen_output)
+        if VERBOSE:
+            print(actual_screen_output)
         self.assertTrue(actual_screen_output == expected_screen_output)
 
 if __name__ == '__main__':

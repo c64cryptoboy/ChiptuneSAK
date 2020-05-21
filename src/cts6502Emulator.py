@@ -70,10 +70,11 @@ class Cpu6502Emulator:
         self.flags = FU  #: flags (byte)
         self.sp = 0  #: stack pointer (byte)
         self.pc = 0  #: program counter (16-bit)
-        self.has_basic = False  #: True if BASIC ROM loaded
-        self.has_kernal = False  #: True if KERNAL ROM loaded
+        self.has_basic = False  #: True if C64 BASIC ROM loaded
+        self.has_kernal = False  #: True if C64 KERNAL ROM loaded
         self.cpucycles = 0  #: count of cpu cycles processed
         self.rom_ranges = []  #: ranages of immutable memory
+        self.last_instruction = None  #: last instruction processed
 
     def set_ram(self, loc, val):
         if not (0 <= val <= 255):
@@ -103,11 +104,13 @@ class Cpu6502Emulator:
     def push(self, data):
         self.set_ram(0x100 + self.sp, data)
         self.sp -= 1
-        self.sp &= 0xff
+        self.sp &= 0xff # this will wrap -1 to 255, as it should
 
     # define POP() (MEM(0x100 + (++sp)))
     def pop(self):
         self.sp += 1
+        # If poping from an empty stack (sp == $FF), this must wrap to 0
+        # http://forum.6502.org/viewtopic.php?f=8&t=1446         
         self.sp &= 0xff
         result = self.memory[0x100 + self.sp]
         return result
@@ -229,6 +232,11 @@ class Cpu6502Emulator:
         src_byte = src_operand_ref.get_byte(self)
         dest_operand_ref.set_byte(src_byte, self)
         self.set_flags(src_byte)
+
+    # this is needed for the TXS command:
+    def assign_no_flag_changes(self, dest_operand_ref, src_operand_ref):
+        src_byte = src_operand_ref.get_byte(self)
+        dest_operand_ref.set_byte(src_byte, self)
 
     # #define ADC(data)                                                        \
     # {                                                                        \
@@ -588,11 +596,22 @@ class Cpu6502Emulator:
     #   {
     def runcpu(self):
         if DEBUG:
-            output_str = "{:08d},PC=${:04x},{:05d},A=${:02x},X=${:02x},Y=${:02x},P=%{:08b}" \
-                .format(self.cpucycles, self.pc, self.pc, self.a, self.x, self.y, self.flags)
+            output_str = "\n{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
+                .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
             print(output_str)
 
+            # Useful for some of the Wolfgang Lorenz tests:
+            """
+            print("data     b a r ${:02x} ${:02x} ${:02x}".format(self.memory[0x08ec], self.memory[0x08f2], self.memory[0x08f8]))
+            print("accum    b a r ${:02x} ${:02x} ${:02x}".format(self.memory[0x08ed], self.memory[0x08f3], self.memory[0x08f9]))
+            print("x        b a r ${:02x} ${:02x} ${:02x}".format(self.memory[0x08ee], self.memory[0x08f4], self.memory[0x08fa]))
+            print("y        b a r ${:02x} ${:02x} ${:02x}".format(self.memory[0x08ef], self.memory[0x08f5], self.memory[0x08fb]))
+            print("flags    b a r ${:08b} ${:08b} ${:08b}".format(self.memory[0x08f0], self.memory[0x08f6], self.memory[0x08fc]))
+            print("stackptr b a r ${:08b} ${:08b} ${:08b}".format(self.memory[0x08f1], self.memory[0x08f7], self.memory[0x08fd]))
+            """
+
         instruction = self.fetch()
+        self.last_instruction = instruction
         self.cpucycles += cpucycles_table[instruction]
 
         # Had converted the C case statement to a bunch of elif statements.  However, pylint can't handle
@@ -1748,7 +1767,7 @@ class Cpu6502Emulator:
         # PHP instruction
         if instruction == 0x08:  # $08/8 PHP
             # add in the B flag: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
-            self.push(self.flags | FB)  # siddump.c neglected to do this
+            self.push(self.flags | FB)  # siddump.c neglected FB here
             return 1
 
         # case 0x68:
@@ -1885,8 +1904,9 @@ class Cpu6502Emulator:
 
         # RTI instruction
         if instruction == 0x40:  # $40/64 RTI
-            if self.sp == 0xff:
-                return 0
+            # siddump.c did the following, but it's bad, since the stack needs to wrap
+            # if self.sp == 0xff:
+            #     return 0             
             self.flags = self.pop()  # no action taken on B flag
             self.flags |= FU  # needed for Wolfgang Lorenz tests          
             self.pc = self.pop()
@@ -1902,8 +1922,9 @@ class Cpu6502Emulator:
 
         # RTS instruction
         if instruction == 0x60:  # $60/96 RTS
-            if self.sp == 0xff:
-                return 0
+            # siddump.c did the following, but it's bad, since the stack needs to wrap
+            # if self.sp == 0xff:
+            #     return 0    
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             self.pc += 1
@@ -1953,7 +1974,9 @@ class Cpu6502Emulator:
         # break;
 
         # SBC instructions
-        if instruction == 0xe9:  # $E9/233 SBC #n
+        # $E9 or (equivalent pseudo op) $EB will work here, see:
+        #    https://wiki.nesdev.com/w/index.php/Programming_with_unofficial_opcodes#Duplicated_instructions        
+        if instruction == 0xe9 or instruction == 0xeb:  # $E9/233 (or $EB/235) SBC #n
             self.SBC(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
@@ -2203,7 +2226,8 @@ class Cpu6502Emulator:
 
         # TXS instruction
         if instruction == 0x9a:  # $9A/154 TXS
-            self.assign_then_set_flags(SP_OPREF, X_OPREF)
+            # Bug in siddump.c, TXS does NOT set flags
+            self.assign_no_flag_changes(SP_OPREF, X_OPREF)
             return 1
 
         # case 0x98:
@@ -2230,7 +2254,7 @@ class Cpu6502Emulator:
         # BRK instruction
         # http://www.6502.org/tutorials/register_preservation.html
         # https://wiki.nesdev.com/w/index.php/Status_flags
-        # Interesting.  Articles say there is no B flag in the processor status register,
+        # Articles say there is no B flag in the processor status register,
         # the bit is unused.  PHP and BRK pushes the P register onto the stack with break
         # bit set, and IRQ/NMI pushes P register with break bit clear.  The "actual" B flag
         # goes unchanged.  I did a BRK in Vice, and sure enough, the B flag wasn't set.
@@ -2379,7 +2403,7 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        # NOP (aka SKB, does a read that's not stored) size 3, 4(+1) cycle
+        # NOP (aka SKB (skip next byte), does a read that's not stored) size 3, 4(+1) cycle
         # 0x0c is abolute address, so won't trigger page cross cycle
         # the others are absolute indexed x
         # $0C/12 NOP abs
@@ -2472,7 +2496,6 @@ class Cpu6502Emulator:
         # $DF/223 DEC-CMP abs,X
         # $E3/227 INC-SBC (zp,X)
         # $E7/231 INC-SBC zp
-        # $EB/235 SBC #n
         # $EF/239 INC-SBC abs
         # $F3/243 INC-SBC (zp),Y
         # $F7/247 INC-SBC zp,X
