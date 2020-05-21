@@ -1,0 +1,1069 @@
+
+C:\Users\crypt\git\ChiptuneSAK\test\wolfgangLorenz6510Tests>python -m unittest -v tests.py
+Skipping the first 0 tests
+test_wl_000_adca (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc absolute"
+
+?adca - ok
+adcax
+ok
+test_wl_001_adcax (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc absolute,x"
+
+?adcax - ok
+adcay
+ok
+test_wl_002_adcay (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc absolute,y"
+
+?adcay - ok
+adcix
+ok
+test_wl_003_adcb (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc immediate"
+
+?adcb - ok
+adcz
+ok
+test_wl_004_adcix (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc (indirect,x)"
+
+?adcix - ok
+adciy
+ok
+test_wl_005_adciy (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc (indirect),y"
+
+?adciy - ok
+sbcb
+ok
+test_wl_006_adcz (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc zeropage"
+
+?adcz - ok
+adczx
+ok
+test_wl_007_adczx (tests.TestWolfgangLorenzPrograms) ...
+Running test "adc zeropage,x"
+
+?adczx - ok
+adca
+ok
+test_wl_008_anda (tests.TestWolfgangLorenzPrograms) ...
+Running test "and absolute"
+
+?anda - ok
+andax
+ok
+test_wl_009_andax (tests.TestWolfgangLorenzPrograms) ...
+Running test "and absolute,x"
+
+?andax - ok
+anday
+ok
+test_wl_010_anday (tests.TestWolfgangLorenzPrograms) ...
+Running test "and absolute,y"
+
+?anday - ok
+andix
+ok
+test_wl_011_andb (tests.TestWolfgangLorenzPrograms) ...
+Running test "and immediate"
+
+?andb - ok
+andz
+ok
+test_wl_012_andix (tests.TestWolfgangLorenzPrograms) ...
+Running test "and (indirect,x)"
+
+?andix - ok
+andiy
+ok
+test_wl_013_andiy (tests.TestWolfgangLorenzPrograms) ...
+Running test "and (indirect),y"
+
+?andiy - ok
+orab
+ok
+test_wl_014_andz (tests.TestWolfgangLorenzPrograms) ...
+Running test "and zeropage"
+
+?andz - ok
+andzx
+ok
+test_wl_015_andzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "and zeropage,x"
+
+?andzx - ok
+anda
+ok
+test_wl_016_asla (tests.TestWolfgangLorenzPrograms) ...
+Running test "asl absolute"
+
+?asla - ok
+aslax
+ok
+test_wl_017_aslax (tests.TestWolfgangLorenzPrograms) ...
+Running test "asl absolute,x"
+
+?aslax - ok
+lsrn
+ok
+test_wl_018_asln (tests.TestWolfgangLorenzPrograms) ...
+Running test "asl"
+
+?asln - ok
+aslz
+ok
+test_wl_019_aslz (tests.TestWolfgangLorenzPrograms) ...
+Running test "asl zeropage"
+
+?aslz - ok
+aslzx
+ok
+test_wl_020_aslzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "asl zeropage,x"
+
+?aslzx - ok
+asla
+ok
+test_wl_021_lsra (tests.TestWolfgangLorenzPrograms) ...
+Running test "lsr absolute"
+
+?lsra - ok
+lsrax
+ok
+test_wl_022_lsrax (tests.TestWolfgangLorenzPrograms) ...
+Running test "lsr absolute,x"
+
+?lsrax - ok
+roln
+ok
+test_wl_023_lsrn (tests.TestWolfgangLorenzPrograms) ...
+Running test "lsr"
+
+?lsrn - ok
+lsrz
+ok
+test_wl_024_lsrz (tests.TestWolfgangLorenzPrograms) ...
+Running test "lsr zeropage"
+
+?lsrz - ok
+lsrzx
+ok
+test_wl_025_lsrzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "lsr zeropage,x"
+
+?lsrzx - ok
+lsra
+ok
+test_wl_026_bccr (tests.TestWolfgangLorenzPrograms) ...
+Running test "bcc relative"
+
+?bccr
+ok
+test_wl_027_bcsr (tests.TestWolfgangLorenzPrograms) ...
+Running test "bcs relative"
+
+?bcsr
+ok
+test_wl_028_beqr (tests.TestWolfgangLorenzPrograms) ...
+Running test "beq relative"
+
+?beqr
+ok
+test_wl_029_bmir (tests.TestWolfgangLorenzPrograms) ...
+Running test "bmi relative"
+
+?bmir
+ok
+test_wl_030_bner (tests.TestWolfgangLorenzPrograms) ...
+Running test "bne relative"
+
+?bner
+ok
+test_wl_031_bplr (tests.TestWolfgangLorenzPrograms) ...
+Running test "bpl relative"
+
+?bplr
+ok
+test_wl_032_bvcr (tests.TestWolfgangLorenzPrograms) ...
+Running test "bvc relative"
+
+?bvcr
+ok
+test_wl_033_bvsr (tests.TestWolfgangLorenzPrograms) ...
+Running test "bvs relative"
+
+?bvsr
+ok
+test_wl_034_branchwrap (tests.TestWolfgangLorenzPrograms) ...
+Running test "branchwrap"
+
+?branchwrap - ok
+mmufetch
+ok
+test_wl_035_brkn (tests.TestWolfgangLorenzPrograms) ...
+Running test "brk"
+
+?brkn
+ok
+test_wl_036_clcn (tests.TestWolfgangLorenzPrograms) ...
+Running test "clc"
+
+?clcn - ok
+secn
+ok
+test_wl_037_cldn (tests.TestWolfgangLorenzPrograms) ...
+Running test "cld"
+
+?cldn - ok
+sedn
+ok
+test_wl_038_clin (tests.TestWolfgangLorenzPrograms) ...
+Running test "cli"
+
+?clin - ok
+sein
+ok
+test_wl_039_clvn (tests.TestWolfgangLorenzPrograms) ...
+Running test "clv"
+
+?clvn - ok
+adcb
+ok
+test_wl_040_bita (tests.TestWolfgangLorenzPrograms) ...
+Running test "bit absolute"
+
+?bita - ok
+brkn
+ok
+test_wl_041_bitz (tests.TestWolfgangLorenzPrograms) ...
+Running test "bit zeropage"
+
+?bitz - ok
+bita
+ok
+test_wl_042_cmpa (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp absolute"
+
+?cmpa - ok
+cmpax
+ok
+test_wl_043_cmpax (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp absolute,x"
+
+?cmpax - ok
+cmpay
+ok
+test_wl_044_cmpay (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp absolute,y"
+
+?cmpay - ok
+cmpix
+ok
+test_wl_045_cmpb (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp immediate"
+
+?cmpb - ok
+cmpz
+ok
+test_wl_046_cmpix (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp (indirect,x)"
+
+?cmpix - ok
+cmpiy
+ok
+test_wl_047_cmpiy (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp (indirect),y"
+
+?cmpiy - ok
+cpxb
+ok
+test_wl_048_cmpz (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp zeropage"
+
+?cmpz - ok
+cmpzx
+ok
+test_wl_049_cmpzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "cmp zeropage,x"
+
+?cmpzx - ok
+cmpa
+ok
+test_wl_050_cpxa (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpx absolute"
+
+?cpxa - ok
+cpyb
+ok
+test_wl_051_cpxb (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpx immediate"
+
+?cpxb - ok
+cpxz
+ok
+test_wl_052_cpxz (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpx zeropage"
+
+?cpxz - ok
+cpxa
+ok
+test_wl_053_cpya (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpy absolute"
+
+?cpya - ok
+bitz
+ok
+test_wl_054_cpyb (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpy immediate"
+
+?cpyb - ok
+cpyz
+ok
+test_wl_055_cpyz (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpy zeropage"
+
+?cpyz - ok
+cpya
+ok
+test_wl_056_cputiming (tests.TestWolfgangLorenzPrograms) ...
+Running test "cpu cycles-consumed tests"
+
+?cputiming
+ok
+test_wl_057_deca (tests.TestWolfgangLorenzPrograms) ...
+Running test "dec absolute"
+
+?deca - ok
+decax
+ok
+test_wl_058_decax (tests.TestWolfgangLorenzPrograms) ...
+Running test "dec absolute,x"
+
+?decax - ok
+asln
+ok
+test_wl_059_decz (tests.TestWolfgangLorenzPrograms) ...
+Running test "dec zeropage"
+
+?decz - ok
+deczx
+ok
+test_wl_060_deczx (tests.TestWolfgangLorenzPrograms) ...
+Running test "dec zeropage,x"
+
+?deczx - ok
+deca
+ok
+test_wl_061_dexn (tests.TestWolfgangLorenzPrograms) ...
+Running test "dex"
+
+?dexn - ok
+deyn
+ok
+test_wl_062_deyn (tests.TestWolfgangLorenzPrograms) ...
+Running test "dey"
+
+?deyn - ok
+incz
+ok
+test_wl_063_eora (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor absolute"
+
+?eora - ok
+eorax
+ok
+test_wl_064_eorax (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor absolute,x"
+
+?eorax - ok
+eoray
+ok
+test_wl_065_eoray (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor absolute,y"
+
+?eoray - ok
+eorix
+ok
+test_wl_066_eorb (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor immediate"
+
+?eorb - ok
+eorz
+ok
+test_wl_067_eorix (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor (indirect,x)"
+
+?eorix - ok
+eoriy
+ok
+test_wl_068_eoriy (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor (indirect),y"
+
+?eoriy - ok
+clcn
+ok
+test_wl_069_eorz (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor zeropage"
+
+?eorz - ok
+eorzx
+ok
+test_wl_070_eorzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "eor zeropage,x"
+
+?eorzx - ok
+eora
+ok
+test_wl_071_inca (tests.TestWolfgangLorenzPrograms) ...
+Running test "inc absolute"
+
+?inca - ok
+incax
+ok
+test_wl_072_incax (tests.TestWolfgangLorenzPrograms) ...
+Running test "inc absolute,x"
+
+?incax - ok
+decz
+ok
+test_wl_073_incz (tests.TestWolfgangLorenzPrograms) ...
+Running test "inc zeropage"
+
+?incz - ok
+inczx
+ok
+test_wl_074_inczx (tests.TestWolfgangLorenzPrograms) ...
+Running test "inc zeropage,x"
+
+?inczx - ok
+inca
+ok
+test_wl_075_inxn (tests.TestWolfgangLorenzPrograms) ...
+Running test "inx"
+
+?inxn - ok
+inyn
+ok
+test_wl_076_inyn (tests.TestWolfgangLorenzPrograms) ...
+Running test "iny"
+
+?inyn - ok
+dexn
+ok
+test_wl_077_jmpi (tests.TestWolfgangLorenzPrograms) ...
+Running test "jmp indirect"
+
+?jmpi - ok
+beqr
+ok
+test_wl_078_jmpw (tests.TestWolfgangLorenzPrograms) ...
+Running test "jmp absolute"
+
+?jmpw - ok
+jmpi
+ok
+test_wl_079_jsrw (tests.TestWolfgangLorenzPrograms) ...
+Running test "jsr absolute"
+
+?jsrw - ok
+rtsn
+ok
+test_wl_080_laxa (tests.TestWolfgangLorenzPrograms) ...
+Running test "lax absolute"
+
+?laxa - ok
+laxay
+ok
+test_wl_081_laxix (tests.TestWolfgangLorenzPrograms) ...
+Running test "lax (indirect,x)"
+
+?laxix - ok
+laxiy
+ok
+test_wl_082_laxiy (tests.TestWolfgangLorenzPrograms) ...
+Running test "lax (indirect),y"
+
+?laxiy - ok
+axsz
+ok
+test_wl_083_laxz (tests.TestWolfgangLorenzPrograms) ...
+Running test "lax zeropage"
+
+?laxz - ok
+laxzy
+ok
+test_wl_084_laxzy (tests.TestWolfgangLorenzPrograms) ...
+Running test "lax zeropage,y"
+
+?laxzy - ok
+laxa
+ok
+test_wl_085_ldaa (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda absolute"
+
+?ldaa - ok
+ldaax
+ok
+test_wl_086_ldaax (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda absolute,x"
+
+?ldaax - ok
+ldaay
+ok
+test_wl_087_ldaay (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda absolute,y"
+
+?ldaay - ok
+ldaix
+ok
+test_wl_088_ldab (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda immediate"
+
+?ldab - ok
+ldaz
+ok
+test_wl_089_ldaix (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda (indirect,x)"
+
+?ldaix - ok
+ldaiy
+ok
+test_wl_090_ldaiy (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda (indirect),y"
+
+?ldaiy - ok
+staz
+ok
+test_wl_091_ldaz (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda zeropage"
+
+?ldaz - ok
+ldazx
+ok
+test_wl_092_ldazx (tests.TestWolfgangLorenzPrograms) ...
+Running test "lda zeropage,x"
+
+?ldazx - ok
+ldaa
+ok
+test_wl_093_ldxa (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldx absolute"
+
+?ldxa - ok
+ldxay
+ok
+test_wl_094_ldxay (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldx absolute,y"
+
+?ldxay - ok
+stxz
+ok
+test_wl_095_ldxb (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldx immediate"
+
+?ldxb - ok
+ldxz
+ok
+test_wl_096_ldxz (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldx zeropage"
+
+?ldxz - ok
+ldxzy
+ok
+test_wl_097_ldxzy (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldx zeropage,y"
+
+?ldxzy - ok
+ldxa
+ok
+test_wl_098_ldya (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldy absolute"
+
+?ldya - ok
+ldyax
+ok
+test_wl_099_ldyax (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldy absolute,x"
+
+?ldyax - ok
+styz
+ok
+test_wl_100_ldyb (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldy immediate"
+
+?ldyb - ok
+ldyz
+ok
+test_wl_101_ldyz (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldy zeropage"
+
+?ldyz - ok
+ldyzx
+ok
+test_wl_102_ldyzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "ldy zeropage,x"
+
+?ldyzx - ok
+ldya
+ok
+test_wl_103_nopn (tests.TestWolfgangLorenzPrograms) ...
+Running test "nop"
+
+?nopn - ok
+nopb
+ok
+test_wl_104_nopa (tests.TestWolfgangLorenzPrograms) ...
+Running test "nop absolute"
+
+?nopa - ok
+nopax
+ok
+test_wl_105_nopax (tests.TestWolfgangLorenzPrograms) ...
+Running test "nop absolute,x"
+
+?nopax - ok
+asoz
+ok
+test_wl_106_nopb (tests.TestWolfgangLorenzPrograms) ...
+Running test "nop immediate"
+
+?nopb - ok
+nopz
+ok
+test_wl_107_nopz (tests.TestWolfgangLorenzPrograms) ...
+Running test "nop zeropage"
+
+?nopz - ok
+nopzx
+ok
+test_wl_108_nopzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "nop zeropage,x"
+
+?nopzx - ok
+nopa
+ok
+test_wl_109_oraa (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora absolute"
+
+?oraa - ok
+oraax
+ok
+test_wl_110_oraax (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora absolute,x"
+
+?oraax - ok
+oraay
+ok
+test_wl_111_oraay (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora absolute,y"
+
+?oraay - ok
+oraix
+ok
+test_wl_112_orab (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora immediate"
+
+?orab - ok
+oraz
+ok
+test_wl_113_oraix (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora (indirect,x)"
+
+?oraix - ok
+oraiy
+ok
+test_wl_114_oraiy (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora (indirect),y"
+
+?oraiy - ok
+eorb
+ok
+test_wl_115_oraz (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora zeropage"
+
+?oraz - ok
+orazx
+ok
+test_wl_116_orazx (tests.TestWolfgangLorenzPrograms) ...
+Running test "ora zeropage,x"
+
+?orazx - ok
+oraa
+ok
+test_wl_117_phan (tests.TestWolfgangLorenzPrograms) ...
+Running test "pha"
+
+?phan - ok
+plan
+ok
+test_wl_118_phpn (tests.TestWolfgangLorenzPrograms) ...
+Running test "php"
+
+?phpn - ok
+plpn
+ok
+test_wl_119_plan (tests.TestWolfgangLorenzPrograms) ...
+Running test "pla"
+
+?plan - ok
+phpn
+ok
+test_wl_120_plpn (tests.TestWolfgangLorenzPrograms) ...
+Running test "plp"
+
+?plpn - ok
+inxn
+ok
+test_wl_121_rola (tests.TestWolfgangLorenzPrograms) ...
+Running test "rol absolute"
+
+?rola - ok
+rolax
+ok
+test_wl_122_rolax (tests.TestWolfgangLorenzPrograms) ...
+Running test "rol absolute,x"
+
+?rolax - ok
+rorn
+ok
+test_wl_123_roln (tests.TestWolfgangLorenzPrograms) ...
+Running test "rol"
+
+?roln - ok
+rolz
+ok
+test_wl_124_rolz (tests.TestWolfgangLorenzPrograms) ...
+Running test "rol zeropage"
+
+?rolz - ok
+rolzx
+ok
+test_wl_125_rolzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "rol zeropage,x"
+
+?rolzx - ok
+rola
+ok
+test_wl_126_rora (tests.TestWolfgangLorenzPrograms) ...
+Running test "ror absolute"
+
+?rora - ok
+rorax
+ok
+test_wl_127_rorax (tests.TestWolfgangLorenzPrograms) ...
+Running test "ror absolute,x"
+
+?rorax - ok
+andb
+ok
+test_wl_128_rorn (tests.TestWolfgangLorenzPrograms) ...
+Running test "ror"
+
+?rorn - ok
+rorz
+ok
+test_wl_129_rorz (tests.TestWolfgangLorenzPrograms) ...
+Running test "ror zeropage"
+
+?rorz - ok
+rorzx
+ok
+test_wl_130_rorzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "ror zeropage,x"
+
+?rorzx - ok
+rora
+ok
+test_wl_131_rtin (tests.TestWolfgangLorenzPrograms) ...
+Running test "rti"
+
+?rtin - ok
+jsrw
+ok
+test_wl_132_rtsn (tests.TestWolfgangLorenzPrograms) ...
+Running test "rts"
+
+?rtsn - ok
+jmpw
+ok
+test_wl_133_sbca (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc absolute"
+
+?sbca - ok
+sbcax
+ok
+test_wl_134_sbcax (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc absolute,x"
+
+?sbcax - ok
+sbcay
+ok
+test_wl_135_sbcay (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc absolute,y"
+
+?sbcay - ok
+sbcix
+ok
+test_wl_136_sbcb (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc immediate"
+
+?sbcb - ok
+sbcz
+ok
+test_wl_137_sbcix (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc (indirect,x)"
+
+?sbcix - ok
+sbciy
+ok
+test_wl_138_sbciy (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc (indirect),y"
+
+?sbciy - ok
+cmpb
+ok
+test_wl_139_sbcz (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc zeropage"
+
+?sbcz - ok
+sbczx
+ok
+test_wl_140_sbczx (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbc zeropage,x"
+
+?sbczx - ok
+sbca
+ok
+test_wl_141_sbcb_eb_ (tests.TestWolfgangLorenzPrograms) ...
+Running test "sbcb(eb)"
+
+?sbcb(eb) - ok
+trap1
+ok
+test_wl_142_secn (tests.TestWolfgangLorenzPrograms) ...
+Running test "sec"
+
+?secn - ok
+cldn
+ok
+test_wl_143_sedn (tests.TestWolfgangLorenzPrograms) ...
+Running test "sed"
+
+?sedn - ok
+clin
+ok
+test_wl_144_sein (tests.TestWolfgangLorenzPrograms) ...
+Running test "sei"
+
+?sein - ok
+clvn
+ok
+test_wl_145_staa (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta absolute"
+
+?staa - ok
+staax
+ok
+test_wl_146_staax (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta absolute,x"
+
+?staax - ok
+staay
+ok
+test_wl_147_staay (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta absolute,y"
+
+?staay - ok
+staix
+ok
+test_wl_148_staix (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta (indirect,x)"
+
+?staix - ok
+staiy
+ok
+test_wl_149_staiy (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta (indirect),y"
+
+?staiy - ok
+ldxb
+ok
+test_wl_150_staz (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta zeropage"
+
+?staz - ok
+stazx
+ok
+test_wl_151_stazx (tests.TestWolfgangLorenzPrograms) ...
+Running test "sta zeropage,x"
+
+?stazx - ok
+staa
+ok
+test_wl_152_stxa (tests.TestWolfgangLorenzPrograms) ...
+Running test "stx absolute"
+
+?stxa - ok
+ldyb
+ok
+test_wl_153_stxz (tests.TestWolfgangLorenzPrograms) ...
+Running test "stx zeropage"
+
+?stxz - ok
+stxzy
+ok
+test_wl_154_stxzy (tests.TestWolfgangLorenzPrograms) ...
+Running test "stx zeropage,y"
+
+?stxzy - ok
+stxa
+ok
+test_wl_155_stya (tests.TestWolfgangLorenzPrograms) ...
+Running test "sty absolute"
+
+?stya - ok
+taxn
+ok
+test_wl_156_styz (tests.TestWolfgangLorenzPrograms) ...
+Running test "sty zeropage"
+
+?styz - ok
+styzx
+ok
+test_wl_157_styzx (tests.TestWolfgangLorenzPrograms) ...
+Running test "sty zeropage,x"
+
+?styzx - ok
+stya
+ok
+test_wl_158_tsxn (tests.TestWolfgangLorenzPrograms) ...
+Running test "tsx"
+
+?tsxn - ok
+txsn
+ok
+test_wl_159_txan (tests.TestWolfgangLorenzPrograms) ...
+Running test "txa"
+
+?txan - ok
+tyan
+ok
+test_wl_160_txsn (tests.TestWolfgangLorenzPrograms) ...
+Running test "txs"
+
+?txsn - ok
+phan
+ok
+test_wl_161_tyan (tests.TestWolfgangLorenzPrograms) ...
+Running test "tya"
+
+?tyan - ok
+tsxn
+ok
+test_wl_162_taxn (tests.TestWolfgangLorenzPrograms) ...
+Running test "tax"
+
+?taxn - ok
+tayn
+ok
+test_wl_163_tayn (tests.TestWolfgangLorenzPrograms) ...
+Running test "tay"
+
+?tayn - ok
+txan
+ok
+test_wl_164_trap1 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap1"
+
+?trap1
+ok
+test_wl_165_trap2 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap2"
+
+?trap2
+ok
+test_wl_166_trap3 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap3"
+
+?trap3
+ok
+test_wl_167_trap4 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap4"
+
+?trap4
+ok
+test_wl_168_trap5 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap5"
+
+?trap5
+ok
+test_wl_169_trap6 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap6"
+
+?trap6
+ok
+test_wl_170_trap7 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap7"
+
+?trap7
+ok
+test_wl_171_trap8 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap8"
+
+?trap8
+ok
+test_wl_172_trap9 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap9"
+
+?trap9
+ok
+test_wl_173_trap10 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap10"
+
+?trap10
+ok
+test_wl_174_trap11 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap11"
+
+?trap11
+ok
+test_wl_175_trap12 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap12"
+
+?trap12
+ok
+test_wl_176_trap13 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap13"
+
+?trap13
+ok
+test_wl_177_trap14 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap14"
+
+?trap14
+ok
+test_wl_178_trap15 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap15"
+
+?trap15
+ok
+test_wl_179_trap16 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap16"
+
+?trap16
+ok
+test_wl_180_trap17 (tests.TestWolfgangLorenzPrograms) ...
+Running test "trap17"
+
+?trap17
+ok
+
+----------------------------------------------------------------------
+Ran 181 tests in 3811.014s
+
+OK
+
+C:\Users\crypt\git\ChiptuneSAK\test\wolfgangLorenz6510Tests>
