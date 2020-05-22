@@ -88,6 +88,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
     * parameterized
     * sphinx
  * [Lilypond](https://lilypond.org/download.html)
+ * [MidiEditor](https://www.midieditor.org/) - *optional, useful for visualizing what is happening to the midi files*
 
 
 ### Bootstrap: Ubuntu 20.04
