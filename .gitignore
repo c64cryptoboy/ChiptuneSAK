@@ -1,14 +1,10 @@
 venv/
 .vscode/
 __pycache__/
+docs/_build/
 .env
-chiptune_sak.code-workspace
-.idea/.gitignore
-.idea/chiptune-sak.iml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-.idea/inspectionProfiles/profiles_settings.xml
+*.code-workspace
+.idea/
 # .vscode/settings.json
 sandbox/consultant.sng
 test/data/Yofa_test.mid
