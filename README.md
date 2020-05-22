@@ -95,10 +95,21 @@ from docs folder:
 `make html`
 
 ## Running Tests
+
+from the root folder, download the test data:
+
+`python3 res/downloadTestResources.py`
+
 from test folder:
 
-`python -m unittest discover -p "*Test.py" -v`
+`python3 -m unittest discover -p "*Test.py" -v`
 
 or for an individual test:
 
-`python -m unittest chirpTest.py`
+`python3 -m unittest chirpTest.py`
+
+## Run a simple example
+
+from `examples/` folder:
+
+`python3 lechuck.py`
