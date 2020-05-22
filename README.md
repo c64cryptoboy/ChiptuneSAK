@@ -89,6 +89,21 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
     * sphinx
  * [Lilypond](https://lilypond.org/download.html)
 
+
+### Bootstrap: Ubuntu 20.04
+
+```bash
+# Install system dependencies
+sudo apt install lilypond python3-venv build-essential
+
+# Make and activate a Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies
+pip3 install -r requirements.txt
+```
+
 ## Generating Documentation
 from docs folder:
 
