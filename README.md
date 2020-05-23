@@ -88,6 +88,22 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
     * parameterized
     * sphinx
  * [Lilypond](https://lilypond.org/download.html)
+ * [MidiEditor](https://www.midieditor.org/) - *optional, useful for visualizing what is happening to the midi files*
+
+
+### Bootstrap: Ubuntu 20.04
+
+```bash
+# Install system dependencies
+sudo apt install lilypond python3-venv build-essential
+
+# Make and activate a Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies
+pip3 install -r requirements.txt
+```
 
 ## Generating Documentation
 from docs folder:
@@ -95,10 +111,21 @@ from docs folder:
 `make html`
 
 ## Running Tests
+
+from the root folder, download the test data:
+
+`python3 res/downloadTestResources.py`
+
 from test folder:
 
-`python -m unittest discover -p "*Test.py" -v`
+`python3 -m unittest discover -p "*Test.py" -v`
 
 or for an individual test:
 
-`python -m unittest chirpTest.py`
+`python3 -m unittest chirpTest.py`
+
+## Run a simple example
+
+from `examples/` folder:
+
+`python3 lechuck.py`
