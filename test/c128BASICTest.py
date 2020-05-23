@@ -7,8 +7,8 @@ import ctsMidi
 import ctsC128Basic
 import ctsConstants
 
-TEST_FILE = ctsConstants.project_to_absolute_path('test/data/bwv_799.mid')
-KNOWN_GOOD = ctsConstants.project_to_absolute_path('test/data/bwv_799_known_good.bas')
+TEST_FILE = ctsConstants.project_to_absolute_path('test/data/BWV_799.mid')
+KNOWN_GOOD = ctsConstants.project_to_absolute_path('test/data/BWV_799_known_good.bas')
 
 
 class TestC128BASIC(unittest.TestCase):
@@ -27,3 +27,6 @@ class TestC128BASIC(unittest.TestCase):
         test_hash = ctsTestingTools.md5_hash_no_spaces(basic_program)
 
         self.assertEqual(known_good_basic_program_hash, test_hash)
+
+if __name__ == '__main__':
+    unittest.main(failfast=False)
