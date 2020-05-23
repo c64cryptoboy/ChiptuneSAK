@@ -748,7 +748,7 @@ binary_file_tests = [
 
 start_tests_at = 0 # start at the beginning
 # when debugging, start at the named test:
-start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('adca')
+start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('trap17')
 
 tests_to_run = binary_file_tests[start_tests_at:]
 
@@ -924,6 +924,24 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
             print(mixed_case_petscii_to_ascii(output_text))
         self.assertTrue(passed_test)
 
+
+    def test_bcd(self):
+        global cpuState
+
+        test_prg = read_binary_file(project_to_absolute_path(
+            'test/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
+
+        # The Klaus Dormann BCD test code assumes it can have ZP $00 through $10,
+        # and that code can live at $0200
+        cpuState.inject_bytes(0, test_prg)
+        cpuState.init_cpu(0x200)
+
+        while cpuState.runcpu():
+            pass # TODO
+
+        # TODO: Create a boolean option that knows the stack size at the beginning
+        # and will return 0 (stopping while loop) on RTS and RTI if the stack size drops
+        # below that starting size.
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()
