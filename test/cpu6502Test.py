@@ -212,6 +212,11 @@ class Test6502Emulator(unittest.TestCase):
         # This method loads the ROM ranges and makes them immutable
         cpuState.inject_roms()
 
+        if not cpuState.has_kernal:
+            raise unittest.case.SkipTest("KERNAL ROM not loaded, skipping C64 boot test")
+        if not cpuState.has_basic:
+            raise unittest.case.SkipTest("BASIC ROM not loaded, skipping C64 boot test")
+
         # On a RESET, the CPU loads the vector from $FFFC/$FFFD into the program counter
         # then continues from there.  This will be 64738, as in the good ol' SYS64738.
         # It tests for an autostart cartridge (which it won't find).  Then
