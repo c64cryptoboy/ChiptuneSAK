@@ -851,6 +851,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
         cpuState.init_cpu(2070) # $816
+        cpuState.stack_wrapping = True # required by TXS test
 
         # This http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html says when loading
         # a test yourself (instead of using test code's loader), do these settings:
@@ -936,12 +937,9 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         cpuState.inject_bytes(0, test_prg)
         cpuState.init_cpu(0x200)
 
-        while cpuState.runcpu():
+        while cpuState.runcpu(): # will terminated when RTS has no stack to pop
             pass # TODO
 
-        # TODO: Create a boolean option that knows the stack size at the beginning
-        # and will return 0 (stopping while loop) on RTS and RTI if the stack size drops
-        # below that starting size.
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()

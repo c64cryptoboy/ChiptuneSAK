@@ -17,6 +17,64 @@ class Test6502Emulator(unittest.TestCase):
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
 
+    def test_stack_wrapping(self):
+        global cpuState
+        
+        cpuState.inject_bytes(32768, [0x60]) # RTS 
+        cpuState.stack_wrapping = False
+
+        cpuState.init_cpu(32768)
+        self.assertTrue(cpuState.sp == 0xff)
+        # With wrapping suppressed, RTS on an empty stack terminates the execution
+        # (without stack pops)        
+        self.assertTrue(cpuState.runcpu() == 0) 
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfe
+        self.assertTrue(cpuState.runcpu() == 0)
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfd
+        self.assertTrue(cpuState.runcpu() == 1)
+        self.assertTrue(cpuState.sp == 0xff)
+
+        cpuState.inject_bytes(32768, [0x40]) # RTI 
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfd
+        self.assertTrue(cpuState.runcpu() == 0)
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfc
+        self.assertTrue(cpuState.runcpu() == 1)
+
+        cpuState.inject_bytes(32768, [0x60]) # RTS 
+        cpuState.stack_wrapping = True
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfd
+        self.assertTrue(cpuState.runcpu() == 1)
+        self.assertTrue(cpuState.sp == 0xff)
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfe
+        self.assertTrue(cpuState.runcpu() == 1)
+        self.assertTrue(cpuState.sp == 0x00)
+
+        cpuState.inject_bytes(32768, [0x40]) # RTI 
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfc
+        self.assertTrue(cpuState.runcpu() == 1)
+        self.assertTrue(cpuState.sp == 0xff)
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xfe
+        self.assertTrue(cpuState.runcpu() == 1)
+        self.assertTrue(cpuState.sp == 0x01)
+
+
+    #@unittest.skip("Debugging, so skipping this test for now")
     def test_obfuscated_sig(self):
         # Emulate the ML portion of my lemon64 signature
         # Note: signature line is obfuscated by changing XOR mask
@@ -136,6 +194,7 @@ class Test6502Emulator(unittest.TestCase):
         $00/0 BRK 
     """
 
+    #@unittest.skip("Debugging, so skipping this test for now")
     def test_C64_kernal_boot(self):
         global cpuState
 

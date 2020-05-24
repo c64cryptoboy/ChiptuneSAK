@@ -75,6 +75,7 @@ class Cpu6502Emulator:
         self.cpucycles = 0  #: count of cpu cycles processed
         self.rom_ranges = []  #: ranages of immutable memory
         self.last_instruction = None  #: last instruction processed
+        self.stack_wrapping = False #: True = empty stack wraps when popped
 
     def set_ram(self, loc, val):
         if not (0 <= val <= 255):
@@ -1904,11 +1905,15 @@ class Cpu6502Emulator:
 
         # RTI instruction
         if instruction == 0x40:  # $40/64 RTI
+            if not self.stack_wrapping and self.sp >= 0xfd:
+                return 0            
             # siddump.c did the following, but it's bad, since the stack needs to wrap
             # if self.sp == 0xff:
             #     return 0             
             self.flags = self.pop()  # no action taken on B flag
-            self.flags |= FU  # needed for Wolfgang Lorenz tests          
+            self.flags |= FU  # needed for Wolfgang Lorenz tests  
+            # Note that unlike RTS, the return address on the stack is the actual
+            # address rather than the address-1.                    
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             return 1
@@ -1922,9 +1927,8 @@ class Cpu6502Emulator:
 
         # RTS instruction
         if instruction == 0x60:  # $60/96 RTS
-            # siddump.c did the following, but it's bad, since the stack needs to wrap
-            # if self.sp == 0xff:
-            #     return 0    
+            if not self.stack_wrapping and self.sp >= 0xfe:
+                return 0
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             self.pc += 1
