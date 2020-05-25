@@ -448,10 +448,30 @@ class RChirpSong(ChiptuneSAKBase):
         self.other = copy.deepcopy(chirp_song.other)
         self.compressed = False
 
+    def remove_tempo_changes(self):
+        """
+        Removes and tempo changes and sets jiffies_per_row constant for the entire song. This
+        method is used to eliminate accelerandos and ritarandos throughout the song for better
+        conversion to Chirp.
+        :return: True on success
+        :rtype: bool
+        """
+        for v in self.voices:
+            jiffies_per_row = v.rows[0].jiffy_len
+            for r in v.rows:
+                row = v.rows[r]
+                if row.row_num == 0:
+                    continue
+                row.jiffy_num = r * jiffies_per_row
+                row.jiffy_len = jiffies_per_row
+                row.new_jiffy_tempo = None
+                v.rows[r] = row
+        return True
+
     # If true, RChirp was compressed or created from a source that uses patterns, etc.
     def has_patterns(self):
         """
-        Does this RCHirp have patterns (and thus, presumably, orderlists)?
+        Does this RChirp have patterns (and thus, presumably, orderlists)?
 
         :return: True if there are patterns
         :rtype: bool
