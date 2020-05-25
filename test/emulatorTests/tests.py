@@ -3,8 +3,9 @@
 # For now, I'm mostly ignoring C64-specific tests, and focusing on 6502
 # instruction tests
 #
+# Also runs Klaus Dormann's ADC/SBC BCD tests (public domain) 
+#
 # to run: python -m unittest -v tests
-# On my machine, it ran 181 tests in 64 minutes
 
 import emulatorTestsPath
 import unittest
@@ -726,7 +727,6 @@ binary_file_tests = [
     ("tayn", "tay"),
 
     # 6510 IO trap, page boundary, and wrap around tests
-    # TODO: They don't say they're failing, but I don't think they're working either...
     ("trap1", "trap1"),
     ("trap2", "trap2"),
     ("trap3", "trap3"),
@@ -748,7 +748,7 @@ binary_file_tests = [
 
 start_tests_at = 0 # start at the beginning
 # when debugging, start at the named test:
-start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('trap17')
+start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('adca')
 
 tests_to_run = binary_file_tests[start_tests_at:]
 
@@ -774,6 +774,7 @@ def mixed_case_petscii_to_ascii(petscii_string):
     return ''.join(result)
 
 
+# On my machine, this runs the 181 selected tests in ~64 minutes
 class TestWolfgangLorenzPrograms(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -926,6 +927,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         self.assertTrue(passed_test)
 
 
+    # on my machine, takes about 1.5 min to run
     def test_bcd(self):
         global cpuState
 
@@ -938,7 +940,21 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         cpuState.init_cpu(0x200)
 
         while cpuState.runcpu(): # will terminated when RTS has no stack to pop
-            pass # TODO
+            pass
+
+        result = cpuState.memory[0x000b]
+        if result != 0:  # if a test failed...
+            print("\n$0000 N1 number to be added or subtracted: ${:02x}".format(cpuState.memory[0x00]))
+            print("$0001 N2 number to be added or subtracted: ${:02x}".format(cpuState.memory[0x01]))
+            print("$0002 HA accumulator result when using binary arithmatic: ${:02x}".format(cpuState.memory[0x02]))
+            print("$0003 HNVZC flag results when using binary arithmatic: ${:08b}".format(cpuState.memory[0x03]))
+            print("$0004 DA accumulator result when using decimal mode: ${:02x}".format(cpuState.memory[0x04]))
+            print("$0005 DNVZC flag results when using decimal mode: ${:08b}".format(cpuState.memory[0x05]))
+            print("$0006 AR predicted accumulator result: ${:02x}".format(cpuState.memory[0x06]))
+            print("$0007 NF predicted negative flag: ${:08b}".format(cpuState.memory[0x07]))
+            print("$0008 VF predicted overflow flag: ${:08b}".format(cpuState.memory[0x08]))
+            print("$0009 ZF predicted zero flag: ${:08b}".format(cpuState.memory[0x09]))
+            print("$000A CF predicted carry flag: ${:08b}".format(cpuState.memory[0x0a]))        
 
 
 if __name__ == '__main__':

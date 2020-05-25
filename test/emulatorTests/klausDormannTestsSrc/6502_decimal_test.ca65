@@ -117,9 +117,9 @@ NEXT2:  inc N2    ; [6] see text
         bpl LOOP1 ; loop through both values of the carry flag
         lda #0    ; test passed, so store 0 in ERROR
         sta ERROR
-DONE:   
+DONE:   rts       ; DONE not provided, so let's just end this way
         end_of_test
-           
+
 ; Calculate the actual decimal mode accumulator and flags, the accumulator
 ; and flag results when N1 is added to N2 using binary arithmetic, the
 ; predicted accumulator result, the predicted carry flag, and the predicted
