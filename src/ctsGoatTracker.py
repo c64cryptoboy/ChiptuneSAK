@@ -2,10 +2,14 @@
 # 
 # Notes:
 # - This code ignores multispeed (for now)
-
+#
 # Note:  Many of these are wholesale imports, instead of using more selective
 # from / import constructs.  This is intentional, as it can avoid many code-breaking
 # circular imports
+#
+# TODO:
+# - turn most/all asserts in parsing into ChiptuneSAKContentError exceptions
+
 from os import path, listdir
 from os.path import isfile, join
 import sys
@@ -653,29 +657,9 @@ class GTSong:
 
         return orderlist
 
-    def has_3_channel_orderlist(self, file_index, sng_bytes):
+    def is_2sid(self, index_at_start_of_orderlists, sng_bytes):
         """
-        Given bytes and a starting index, if a grouping of 3 orderlists is found, the index
-        after the last byte is returned.  If not -1 is returned.
-        Note: a stereo GoatTracker file will have two of these structures back to back.
-
-        :param file_index: start point from which to look in sng_bytes
-        :type file_index: int
-        :param sng_bytes: bytes that contain orderlists
-        :type sng_bytes: bytes
-        :return: index after three orderlists, or -1 if not found
-        :rtype: int
-        """
-        for _ in range(3):
-            index_of_ff = sng_bytes[file_index]
-            if sng_bytes[file_index + index_of_ff] != 0xff:
-                return -1
-            file_index += index_of_ff + 2
-        return file_index
-
-    def is_2sid(self, index_at_start_of_orderlist, sng_bytes):
-        """
-        Hueristic to determine if .sng binary is 1SID or 2SID (aka "stereo")
+        Heuristic to determine if .sng binary is 1SID or 2SID (aka "stereo")
 
         :param index_at_start_of_orderlist: index of start of orderlists in sng_bytes
         :type index_at_start_of_orderlist: int
@@ -684,9 +668,28 @@ class GTSong:
         :return: True if 2SID, False if 1SID
         :rtype: bool
         """
-        file_index = self.has_3_channel_orderlist(index_at_start_of_orderlist, sng_bytes)
-        assert file_index != -1, "Error: could not parse orderlist"
-        return self.has_3_channel_orderlist(file_index, sng_bytes) != -1
+        expected_num_orderlists_for_3sid = self.headers.num_subtunes * 3
+        expected_num_orderlists_for_6sid = expected_num_orderlists_for_3sid * 2
+        file_index = index_at_start_of_orderlists
+
+        orderlist_count = 0
+        while True:
+            index_of_ff = sng_bytes[file_index]  # get length (minus 1) of orderlist for voice
+            if sng_bytes[file_index + index_of_ff] != 0xff: # if orderlist, will be $FF
+                break
+            orderlist_count += 1
+            file_index += index_of_ff + 2  # account for the byte after the 0xff
+
+        if orderlist_count == expected_num_orderlists_for_3sid:
+            return False
+
+        if orderlist_count == expected_num_orderlists_for_6sid:
+            return True
+
+        raise ChiptuneSAKContentError("Error: found %d orderlists (expected %d or %d)" %
+            (orderlist_count, expected_num_orderlists_for_3sid,
+            expected_num_orderlists_for_6sid))                      
+
 
     def import_sng_file_to_parsed_gt(self, input_filename):
         """
@@ -713,14 +716,17 @@ class GTSong:
         header = GtHeader()
 
         header.id = sng_bytes[0:4]
-        assert header.id == GT_FILE_HEADER, "Error: Did not find magic header used by goattracker sng files"
+
+        if header.id != GT_FILE_HEADER:
+            raise ChiptuneSAKContentError("Error: Did not find magic header")
 
         header.song_name = get_chars(sng_bytes[4:36])
         header.author_name = get_chars(sng_bytes[36:68])
         header.copyright = get_chars(sng_bytes[68:100])
         header.num_subtunes = sng_bytes[100]
 
-        assert header.num_subtunes <= GT_MAX_SUBTUNES_PER_SONG, 'Error:  too many subtunes'
+        if header.num_subtunes > GT_MAX_SUBTUNES_PER_SONG:
+            raise ChiptuneSAKContentError("Error:  too many subtunes")
 
         file_index = 101
         self.headers = header
