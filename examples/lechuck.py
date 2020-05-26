@@ -28,8 +28,7 @@ print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')
-print()
-print('Original track names:')
+print('Track names:')
 print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
 print()
 
@@ -97,12 +96,12 @@ print('Removing remaining polyphony')
 chirp_song.remove_polyphony()  # There is one place in the bass line that made a chord; this removes it
 
 # Now export the modified chirp to a new midi file, which can be viewed and should look nice and neat
-print(f'Writing {output_midi_file}...')
+print(f'Writing to MIDI file {output_midi_file}')
 ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.
 # Since we want control over the instruments we specify the GT ones in order.
-print(f'Setting goattracker instruments...')
+print(f'Setting GoatTracker instruments...')
 for i, program in enumerate([1, 2, 2, 2, 3]):
     chirp_song.tracks[i].set_program(program)
 
@@ -117,7 +116,7 @@ compressor = ctsOnePassCompress.OnePassLeftToRight()
 rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
-print(f'Writing {output_gt_file}')
+print(f'Writing GoatTracker file {output_gt_file}')
 GT = ctsGoatTracker.GoatTracker()
 GT.set_options(instruments=['Lead2', 'Harpsichord', 'Bass3'])
 GT.to_file(rchirp_song, output_gt_file)

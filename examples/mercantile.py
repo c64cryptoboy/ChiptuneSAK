@@ -48,8 +48,7 @@ print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')
-print()
-print('Original track names:')
+print('Track names:')
 print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
 print()
 
@@ -97,6 +96,14 @@ chirp_song.truncate(197280)
 
 # Set the key (D minor)
 chirp_song.set_key_signature('Dm')
+
+print(f'Modified song:')
+print(f'#tracks = {len(chirp_song.tracks)}')
+print(f'    ppq = {chirp_song.metadata.ppq}')
+print(f'  tempo = {chirp_song.metadata.qpm} qpm')
+print('Track names:')
+print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
+print()
 
 # Save the result to a MIDi file.
 ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
