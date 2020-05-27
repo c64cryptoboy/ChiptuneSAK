@@ -32,6 +32,10 @@ In this example a MIDI song is read, and a snippet of measures is converted to a
 C128 Basic Example
 ------------------
 
+In this example a MIDI song is read and converted to C128 BASIC:
+
+.. literalinclude:: ../examples/c128BasicExample.py
+    :language: python
 
 Metric Modulation Examples
 --------------------------
@@ -39,23 +43,18 @@ Metric Modulation Examples
 Fix too-short note durations
 ++++++++++++++++++++++++++++
 
-tools/BWV_799.mid is a three-part Bach invention.  We can convert it to a C128 BASIC program as follows:
+examples/data/C128/BWV_799.mid is a three-part Bach invention. It contains a few 32nd notes near the end.
+
+Unfortuately, C128 BASIC only supports notes down to 16th notes, so exporting this piece to C128 BASIC without loss of those notes is not possible without metric modulation.
+
+In the :ref:`C128 Basic Example`, the line
 
 ::
 
-    python tools\midiToC128Basic.py test\BWV_test.mid test\BWV_test.prg -t prg
+    chirp_song.modulate(2, 1)
 
-This should sound fine to anyone not familiar with the piece.  However, C128 BASIC PLAY command can perform 16th notes, but not finer durations (e.g., 32nd notes, etc).  And BWV 799 contains 32nd notes towards the end.
+Makes all the notes 2/1 = 2X as long, so the 32nd notes turn into 16th notes.  The tempo is changed to compensate so the song sounds correct.  Exporting the song to C128 BASIC now works correctly.
 
-A solution is to use metric modulation to double all the note durations, as well as doubling the BPM so that the perceived tempo remains the same.  That way, the smallest note duration is a 16th note, which PLAY commands can play.
-
-This command will change the 3/8 time signature piece into a 3/4 time signature, along with the changes described above:
-
-::
-
-    python tools\midiTransform.py -m 2/1 -q 16 -j 3/4 test\BWV_799.mid test\BWV_test.mid
-
-Now when BWV_test is converted to C128 BASIC, all the notes are present.
 
 Eliminate triplets
 ++++++++++++++++++
