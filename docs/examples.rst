@@ -29,6 +29,10 @@ In this example a MIDI song is read, and a snippet of measures is converted to a
 .. literalinclude:: ../examples/lilypondClipExample.py
     :language: python
 
+C128 Basic Example
+------------------
+
+
 Metric Modulation Examples
 --------------------------
 

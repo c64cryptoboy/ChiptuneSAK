@@ -13,4 +13,18 @@ If a song is primarily comprised of factor-of-two rhythms, then the song is writ
 
 **Metric Modulation** is a technique that changes note duration types while still sounding the same, allowing music to meet the constraints that may be imposed by 8-bit chiptunes devices.
 
-For example, music written in a simple meter can be converted to a compound meter. Chiptune engines frequently only support simple meters and require that all notes be powers-of-two lengths. Using metric modulation, music that contains tuples can be converted to music that obeys factor-of-two constraints.
+Metric Modulation in ChiptuneSAK
+################################
+
+Metric modulation is primarily used for two purposes in ChiptuneSAK:
+
+1. Some architectures do not support note durations less than a minimum amount.  For example, the shortest note available in C128 BASIC is a 16th note.
+
+  In this case, the length of each note can be multiplied by a constant and the tempo increased by the same factor, resulting in music that sounds the same but now has a shortest note duration that is longer than the original.  This technique is shown in the :ref:`Fix too-short note durations` example.  It is also used in the :ref:`C128 Basic Example`.
+
+2. Many chiptunes architectures do not support triplets.  This limitation can be overcome by using a metric modulation of a factor of 3/2, which eliminates the triplets and puts the music into a compound meter. This technnique is illustrated in the :ref:`Eliminate triplets` example.
+
+Metric modulation is achieved by use of the ChirpSong modulate() method:
+
+.. automethod:: ctsChirp.ChirpSong.modulate
+    :noindex:
