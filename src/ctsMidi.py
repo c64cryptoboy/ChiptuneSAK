@@ -263,7 +263,7 @@ class MIDI(ChiptuneSAKIO):
         if len(chirp_song.tempo_changes) == 0 or chirp_song.tempo_changes[0].start_time != 0:
             chirp_song.tempo_changes.insert(0, TempoEvent(0, int(mido.tempo2bpm(500000))))
         chirp_song.metadata.qpm = chirp_song.tempo_changes[0].qpm
-
+        chirp_song.set_metadata()
         return chirp_song
 
     def split_midi_zero_into_tracks(self, midi_song):

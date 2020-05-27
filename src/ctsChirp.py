@@ -482,6 +482,7 @@ class ChirpSong(ChiptuneSAKBase):
         :rtype: ctsRChirp.RChirpSong
         """
         self.set_options(**kwargs)
+        self.set_metadata()
         return ctsRChirp.RChirpSong(self)
 
     def to_mchirp(self, **kwargs):
@@ -492,6 +493,7 @@ class ChirpSong(ChiptuneSAKBase):
         :rtype: ctsMChirp.MChirpSong
         """
         self.set_options(**kwargs)
+        self.set_metadata()
         return ctsMChirp.MChirpSong(self)
 
     def import_mchirp_song(self, mchirp_song):
@@ -512,6 +514,59 @@ class ChirpSong(ChiptuneSAKBase):
         self.key_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, KeySignatureEvent)]
         self.tempo_changes = [e for m in t.measures for e in m.events if isinstance(e, TempoEvent)]
         self.other = copy.deepcopy(mchirp_song.other)
+        self.set_metadata()
+
+    def set_metadata(self):
+        """
+        Sets the song metadata to reflect the current status of the song.  This function cleans up
+        any redundant tiem siognature, key signature, or tempo changes (two events that have the same
+        timestamp) and keeps the last one it finds, then sets the metadata values to the first of each
+        respectively.
+        """
+        # Eliminate redundant time signature changes
+        if len(self.time_signature_changes) > 1:
+            new_ts_changes = []
+            current_ts = self.time_signature_changes[0]
+            for i in range(1, len(self.time_signature_changes)):
+                if self.time_signature_changes[i].start_time > self.time_signature_changes[i-1].start_time:
+                    new_ts_changes.append(current_ts)
+                current_ts = self.time_signature_changes[i]
+            new_ts_changes.append(current_ts)
+            self.time_signature_changes = new_ts_changes
+
+        # Set the time signature.  Note that this is a change event
+        if len(self.time_signature_changes) > 0:
+            self.metadata.time_signature = self.time_signature_changes[0]
+
+        # Eliminate redundant key signature changes
+        if len(self.key_signature_changes) > 1:
+            new_ks_changes = []
+            current_ks = self.key_signature_changes[0]
+            for i in range(1, len(self.key_signature_changes)):
+                if self.key_signature_changes[i].start_time > self.key_signature_changes[i-1].start_time:
+                    new_ks_changes.append(current_ks)
+                current_ks = self.key_signature_changes[i]
+            new_ks_changes.append(current_ks)
+            self.key_signature_changes = new_ks_changes
+
+        # Set the key signature; note that this is a change event
+        if len(self.key_signature_changes) > 0:
+            self.metadata.key_signature = self.key_signature_changes[0]
+
+        # Eliminate redundant tempo changes
+        if len(self.tempo_changes) > 1:
+            new_qpm_changes = []
+            current_ks = self.tempo_changes[0]
+            for i in range(1, len(self.tempo_changes)):
+                if self.tempo_changes[i].start_time > self.tempo_changes[i-1].start_time:
+                    new_qpm_changes.append(current_ks)
+                current_ks = self.tempo_changes[i]
+            new_qpm_changes.append(current_ks)
+            self.tempo_changes = new_qpm_changes
+
+        # Set the qpm; this is different because it is not a change event
+        if len(self.tempo_changes) > 0:
+            self.metadata.qpm = self.tempo_changes[0].qpm
 
     def estimate_quantization(self):
         """ 
@@ -747,6 +802,8 @@ class ChirpSong(ChiptuneSAKBase):
         # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
         self.qticks_notes = (self.qticks_notes * num) // denom
         self.qticks_durations = (self.qticks_durations * num) // denom
+        # Now adjust everything to be self-consistent
+        self.set_metadata()
 
     def scale_ticks(self, scale_factor):
         """

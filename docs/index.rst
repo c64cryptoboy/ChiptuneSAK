@@ -9,10 +9,11 @@ ChiptuneSAK documentation
    changelog
    introduction
    musical_concepts
-   chirp
+   chirp_ir
    other_formats
    import_export
-   classes
+   examples
+   class_reference
 
 ==================
 Indices and tables
