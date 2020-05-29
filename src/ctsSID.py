@@ -1,4 +1,8 @@
 # Parse SID header information
+#
+# TODO:
+# - search all the SIDs to see if they contain the KERNAL or BASIC ROMs
+
 
 from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsConstants import project_to_absolute_path
@@ -6,30 +10,32 @@ from ctsErrors import ChiptuneSAKValueError
 
 class SidFile:
     def __init__(self):
-        self.magic_id = None        #: PSID or RSID
-        self.version = None         #: 1 to 4
-        self.data_offset = None     #: start of the C64 payload
-        self.load_address = None    #: often the starting memory location
-        self.init_address = None    #: often the init address
-        self.play_address = None    #: often the play address
-        self.num_subtunes = None    #: number of songs
-        self.start_song = None      #: starting song
-        self.speed = None           #: bitfield for each subtune indicating playback considerations
-        self.name = None            #: SID name
-        self.author = None          #: SID author
-        self.released = None        #: SID release details
-        self.c64_payload = None     #: The C64 payload
-        self.flags = 0              #: Collection of flags
-        self.flag_0 = 0             #: bit 0 from flags
-        self.flag_1 = 0             #: bit 1 from flags
-        self.clock = 0              #: video clock
-        self.sid_model = 0          #: SID1 chip type
-        self.sid2_model = 0         #: SID2 chip type
-        self.sid3_model = 0         #: SID3 chip type
-        self.start_page = 0         #: helps indicate where SID writes to memory
-        self.page_length = 0        #: helps indicate where SID writes to memory
-        self.sid2_address = 0       #: SID2 I/O starting address
-        self.sid3_address = 0       #: SID3 I/O starting address
+        self.magic_id = None            #: PSID or RSID
+        self.version = None             #: 1 to 4
+        self.data_offset = None         #: start of the C64 payload
+        self.load_address = None        #: often the starting memory location
+        self.init_address = None        #: often the init address
+        self.play_address = None        #: often the play address
+        self.num_subtunes = None        #: number of songs
+        self.start_song = None          #: starting song
+        self.speed = None               #: bitfield for each subtune indicating playback considerations
+        self.name = None                #: SID name
+        self.author = None              #: SID author
+        self.released = None            #: SID release details
+        self.c64_payload = None         #: The C64 payload
+        self.load_addr_preamble = False #: True if payload begins with 16-bit load addr        
+        self.flags = 0                  #: Collection of flags
+        self.flag_0 = 0                 #: bit 0 from flags
+        self.flag_1 = 0                 #: bit 1 from flags
+        self.clock = 0                  #: video clock
+        self.sid_model = 0              #: SID1 chip type
+        self.sid2_model = 0             #: SID2 chip type
+        self.sid3_model = 0             #: SID3 chip type
+        self.start_page = 0             #: helps indicate where SID writes to memory
+        self.page_length = 0            #: helps indicate where SID writes to memory
+        self.sid2_address = 0           #: SID2 I/O starting address
+        self.sid3_address = 0           #: SID3 I/O starting address
+        self.sid_count = 1              #: Number of SIDs used (1 to 3)
 
     def decode_clock(self):
         """
@@ -104,6 +110,8 @@ class SidFile:
         # Conversely, if this is a PSID with an loading address preamble to the C64 payload, this
         # must be zero.
         self.load_address = big_endian_int(sid_binary[8:10])
+        if self.load_address == 0 or self.magic_id == b'RSID':
+            self.load_addr_preamble = True
         if self.magic_id == 'RSID' and self.load_address < 2024: # < $07E8
             raise ChiptuneSAKValueError("Error: invalid RSID load address")
 
@@ -174,8 +182,9 @@ class SidFile:
 
         if self.version == 1:
             self.c64_payload = sid_binary[118:]
-            if self.load_address == 0:
+            if self.load_addr_preamble:
                 self.load_address = self.get_load_addr_from_payload()
+            self.c64_payload = self.c64_payload[2:]
         else:
             self.flags = big_endian_int(sid_binary[118:120])
 
@@ -358,9 +367,16 @@ class SidFile:
             else:
                 self.sid3_address = 53248 + (self.sid3_address * 16)
 
+            if self.sid2_address > 0:
+                self.sid_count += 1
+
+            if self.sid3_address > 0:
+                self.sid_count += 1
+
             self.c64_payload = sid_binary[124:]
-            if self.load_address == 0:
+            if self.load_addr_preamble:
                 self.load_address = self.get_load_addr_from_payload()
+                self.c64_payload = self.c64_payload[2:]                
 
 
     def get_payload_length(self):
