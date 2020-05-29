@@ -5,6 +5,7 @@ import os
 from fractions import Fraction
 from dataclasses import dataclass, field
 from pathlib import Path
+from ctsErrors import *
 
 
 # Version information.  Update BUILD_VERSION with every significant bugfix;
@@ -125,6 +126,39 @@ ARCH = {
                                  lines_per_frame=312,
                                  visible_lines=284),
 }
+
+
+def midi_num_to_freq(midi_num, tuning=CONCERT_A):
+    """
+    Convert a midi number into its frequency
+
+    :param midi_num: midi number
+    :type midi_num: int
+    :param tuning: frequency, defaults to CONCERT_A
+    :type tuning: float, optional
+    :return: frequency for midi number
+    :rtype: float
+    """
+    return tuning * pow(2, (midi_num - A4_MIDI_NUM) / 12)
+
+
+def midi_num_to_freq_arch(midi_num, arch, tuning=CONCERT_A):
+    """
+    Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
+
+    :param midi_num: midi note number
+    :type midi_num: int
+    :param architecture: Architecture description string
+    :type architecture: string
+    :return: int frequency for arch
+    :rtype: int
+    """
+    if arch not in ('NTSC-C64', 'PAL-C64'):
+        raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
+
+    # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
+    # SID oscillator is 24-bit (phase-accumulating design)
+    return round((0x1000000 / ARCH[arch].system_clock) * midi_num_to_freq(midi_num, tuning))
 
 
 def project_to_absolute_path(file_path):
