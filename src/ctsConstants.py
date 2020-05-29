@@ -164,6 +164,19 @@ def midi_num_to_freq_arch(midi_num, arch, tuning=CONCERT_A):
 
 
 def freq_to_midi_num(freq, tuning=CONCERT_A):
+    """
+    Converts a frequency in Hz to a midi number and an offset from the midi pitch in cents.
+    The cent is musical term indicating an small change in pitch; 100 cents is a semitone.
+    Positive cents means the frequency is sharp relative to the midi note;
+    Negative cents means the frequency is flat relative to the midi note.
+
+    :param freq: Frequency, in Hz
+    :type freq: float
+    :param tuning: pitch of A4
+    :type tuning: float
+    :return: (midi_num, cents)
+    :rtype: tuple of int, int
+    """
     midi_num_float = (log2(freq) - log2(tuning)) * 12. + A4_MIDI_NUM
     midi_num = int(round(midi_num_float))
     cents = int(round((midi_num_float - midi_num) * 100))
