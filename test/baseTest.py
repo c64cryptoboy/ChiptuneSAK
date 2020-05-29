@@ -2,6 +2,7 @@ import testingPath
 import unittest
 from ctsConstants import *
 from ctsBase import *
+import math
 
 
 class BaseTestCase(unittest.TestCase):
@@ -41,3 +42,9 @@ class BaseTestCase(unittest.TestCase):
         octave_offset = 1  # up one octave
         self.assertEqual('G5', pitch_to_note_name(67, octave_offset))
         self.assertEqual(67, note_name_to_pitch('G5', octave_offset))
+
+    def test_freq_conversion(self):
+        self.assertEqual(ctsConstants.freq_to_midi_num(440.), (ctsConstants.A4_MIDI_NUM, 0))
+        # Make a tone exactly 12 cents higher than C4
+        f = 261.63 * 2**(1/100)
+        self.assertEqual(ctsConstants.freq_to_midi_num(f), (ctsConstants.C4_MIDI_NUM, 12))

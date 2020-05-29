@@ -5,6 +5,7 @@ import os
 from fractions import Fraction
 from dataclasses import dataclass, field
 from pathlib import Path
+from math import log2
 from ctsErrors import *
 
 
@@ -12,7 +13,7 @@ from ctsErrors import *
 # update MINOR_VERSION with every feature addition
 MAJOR_VERSION = 0
 MINOR_VERSION = 3
-BUILD_VERSION = 0
+BUILD_VERSION = 1
 
 CHIPTUNESAK_VERSION = f"{MAJOR_VERSION}.{MINOR_VERSION}.{BUILD_VERSION}"
 CHIPTUNESAK_RELEASE = f"{MAJOR_VERSION}.{MINOR_VERSION}"
@@ -26,6 +27,7 @@ C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
 A4_MIDI_NUM = C4_MIDI_NUM + 9
 CONCERT_A = 440.0  # note: scene sometimes uses 435Hz to reach B7 on PAL
+
 
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
@@ -159,6 +161,13 @@ def midi_num_to_freq_arch(midi_num, arch, tuning=CONCERT_A):
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
     # SID oscillator is 24-bit (phase-accumulating design)
     return round((0x1000000 / ARCH[arch].system_clock) * midi_num_to_freq(midi_num, tuning))
+
+
+def freq_to_midi_num(freq, tuning=CONCERT_A):
+    midi_num_float = (log2(freq) - log2(tuning)) * 12. + A4_MIDI_NUM
+    midi_num = int(round(midi_num_float))
+    cents = int(round((midi_num_float - midi_num) * 100))
+    return (midi_num, cents)
 
 
 def project_to_absolute_path(file_path):
