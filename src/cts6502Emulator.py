@@ -7,7 +7,7 @@
 # 1) C code: siddumper: https://csdb.dk/release/?id=152422
 #    In fact, this is a direct python adaptation of that code.  At this time, the original
 #    C code is still included in this file as reference.  It made heavy use of macros
-#    (something python doesn't have) for register/value/address polymorphism.  
+#    (something python doesn't have) for register/value/address polymorphism.
 # 2) python code: py65: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
 #    If I had just imported this library, I would have been done.  But then I wouldn't have
 #    learned nearly as much trying to get this emulator bug free.
@@ -18,10 +18,12 @@
 
 
 # TODOs:
-# - Develop test cases for gaps in test coverage
+# - Move C64-specific stuff out of here into a subclass
+# - Test a mirror set in VICE (on some vic register, not SID)
 
-from ctsConstants import project_to_absolute_path, ARCH
-from ctsBytesUtil import little_endian_int, read_binary_file, hex_to_int
+from ctsConstants import project_to_absolute_path
+from ctsBytesUtil import little_endian_int, read_binary_file
+from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError, ChiptuneSAKContentError
 
 DEBUG = False
 
@@ -70,42 +72,171 @@ class Cpu6502Emulator:
         self.flags = FU  #: flags (byte)
         self.sp = 0  #: stack pointer (byte)
         self.pc = 0  #: program counter (16-bit)
-        self.has_basic = False  #: True if C64 BASIC ROM loaded
-        self.has_kernal = False  #: True if C64 KERNAL ROM loaded
         self.cpucycles = 0  #: count of cpu cycles processed
         self.rom_ranges = []  #: ranages of immutable memory
         self.last_instruction = None  #: last instruction processed
-        self.stack_wrapping = False #: True = empty stack wraps when popped
+        self.stack_wrapping = False  #: True = empty stack wraps when popped
 
-    def set_ram(self, loc, val):
+        self.has_basic = False  #: True if C64 BASIC ROM loaded
+        self.has_kernal = False  #: True if C64 KERNAL ROM loaded
+        self.has_char = False  #: True if C64 CHARGEN ROM loaded
+        self.see_basic = True
+        self.see_kernal = True
+        self.see_io = True
+        self.see_char = False
+
+        self.rom_kernal = [0] * 8192  # KERNAL ROM 57344-65535 ($E000-$FFFF)
+        self.rom_basic = [0] * 8192  # BASIC ROM 40960-49151 ($A000-$BFFF)
+        self.rom_char = [0] * 4096  # Character set ROM 53248-57343 ($D000-$DFFF)
+
+    def get_mem(self, loc):
+        if loc < 0xa000 or (0xc000 <= loc <= 0xcfff):
+            return self.memory[loc]
+
+        if loc >= 0xe000:
+            if self.see_kernal:
+                return self.rom_kernal[loc - 0xe000]
+            else:
+                return self.memory[loc]
+
+        if 0xa000 <= loc <= 0xbfff:
+            if self.see_basic:
+                return self.rom_basic[loc - 0xa000]
+            else:
+                return self.memory[loc]
+
+        # only $D000 to $DFFF left to process:
+        if self.see_char:
+            return self.rom_char[loc-0xd000]
+
+        # Normally, for a given memory location, you can write to RAM, or read from either RAM
+        # or what's banked in instead.  But it's more complicated in the $D000 to $DFFF range:
+        #
+        # When RAM is banked in:
+        # - $D000-$DFFF: reads and writes go to RAM
+        #
+        # When character ROM banked in:
+        # - $D000-$DFFF: reads from Character ROM, writes go to RAM
+        # 
+        # When I/O banked in:
+        # - $D000-$D02E: reads/writes go to VIC-II chip registers 
+        # - $D02F-$D03F: In a real C64, always read as $FF, and cannot be altered
+        # - $D040-$D3FF: In a real C64, every 64-byte block here is a "mirror" of VIC-II registers at $D000
+        # - $D400-$D418: Write-only SID registers (read value is not SID register or the RAM underneath)
+        # - $D419-$D41C: Read-only SID registers
+        # - $D41D-$D41F: In a real C64, always read as $FF, and cannot be altered
+        # - $D420-$D4FF: In a real C64, every 32-bytes block here is a "mirror" of the SID registers at $D400
+        # - $D800-$DBFF: reads/writes go to Color RAM
+        # - $DC00-$DC0F: reads/writes go to CIA #1
+        # - $DC10-$DCFF: In a real C64, every 16-bytes block here is a "mirror" of the CIA registers at $DC00
+        # - $DD00-$DD0F: reads/writes go to CIA #2
+        # - $DD10-$DDFF: In a real C64, every 16-bytes block here is a "mirror" of the CIA registers at $DD00
+        # - $DE00-$DEFF: TODO: When no cart present, read/write behavior here is confusing
+        # - $DF00-$DFFF: TODO: When no cart present, read/write behavior here is confusing
+
+        if self.see_io:
+            if 0xd02f <= loc <= 0xd03f or 0xd41d <= loc <= 0xd41f:
+                return 0xff
+
+            if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirroring
+                return self.memory[0xd000 + ((loc - 0xd040) % 64)]
+            
+            # no special treatment for $D400-$D418
+            #    In this low-fidelity emulator, you can read anything that was stored in a
+            #    write-only SID register, which is useful for our SID value extraction 
+
+            if 0xd420 <= loc <= 0xd4ff:  # SID mirroring
+                return self.memory[0xd000 + ((loc - 0xd420) % 32)]
+
+            if 0xdc10 <= loc <= 0xdcff:  # CIA1 mirroring
+                return self.memory[0xd000 + ((loc - 0xdc10) % 16)]
+
+            if 0xdd10 <= loc <= 0xddff:  # CIA2 mirroring
+                return self.memory[0xd000 + ((loc - 0xdd10) % 16)]
+
+        return self.memory[loc]  # Return memory (from somewhere in $Dxxx range)
+
+
+    def set_mem(self, loc, val):
         if not (0 <= val <= 255):
-            exit("Error: POKE(%d),%d" % (loc, val))
+            exit("Error: POKE(%d),%d out of range" % (loc, val))
 
-        for immutable_range in self.rom_ranges:
-            if immutable_range[0] <= loc <= immutable_range[1]:
-                return  # don't change an immutable memory location
+        if (0xd000 < loc < 0xdfff) and self.see_io:
+            if 0xd02f <= loc <= 0xd03f or 0xd41d <= loc <= 0xd41f:
+                return  # unsettable
+
+            if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirror set
+                self.memory[0xd000 + ((loc - 0xd040) % 64)] = val
+                return
+            
+            if 0xd420 <= loc <= 0xd4ff:  # SID mirror set
+                self.memory[0xd000 + ((loc - 0xd420) % 32)] = val
+                return
+            
+            if 0xdc10 <= loc <= 0xdcff:  # CIA1 mirror set
+                self.memory[0xd000 + ((loc - 0xdc10) % 16)] = val
+                return    
+            
+            if 0xdd10 <= loc <= 0xddff:  # CIA2 mirror set
+                self.memory[0xd000 + ((loc - 0xdd10) % 16)] = val
+                return
+        
         self.memory[loc] = val
+
+        """
+        if loc == 0:
+            print("TODO: Someone's touching location 0 -- need to understand if/how this affects memory reads/writes")
+        """
+
+        if loc == 1:  # hook changes to $0001 to update memory banking
+            self.see_basic = self.see_kernal = self.see_io = self.see_char = False
+
+            # From https://www.c64-wiki.com/wiki/Bank_Switching
+            # Assumming the EXROM and GAME are both 1 (since not emulating cartridges),
+            # here's the banks for the other three PLA latch states:
+
+            # m1:b2   m1:b1   m1:b0   $1000-  $8000-  $A000-  $C000-  $D000-  $E000-
+            # CHAREN  HIRAM   LORAM   $7FFF   $9FFF   $BFFF   $CFFF   $DFFF   $FFFF 
+            # 1       1       1       RAM     RAM     BASIC   RAM     I/O     KERNAL
+            # 1       1       0       RAM     RAM     RAM     RAM     I/O     KERNAL
+            # 1       0       1       RAM     RAM     RAM     RAM     I/O     RAM
+            # 1       0       0       RAM     RAM     RAM     RAM     RAM     RAM
+            # 0       1       1       RAM     RAM     BASIC   RAM     CHAR    KERNAL
+            # 0       1       0       RAM     RAM     RAM     RAM     CHAR    KERNAL
+            # 0       0       1       RAM     RAM     RAM     RAM     CHAR    RAM
+            # 0       0       0       RAM     RAM     RAM     RAM     RAM     RAM 
+            # (I/O = VIC-II, SID, Color, CIA-1, CIA-2)
+
+            banks = self.memory[0x0001] & 0b00000111
+            if banks & 0b00000011:
+                self.see_basic = True
+            if banks & 0b00000010:
+                self.see_kernal = True
+            if 5 <= banks <= 7:
+                self.see_io = True
+            if 1 <= banks <= 3:
+                self.see_char = True
 
     # define LO() (MEM(pc))
     def lo(self):
-        return self.memory[self.pc]
+        return self.get_mem(self.pc)
 
     # define HI() (MEM(pc+1))
     def hi(self):
-        return self.memory[(self.pc + 1) & 0xffff]
+        return self.get_mem((self.pc + 1) & 0xffff)
 
     # define FETCH() (MEM(pc++))
     def fetch(self):
         self.pc &= 0xffff
-        val = self.memory[self.pc]
+        val = self.get_mem(self.pc)
         self.pc = (self.pc + 1) & 0xffff
         return val
 
     # define PUSH(data) (MEM(0x100 + (sp--)) = (data))
     def push(self, data):
-        self.set_ram(0x100 + self.sp, data)
+        self.set_mem(0x100 + self.sp, data)
         self.sp -= 1
-        self.sp &= 0xff # this will wrap -1 to 255, as it should
+        self.sp &= 0xff  # this will wrap -1 to 255, as it should
 
     # define POP() (MEM(0x100 + (++sp)))
     def pop(self):
@@ -113,7 +244,7 @@ class Cpu6502Emulator:
         # If poping from an empty stack (sp == $FF), this must wrap to 0
         # http://forum.6502.org/viewtopic.php?f=8&t=1446         
         self.sp &= 0xff
-        result = self.memory[0x100 + self.sp]
+        result = self.get_mem(0x100 + self.sp)
         return result
 
     # define IMMEDIATE() (LO())
@@ -146,18 +277,17 @@ class Cpu6502Emulator:
 
     # define INDIRECTX() (MEM((LO() + x) & 0xff) | (MEM((LO() + x + 1) & 0xff) << 8))
     def indirect_x(self):
-        return self.memory[(self.lo() + self.x) & 0xff] | (self.memory[(self.lo() + self.x + 1) & 0xff] << 8)
+        return self.get_mem((self.lo() + self.x) & 0xff) | (self.get_mem((self.lo() + self.x + 1) & 0xff) << 8)
 
     # define INDIRECTY() (((MEM(LO()) | (MEM((LO() + 1) & 0xff) << 8)) + y) & 0xffff)
     def indirect_y(self):
-        zp_vec = self.memory[self.pc]
-        return ((self.memory[zp_vec] | (self.memory[(zp_vec + 1) & 0xff] << 8)) + self.y) & 0xffff
+        zp_vec = self.get_mem(self.pc)
+        return ((self.get_mem(zp_vec) | (self.get_mem((zp_vec + 1) & 0xff) << 8)) + self.y) & 0xffff
 
     # define INDIRECTZP() (((MEM(LO()) | (MEM((LO() + 1) & 0xff) << 8)) + 0) & 0xffff)
     def indirect_zp(self):
-        # return ((self.memory[self.lo()] | (self.memory[(self.lo() + 1) & 0xff] << 8)) + 0) & 0xffff
-        zp_vec = self.memory[self.pc]
-        return ((self.memory[zp_vec] | (self.memory[(zp_vec + 1) & 0xff] << 8)) + 0) & 0xffff
+        zp_vec = self.get_mem(self.pc)
+        return ((self.get_mem(zp_vec) | (self.get_mem((zp_vec + 1) & 0xff) << 8)) + 0) & 0xffff
 
     # define EVALPAGECROSSING(baseaddr, realaddr) ((((baseaddr) ^ (realaddr)) & 0xff00) ? 1 : 0)
     def eval_page_crossing(self, baseaddr, realaddr):
@@ -218,7 +348,7 @@ class Cpu6502Emulator:
         else:
             # turn off flag's N and Z, then add in a_byte's N
             self.flags = (self.flags & ~(FN | FZ) & 0xff) | (a_byte & FN)
-        self.flags |= FU # might not need this here, but being safe
+        self.flags |= FU  # might not need this here, but being safe
 
     # #define ASSIGNSETFLAGS(dest, data)      \
     # {                                       \
@@ -597,7 +727,7 @@ class Cpu6502Emulator:
     #   {
     def runcpu(self):
         if DEBUG:
-            output_str = "\n{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
+            output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
                 .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
             print(output_str)
 
@@ -1409,7 +1539,7 @@ class Cpu6502Emulator:
         if instruction == 0x6c:  # $6C/108 JMP (abs)
             adr = self.absolute()
             # Yup, indirect JMP is bug compatible
-            self.pc = (self.memory[adr] | (self.memory[((adr + 1) & 0xff) | (adr & 0xff00)] << 8))
+            self.pc = (self.get_mem(adr) | (self.get_mem(((adr + 1) & 0xff) | (adr & 0xff00)) << 8))
             return 1
 
         # case 0xa9:
@@ -2095,37 +2225,37 @@ class Cpu6502Emulator:
         # STA instructions
         # Note: STA/X/Y doesn't affect flags
         if instruction == 0x85:  # $85/133 STA zp
-            self.set_ram(self.zeropage(), self.a)
+            self.set_mem(self.zeropage(), self.a)
             self.pc += 1
             return 1
 
         if instruction == 0x95:  # $95/149 STA zp,X
-            self.set_ram(self.zeropage_x(), self.a)
+            self.set_mem(self.zeropage_x(), self.a)
             self.pc += 1
             return 1
 
         if instruction == 0x8d:  # $8D/141 STA abs
-            self.set_ram(self.absolute(), self.a)
+            self.set_mem(self.absolute(), self.a)
             self.pc += 2
             return 1
 
         if instruction == 0x9d:  # $9D/157 STA abs,X
-            self.set_ram(self.absolute_x(), self.a)
+            self.set_mem(self.absolute_x(), self.a)
             self.pc += 2
             return 1
 
         if instruction == 0x99:  # $99/153 STA abs,Y
-            self.set_ram(self.absolute_y(), self.a)
+            self.set_mem(self.absolute_y(), self.a)
             self.pc += 2
             return 1
 
         if instruction == 0x81:  # $81/129 STA (zp,X)
-            self.set_ram(self.indirect_x(), self.a)
+            self.set_mem(self.indirect_x(), self.a)
             self.pc += 1
             return 1
 
         if instruction == 0x91:  # $91/145 STA (zp),Y
-            self.set_ram(self.indirect_y(), self.a)
+            self.set_mem(self.indirect_y(), self.a)
             self.pc += 1
             return 1
 
@@ -2149,17 +2279,17 @@ class Cpu6502Emulator:
 
         # STX instructions
         if instruction == 0x86:  # $86/134 STX zp
-            self.set_ram(self.zeropage(), self.x)
+            self.set_mem(self.zeropage(), self.x)
             self.pc += 1
             return 1
 
         if instruction == 0x96:  # $96/150 STX zp,Y
-            self.set_ram(self.zeropage_y(), self.x)
+            self.set_mem(self.zeropage_y(), self.x)
             self.pc += 1
             return 1
 
         if instruction == 0x8e:  # $8E/142 STX abs
-            self.set_ram(self.absolute(), self.x)
+            self.set_mem(self.absolute(), self.x)
             self.pc += 2
             return 1
 
@@ -2183,17 +2313,17 @@ class Cpu6502Emulator:
 
         # STY instructions
         if instruction == 0x84:  # $84/132 STY zp
-            self.set_ram(self.zeropage(), self.y)
+            self.set_mem(self.zeropage(), self.y)
             self.pc += 1
             return 1
 
         if instruction == 0x94:  # $94/148 STY zp,X
-            self.set_ram(self.zeropage_x(), self.y)
+            self.set_mem(self.zeropage_x(), self.y)
             self.pc += 1
             return 1
 
         if instruction == 0x8c:  # $8C/140 STY abs
-            self.set_ram(self.absolute(), self.y)
+            self.set_mem(self.absolute(), self.y)
             self.pc += 2
             return 1
 
@@ -2272,7 +2402,7 @@ class Cpu6502Emulator:
             self.push((self.pc) & 0xff)
             self.push(self.flags | FB)
             self.flags |= FI
-            self.pc = self.get_addr_at_loc(IRQ)
+            self.pc = self.get_le_word(IRQ)
             return 0
 
         # case 0xa7:
@@ -2442,7 +2572,7 @@ class Cpu6502Emulator:
         # $F2/242 HALT
         if instruction in (0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92,
                            0xb2, 0xd2, 0xf2):
-            raise Exception("Error: CPU halt at %s\n" % hex(self.pc - 1))
+            raise ChiptuneSAKValueError("Error: CPU halt at %s\n" % hex(self.pc - 1))
 
         # Pseudo-ops I'm not likely to need for SID playback (TODO: implement later)
         # $03/3 ASL-ORA (zp,X)
@@ -2506,36 +2636,56 @@ class Cpu6502Emulator:
         # $FB/251 INC-SBC abs,Y
         # $FF/255 INC-SBC abs,X
 
-        raise Exception("Error: unknown/unimplemented opcode %s at %s" % (hex(instruction), hex(self.pc - 1)))
+        raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s"
+            % (hex(instruction), hex(self.pc - 1)))
 
-    def get_addr_at_loc(self, mem_loc):
-        return little_endian_int(self.memory[mem_loc:mem_loc + 2])
+    def get_le_word(self, mem_loc):
+        # TODO:  This should be the 6502 (not c64) parent class implementation:
+        #return little_endian_int(self.memory[mem_loc:mem_loc + 2])
+        return self.get_mem(mem_loc) | (self.get_mem(mem_loc+1) << 8)
 
-    # allowed to inject into ROM areas, etc.
     def inject_bytes(self, mem_loc, bytes):
         for i, a_byte in enumerate(bytes):
             self.memory[mem_loc + i] = a_byte
 
-    # TODO:  This is commodore-specific functionality that I need to move out of this module into
-    # a new module, however, it's not quite yet ready to check that new module in yet
-    def inject_roms(self):
-        path_and_filename = project_to_absolute_path('res/c64kernal.bin')
-        binary = read_binary_file(path_and_filename)
-        if binary is not None:
-            self.inject_bytes(57344, binary)  # KERNAL ROM 57344-65535 ($E000-$FFFF)
-            self.has_kernal = True
-            self.rom_ranges.append((57344, 65535))
-        else:
-            print("Warning: could not find %s" % (path_and_filename))
 
-        path_and_filename = project_to_absolute_path('res/c64basic.bin')
+    def load_rom(self, path_and_filename, expected_size):
         binary = read_binary_file(path_and_filename)
-        if binary is not None:
-            self.inject_bytes(40960, binary)  # BASIC ROM 40960-49151 ($A000-$BFFF)
-            self.has_basic = True
-            self.rom_ranges.append((40960, 49151))
-        else:
+        if binary is None:
             print("Warning: could not find %s" % (path_and_filename))
+        elif len(binary) != expected_size:
+            raise ChiptuneSAKContentError("Error: %s had unexpected length" % path_and_filename)
+
+        return binary
+
+
+    def load_roms(self):
+        binary = self.load_rom(project_to_absolute_path('res/c64kernal.bin'), 8192)
+        if binary is not None:
+            self.rom_kernal = binary
+            self.has_kernal = True
+
+        binary = self.load_rom(project_to_absolute_path('res/c64basic.bin'), 8192)
+        if binary is not None:
+            self.rom_basic = binary
+            self.has_basic = True
+
+        binary = self.load_rom(project_to_absolute_path('res/c64char.bin'), 4096)
+        if binary is not None:
+            self.rom_char = binary
+            self.has_char = True
+
+
+    def patch_kernal(self, mem_loc, bytes):
+        mem_loc -= 0xe000
+        for i, a_byte in enumerate(bytes):
+            self.rom_kernal[mem_loc + i] = a_byte
+
+
+    def patch_basic(self, mem_loc, bytes):
+        mem_loc -= 0xa000
+        for i, a_byte in enumerate(bytes):
+            self.rom_basic[mem_loc + i] = a_byte
 
 
 # The original C code used macros, which resulted in a crazy amount of polymorphism
@@ -2546,13 +2696,13 @@ class OperandRef:
         assert type in (A_REG, X_REG, Y_REG, SP_REG, BYTE_VAL, LOC_VAL), \
             "Error: invalid enum type when instantiating a new OperandRef"
         if type in (A_REG, X_REG, Y_REG, SP_REG) and val_or_loc is not None:
-            raise Exception("Error: value not needed for operand of type register")
+            raise ChiptuneSAKValueError("Error: value not needed for operand of type register")
         if type in (BYTE_VAL, LOC_VAL) and val_or_loc is None:
-            raise Exception("Error: value needed for operand")
+            raise ChiptuneSAKValueError("Error: value needed for operand")
         if type == BYTE_VAL and not (0 <= val_or_loc <= 255):
-            raise Exception("Error: byte value out of range")
+            raise ChiptuneSAKValueError("Error: byte value out of range")
         if type == LOC_VAL and not (0 <= val_or_loc <= 65535):
-            raise Exception("Error: memory location out of range")
+            raise ChiptuneSAKValueError("Error: memory location out of range")
 
         self.type = type
         self.val_or_loc = val_or_loc
@@ -2568,10 +2718,9 @@ class OperandRef:
         elif self.type == SP_REG:
             cpuInstance.sp = byte_val
         elif self.type == LOC_VAL:
-            # cpuInstance.memory[self.val_or_loc] = byte_val
-            cpuInstance.set_ram(self.val_or_loc, byte_val)
+            cpuInstance.set_mem(self.val_or_loc, byte_val)
         else:
-            raise Exception("Error: unable to set OperandRef to a byte value")
+            raise ChiptuneSAKValueError("Error: unable to set OperandRef to a byte value")
 
     # this returns the register value, the fixed value, or the memory location's
     #    content value
@@ -2585,11 +2734,11 @@ class OperandRef:
         elif self.type == SP_REG:
             result = cpuInstance.sp
         elif self.type == LOC_VAL:
-            result = cpuInstance.memory[self.val_or_loc]
+            result = cpuInstance.get_mem(self.val_or_loc)
         else:  # BYTE_VAL
             result = self.val_or_loc
         if not (0 <= result <= 255):
-            raise Exception("Error: byte out of range")
+            raise ChiptuneSAKValueError("Error: byte out of range")
         return result
 
 

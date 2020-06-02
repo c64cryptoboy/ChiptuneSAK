@@ -16,7 +16,7 @@ class Test6502Emulator(unittest.TestCase):
         global cpuState
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
-
+    #@unittest.skip("Debugging, so skipping this test for now")
     def test_stack_wrapping(self):
         global cpuState
         
@@ -97,15 +97,15 @@ class Test6502Emulator(unittest.TestCase):
 
         cpuState.inject_bytes(32768, test_prog)
 
-        # Memory Patch:  Since kernal not loaded, make $FFD2 just an RTS
-        cpuState.memory[65490] = 0x60
+        # Memory Patch:  Since kernal ROM not loaded, make $FFD2 just an RTS
+        cpuState.patch_kernal(0xffd2, [0x60])
 
         cpuState.init_cpu(32768)
         
         output_text = ""
         while cpuState.runcpu():
             # Capture petscii characters sent to screen print routine
-            if cpuState.pc == 65490: # $FFD2
+            if cpuState.pc == 0xffd2:
                 output_text += chr(cpuState.a)
 
         self.assertTrue(output_text == '\rYOFA WAS HERE\r')
@@ -119,79 +119,28 @@ class Test6502Emulator(unittest.TestCase):
         def indirect_x(self): 
             return self.memory[(self.lo() + self.x) & 0xff] | (self.memory[(self.lo() + self.x + 1) & 0xff] << 8) 
 
-        The BCD part of ADC
-        The BCD part of SBC
-        The need to set the V flag in SBC (when not BCD)
-        The need to set the C flag in ASL
+        BCD in ADC and SBC
+        Setting the V flag in SBC (when not BCD)
+        Settig the C flag in ASL
 
         And these instructions:
-        $75/117 ADC zp,X 
-        $6D/109 ADC abs 
-        $7D/125 ADC abs,X 
-        $61/97 ADC (zp,X) 
-        $71/113 ADC (zp),Y 
-        $25/37 AND zp 
-        $35/53 AND zp,X 
-        $2D/45 AND abs 
-        $3D/61 AND abs,X 
-        $39/57 AND abs,Y 
-        $21/33 AND (zp,X) 
-        $31/49 AND (zp),Y 
-        $0A/10 ASL A 
-        $0E/14 ASL abs 
-        $1E/30 ASL abs,X 
-        $2C/44 BIT abs 
-        $50/80 BVC rel 
-        $70/112 BVS rel 
-        $B8/184 CLV 
-        $D5/213 CMP zp,X 
-        $CD/205 CMP abs 
-        $D9/217 CMP abs,Y 
-        $C1/193 CMP (zp,X) 
-        $EC/236 CPX abs 
-        $CC/204 CPY abs 
-        $D6/214 DEC zp,X 
-        $CE/206 DEC abs 
-        $DE/222 DEC abs,X 
-        $55/85 EOR zp,X 
-        $4D/77 EOR abs 
-        $5D/93 EOR abs,X 
-        $41/65 EOR (zp,X) 
-        $51/81 EOR (zp),Y 
-        $F6/246 INC zp,X 
-        $EE/238 INC abs 
-        $FE/254 INC abs,X 
-        $A1/161 LDA (zp,X) 
-        $B6/182 LDX zp,Y 
-        $BE/190 LDX abs,Y 
-        $BC/188 LDY abs,X 
-        $4A/74 LSR A 
-        $4E/78 LSR abs 
-        $5E/94 LSR abs,X 
-        $EA/234 NOP 
-        $15/21 ORA zp,X 
-        $1D/29 ORA abs,X 
-        $19/25 ORA abs,Y 
-        $01/1 ORA (zp,X) 
-        $11/17 ORA (zp),Y 
-        $26/38 ROL zp 
-        $36/54 ROL zp,X 
-        $2E/46 ROL abs 
-        $3E/62 ROL abs,X
-        $6E/110 ROR abs 
-        $7E/126 ROR abs,X 
-        $40/64 RTI 
-        $F5/245 SBC zp,X 
-        $ED/237 SBC abs 
-        $FD/253 SBC abs,X 
-        $F9/249 SBC abs,Y 
-        $E1/225 SBC (zp,X) 
-        $F1/241 SBC (zp),Y 
-        $F8/248 SED 	
-        $81/129 STA (zp,X) 
-        $96/150 STX zp,Y 
-        $BA/186 TSX 
-        $00/0 BRK 
+        $75/117 ADC zp,X        $6D/109 ADC abs     $7D/125 ADC abs,X       $61/97 ADC (zp,X) 
+        $71/113 ADC (zp),Y      $25/37 AND zp       $35/53 AND zp,X         $2D/45 AND abs 
+        $3D/61 AND abs,X        $39/57 AND abs,Y    $21/33 AND (zp,X)       $31/49 AND (zp),Y 
+        $0A/10 ASL A            $0E/14 ASL abs      $1E/30 ASL abs,X        $2C/44 BIT abs 
+        $50/80 BVC rel          $70/112 BVS rel     $B8/184 CLV             $D5/213 CMP zp,X
+        $CD/205 CMP abs         $D9/217 CMP abs,Y   $C1/193 CMP (zp,X)      $EC/236 CPX abs
+        $CC/204 CPY abs         $D6/214 DEC zp,X    $CE/206 DEC abs $DE/222 DEC abs,X
+        $55/85 EOR zp,X         $4D/77 EOR abs      $5D/93 EOR abs,X        $41/65 EOR (zp,X) 
+        $51/81 EOR (zp),Y       $F6/246 INC zp,X    $EE/238 INC abs         $FE/254 INC abs,X 
+        $A1/161 LDA (zp,X)      $B6/182 LDX zp,Y    $BE/190 LDX abs,Y       $BC/188 LDY abs,X 
+        $4A/74 LSR A            $4E/78 LSR abs      $5E/94 LSR abs,X        $EA/234 NOP 
+        $15/21 ORA zp,X         $1D/29 ORA abs,X    $19/25 ORA abs,Y        $01/1 ORA (zp,X) 
+        $11/17 ORA (zp),Y       $26/38 ROL zp       $36/54 ROL zp,X         $2E/46 ROL abs 
+        $3E/62 ROL abs,X        $6E/110 ROR abs     $7E/126 ROR abs,X       $40/64 RTI 
+        $F5/245 SBC zp,X        $ED/237 SBC abs     $FD/253 SBC abs,X       $F9/249 SBC abs,Y 
+        $E1/225 SBC (zp,X)      $F1/241 SBC (zp),Y  $F8/248 SED 	        $81/129 STA (zp,X) 
+        $96/150 STX zp,Y        $BA/186 TSX         $00/0 BRK 
     """
 
     #@unittest.skip("Debugging, so skipping this test for now")
@@ -210,7 +159,7 @@ class Test6502Emulator(unittest.TestCase):
         # The startup ram check only stops when, working its way up from $0801, it hits the
         # BASIC ROM and finds that it can't change it.
         # This method loads the ROM ranges and makes them immutable
-        cpuState.inject_roms()
+        cpuState.load_roms()
 
         if not cpuState.has_kernal:
             raise unittest.case.SkipTest("KERNAL ROM not loaded, skipping C64 boot test")
@@ -221,8 +170,8 @@ class Test6502Emulator(unittest.TestCase):
         # then continues from there.  This will be 64738, as in the good ol' SYS64738.
         # It tests for an autostart cartridge (which it won't find).  Then
         # IOINIT, RAMTAS, RESTOR, and CINT are called.  Then BASIC entered through
-        # cold start vector at $A000, and we get the start-up message.    
-        reset = cpuState.get_addr_at_loc(65532)
+        # cold start vector at $A000, and we get the start-up message.  
+        reset = cpuState.get_le_word(0xfffc)
 
         # I've seen others set the break flag on RESET, but VICE doesn't do that, and
         # pagetable says not to: https://www.pagetable.com/?p=410

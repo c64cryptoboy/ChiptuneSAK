@@ -68,12 +68,6 @@ def manage_resources(resources):
 def main():
     resources = []
 
-    """
-    resources.append(ResourceFile(
-        'http://youdzone.com/tmp/resourceTest.txt',
-        'res'))
-    """
-
     resources.append(ResourceFile(
         'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
         'examples/data',
@@ -91,6 +85,12 @@ def main():
         'res',
         'c64basic.bin'
         )) 
+
+    resources.append(ResourceFile(
+        'http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/characters.901225-01.bin',
+        'res',
+        'c64char.bin'
+        ))
 
     # An HVSC mirror:
     an_hvsc_mirror = 'https://www.sannic.nl/hvsc/C64Music/MUSICIANS'

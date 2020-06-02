@@ -17,6 +17,27 @@ from ctsConstants import project_to_absolute_path
 
 cpuState = None
 
+# translate alphabet from mixed-case (mode) petscii to ascii
+# TODO:  This method is only complete enough for these tests, it's not yet general
+#    Someday, all petscii tools will live in one place and be general
+#    We'll need ascii<->petscii upper case and ascii<->petscii mixed case converters
+def mixed_case_petscii_to_ascii(petscii_string):
+    result = []
+    for c in petscii_string:
+        c = ord(c)
+        # only doing letter conversions
+        if 193 <= c <= 218:
+            c -= 96 # convert lowercase letters
+        elif 65 <= c <= 90:
+            c += 32 # convert uppercase letters
+        elif chr(c) == '\r':
+            c = ord('\n')
+        elif chr(c) not in string.printable:
+            c = ord('?')
+        result.append(chr(c))
+    return ''.join(result)
+
+
 # psuedo-op docs reference http://www.ffd2.com/fridge/docs/6502-NMOS.extra.opcodes
 binary_file_tests = [
     # ADC tests
@@ -752,30 +773,8 @@ start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('adca')
 
 tests_to_run = binary_file_tests[start_tests_at:]
 
-
-# translate alphabet from mixed-case (mode) petscii to ascii
-# TODO:  This method is only complete enough for these tests, it's not yet general
-#    Someday, all petscii tools will live in one place and be general
-#    We'll need ascii<->petscii upper case and ascii<->petscii mixed case converters
-def mixed_case_petscii_to_ascii(petscii_string):
-    result = []
-    for c in petscii_string:
-        c = ord(c)
-        # only doing letter conversions
-        if 193 <= c <= 218:
-            c -= 96 # convert lowercase letters
-        elif 65 <= c <= 90:
-            c += 32 # convert uppercase letters
-        elif chr(c) == '\r':
-            c = ord('\n')
-        elif chr(c) not in string.printable:
-            c = ord('?')
-        result.append(chr(c))
-    return ''.join(result)
-
-
 # On my machine, this runs the 181 selected tests in ~64 minutes
-class TestWolfgangLorenzPrograms(unittest.TestCase):
+class TestSuitesForC64(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Skipping the first %d tests" % (start_tests_at))
@@ -793,7 +792,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
         # - $FFFC system reset vector points to power-on routine $FCE2
         # - $FFFE maskable interrupt request and break vector points to main IRQ handler $FF48
-        cpuState.inject_bytes(65530, [0x43, 0xfe, 0xe2, 0xfc, 0x48, 0xff])
+        cpuState.patch_kernal(65530, [0x43, 0xfe, 0xe2, 0xfc, 0x48, 0xff])
 
         # set RAM interrupt routine vectors
         cpuState.inject_bytes(788, [0x31, 0xea, 0x66, 0xfe, 0x47, 0xfe])
@@ -804,13 +803,13 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # set yet more vectors
         # - $A000, basic cold start vector, points to $E394
         # = $A002, basic warm start / NMI entry vector, points to $E37B
-        cpuState.inject_bytes(40960, [0x94, 0xe3, 0x7b, 0xe3])       
+        cpuState.patch_basic(0xa000, [0x94, 0xe3, 0x7b, 0xe3])       
 
         # patch $EA31 to jump to $EA81
-        cpuState.inject_bytes(59953, [0x4c, 0x81, 0xea])
+        cpuState.patch_kernal(59953, [0x4c, 0x81, 0xea])
 
         # inject original kernal snippet into $EA81 (instructions PLA, TAY, PLA, TAX, PLA, RTI)
-        cpuState.inject_bytes(59953, [0x68, 0xa8, 0x68, 0xa4, 0x68, 0x40]) 
+        cpuState.patch_kernal(59953, [0x68, 0xa8, 0x68, 0xa4, 0x68, 0x40]) 
 
         # inject original kernal snippet into $FF48 (ROM IRQ/BRK Interrupt Entry routine)
         # FF48  48        PHA         ; put accumulator, x, and y on stack
@@ -824,18 +823,18 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # FF53  F0 03     BEQ $FF58
         # FF55  6C 16 03  JMP ($0316) ; if software irq (break flag set)
         # FF58  6C 14 03  JMP ($0314) ; if hardware irq        
-        cpuState.inject_bytes(65352,
+        cpuState.patch_kernal(65352,
             [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
             0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
 
         # Replace some missing routines with RTS instructions (so they're not BRKs)
-        cpuState.memory[65490] = 0x60 # $FFD2 CHROUT
-        cpuState.memory[65091] = 0x60 # $FE43 NMI Interrupt Entry Point
-        cpuState.memory[64738] = 0x60 # $FCE2 power-on reset routine
-        cpuState.memory[65095] = 0x60 # $FE47 NMI handler
-        cpuState.memory[65126] = 0x60 # $FE66 init things then BASIC warm start using vec $A002
-        cpuState.memory[58260] = 0x60 # $E394 basic cold entry
-        cpuState.memory[58235] = 0x60 # $E37B basic warm entry / NMI entry
+        cpuState.patch_kernal(65490, [0x60])  # $FFD2 CHROUT
+        cpuState.patch_kernal(65091, [0x60])  # $FE43 NMI Interrupt Entry Point
+        cpuState.patch_kernal(64738, [0x60])  # $FCE2 power-on reset routine
+        cpuState.patch_kernal(65095, [0x60])  # $FE47 NMI handler
+        cpuState.patch_kernal(65126, [0x60])  # $FE66 init things then BASIC warm start using vec $A002
+        cpuState.patch_kernal(58260, [0x60])  # $E394 basic cold entry
+        cpuState.patch_kernal(58235, [0x60])  # $E37B basic warm entry / NMI entry
 
 
     @parameterized.expand(tests_to_run)
@@ -861,7 +860,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         #    $A002 = $00; $A003 = $80
         #    $FFFE = $48; $FFFF = $FF (done in setUp())
         #    Set S to $FD and set $01FE = $FF and $01FF = $7F (going to ignore this)
-        cpuState.inject_bytes(0xa002, [0x00, 0x80])  # override from setUp() 
+        cpuState.patch_basic(0xa002, [0x00, 0x80])  # override values from setUp() 
 
         # Stack
         #
@@ -874,17 +873,13 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         # - a679 return from restore
         # - e39c return from basic cold start
         #
-        # I'm just going to try this:
+        # But just this appears to be enough for the C64 tests:
         cpuState.sp = 0xf6
 
-        # No need to set the two cartridge basic reset vectors
-        # $8000-$8001, 32768-32769: Execution address of cold reset.
-        # $8002-$8003, 32770-32771: Execution address of non-maskable interrupt service routine.
-
-        cpuState.memory[42100] = 0xea # Tests will sometimes exit to BASIC through $A474, trap it later
+        cpuState.patch_basic(42100, [0xea])  # Tests will sometimes exit to BASIC through $A474, trap it later
 
         # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
-        cpuState.inject_bytes(0xffe4, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
+        cpuState.patch_kernal(0xffe4, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
 
         output_text = ""
         passed_test = True
@@ -928,6 +923,7 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
 
 
     # on my machine, takes about 1.5 min to run
+    #@unittest.skip("Debugging, so skipping this test for now")
     def test_bcd(self):
         global cpuState
 
@@ -942,19 +938,30 @@ class TestWolfgangLorenzPrograms(unittest.TestCase):
         while cpuState.runcpu(): # will terminated when RTS has no stack to pop
             pass
 
-        result = cpuState.memory[0x000b]
+        result = cpuState.get_mem(0x000b)
         if result != 0:  # if a test failed...
-            print("\n$0000 N1 number to be added or subtracted: ${:02x}".format(cpuState.memory[0x00]))
-            print("$0001 N2 number to be added or subtracted: ${:02x}".format(cpuState.memory[0x01]))
-            print("$0002 HA accumulator result when using binary arithmatic: ${:02x}".format(cpuState.memory[0x02]))
-            print("$0003 HNVZC flag results when using binary arithmatic: ${:08b}".format(cpuState.memory[0x03]))
-            print("$0004 DA accumulator result when using decimal mode: ${:02x}".format(cpuState.memory[0x04]))
-            print("$0005 DNVZC flag results when using decimal mode: ${:08b}".format(cpuState.memory[0x05]))
-            print("$0006 AR predicted accumulator result: ${:02x}".format(cpuState.memory[0x06]))
-            print("$0007 NF predicted negative flag: ${:08b}".format(cpuState.memory[0x07]))
-            print("$0008 VF predicted overflow flag: ${:08b}".format(cpuState.memory[0x08]))
-            print("$0009 ZF predicted zero flag: ${:08b}".format(cpuState.memory[0x09]))
-            print("$000A CF predicted carry flag: ${:08b}".format(cpuState.memory[0x0a]))        
+            print("\n$0000 N1 number to be added or subtracted: ${:02x}" \
+                .format(cpuState.get_mem(0x00)))
+            print("$0001 N2 number to be added or subtracted: ${:02x}" \
+                .format(cpuState.get_mem(0x01)))
+            print("$0002 HA accumulator result when using binary arithmatic: ${:02x}" \
+                .format(cpuState.get_mem(0x02)))
+            print("$0003 HNVZC flag results when using binary arithmatic: ${:08b}" \
+                .format(cpuState.get_mem(0x03)))
+            print("$0004 DA accumulator result when using decimal mode: ${:02x}" \
+                .format(cpuState.get_mem(0x04)))
+            print("$0005 DNVZC flag results when using decimal mode: ${:08b}" \
+                .format(cpuState.get_mem(0x05)))
+            print("$0006 AR predicted accumulator result: ${:02x}" \
+                .format(cpuState.get_mem(0x06)))
+            print("$0007 NF predicted negative flag: ${:08b}" \
+                .format(cpuState.get_mem(0x07)))
+            print("$0008 VF predicted overflow flag: ${:08b}" \
+                .format(cpuState.get_mem(0x08)))
+            print("$0009 ZF predicted zero flag: ${:08b}" \
+                .format(cpuState.get_mem(0x09)))
+            print("$000A CF predicted carry flag: ${:08b}" \
+                .format(cpuState.get_mem(0x0a)))        
 
 
 if __name__ == '__main__':
