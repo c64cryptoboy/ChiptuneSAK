@@ -1,0 +1,14 @@
+language: python
+python:
+  - "3.7"
+  - "3.8"
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install lilypond python3-venv build-essential
+install:
+  - pip install -r requirements.txt
+  - pip install black
+script:
+  - black --check .
+  - cd docs/ && make html
+  - python3 examples/lechuck.py
