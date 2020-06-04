@@ -5,21 +5,19 @@
 import testingPath
 import unittest
 import cts6502Emulator
+import thinC64Emulator
 from ctsConstants import ARCH
 
 VERBOSE = False
 
-cpuState = None
-
 class Test6502Emulator(unittest.TestCase):
     def setUp(self):
-        global cpuState
-        cpuState = cts6502Emulator.Cpu6502Emulator()
+        pass
 
     #@unittest.skip("Debugging, so skipping this test for now")
     def test_stack_wrapping(self):
-        global cpuState
-        
+        cpuState = cts6502Emulator.Cpu6502Emulator()
+  
         cpuState.inject_bytes(32768, [0x60]) # RTS 
         cpuState.stack_wrapping = False
 
@@ -78,7 +76,9 @@ class Test6502Emulator(unittest.TestCase):
     def test_obfuscated_sig(self):
         # Emulate the ML portion of my lemon64 signature
         # Note: signature line is obfuscated by changing XOR mask
-        
+
+        cpuState = thinC64Emulator.ThinC64Emulator()
+
         """
         10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
         20 DATA160,15,152,89,12,128,32,210,255,136,208,246,96
@@ -145,7 +145,7 @@ class Test6502Emulator(unittest.TestCase):
 
     #@unittest.skip("Debugging, so skipping this test for now")
     def test_C64_kernal_boot(self):
-        global cpuState
+        cpuState = thinC64Emulator.ThinC64Emulator()
 
         expected_screen_output = \
             "                                        \n" + \

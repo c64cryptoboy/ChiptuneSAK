@@ -10,12 +10,11 @@
 import emulatorTestsPath
 import unittest
 import cts6502Emulator
+import thinC64Emulator
 import string
 from parameterized import parameterized, parameterized_class
 from ctsBytesUtil import read_binary_file
 from ctsConstants import project_to_absolute_path
-
-cpuState = None
 
 # translate alphabet from mixed-case (mode) petscii to ascii
 # TODO:  This method is only complete enough for these tests, it's not yet general
@@ -777,55 +776,22 @@ tests_to_run = binary_file_tests[start_tests_at:]
 class TestSuitesForC64(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        print("Skipping the first %d tests" % (start_tests_at))
+        if start_tests_at > 0:
+            print("(Skipping the first %d Wolfgang Lorenz tests)" % (start_tests_at))
 
     @classmethod
     def tearDownClass(cls):
         pass
 
     def setUp(self):
-        global cpuState
+        pass
 
-        cpuState = cts6502Emulator.Cpu6502Emulator()
+    @parameterized.expand(tests_to_run)
+    def test_wl(self, file_name, test_name):
+        cpuState = thinC64Emulator.ThinC64Emulator()
 
-        # set kernal ROM hardware vectors to their kernal entry points
-        # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
-        # - $FFFC system reset vector points to power-on routine $FCE2
-        # - $FFFE maskable interrupt request and break vector points to main IRQ handler $FF48
-        cpuState.patch_kernal(65530, [0x43, 0xfe, 0xe2, 0xfc, 0x48, 0xff])
-
-        # set RAM interrupt routine vectors
-        cpuState.inject_bytes(788, [0x31, 0xea, 0x66, 0xfe, 0x47, 0xfe])
-        # - $0314 (CINV) IRQ interrupt routine vector, defaults to $EA31
-        # - $0316 (CBINV) BRK instruction interrupt vector, defaults to $FE66
-        # - $0318 (NMINV) Non-maskable interrupt vector, default to $FE47
-
-        # set yet more vectors
-        # - $A000, basic cold start vector, points to $E394
-        # = $A002, basic warm start / NMI entry vector, points to $E37B
-        cpuState.patch_basic(0xa000, [0x94, 0xe3, 0x7b, 0xe3])       
-
-        # patch $EA31 to jump to $EA81
+        # patch $EA31 to jump to the $EA81 exit
         cpuState.patch_kernal(59953, [0x4c, 0x81, 0xea])
-
-        # inject original kernal snippet into $EA81 (instructions PLA, TAY, PLA, TAX, PLA, RTI)
-        cpuState.patch_kernal(59953, [0x68, 0xa8, 0x68, 0xa4, 0x68, 0x40]) 
-
-        # inject original kernal snippet into $FF48 (ROM IRQ/BRK Interrupt Entry routine)
-        # FF48  48        PHA         ; put accumulator, x, and y on stack
-        # FF49  8A        TXA
-        # FF4A  48        PHA
-        # FF4B  98        TYA
-        # FF4C  48        PHA
-        # FF4D  BA        TSX         ; look at flags put on the stack
-        # FF4E  BD 04 01  LDA $0104,X
-        # FF51  29 10     AND #$10 
-        # FF53  F0 03     BEQ $FF58
-        # FF55  6C 16 03  JMP ($0316) ; if software irq (break flag set)
-        # FF58  6C 14 03  JMP ($0314) ; if hardware irq        
-        cpuState.patch_kernal(65352,
-            [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
-            0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
 
         # Replace some missing routines with RTS instructions (so they're not BRKs)
         cpuState.patch_kernal(65490, [0x60])  # $FFD2 CHROUT
@@ -835,11 +801,6 @@ class TestSuitesForC64(unittest.TestCase):
         cpuState.patch_kernal(65126, [0x60])  # $FE66 init things then BASIC warm start using vec $A002
         cpuState.patch_kernal(58260, [0x60])  # $E394 basic cold entry
         cpuState.patch_kernal(58235, [0x60])  # $E37B basic warm entry / NMI entry
-
-
-    @parameterized.expand(tests_to_run)
-    def test_wl(self, file_name, test_name):
-        global cpuState
 
         print('\nRunning test "%s"' %(test_name))
 
@@ -926,6 +887,10 @@ class TestSuitesForC64(unittest.TestCase):
     #@unittest.skip("Debugging, so skipping this test for now")
     def test_bcd(self):
         global cpuState
+
+        # test code wants to use location 1 as storage, so don't want c64 emulation
+        # with bank management, just the 6502 emulator
+        cpuState = cts6502Emulator.Cpu6502Emulator()
 
         test_prg = read_binary_file(project_to_absolute_path(
             'test/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
