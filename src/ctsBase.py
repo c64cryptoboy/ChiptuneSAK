@@ -269,7 +269,7 @@ def note_name_to_pitch(note_name, octave_offset=0):
         note_num -= accidentals.count('b')
     return note_num
 
-    
+
 def decompose_duration(duration, ppq, allowed_durations):
     """
     Decomposes a given duration into a sum of allowed durations.
@@ -330,5 +330,3 @@ def start_beat_type(time, ppq):
     """
     f = Fraction(time, ppq).limit_denominator(16)
     return f.denominator
-
-

@@ -109,7 +109,7 @@ ARCH = {
                                 cycles_per_line=65,
                                 lines_per_frame=263,
                                 visible_lines=235),
-    # Old NTSC C64 and C128 (1Mhz mode)                       
+    # Old NTSC C64 and C128 (1Mhz mode)
     'NTSC-R56A': ArchDescription(system_clock=1022727,    # The "old" NTSC 6567R56A
                                  cycles_per_line=64,
                                  lines_per_frame=262,

@@ -105,7 +105,7 @@ class Cpu6502Emulator:
     def pop(self):
         self.sp += 1
         # If poping from an empty stack (sp == $FF), this must wrap to 0
-        # http://forum.6502.org/viewtopic.php?f=8&t=1446         
+        # http://forum.6502.org/viewtopic.php?f=8&t=1446
         self.sp &= 0xff
         result = self.get_mem(0x100 + self.sp)
         return result
@@ -221,7 +221,7 @@ class Cpu6502Emulator:
     #   else                                  \
     #     flags = (flags & ~(FN|FZ)) |        \
     #     (dest & FN);                        \
-    # } 
+    # }
     def assign_then_set_flags(self, dest_operand_ref, src_operand_ref):
         src_byte = src_operand_ref.get_byte(self)
         dest_operand_ref.set_byte(src_byte, self)
@@ -582,7 +582,7 @@ class Cpu6502Emulator:
     # int runcpu(void)
     # {
     #   unsigned temp;
-    # 
+    #
     #   unsigned char op = FETCH();
     #   /* printf("PC: %04x OP: %02x A:%02x X:%02x Y:%02x\n", pc-1, op, a, x, y); */
     #   cpucycles += cpucycles_table[op];
@@ -616,46 +616,46 @@ class Cpu6502Emulator:
         # ADC(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x65:
         # ADC(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x75:
         # ADC(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x6d:
         # ADC(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x7d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ADC(MEM(ABSOLUTEX()));
         #  pc += 2;
         # break;
-        # 
+        #
         # case 0x79:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ADC(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x61:
         # ADC(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x71:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ADC(MEM(INDIRECTY()));
         # pc++;
         # break;
 
-        # ADC instructions    
+        # ADC instructions
         if instruction == 0x69:  # $69/105 ADC #n
             self.ADC(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
@@ -703,46 +703,46 @@ class Cpu6502Emulator:
         # AND(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x25:
         # AND(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x35:
         # AND(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x2d:
         # AND(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x3d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # AND(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x39:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # AND(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x21:
         # AND(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x31:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # AND(MEM(INDIRECTY()));
         # pc++;
         # break;
 
-        # AND instructions    
+        # AND instructions
         if instruction == 0x29:  # $29/41 AND #n
             self.AND(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
@@ -789,22 +789,22 @@ class Cpu6502Emulator:
         # case 0x0a:
         # ASL(a);
         # break;
-        # 
+        #
         # case 0x06:
         # ASL(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x16:
         # ASL(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x0e:
         # ASL(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x1e:
         # ASL(MEM(ABSOLUTEX()));
         # pc += 2;
@@ -878,7 +878,7 @@ class Cpu6502Emulator:
         # BIT(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x2c:
         # BIT(MEM(ABSOLUTE()));
         # pc += 2;
@@ -1000,39 +1000,39 @@ class Cpu6502Emulator:
         # CMP(a, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xc5:
         # CMP(a, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xd5:
         # CMP(a, MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xcd:
         # CMP(a, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xdd:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # CMP(a, MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xd9:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # CMP(a, MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xc1:
         # CMP(a, MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xd1:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # CMP(a, MEM(INDIRECTY()));
@@ -1087,12 +1087,12 @@ class Cpu6502Emulator:
         # CMP(x, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xe4:
         # CMP(x, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xec:
         # CMP(x, MEM(ABSOLUTE()));
         # pc += 2;
@@ -1118,12 +1118,12 @@ class Cpu6502Emulator:
         # CMP(y, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xc4:
         # CMP(y, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xcc:
         # CMP(y, MEM(ABSOLUTE()));
         # pc += 2;
@@ -1150,19 +1150,19 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xd6:
         # DEC(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0xce:
         # DEC(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xde:
         # DEC(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1218,39 +1218,39 @@ class Cpu6502Emulator:
         # EOR(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x45:
         # EOR(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x55:
         # EOR(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x4d:
         # EOR(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x5d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # EOR(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x59:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # EOR(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x41:
         # EOR(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x51:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # EOR(MEM(INDIRECTY()));
@@ -1306,19 +1306,19 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xf6:
         # INC(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0xee:
         # INC(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xfe:
         # INC(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1386,7 +1386,7 @@ class Cpu6502Emulator:
         # case 0x4c:
         # pc = ABSOLUTE();
         # break;
-        # 
+        #
         # case 0x6c:
         # {
         #   unsigned short adr = ABSOLUTE();
@@ -1409,39 +1409,39 @@ class Cpu6502Emulator:
         # ASSIGNSETFLAGS(a, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xa5:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb5:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xad:
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xbd:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xb9:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xa1:
         # ASSIGNSETFLAGS(a, MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb1:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
@@ -1496,22 +1496,22 @@ class Cpu6502Emulator:
         # ASSIGNSETFLAGS(x, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xa6:
         # ASSIGNSETFLAGS(x, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb6:
         # ASSIGNSETFLAGS(x, MEM(ZEROPAGEY()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xae:
         # ASSIGNSETFLAGS(x, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xbe:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ASSIGNSETFLAGS(x, MEM(ABSOLUTEY()));
@@ -1549,22 +1549,22 @@ class Cpu6502Emulator:
         # ASSIGNSETFLAGS(y, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xa4:
         # ASSIGNSETFLAGS(y, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb4:
         # ASSIGNSETFLAGS(y, MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xac:
         # ASSIGNSETFLAGS(y, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xbc:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ASSIGNSETFLAGS(y, MEM(ABSOLUTEX()));
@@ -1601,25 +1601,25 @@ class Cpu6502Emulator:
         # case 0x4a:
         # LSR(a);
         # break;
-        # 
+        #
         # case 0x46:
         # LSR(MEM(ZEROPAGE()));
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x56:
         # LSR(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x4e:
         # LSR(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x5e:
         # LSR(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1662,39 +1662,39 @@ class Cpu6502Emulator:
         # ORA(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x05:
         # ORA(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x15:
         # ORA(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x0d:
         # ORA(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x1d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ORA(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x19:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ORA(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x01:
         # ORA(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x11:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ORA(MEM(INDIRECTY()));
@@ -1786,25 +1786,25 @@ class Cpu6502Emulator:
         # case 0x2a:
         # ROL(a);
         # break;
-        # 
+        #
         # case 0x26:
         # ROL(MEM(ZEROPAGE()));
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x36:
         # ROL(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x2e:
         # ROL(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x3e:
         # ROL(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1839,25 +1839,25 @@ class Cpu6502Emulator:
         # case 0x6a:
         # ROR(a);
         # break;
-        # 
+        #
         # case 0x66:
         # ROR(MEM(ZEROPAGE()));
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x76:
         # ROR(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x6e:
         # ROR(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x7e:
         # ROR(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1899,14 +1899,14 @@ class Cpu6502Emulator:
         # RTI instruction
         if instruction == 0x40:  # $40/64 RTI
             if not self.stack_wrapping and self.sp >= 0xfd:
-                return 0            
+                return 0
             # siddump.c did the following, but it's bad, since the stack needs to wrap
             # if self.sp == 0xff:
-            #     return 0             
+            #     return 0
             self.flags = self.pop()  # no action taken on B flag
-            self.flags |= FU  # needed for Wolfgang Lorenz tests  
+            self.flags |= FU  # needed for Wolfgang Lorenz tests
             # Note that unlike RTS, the return address on the stack is the actual
-            # address rather than the address-1.                    
+            # address rather than the address-1.
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             return 1
@@ -1931,39 +1931,39 @@ class Cpu6502Emulator:
         # SBC(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xe5:
         # SBC(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xf5:
         # SBC(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xed:
         # SBC(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xfd:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # SBC(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xf9:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # SBC(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xe1:
         # SBC(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xf1:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # SBC(MEM(INDIRECTY()));
@@ -1972,7 +1972,7 @@ class Cpu6502Emulator:
 
         # SBC instructions
         # $E9 or (equivalent pseudo op) $EB will work here, see:
-        #    https://wiki.nesdev.com/w/index.php/Programming_with_unofficial_opcodes#Duplicated_instructions        
+        #    https://wiki.nesdev.com/w/index.php/Programming_with_unofficial_opcodes#Duplicated_instructions
         if instruction == 0xe9 or instruction == 0xeb:  # $E9/233 (or $EB/235) SBC #n
             self.SBC(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
@@ -2048,37 +2048,37 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x95:
         # MEM(ZEROPAGEX()) = a;
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x8d:
         # MEM(ABSOLUTE()) = a;
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x9d:
         # MEM(ABSOLUTEX()) = a;
         # WRITE(ABSOLUTEX());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x99:
         # MEM(ABSOLUTEY()) = a;
         # WRITE(ABSOLUTEY());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x81:
         # MEM(INDIRECTX()) = a;
         # WRITE(INDIRECTX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x91:
         # MEM(INDIRECTY()) = a;
         # WRITE(INDIRECTY());
@@ -2127,13 +2127,13 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x96:
         # MEM(ZEROPAGEY()) = x;
         # WRITE(ZEROPAGEY());
         # pc++;
         # break;
-        # 
+        #
         # case 0x8e:
         # MEM(ABSOLUTE()) = x;
         # WRITE(ABSOLUTE());
@@ -2161,13 +2161,13 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x94:
         # MEM(ZEROPAGEX()) = y;
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x8c:
         # MEM(ABSOLUTE()) = y;
         # WRITE(ABSOLUTE());
@@ -2273,25 +2273,25 @@ class Cpu6502Emulator:
         # x = a;
         # pc++;
         # break;
-        # 
+        #
         # case 0xb7:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGEY()));
         # x = a;
         # pc++;
         # break;
-        # 
+        #
         # case 0xaf:
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTE()));
         # x = a;
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xa3:
         # ASSIGNSETFLAGS(a, MEM(INDIRECTX()));
         # x = a;
         # pc++;
         # break;
-        # 
+        #
         # case 0xb3:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
@@ -2338,7 +2338,7 @@ class Cpu6502Emulator:
         # case 0xda:
         # case 0xfa:
         # break;
-        # 
+        #
         # case 0x80:
         # case 0x82:
         # case 0x89:
@@ -2355,7 +2355,7 @@ class Cpu6502Emulator:
         # case 0xf4:
         # pc++;
         # break;
-        # 
+        #
         # case 0x0c:
         # case 0x1c:
         # case 0x3c:

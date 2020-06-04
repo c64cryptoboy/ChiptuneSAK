@@ -260,9 +260,9 @@ class Lilypond(ChiptuneSAKIO):
 
         output.append('\\version "2.18.2"')
         output.append('''
-            \\paper { 
+            \\paper {
             indent=0\\mm line-width=120\\mm oddHeaderMarkup = ##f
-            evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f 
+            evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f
             page-breaking = #ly:one-line-breaking }
         ''')
         note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, Note)),
