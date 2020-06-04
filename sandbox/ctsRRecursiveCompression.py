@@ -7,7 +7,9 @@
 import copy
 from datetime import datetime
 
-MIN_REUSE_FOR_PAT = 2 # must have at least this many occurrences to be promoted to a pattern
+MIN_REUSE_FOR_PAT = (
+    2  # must have at least this many occurrences to be promoted to a pattern
+)
 MAX_PAT_LEN = 100
 MIN_PAT_LEN = 12
 
@@ -15,18 +17,19 @@ N_STEP_SIZE = 2
 
 # these are overriden in config()
 ALLOW_TRANSPOSE = True
-TRANSPOSE_MAX = 14   # 6 wholesteps
+TRANSPOSE_MAX = 14  # 6 wholesteps
 TRANSPOSE_MIN = -15  # 6.5 wholesteps
 
-GT_MAX_ROWS_PER_PATTERN = 128 # refactor this out
+GT_MAX_ROWS_PER_PATTERN = 128  # refactor this out
 
-data = '' # chars for now, rows later
+data = ""  # chars for now, rows later
 
 DEBUG = False
 same_length_permutations = False
 
 results = []
 all_matches = {}
+
 
 class Piece:
     def __init__(self, start_index, end_index):
@@ -40,10 +43,12 @@ class Piece:
         return self.end_index - self.start_index + 1
 
     def __str__(self):
-        return f'{self.start_index} to {self.end_index}'
+        return f"{self.start_index} to {self.end_index}"
 
     def __eq__(self, other):
-        return self.start_index == other.start_index and self.end_index == other.end_index
+        return (
+            self.start_index == other.start_index and self.end_index == other.end_index
+        )
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -52,9 +57,9 @@ class Piece:
         return self.start_index <= index <= self.end_index
 
 
-class Pieces():
+class Pieces:
     def __init__(self):
-        self.pieces = [] # list of ordered Piece instances
+        self.pieces = []  # list of ordered Piece instances
 
     def __len__(self):
         return len(self.pieces)
@@ -63,7 +68,7 @@ class Pieces():
         return self.pieces[index]
 
     def __str__(self):
-        return ', '.join(s.__str__() for s in self.pieces)
+        return ", ".join(s.__str__() for s in self.pieces)
 
     def piece_width_sum(self):
         sum = 0
@@ -89,7 +94,7 @@ class Pieces():
         self.pieces.append(piece)
         return self
 
-    def clone(self):   # too lazy to properly implement __deepcopy__(self, memo)
+    def clone(self):  # too lazy to properly implement __deepcopy__(self, memo)
         return_val = Pieces()
         return_val_pieces = return_val.pieces
         for piece in self.pieces:
@@ -99,12 +104,14 @@ class Pieces():
     def validate(self):
         curr_index = -1
         for piece in self.pieces:
-            if not (isinstance(piece.start_index, int) and isinstance(piece.end_index, int)):
+            if not (
+                isinstance(piece.start_index, int) and isinstance(piece.end_index, int)
+            ):
                 raise Exception("Error: ints required for piece start/end indexes")
             if piece.end_index <= piece.start_index:
                 raise Exception("Error: piece end index must be >= start index")
             if piece.start_index < curr_index:
-                raise Exception("Error: pieces are not in order")  
+                raise Exception("Error: pieces are not in order")
             curr_index = piece.start_index
 
 
@@ -117,7 +124,7 @@ class Pattern:
         self.debug_add_order = -1
 
     def __lt__(self, other):
-         return self.start_index < other.start_index
+        return self.start_index < other.start_index
 
     def __copy__(self):
         new_copy = Pattern(self.start_index, self.end_index)
@@ -128,8 +135,8 @@ class Pattern:
         return new_copy
 
     def __str__(self):
-        #return f'{self.start_index} to {self.end_index} {self.other_start_indexes}'
-        return f'{self.debug_add_order}:{self.start_index} to {self.end_index} {self.other_start_indexes}'
+        # return f'{self.start_index} to {self.end_index} {self.other_start_indexes}'
+        return f"{self.debug_add_order}:{self.start_index} to {self.end_index} {self.other_start_indexes}"
 
     def append(self, start_index):
         self.other_start_indexes.append(start_index)
@@ -146,21 +153,21 @@ class Pattern:
 
 
 def patterns_to_string(patterns_dict):
-    #result = [] # my comprehension's not working, so doing this the long way
-    #for key in sorted(patterns_dict):
+    # result = [] # my comprehension's not working, so doing this the long way
+    # for key in sorted(patterns_dict):
     #    result.append("%s" % patterns_dict[key])
-    #return ', '.join(result)
-    return ', '.join(str(pattern) for pattern in sorted(patterns_dict.values()))
+    # return ', '.join(result)
+    return ", ".join(str(pattern) for pattern in sorted(patterns_dict.values()))
 
 
 def config(target):
     global ALLOW_TRANSPOSE, TRANSPOSE_MAX, TRANSPOSE_MIN
 
-    if target == 'gt': # if goattracker
+    if target == "gt":  # if goattracker
         ALLOW_TRANSPOSE = True
         TRANSPOSE_MAX = 14
         TRANSPOSE_MIN = -15
-    elif target == '': # if sidwizard (no orderlist-based transpositions supported)
+    elif target == "":  # if sidwizard (no orderlist-based transpositions supported)
         ALLOW_TRANSPOSE = False
         TRANSPOSE_MAX = TRANSPOSE_MIN = 0
 
@@ -182,13 +189,14 @@ def add_solution(n, pieces, patterns):
 
         # convert piece into 1 or more patterns
         while width > GT_MAX_ROWS_PER_PATTERN:
-            patterns[piece.start_index] = \
-                Pattern(piece.start_index, piece.start_index+GT_MAX_ROWS_PER_PATTERN-1)
-            patterns[piece.start_index].debug_add_order = len(patterns)    
+            patterns[piece.start_index] = Pattern(
+                piece.start_index, piece.start_index + GT_MAX_ROWS_PER_PATTERN - 1
+            )
+            patterns[piece.start_index].debug_add_order = len(patterns)
             piece.start_index += GT_MAX_ROWS_PER_PATTERN
             width -= GT_MAX_ROWS_PER_PATTERN
         patterns[piece.start_index] = Pattern(piece.start_index, piece.end_index)
-        patterns[piece.start_index].debug_add_order = len(patterns) 
+        patterns[piece.start_index].debug_add_order = len(patterns)
 
     percent_coverage = (len(data) - unpatterned_count) / len(data) * 100
     percent_new_size = (pattern_bytes / len(data)) * 100
@@ -198,10 +206,11 @@ def add_solution(n, pieces, patterns):
 
         reduction_str = "{0:.2f}% of original".format(percent_new_size)
         coverage_str = "{0:.2f}% coverage".format(percent_coverage)
-        patterns_str = ', '.join(str(pattern) for pattern in sorted(patterns.values()))
-        print('%s, %s\n%s\n' % (reduction_str, coverage_str, patterns_str))
-    
+        patterns_str = ", ".join(str(pattern) for pattern in sorted(patterns.values()))
+        print("%s, %s\n%s\n" % (reduction_str, coverage_str, patterns_str))
+
     pass
+
 
 """
 Old approach, before strings were precomputed
@@ -341,9 +350,10 @@ def eval_pats_with_size_le_n(n, pieces, patterns, size_n_cp_to_ignore):
             continue
 
         new_size_n_ignore = size_n_cp_to_ignore.copy()
-        new_size_n_ignore.add(cp) # add candidate pattern
-        (new_pieces, new_patterns) = \
-            make_new_pieces(cp_matches, n, pieces.clone(), copy.deepcopy(patterns))
+        new_size_n_ignore.add(cp)  # add candidate pattern
+        (new_pieces, new_patterns) = make_new_pieces(
+            cp_matches, n, pieces.clone(), copy.deepcopy(patterns)
+        )
         if new_pieces is None:
             continue
         a_size_n_pattern_found = True
@@ -355,18 +365,23 @@ def eval_pats_with_size_le_n(n, pieces, patterns, size_n_cp_to_ignore):
         #   smaller pattern.
 
         # with the pattern added, continue searching with size n
-        if DEBUG: print("n=%d pattern added, looking for more len n patterns" % n)
+        if DEBUG:
+            print("n=%d pattern added, looking for more len n patterns" % n)
         eval_pats_with_size_le_n(n, new_pieces, new_patterns, new_size_n_ignore)
-        
+
         # ignore the new pattern (as if not added), but continue searching for other size n
         # ultimately, on one of the recursive searches, length-n patterns will be completely skipped
-        if DEBUG: print("n=%d ignoring pattern, looking for more len n patterns" % n)
-        # TODO: probably don't have to do clone here, but playing it safe for now...      
-        eval_pats_with_size_le_n(n, pieces.clone(), copy.deepcopy(patterns), new_size_n_ignore)
+        if DEBUG:
+            print("n=%d ignoring pattern, looking for more len n patterns" % n)
+        # TODO: probably don't have to do clone here, but playing it safe for now...
+        eval_pats_with_size_le_n(
+            n, pieces.clone(), copy.deepcopy(patterns), new_size_n_ignore
+        )
 
         # with the pattern added, skip other size n matches (if any), and go on to n-1
-        if DEBUG: print("n=%d keep len n patten(s), but move to n-%d" % (n, N_STEP_SIZE))
-        eval_pats_with_size_le_n(n-N_STEP_SIZE, new_pieces, new_patterns, set())
+        if DEBUG:
+            print("n=%d keep len n patten(s), but move to n-%d" % (n, N_STEP_SIZE))
+        eval_pats_with_size_le_n(n - N_STEP_SIZE, new_pieces, new_patterns, set())
 
         # defer the new pattern.  This lets us shuffle the order in which we match
         # patterns of the same length.  This can find better solutions, but is costly.
@@ -381,16 +396,20 @@ def eval_pats_with_size_le_n(n, pieces, patterns, size_n_cp_to_ignore):
         #    call is made, patten A is re-evaluated.  In other words, my recursion sometimes
         #    redundantly visits n-length statesin this "all permutations of all lengths" problem.
         if same_length_permutations:
-            if DEBUG: print("n=%d pattern deferred, looking for more len n patterns" % n)
+            if DEBUG:
+                print("n=%d pattern deferred, looking for more len n patterns" % n)
         else:
             size_n_cp_to_ignore = new_size_n_ignore
 
-    if not a_size_n_pattern_found: # and (n - N_STEP_SIZE >= MIN_PAT_LEN):
-        if DEBUG: print("n=%d no len n patten(s), move to n-%d" % (n, N_STEP_SIZE))
+    if not a_size_n_pattern_found:  # and (n - N_STEP_SIZE >= MIN_PAT_LEN):
+        if DEBUG:
+            print("n=%d no len n patten(s), move to n-%d" % (n, N_STEP_SIZE))
         # TODO: Not sure if clones are necessary
-        eval_pats_with_size_le_n(n-N_STEP_SIZE, pieces.clone(), copy.deepcopy(patterns), set())
+        eval_pats_with_size_le_n(
+            n - N_STEP_SIZE, pieces.clone(), copy.deepcopy(patterns), set()
+        )
 
-    return # recursive calls return nothing, easier design that way
+    return  # recursive calls return nothing, easier design that way
 
 
 # cloned pieces and patterns sent to make_new_pieces, and they will be updated
@@ -406,17 +425,17 @@ def make_new_pieces(cp_matches, n, new_pieces, new_patterns):
         index_of_piece_to_mod = new_pieces.piece_containing_index(match_index)
         # if no piece containing this starting index exists...
         if index_of_piece_to_mod is None:
-            continue 
+            continue
         # if the would-be match got truncated...
-        if new_pieces[index_of_piece_to_mod].end_index < match_index + n-1:
+        if new_pieces[index_of_piece_to_mod].end_index < match_index + n - 1:
             continue
         new_cp_matches.append(match_index)
     if len(new_cp_matches) < MIN_REUSE_FOR_PAT:
-        return (None, None) # new_pieces and new_patterns remain unmodified
+        return (None, None)  # new_pieces and new_patterns remain unmodified
 
     # create new pieces reflecting the newly extracted pattern
     new_pattern_index = None
-    for match_index in new_cp_matches:                  
+    for match_index in new_cp_matches:
         tmp_pieces = []
         index_of_piece_to_mod = new_pieces.piece_containing_index(match_index)
         assert index_of_piece_to_mod is not None, "ERROR: Fix this None!"
@@ -424,34 +443,38 @@ def make_new_pieces(cp_matches, n, new_pieces, new_patterns):
 
         # possibly make a piece left of the match
         if match_index > piece_to_mod.start_index:
-            tmp_pieces.append(Piece(piece_to_mod.start_index, match_index-1))
+            tmp_pieces.append(Piece(piece_to_mod.start_index, match_index - 1))
 
         # pull out a pattern
         if new_pattern_index is None:
             new_pattern_index = match_index
-        if new_pattern_index not in new_patterns: # insert
-            new_patterns[new_pattern_index] = Pattern(match_index, match_index+n-1)
+        if new_pattern_index not in new_patterns:  # insert
+            new_patterns[new_pattern_index] = Pattern(match_index, match_index + n - 1)
             new_patterns[new_pattern_index].debug_add_order = len(new_patterns)
-        else: # update
+        else:  # update
             new_patterns[new_pattern_index].append(match_index)
 
         # possibly make a piece right of the match
-        if piece_to_mod.end_index > match_index+n-1:
-            tmp_pieces.append(Piece(match_index+n, piece_to_mod.end_index))
+        if piece_to_mod.end_index > match_index + n - 1:
+            tmp_pieces.append(Piece(match_index + n, piece_to_mod.end_index))
 
         # replace the old piece with 0 to 2 new pieces
         #    this achieves a list insertion via a slice (which flattens the lists, so no nesting)
-        new_pieces.pieces[index_of_piece_to_mod:index_of_piece_to_mod+1] = tmp_pieces
+        new_pieces.pieces[
+            index_of_piece_to_mod : index_of_piece_to_mod + 1
+        ] = tmp_pieces
 
     return (new_pieces, new_patterns)
 
 
 # find the candidate patterns that exist at least MIN_REUSE_FOR_PAT times.
 # these are candidates for further recursion
-def find_candidate_pattern_matches(n, pieces, cp, starting_piece_index, offset_for_starting_piece):
-    # on first pattern, don't search in the candidate pattern's position            
-    #cp_matches = [(starting_piece_index, offset_for_starting_piece-1, offset_for_starting_piece + n-1-1)]
-    cp_matches = [offset_for_starting_piece-1]
+def find_candidate_pattern_matches(
+    n, pieces, cp, starting_piece_index, offset_for_starting_piece
+):
+    # on first pattern, don't search in the candidate pattern's position
+    # cp_matches = [(starting_piece_index, offset_for_starting_piece-1, offset_for_starting_piece + n-1-1)]
+    cp_matches = [offset_for_starting_piece - 1]
 
     offset = offset_for_starting_piece
 
@@ -468,18 +491,18 @@ def find_candidate_pattern_matches(n, pieces, cp, starting_piece_index, offset_f
         piece_end_index = piece.end_index
 
         # skip if piece is too small for matching candidate pattern
-        if piece_start_index + offset + n-1 > piece_end_index:    
+        if piece_start_index + offset + n - 1 > piece_end_index:
             continue
-        
-        for i in range(piece_start_index + offset, piece_end_index-n+2):
-            if matches(data[i:i+n], cp):   
+
+        for i in range(piece_start_index + offset, piece_end_index - n + 2):
+            if matches(data[i : i + n], cp):
                 cp_matches.append(i)
 
     cp_matches = deoverlap_matches(cp_matches, n)
 
     if len(cp_matches) >= MIN_REUSE_FOR_PAT:
         return cp_matches
-    
+
     return None
 
 
@@ -487,18 +510,18 @@ def matches(data1, data2):
     assert len(data1) == len(data2), "Error: call to matches is broken, fix it"
 
     if data1[0] == data2[0]:
-        for i in range(1, len(data1)): # check for match
+        for i in range(1, len(data1)):  # check for match
             if data1[i] != data2[i]:
                 return False
     else:
-        if not ALLOW_TRANSPOSE: # check for transposition match
+        if not ALLOW_TRANSPOSE:  # check for transposition match
             return False
-        offset = ord(data2[0])-ord(data1[0])
+        offset = ord(data2[0]) - ord(data1[0])
         if not (TRANSPOSE_MIN <= offset <= TRANSPOSE_MAX):
             return False
         for i in range(1, len(data1)):
-            if ord(data1[i])+offset != ord(data2[i]):
-                return False        
+            if ord(data1[i]) + offset != ord(data2[i]):
+                return False
 
     return True
 
@@ -513,9 +536,9 @@ def deoverlap_matches(cp_matches, n):
     for match_index in cp_matches:
         if match_index < next_allowed_index:
             overlapping_matches = True
-            #print("DEBUG: OVERLAP DETECTED")
+            # print("DEBUG: OVERLAP DETECTED")
             break
-        next_allowed_index = match_index+n
+        next_allowed_index = match_index + n
 
     # TODO: For now, just doing a greedy approach, but changes to a tree approach later
     if overlapping_matches:
@@ -525,24 +548,24 @@ def deoverlap_matches(cp_matches, n):
         for match_index in tmp_cp_matches:
             if match_index >= next_allowed_index:
                 cp_matches.append(match_index)
-                next_allowed_index = match_index+n
+                next_allowed_index = match_index + n
             else:
                 pass
-                #print("DEBUG: Resolved a single pattern's match overlaps from left to right; tree search could do better")
+                # print("DEBUG: Resolved a single pattern's match overlaps from left to right; tree search could do better")
 
     return cp_matches
 
 
 def recursive_compress(voices):
-    global data 
-    data = ''.join(voiceData for voiceData in voices)
+    global data
+    data = "".join(voiceData for voiceData in voices)
 
     pieces = Pieces()
     # pieces are ranges of data in index order, from which common patterns will be extracted
     # we start with one piece for each voice's data
     curr_pos = 0
     for i in range(0, len(voices)):
-        pieces.append(Piece(curr_pos, curr_pos + len(voices[i])-1))
+        pieces.append(Piece(curr_pos, curr_pos + len(voices[i]) - 1))
         curr_pos += len(voices[i])
 
     precompute_all_matches(pieces)
@@ -554,7 +577,7 @@ def precompute_all_matches(pieces):
     global all_matches
 
     all_matches = {}
-    for n in range(MIN_PAT_LEN, MAX_PAT_LEN+1):
+    for n in range(MIN_PAT_LEN, MAX_PAT_LEN + 1):
         size_n_seen_list = set()
         all_matches[n] = {}
 
@@ -565,8 +588,8 @@ def precompute_all_matches(pieces):
             if n > piece_end_index + 1:
                 continue
 
-            for i in range(piece_start_index, piece_end_index-n+2):
-                cp = data[i:i+n]  # candidate pattern to look for
+            for i in range(piece_start_index, piece_end_index - n + 2):
+                cp = data[i : i + n]  # candidate pattern to look for
                 if cp in size_n_seen_list:
                     continue
                 size_n_seen_list.add(cp)
@@ -574,9 +597,11 @@ def precompute_all_matches(pieces):
                 # cp_matches comes from the pieces we started with at this n level
                 # (not new_pieces).  That way, a second or later match of size-n can have
                 # a chance to be matches before the 1st size-n match we encountered.
-                # the i+1 means don't match the candidate pattern at the same index 
-                # that we harvested it from   
-                cp_matches = find_candidate_pattern_matches(n, pieces, cp, piece_index, i+1)
+                # the i+1 means don't match the candidate pattern at the same index
+                # that we harvested it from
+                cp_matches = find_candidate_pattern_matches(
+                    n, pieces, cp, piece_index, i + 1
+                )
                 if cp_matches is not None:
                     all_matches[n][cp] = cp_matches
 
@@ -588,8 +613,8 @@ if __name__ == "__main__":
     voices = [v1, v2, v3]
 
     print(datetime.now())
-    
+
     recursive_compress(voices)
-    
+
     print(datetime.now())
     print("Done")

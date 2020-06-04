@@ -2,7 +2,7 @@
 #
 # RChirp is a row-based verison of chirp, useful for export from and to trackers,
 # and other jiffy-based music players.
-# Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
+# Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms.
 # Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
 import copy
@@ -13,24 +13,28 @@ from ctsBase import *
 import ctsConstants
 from dataclasses import dataclass
 
+
 @dataclass(order=True)
 class RChirpRow:
     """
     The basic RChirp row
     """
-    row_num: int = None           #: rchirp row number
-    jiffy_num: int = None         #: jiffy num since time 0
-    note_num: int = None          #: MIDI note number; None means no note asserted
-    instr_num: int = None         #: Instrument number
-    new_instrument: int = None    #: Instrument number; None means no change
-    gate: bool = None             #: Gate on/off tri-value True/False/None; None means no gate change
-    jiffy_len: int = None         #: Jiffies to process this row (until next row)
-    new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
+
+    row_num: int = None  #: rchirp row number
+    jiffy_num: int = None  #: jiffy num since time 0
+    note_num: int = None  #: MIDI note number; None means no note asserted
+    instr_num: int = None  #: Instrument number
+    new_instrument: int = None  #: Instrument number; None means no change
+    gate: bool = None  #: Gate on/off tri-value True/False/None; None means no gate change
+    jiffy_len: int = None  #: Jiffies to process this row (until next row)
+    new_jiffy_tempo: int = None  #: New tempo for channel (not global); None means no change
 
     def match(self, other):
-        if self.row_num != other.row_num \
-                or self.jiffy_num != other.jiffy_num \
-                or self.jiffy_len != other.jiffy_len:
+        if (
+            self.row_num != other.row_num
+            or self.jiffy_num != other.jiffy_num
+            or self.jiffy_len != other.jiffy_len
+        ):
             return False
         if self.note_num is not None or other.note_num is not None:
             if self.note_num != other.note_num:
@@ -44,7 +48,9 @@ class RChirpRow:
         if self.new_instrument is not None and other.new_instrument is not None:
             if self.new_instrument != other.new_instrument:
                 return False
-        if self.new_jiffy_tempo is not None and other.new_jiffy_tempo is not None:  # only check if both
+        if (
+            self.new_jiffy_tempo is not None and other.new_jiffy_tempo is not None
+        ):  # only check if both
             if self.new_jiffy_tempo != other.new_jiffy_tempo:
                 return False
         return True
@@ -61,6 +67,7 @@ class RChirpOrderList(list):
     """
     An orderlist is a list of RChirpOrderEntry instances
     """
+
     pass
 
 
@@ -68,11 +75,14 @@ class RChirpPattern:
     """
     A pattern made up of a set of rows
     """
+
     def __init__(self, rows=None):
-        self.rows = []                  #: List of RChirpRow instances (NOT a dictionary!m No gaps allowed!)
+        self.rows = (
+            []
+        )  #: List of RChirpRow instances (NOT a dictionary!m No gaps allowed!)
 
         if rows is not None:
-            base_row = min(r.row_num for r in rows)      # Starting row frame number
+            base_row = min(r.row_num for r in rows)  # Starting row frame number
             base_jiffy = min(r.jiffy_num for r in rows)  # Starting jiffy number
             for r in rows:
                 r.row_num -= base_row
@@ -82,24 +92,29 @@ class RChirpPattern:
         self.rows.sort()  # Sort the rows by the row number member.
 
     def __str__(self):
-        return '\n  '.join(str(r) for r in self.rows)
+        return "\n  ".join(str(r) for r in self.rows)
 
 
 class RChirpVoice:
     """
     The representation of a single voice; contains rows
     """
+
     def __init__(self, rchirp_song, chirp_track=None):
-        self.rchirp_song = rchirp_song                  #: The song this voice belongs to
-        self.rows = collections.defaultdict(RChirpRow)  #: dictionary: K:row num, V: RChirpRow instance
+        self.rchirp_song = rchirp_song  #: The song this voice belongs to
+        self.rows = collections.defaultdict(
+            RChirpRow
+        )  #: dictionary: K:row num, V: RChirpRow instance
         self.orderlist = RChirpOrderList()
-        self.name = ''
+        self.name = ""
         if chirp_track is not None:
             tmp = str(type(chirp_track))
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
-                raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
+                raise ChiptuneSAKTypeError(
+                    "MChirpTrack init can only import ChirpTrack objects."
+                )
             else:
-                self.import_chirp_track(chirp_track)     
+                self.import_chirp_track(chirp_track)
 
     @property
     def jiffy_indexed_rows(self):
@@ -115,7 +130,7 @@ class RChirpVoice:
         return_val = {v.jiffy_num: v for k, v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
-        
+
     @property
     def sorted_rows(self):
         """
@@ -148,7 +163,11 @@ class RChirpVoice:
         :return: row with latest jiffy number
         :rtype: RChirpRow
         """
-        return None if len(self.rows) == 0 else self.rows[max(self.rows, key=self.rows.get)]
+        return (
+            None
+            if len(self.rows) == 0
+            else self.rows[max(self.rows, key=self.rows.get)]
+        )
 
     @property
     def next_row_num(self):
@@ -169,7 +188,10 @@ class RChirpVoice:
         :rtype: boolean
         """
         start_row = 0 if len(self.rows) == 0 else min(self.rows)
-        curr_jiffy, curr_row = self.rows[start_row].jiffy_num, self.rows[start_row].row_num
+        curr_jiffy, curr_row = (
+            self.rows[start_row].jiffy_num,
+            self.rows[start_row].row_num,
+        )
         for row_num in sorted(self.rows):
             if self.rows[row_num].row_num != curr_row:
                 return False
@@ -189,21 +211,43 @@ class RChirpVoice:
         row_nums = []
         jiffy_nums = []
         for k, row in self.rows.items():
-            assert k == row.row_num, "Error: RChirpVoice has a row number that doesn't match its row number index"
-            assert row.row_num is not None, "Error: RChirpRow row cannot have row_num = None"
-            assert row.row_num >= 0, "Error: RChirpRow row cannot have a negative row_num"
-            assert row.jiffy_num is not None, "Error: RChirpRow row cannot have jiffy_num = None"
-            assert row.jiffy_num >= 0, "Error: RChirpRow row cannot have a negative jiffy_num"
+            assert (
+                k == row.row_num
+            ), "Error: RChirpVoice has a row number that doesn't match its row number index"
+            assert (
+                row.row_num is not None
+            ), "Error: RChirpRow row cannot have row_num = None"
+            assert (
+                row.row_num >= 0
+            ), "Error: RChirpRow row cannot have a negative row_num"
+            assert (
+                row.jiffy_num is not None
+            ), "Error: RChirpRow row cannot have jiffy_num = None"
+            assert (
+                row.jiffy_num >= 0
+            ), "Error: RChirpRow row cannot have a negative jiffy_num"
             if row.note_num is not None:
-                assert row.note_num >= 0, "Error: RChirpRow row cannot have a negative note_num"
-            if row.new_instrument is not None:    
-                assert row.new_instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
-            assert row.jiffy_len is not None, "Error: RChirpRow row cannot have jiffy_len = None"
-            assert row.jiffy_len >= 0, "Error: RChirpRow row cannot have a negative jiffy_len"
+                assert (
+                    row.note_num >= 0
+                ), "Error: RChirpRow row cannot have a negative note_num"
+            if row.new_instrument is not None:
+                assert (
+                    row.new_instrument >= 0
+                ), "Error: RChirpRow row cannot have a negative instrument"
+            assert (
+                row.jiffy_len is not None
+            ), "Error: RChirpRow row cannot have jiffy_len = None"
+            assert (
+                row.jiffy_len >= 0
+            ), "Error: RChirpRow row cannot have a negative jiffy_len"
             row_nums.append(row.row_num)
             jiffy_nums.append(row.jiffy_num)
-        assert len(row_nums) == len(set(row_nums)), "Error: RChirpVoice row numbers must be unique"
-        assert len(jiffy_nums) == len(set(jiffy_nums)), "Error: RChirpVoice rows' jiffy_nums must be unique"
+        assert len(row_nums) == len(
+            set(row_nums)
+        ), "Error: RChirpVoice row numbers must be unique"
+        assert len(jiffy_nums) == len(
+            set(jiffy_nums)
+        ), "Error: RChirpVoice rows' jiffy_nums must be unique"
         return True
 
     def _find_closest_row_after(self, row):
@@ -266,7 +310,9 @@ class RChirpVoice:
                 row.row_num = r
             # Jiffy number is derived from the last row
             if row.jiffy_num is None:
-                row.jiffy_num = last.jiffy_num + (row.row_num - last.row_num) * last.jiffy_len
+                row.jiffy_num = (
+                    last.jiffy_num + (row.row_num - last.row_num) * last.jiffy_len
+                )
             # If no jiffy length, use the one from the last row
             if row.jiffy_len is None:
                 row.jiffy_len = last.jiffy_len
@@ -335,31 +381,44 @@ class RChirpVoice:
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
         if not chirp_track.is_quantized():
-            raise ChiptuneSAKQuantizationError("Track must be quantized to generate RChirp.")
+            raise ChiptuneSAKQuantizationError(
+                "Track must be quantized to generate RChirp."
+            )
         if chirp_track.is_polyphonic():
-            raise ChiptuneSAKPolyphonyError("Track must be non-polyphonic to generate RChirp.")
+            raise ChiptuneSAKPolyphonyError(
+                "Track must be non-polyphonic to generate RChirp."
+            )
 
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
-                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
+        ticks_per_jiffy = (
+            self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60
+        ) / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
         jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
         jiffies_per_quarter = rows_per_quarter * jiffies_per_row
-        jiffies_per_row = jiffies_per_quarter * chirp_track.qticks_notes // self.rchirp_song.metadata.ppq
+        jiffies_per_row = (
+            jiffies_per_quarter
+            * chirp_track.qticks_notes
+            // self.rchirp_song.metadata.ppq
+        )
         ticks_per_row = chirp_track.qticks_notes
         tmp_rows = collections.defaultdict(RChirpRow)
 
         # Always insert a row number 0
-        tmp_rows[0] = RChirpRow(row_num=0,
-                                jiffy_num=0,
-                                jiffy_len=jiffies_per_row,
-                                new_jiffy_tempo=jiffies_per_row)
+        tmp_rows[0] = RChirpRow(
+            row_num=0,
+            jiffy_num=0,
+            jiffy_len=jiffies_per_row,
+            new_jiffy_tempo=jiffies_per_row,
+        )
         # Insert the notes into the voice
         for n in chirp_track.notes:
-            n_row = int(n.start_time // ticks_per_row)  # Note: if tempo varies this gets complicated.
+            n_row = int(
+                n.start_time // ticks_per_row
+            )  # Note: if tempo varies this gets complicated.
             tmp_rows[n_row].row_num = n_row
             tmp_rows[n_row].jiffy_num = n_row * jiffies_per_row
             tmp_rows[n_row].note_num = n.note_num
@@ -384,21 +443,22 @@ class RChirpSong(ChiptuneSAKBase):
     """
     The representation of an RChirp song.  Contains voices, voice groups, and metadata.
     """
+
     @classmethod
     def cts_type(cls):
-        return 'RChirp'
+        return "RChirp"
 
     def __init__(self, chirp_song=None):
         ChiptuneSAKBase.__init__(self)
-        self.arch = ctsConstants.DEFAULT_ARCH           #: Architecture
-        self.voices = []                                #: List of RChirpVoice instances
-        self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
-        self.patterns = []                              #: Patterns to be shared among the voices
-        self.stats = {}                                 #: TODO: ???
-        self.metadata = None                            #: Song metadata (author, copyright, etc.)
-        self.other = None                               #: Other meta-events in song
-        self.compressed = False                         #: Has song been through compression algorithm?
-        self.program_map = {}                           #: Midi-to-RChirp instrument map
+        self.arch = ctsConstants.DEFAULT_ARCH  #: Architecture
+        self.voices = []  #: List of RChirpVoice instances
+        self.voice_groups = []  #: Voice groupings for lowering to multiple chips
+        self.patterns = []  #: Patterns to be shared among the voices
+        self.stats = {}  #: TODO: ???
+        self.metadata = None  #: Song metadata (author, copyright, etc.)
+        self.other = None  #: Other meta-events in song
+        self.compressed = False  #: Has song been through compression algorithm?
+        self.program_map = {}  #: Midi-to-RChirp instrument map
 
         if chirp_song is None:
             self.metadata = SongMetadata()
@@ -406,7 +466,9 @@ class RChirpSong(ChiptuneSAKBase):
             self.metadata = copy.deepcopy(chirp_song.metadata)
             tmp = str(type(chirp_song))
             if tmp != "<class 'ctsChirp.ChirpSong'>":
-                raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
+                raise ChiptuneSAKTypeError(
+                    "MChirpSong init can only import ChirpSong objects"
+                )
             else:
                 self.import_chirp_song(chirp_song)
 
@@ -429,13 +491,17 @@ class RChirpSong(ChiptuneSAKBase):
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
-        if chirp_song.cts_type() != 'Chirp':
+        if chirp_song.cts_type() != "Chirp":
             raise ChiptuneSAKTypeError("RChirp can only import ChirpSong objects")
         if not chirp_song.is_quantized():
-            raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to create RChirp.")
+            raise ChiptuneSAKQuantizationError(
+                "ChirpSong must be quantized to create RChirp."
+            )
         if chirp_song.is_polyphonic():
-            raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
-        arch = chirp_song.get_option('arch', self.arch)
+            raise ChiptuneSAKPolyphonyError(
+                "ChirpSong must not be polyphonic to create RChirp."
+            )
+        arch = chirp_song.get_option("arch", self.arch)
         if arch not in ctsConstants.ARCH:
             raise ChiptuneSAKValueError("Illegal architecture name {self.arch}")
         self.arch = arch
@@ -460,7 +526,10 @@ class RChirpSong(ChiptuneSAKBase):
             r_min = min(v.rows)
             first_row = v.rows[r_min]
             jiffies_per_row = first_row.jiffy_len
-            if first_row.new_jiffy_tempo is None or first_row.new_jiffy_tempo != jiffies_per_row:
+            if (
+                first_row.new_jiffy_tempo is None
+                or first_row.new_jiffy_tempo != jiffies_per_row
+            ):
                 first_row.new_jiffy_tempo = jiffies_per_row
             for r in v.rows:
                 if r == r_min:
@@ -515,7 +584,7 @@ class RChirpSong(ChiptuneSAKBase):
 
         :return: True if integrity checks pass for all voices
         :raises AssertionError: Various integrity failure assertions possible
-        """    
+        """
         return all(voice.integrity_check() for voice in self.voices)
 
     def set_row_delta_values(self):
@@ -528,13 +597,19 @@ class RChirpSong(ChiptuneSAKBase):
         for debug_voice_index, voice in enumerate(self.voices):
             prev_tempo = prev_instr = -1
             for rchirp_row in voice.sorted_rows:
-                if rchirp_row.instr_num is not None and rchirp_row.instr_num != prev_instr:
+                if (
+                    rchirp_row.instr_num is not None
+                    and rchirp_row.instr_num != prev_instr
+                ):
                     rchirp_row.new_instrument = rchirp_row.instr_num
                     prev_instr = rchirp_row.instr_num
 
                 # This can can lead to lots of tempo changes when a tracker import is unrolling a global
                 # funk tempo (tempo that alternates with each row to achieve swing)
-                if rchirp_row.jiffy_len is not None and rchirp_row.jiffy_len != prev_tempo:
+                if (
+                    rchirp_row.jiffy_len is not None
+                    and rchirp_row.jiffy_len != prev_tempo
+                ):
                     rchirp_row.new_jiffy_tempo = rchirp_row.jiffy_len
                     prev_tempo = rchirp_row.jiffy_len
 
@@ -561,23 +636,26 @@ class RChirpSong(ChiptuneSAKBase):
         :return: CSV string
         :rtype: str
         """
-        def _str_with_null_handling(a_value):
-            return str(a_value) if a_value is not None else ''
 
-        max_tick = max(self.voices[i].last_row.jiffy_num for i in range(len(self.voices)))
+        def _str_with_null_handling(a_value):
+            return str(a_value) if a_value is not None else ""
+
+        max_tick = max(
+            self.voices[i].last_row.jiffy_num for i in range(len(self.voices))
+        )
 
         channels_time_events = self.jiffy_indexed_voices
 
         csv_header = ["jiffy"]
         for i in range(len(self.voices)):
-            csv_header.append("v%d row #" % (i+1))
-            csv_header.append("v%d note" % (i+1))
-            csv_header.append("v%d on/off/none" % (i+1))
-            csv_header.append("v%d tempo update" % (i+1))
- 
+            csv_header.append("v%d row #" % (i + 1))
+            csv_header.append("v%d note" % (i + 1))
+            csv_header.append("v%d on/off/none" % (i + 1))
+            csv_header.append("v%d tempo update" % (i + 1))
+
         csv_rows = []
         prev_tempo = [-1] * len(self.voices)
-        for tick in range(max_tick+1):
+        for tick in range(max_tick + 1):
             # if any channel has a entry at this tick, create a row for all channels
             if any(tick in channels_time_events[i] for i in range(len(self.voices))):
                 a_csv_row = ["%d" % tick]
@@ -590,17 +668,17 @@ class RChirpSong(ChiptuneSAKBase):
                         if event.jiffy_len != prev_tempo[i]:
                             tempo_update = event.jiffy_len
                         else:
-                            tempo_update = ''
+                            tempo_update = ""
                         a_csv_row.append("%s" % str(tempo_update))
                     else:
                         a_csv_row.append("")
                         a_csv_row.append("")
                         a_csv_row.append("")
                         a_csv_row.append("")
-                csv_rows.append(','.join(a_csv_row))
-        spreadsheet = '\n'.join(csv_rows)
-        spreadsheet = ','.join(csv_header) + '\n' + spreadsheet
-   
+                csv_rows.append(",".join(a_csv_row))
+        spreadsheet = "\n".join(csv_rows)
+        spreadsheet = ",".join(csv_header) + "\n" + spreadsheet
+
         return spreadsheet
 
     def convert_to_chirp(self):
@@ -616,12 +694,19 @@ class RChirpSong(ChiptuneSAKBase):
         song.name = self.metadata.name
         song.set_options(arch=self.arch)  # So that round-trip will return the same arch
 
-        note_jiffy_nums = [v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None]
+        note_jiffy_nums = [
+            v.rows[r].jiffy_num
+            for v in self.voices
+            for r in v.rows
+            if v.rows[r].gate is not None
+        ]
         note_jiffy_nums.sort()
         notes_offset_jiffies = note_jiffy_nums[0]
 
         # find the minimum divisor for note length
-        jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums))
+        jiffies_per_note = reduce(
+            math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums)
+        )
 
         # We arbitrarily set he minimum divisor to be a sixteenth note.
         midi_ticks_per_quarter = ctsConstants.DEFAULT_MIDI_PPQN
@@ -633,16 +718,20 @@ class RChirpSong(ChiptuneSAKBase):
         midi_tick = 0
         for iv, v in enumerate(self.voices):
             track = ctsChirp.ChirpTrack(song)
-            track.name = 'Track %d' % (iv + 1)
+            track.name = "Track %d" % (iv + 1)
             track.channel = iv
             current_note = None
             for r in sorted(v.rows):
                 row = v.rows[r]
-                midi_tick = int(round((row.jiffy_num - notes_offset_jiffies) * midi_ticks_per_jiffy))
+                midi_tick = int(
+                    round((row.jiffy_num - notes_offset_jiffies) * midi_ticks_per_jiffy)
+                )
                 if row.gate:
                     if current_note:
                         new_note = ctsChirp.Note(
-                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                            current_note.start_time,
+                            current_note.note_num,
+                            midi_tick - current_note.start_time,
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
@@ -650,14 +739,18 @@ class RChirpSong(ChiptuneSAKBase):
                 elif row.gate is False:
                     if current_note:
                         new_note = ctsChirp.Note(
-                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                            current_note.start_time,
+                            current_note.note_num,
+                            midi_tick - current_note.start_time,
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
                     current_note = None
             if current_note:
                 new_note = ctsChirp.Note(
-                    current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                    current_note.start_time,
+                    current_note.note_num,
+                    midi_tick - current_note.start_time,
                 )
                 if new_note.duration > 0:
                     track.notes.append(new_note)

@@ -31,12 +31,14 @@ It shows the steps needed for this conversion:
 
 """
 
-output_folder = str(project_to_absolute_path('examples\\data\\mercantile')) + '\\'
+output_folder = str(project_to_absolute_path("examples\\data\\mercantile")) + "\\"
 input_folder = output_folder
-input_file = str(project_to_absolute_path(input_folder + 'betrayalKrondorMercantile.mid'))
-output_midi_file = str(project_to_absolute_path(output_folder + 'mercantile.mid'))
-output_ly_file = str(project_to_absolute_path(output_folder + 'mercantile.ly'))
-output_gt_file = str(project_to_absolute_path(output_folder + 'mercantile.sng'))
+input_file = str(
+    project_to_absolute_path(input_folder + "betrayalKrondorMercantile.mid")
+)
+output_midi_file = str(project_to_absolute_path(output_folder + "mercantile.mid"))
+output_ly_file = str(project_to_absolute_path(output_folder + "mercantile.ly"))
+output_gt_file = str(project_to_absolute_path(output_folder + "mercantile.sng"))
 
 # Read in the original MIDI to Chirp
 chirp_song = ctsMidi.MIDI().to_chirp(input_file)
@@ -44,12 +46,12 @@ chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
 
-print(f'Original song:')
-print(f'#tracks = {len(chirp_song.tracks)}')
-print(f'    ppq = {chirp_song.metadata.ppq}')
-print(f'  tempo = {chirp_song.metadata.qpm} qpm')
-print('Track names:')
-print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
+print(f"Original song:")
+print(f"#tracks = {len(chirp_song.tracks)}")
+print(f"    ppq = {chirp_song.metadata.ppq}")
+print(f"  tempo = {chirp_song.metadata.qpm} qpm")
+print("Track names:")
+print("\n".join(f"{i+1}:  {t.name}" for i, t in enumerate(chirp_song.tracks)))
 print()
 
 # Truncate to 4 tracks and re-order from melody to bass
@@ -70,9 +72,9 @@ chirp_song.tracks[2].program_changes.append(new_program)
 # Now move the notes from track 4 into track 3
 chirp_song.tracks[2].notes.extend(chirp_song.tracks[3].notes)
 chirp_song.tracks = chirp_song.tracks[:3]
-chirp_song.tracks[0].name = 'Ocarina'
-chirp_song.tracks[1].name = 'Guitar'
-chirp_song.tracks[2].name = 'Strings/Bass'
+chirp_song.tracks[0].name = "Ocarina"
+chirp_song.tracks[1].name = "Guitar"
+chirp_song.tracks[2].name = "Strings/Bass"
 
 # At this point, with the tracks arranged, run the FitPPQ.py program in the tools directory.
 
@@ -86,7 +88,7 @@ chirp_song.metadata.ppq = 960
 chirp_song.tracks[0].set_min_note_len(480)
 
 # Quantize the whole song to eighth notes
-chirp_song.quantize_from_note_name('8')
+chirp_song.quantize_from_note_name("8")
 
 # Now we can safely remove any polyphony
 chirp_song.remove_polyphony()
@@ -95,14 +97,14 @@ chirp_song.remove_polyphony()
 chirp_song.truncate(197280)
 
 # Set the key (D minor)
-chirp_song.set_key_signature('Dm')
+chirp_song.set_key_signature("Dm")
 
-print(f'Modified song:')
-print(f'#tracks = {len(chirp_song.tracks)}')
-print(f'    ppq = {chirp_song.metadata.ppq}')
-print(f'  tempo = {chirp_song.metadata.qpm} qpm')
-print('Track names:')
-print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
+print(f"Modified song:")
+print(f"#tracks = {len(chirp_song.tracks)}")
+print(f"    ppq = {chirp_song.metadata.ppq}")
+print(f"  tempo = {chirp_song.metadata.qpm} qpm")
+print("Track names:")
+print("\n".join(f"{i+1}:  {t.name}" for i, t in enumerate(chirp_song.tracks)))
 print()
 
 # Save the result to a MIDi file.
@@ -117,10 +119,10 @@ ly.to_file(mchirp_song, output_ly_file)
 
 # If you have Lilypond installed, generate the pdf
 # If you do not have Lilypond installed, comment the following line out
-subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=True)
+subprocess.call("lilypond -o %s %s" % (output_folder, output_ly_file), shell=True)
 
 # Now convert the song to RChirp
-rchirp_song = chirp_song.to_rchirp(arch='PAL-C64')
+rchirp_song = chirp_song.to_rchirp(arch="PAL-C64")
 
 # Let's see what programs are used
 # print(rchirp_song.program_map)
@@ -131,15 +133,15 @@ rchirp_song = chirp_song.to_rchirp(arch='PAL-C64')
 # 48 = String Ensemble 1         SimpleTriangle.ins
 # 32 = Acoustic Bass             SoftBass.ins
 #
-instruments = ['Flute', 'MuteGuitar', 'SimpleTriangle', 'SoftBass']
+instruments = ["Flute", "MuteGuitar", "SimpleTriangle", "SoftBass"]
 
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
-print('Compressing RChirp')
+print("Compressing RChirp")
 compressor = ctsOnePassCompress.OnePassLeftToRight()
 rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
-print(f'Writing {output_gt_file}')
+print(f"Writing {output_gt_file}")
 GT = ctsGoatTracker.GoatTracker()
 GT.to_file(rchirp_song, output_gt_file, instruments=instruments)

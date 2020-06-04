@@ -42,7 +42,7 @@ def find_best_f(notes, desired_q, f_start, f_end, step, offset):
 def find_best_offset(notes, desired_q, o_start, o_end, f):
     min_e = objective_function(notes, desired_q, o_start, f)
     best_offset = o_start
-    n_steps = (o_end - o_start)
+    n_steps = o_end - o_start
     for offset in range(o_start, o_end + 1):
         e = objective_function(notes, desired_q, offset, f)
         if e < min_e:
@@ -53,14 +53,30 @@ def find_best_offset(notes, desired_q, o_start, o_end, f):
 
 def main():
     parser = argparse.ArgumentParser(description="Fit best PPQ value for MIDI files.")
-    parser.add_argument('midi_in_file', help='midi filename to import')
-    parser.add_argument('midi_out_file', help='midi filename to export')
-    parser.add_argument('-p', '--ppq', type=int, default=DEFAULT_MIDI_PPQN, nargs='?',
-                        help='preferred PPQ (default = DEFAULT_MIDI_PPQN)')
-    parser.add_argument('-m', '--minnote', type=str, default='16', nargs='?',
-                        help='minimum interval name (default = 16)')
-    parser.add_argument('-s', '--scalefactor', type=float, help='estimated scale factor')
-    parser.add_argument('-o', '--offset', type=int, help='estimated offset in original ticks')
+    parser.add_argument("midi_in_file", help="midi filename to import")
+    parser.add_argument("midi_out_file", help="midi filename to export")
+    parser.add_argument(
+        "-p",
+        "--ppq",
+        type=int,
+        default=DEFAULT_MIDI_PPQN,
+        nargs="?",
+        help="preferred PPQ (default = DEFAULT_MIDI_PPQN)",
+    )
+    parser.add_argument(
+        "-m",
+        "--minnote",
+        type=str,
+        default="16",
+        nargs="?",
+        help="minimum interval name (default = 16)",
+    )
+    parser.add_argument(
+        "-s", "--scalefactor", type=float, help="estimated scale factor"
+    )
+    parser.add_argument(
+        "-o", "--offset", type=int, help="estimated offset in original ticks"
+    )
 
     args = parser.parse_args()
 
@@ -71,36 +87,38 @@ def main():
     song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
     notes = [n for t in song.tracks for n in t.notes]
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
-    f_max = f_min * 8.
+    f_max = f_min * 8.0
     if args.scalefactor:
-        f_min = args.scalefactor * .66
+        f_min = args.scalefactor * 0.66
         f_max = args.scalefactor * 1.5
     else:
-        if f_min < 1.:
-            f_min = 1.
-        if f_max > 12.:
-            f_max = 12.
-    f_step = .01
+        if f_min < 1.0:
+            f_min = 1.0
+        if f_max > 12.0:
+            f_max = 12.0
+    f_step = 0.01
     offset_est = min(n.start_time for n in notes)
     if args.offset:
         offset_est = args.offset
-    last_min_e = 1.e9
+    last_min_e = 1.0e9
 
     get_best_f = functools.partial(find_best_f, notes, desired_q)
-    get_best_offset = functools.partial(find_best_offset, notes, desired_q, offset_est-20, offset_est+20)
+    get_best_offset = functools.partial(
+        find_best_offset, notes, desired_q, offset_est - 20, offset_est + 20
+    )
 
-    print('Finding initial parameters...')
+    print("Finding initial parameters...")
     # Do wide-range search for best scale factor and offset.
     best_f, min_e = get_best_f(f_min, f_max, f_step, offset_est)
     best_offset, min_e = get_best_offset(best_f)
 
     # Now refine the scale factor and ofset iteratively until they converge
-    print('Refining...')
+    print("Refining...")
     while min_e < last_min_e:
         last_min_e = min_e
-        f_step /= 10.
+        f_step /= 10.0
         f_min = best_f - (f_step * 100)
-        if (f_min < 1.0):
+        if f_min < 1.0:
             f_min = 1.0
         f_max = f_min + (f_step * 200)
         best_f, min_e = get_best_f(f_min, f_max, f_step, best_offset)
@@ -108,8 +126,10 @@ def main():
 
     # Average error in new ticks
     tick_error = min_e / len(notes) * best_f
-    print("scale_factor = %.12lf, offset = %d, total error = %.1lf ticks (%.2lf ticks/note for ppq = %d)"
-          % (best_f, best_offset, min_e, tick_error, desired_ppq))
+    print(
+        "scale_factor = %.12lf, offset = %d, total error = %.1lf ticks (%.2lf ticks/note for ppq = %d)"
+        % (best_f, best_offset, min_e, tick_error, desired_ppq)
+    )
 
     song.move_ticks(-best_offset)
     song.scale_ticks(best_f)
@@ -121,5 +141,5 @@ def main():
     print("\ndone")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

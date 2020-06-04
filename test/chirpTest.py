@@ -1,13 +1,14 @@
 import sys
 import copy
-sys.path.append('../src/')
+
+sys.path.append("../src/")
 import unittest
 import ctsMidi
 import ctsChirp
 from ctsConstants import project_to_absolute_path
 
-SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
-TRACK_TEST_SONG = project_to_absolute_path('test/data/BWV_799.mid')
+SONG_TEST_SONG = project_to_absolute_path("test/data/twinkle.mid")
+TRACK_TEST_SONG = project_to_absolute_path("test/data/BWV_799.mid")
 
 
 class SongTestCase(unittest.TestCase):
@@ -19,15 +20,21 @@ class SongTestCase(unittest.TestCase):
         """
         Tests that the total number of notes imported is correct.
         """
-        self.assertEqual(self.test_song.stats['Notes'], 143)
-        self.assertEqual(max(n.note_num for t in self.test_song.tracks for n in t.notes), 69)
-        self.assertEqual(max(n.duration for t in self.test_song.tracks for n in t.notes), 3840)
+        self.assertEqual(self.test_song.stats["Notes"], 143)
+        self.assertEqual(
+            max(n.note_num for t in self.test_song.tracks for n in t.notes), 69
+        )
+        self.assertEqual(
+            max(n.duration for t in self.test_song.tracks for n in t.notes), 3840
+        )
 
     def test_tracks(self):
         """
         Tests both the number and the names of extracted tracks
         """
-        self.assertTupleEqual(tuple(t.name for t in self.test_song.tracks), ('Lead', 'Counter', 'Bass'))
+        self.assertTupleEqual(
+            tuple(t.name for t in self.test_song.tracks), ("Lead", "Counter", "Bass")
+        )
 
     def test_quantization_and_polyphony(self):
         """
@@ -53,9 +60,11 @@ class SongTestCase(unittest.TestCase):
         Test conversion of durations (in ticks) to note names
         """
         ppq = self.test_song.metadata.ppq
-        known_good = 'quarter, eighth, eighth triplet, sixteenth, thirty-second, thirty-second triplet, sixty-fourth'
+        known_good = "quarter, eighth, eighth triplet, sixteenth, thirty-second, thirty-second triplet, sixty-fourth"
         test_durations = [1, 2, 3, 4, 8, 12, 16]
-        test_output = ', '.join(ctsChirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)
+        test_output = ", ".join(
+            ctsChirp.duration_to_note_name(ppq // n, ppq) for n in test_durations
+        )
         self.assertEqual(test_output, known_good)
 
     def test_measures(self):
@@ -81,10 +90,17 @@ class SongTestCase(unittest.TestCase):
         test_song_transposed.transpose(test_transpose)
         test_notes = [n for t in test_song_transposed.tracks for n in t.notes]
 
-        self.assertTrue(all(n.note_num - o.note_num == test_transpose for o, n in zip(orig_notes, test_notes)))
+        self.assertTrue(
+            all(
+                n.note_num - o.note_num == test_transpose
+                for o, n in zip(orig_notes, test_notes)
+            )
+        )
 
         orig_key_offset = self.test_song.metadata.key_signature.key.key_signature.offset
-        test_key_offset = test_song_transposed.metadata.key_signature.key.key_signature.offset
+        test_key_offset = (
+            test_song_transposed.metadata.key_signature.key.key_signature.offset
+        )
 
         self.assertTrue((test_key_offset - orig_key_offset) % 12 == test_transpose % 12)
 
@@ -107,7 +123,9 @@ class TrackTestCase(unittest.TestCase):
 
         tmp_song.quantize(test_duration, test_duration)
         total_notes = sum(len(t.notes) for t in tmp_song.tracks)
-        short_notes = sum(1 for t in tmp_song.tracks for n in t.notes if n.duration <= test_duration)
+        short_notes = sum(
+            1 for t in tmp_song.tracks for n in t.notes if n.duration <= test_duration
+        )
         for t in tmp_song.tracks:
             t.remove_short_notes(test_duration)
 
@@ -121,7 +139,9 @@ class TrackTestCase(unittest.TestCase):
 
         tmp_song.quantize(test_duration, test_duration)
         total_notes = sum(len(t.notes) for t in tmp_song.tracks)
-        short_notes = sum(1 for t in tmp_song.tracks for n in t.notes if n.duration <= test_duration)
+        short_notes = sum(
+            1 for t in tmp_song.tracks for n in t.notes if n.duration <= test_duration
+        )
         for t in tmp_song.tracks:
             t.set_min_note_len(test_duration * 2)
 

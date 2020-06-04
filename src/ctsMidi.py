@@ -5,13 +5,13 @@ from ctsChirp import Note, ChirpTrack, ChirpSong
 
 
 def sort_midi_events(msg):
-    if msg.type == 'note_off':
+    if msg.type == "note_off":
         return (msg.time, 9)
-    elif msg.type == 'note_on':
+    elif msg.type == "note_on":
         return (msg.time, 10)
-    elif msg.type == 'program_change':
+    elif msg.type == "program_change":
         return (msg.time, 5)
-    elif msg.type == 'track_name':
+    elif msg.type == "track_name":
         return (msg.time, 0)
     else:
         return (msg.time, 7)
@@ -32,6 +32,7 @@ class MIDI(ChiptuneSAKIO):
 
     .. _mido: https://mido.readthedocs.io/en/latest/
     """
+
     @classmethod
     def cts_type(cls):
         return "MIDI"
@@ -82,12 +83,12 @@ class MIDI(ChiptuneSAKIO):
         """
         chirp_track = ChirpTrack(chirp_song)
         # Find the first note_on event and use its channel to set the channel for this track.
-        ch_msg = next((msg for msg in midi_track if msg.type == 'note_on'), None)
+        ch_msg = next((msg for msg in midi_track if msg.type == "note_on"), None)
         if ch_msg:
             chirp_track.channel = ch_msg.channel
-            chirp_track.name = 'Channel %d' % chirp_track.channel
+            chirp_track.name = "Channel %d" % chirp_track.channel
         # Find the name meta message to get the track's name. Default is the channel.
-        name_msg = next((msg for msg in midi_track if msg.type == 'track_name'), None)
+        name_msg = next((msg for msg in midi_track if msg.type == "track_name"), None)
         if name_msg:
             if len(name_msg.name.strip()) > 0:
                 chirp_track.name = name_msg.name.strip()
@@ -95,7 +96,9 @@ class MIDI(ChiptuneSAKIO):
         current_time = 0
         current_notes_on = {}
         chirp_track.notes = []  # list of notes
-        chirp_track.other = []  # list of other things int the track, such as patch changes or pitchwheel
+        chirp_track.other = (
+            []
+        )  # list of other things int the track, such as patch changes or pitchwheel
         channels = set()
         for msg in midi_track:
             current_time += msg.time
@@ -103,7 +106,7 @@ class MIDI(ChiptuneSAKIO):
                 # Keep track of unique channels for non-meta messages
                 channels.add(msg.channel)
             # Some MIDI devices use a note_on with velocity of 0 to turn notes off.
-            if msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
+            if msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
                 # If this note is not in our dictionary of notes that are on, ignore the note_off
                 if msg.note in current_notes_on:
                     current_note = current_notes_on[msg.note]
@@ -113,17 +116,23 @@ class MIDI(ChiptuneSAKIO):
                         current_note.duration = delta
                         chirp_track.notes.append(current_note)
                     elif delta < 0:
-                        raise ChiptuneSAKValueError("Error in MIDI import: Illegal note length %d" % delta)
+                        raise ChiptuneSAKValueError(
+                            "Error in MIDI import: Illegal note length %d" % delta
+                        )
                     # Remove the note from the dictionary of notes that are on.
                     del current_notes_on[msg.note]
-            elif msg.type == 'note_on':
+            elif msg.type == "note_on":
                 # Keep a dictionary of all notes that are currently on
                 if msg.note not in current_notes_on:
-                    current_notes_on[msg.note] = Note(current_time, msg.note, 0, msg.velocity)
+                    current_notes_on[msg.note] = Note(
+                        current_time, msg.note, 0, msg.velocity
+                    )
             # Program changes get their own list
-            elif msg.type == 'program_change':
-                chirp_track.program_changes.append(ProgramEvent(current_time, int(msg.program)))
-            elif msg.is_meta and msg.type == 'track_name':
+            elif msg.type == "program_change":
+                chirp_track.program_changes.append(
+                    ProgramEvent(current_time, int(msg.program))
+                )
+            elif msg.is_meta and msg.type == "track_name":
                 chirp_track.name = msg.name.strip()
             # Other messages of interest in the track are stored in a separate list as native MIDI messages
             elif msg.is_meta or (msg.type in ChirpTrack.other_message_types):
@@ -138,8 +147,10 @@ class MIDI(ChiptuneSAKIO):
 
         # Check that there was only one channel used in the track
         if len(channels) > 1:
-            raise ChiptuneSAKException('Non-unique channel for track: %d channels in track %s'
-                                       % (len(channels), chirp_track.name))
+            raise ChiptuneSAKException(
+                "Non-unique channel for track: %d channels in track %s"
+                % (len(channels), chirp_track.name)
+            )
 
         # Now sort the notes by the time they turn on. They were inserted into the list in
         # the order they were turned off.  To do the sort, take advatage of automatic sorting of tuples.
@@ -159,11 +170,16 @@ class MIDI(ChiptuneSAKIO):
 
         # Open the midi file using the Python mido library
         in_midi = mido.MidiFile(input_filename)
-        chirp_song.metadata.ppq = in_midi.ticks_per_beat  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
+        chirp_song.metadata.ppq = (
+            in_midi.ticks_per_beat
+        )  # Pulses Per Quarter Note (usually 480, but Sibelius uses 960)
         # If MIDI file is not a Type 0 or 1 file, barf
         if int(in_midi.type) > 1:
-            print("Error: Midi type %d detected. Only midi type 0 and 1 files supported." % (in_midi.type),
-                  file=sys.stderr)
+            print(
+                "Error: Midi type %d detected. Only midi type 0 and 1 files supported."
+                % (in_midi.type),
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         # Parse and process the MIDI file into tracks
@@ -179,23 +195,35 @@ class MIDI(ChiptuneSAKIO):
         for i, track in enumerate(in_midi.tracks):
             if i == 0:
                 midi_meta_tracks.append(track)
-                chirp_song = self.get_meta(chirp_song, track, True if i == 0 else False, True)
+                chirp_song = self.get_meta(
+                    chirp_song, track, True if i == 0 else False, True
+                )
             else:
                 chirp_song = self.get_meta(chirp_song, track, False, False)
 
         # Sort all time changes from meta tracks into a single time signature change list
         chirp_song.time_signature_changes = sorted(chirp_song.time_signature_changes)
-        chirp_song.stats['Time Signature Changes'] = len(chirp_song.time_signature_changes)
+        chirp_song.stats["Time Signature Changes"] = len(
+            chirp_song.time_signature_changes
+        )
         chirp_song.key_signature_changes = sorted(chirp_song.key_signature_changes)
-        chirp_song.stats['Key Signature Changes'] = len(chirp_song.key_signature_changes)
+        chirp_song.stats["Key Signature Changes"] = len(
+            chirp_song.key_signature_changes
+        )
         chirp_song.tempo_changes = sorted(chirp_song.tempo_changes)
-        chirp_song.stats['Tempo Changes'] = len(chirp_song.tempo_changes)
+        chirp_song.stats["Tempo Changes"] = len(chirp_song.tempo_changes)
 
         # Find all tracks that contain notes
-        midi_note_tracks = [t for t in in_midi.tracks if sum(1 for m in t if m.type == 'note_on') > 0]
+        midi_note_tracks = [
+            t for t in in_midi.tracks if sum(1 for m in t if m.type == "note_on") > 0
+        ]
 
-        chirp_song.stats["MIDI notes"] = sum(1 for t in midi_note_tracks
-                                             for m in t if m.type == 'note_on' and m.velocity != 0)
+        chirp_song.stats["MIDI notes"] = sum(
+            1
+            for t in midi_note_tracks
+            for m in t
+            if m.type == "note_on" and m.velocity != 0
+        )
 
         # Now generate the note tracks
         for track in midi_note_tracks:
@@ -205,15 +233,15 @@ class MIDI(ChiptuneSAKIO):
         chirp_song.stats["Notes"] = sum(len(t.notes) for t in chirp_song.tracks)
         chirp_song.stats["Track names"] = [t.name for t in chirp_song.tracks]
 
-        if self.get_option('keyswitch', True):
+        if self.get_option("keyswitch", True):
             chirp_song.remove_keyswitches(ks_max=8)
-        q_type = self.get_option('quantization', None)
+        q_type = self.get_option("quantization", None)
         if q_type is not None:
-            if q_type == 'auto':
+            if q_type == "auto":
                 chirp_song.quantize(*chirp_song.estimate_quantization())
             elif isinstance(q_type, int) or all(c.isdigit() for c in q_type):
                 chirp_song.quantize_from_note_name(str(q_type))
-        if not self.get_option('polyphony', 'True'):
+        if not self.get_option("polyphony", "True"):
             chirp_song.remove_polyphony()
 
         return chirp_song
@@ -232,21 +260,26 @@ class MIDI(ChiptuneSAKIO):
         current_time = 0
         for msg in meta_track:
             current_time += msg.time
-            if msg.type == 'time_signature':
+            if msg.type == "time_signature":
                 chirp_song.time_signature_changes.append(
-                    TimeSignatureEvent(current_time, msg.numerator, msg.denominator))
-            elif msg.type == 'set_tempo':
-                chirp_song.tempo_changes.append(TempoEvent(current_time, int(round(mido.tempo2bpm(msg.tempo)))))
-            elif msg.type == 'key_signature':
-                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, ctsKey.ChirpKey(msg.key)))
-            elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
+                    TimeSignatureEvent(current_time, msg.numerator, msg.denominator)
+                )
+            elif msg.type == "set_tempo":
+                chirp_song.tempo_changes.append(
+                    TempoEvent(current_time, int(round(mido.tempo2bpm(msg.tempo))))
+                )
+            elif msg.type == "key_signature":
+                chirp_song.key_signature_changes.append(
+                    KeySignatureEvent(current_time, ctsKey.ChirpKey(msg.key))
+                )
+            elif msg.type == "track_name" and is_zerotrack and not is_name_set:
                 chirp_song.metadata.name = msg.name.strip()
                 is_name_set = True
             # Composer seems to be the first text message in track zero.  Not required but maybe a semi-standard
-            elif msg.type == 'text' and is_zerotrack and not is_composer_set:
+            elif msg.type == "text" and is_zerotrack and not is_composer_set:
                 chirp_song.metadata.composer = msg.text.strip()
                 is_composer_set = True
-            elif msg.type == 'copyright' and is_zerotrack:
+            elif msg.type == "copyright" and is_zerotrack:
                 chirp_song.metadata.copyright = msg.text.strip()
             # Keep meta events from tracks without notes
             # Note that these events are stored as midi messages with the global time attached.
@@ -254,14 +287,29 @@ class MIDI(ChiptuneSAKIO):
                 chirp_song.other.append(OtherMidiEvent(current_time, msg))
 
         # Require initial time signature, key signature, and tempo values.
-        if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
-            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, ctsKey.ChirpKey("C")))  # Default top key of C
+        if (
+            len(chirp_song.key_signature_changes) == 0
+            or chirp_song.key_signature_changes[0].start_time != 0
+        ):
+            chirp_song.key_signature_changes.insert(
+                0, KeySignatureEvent(0, ctsKey.ChirpKey("C"))
+            )  # Default top key of C
         chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
-        if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
-            chirp_song.time_signature_changes.insert(0, TimeSignatureEvent(0, 4, 4))  # Default to 4/4
+        if (
+            len(chirp_song.time_signature_changes) == 0
+            or chirp_song.time_signature_changes[0].start_time != 0
+        ):
+            chirp_song.time_signature_changes.insert(
+                0, TimeSignatureEvent(0, 4, 4)
+            )  # Default to 4/4
         chirp_song.metadata.time_signature = chirp_song.time_signature_changes[0]
-        if len(chirp_song.tempo_changes) == 0 or chirp_song.tempo_changes[0].start_time != 0:
-            chirp_song.tempo_changes.insert(0, TempoEvent(0, int(mido.tempo2bpm(500000))))
+        if (
+            len(chirp_song.tempo_changes) == 0
+            or chirp_song.tempo_changes[0].start_time != 0
+        ):
+            chirp_song.tempo_changes.insert(
+                0, TempoEvent(0, int(mido.tempo2bpm(500000)))
+            )
         chirp_song.metadata.qpm = chirp_song.tempo_changes[0].qpm
         chirp_song.set_metadata()
         return chirp_song
@@ -283,7 +331,7 @@ class MIDI(ChiptuneSAKIO):
                 last_times[0] = current_time
                 tracks[0].append(msg)
             # All other messages get assigned to tracks based on their channel.
-            elif msg.type != 'sysex':
+            elif msg.type != "sysex":
                 ch = msg.channel + 1
                 msg.time = current_time - last_times[ch]
                 last_times[ch] = current_time
@@ -299,21 +347,39 @@ class MIDI(ChiptuneSAKIO):
         Convert  ChirpTrack to a midi track.
         """
         midiTrack = mido.MidiTrack()
-        events = [mido.MetaMessage('track_name', name=chirp_track.name, time=0)]
+        events = [mido.MetaMessage("track_name", name=chirp_track.name, time=0)]
         for n in chirp_track.notes:
             # For the sake of sorting, create the midi event with the absolute time (which will be
             # changed to a delta time before returning).
             if n.note_num < 0 or n.note_num > 127:
                 print(n.note_num)
-            events.append(mido.Message('note_on',
-                                       note=n.note_num, channel=chirp_track.channel,
-                                       velocity=n.velocity, time=n.start_time))
-            events.append(mido.Message('note_off',
-                                       note=n.note_num, channel=chirp_track.channel,
-                                       velocity=0, time=n.start_time + n.duration))
+            events.append(
+                mido.Message(
+                    "note_on",
+                    note=n.note_num,
+                    channel=chirp_track.channel,
+                    velocity=n.velocity,
+                    time=n.start_time,
+                )
+            )
+            events.append(
+                mido.Message(
+                    "note_off",
+                    note=n.note_num,
+                    channel=chirp_track.channel,
+                    velocity=0,
+                    time=n.start_time + n.duration,
+                )
+            )
         for t, program in chirp_track.program_changes:
-            events.append(mido.Message('program_change',
-                                       channel=chirp_track.channel, program=program, time=t))
+            events.append(
+                mido.Message(
+                    "program_change",
+                    channel=chirp_track.channel,
+                    program=program,
+                    time=t,
+                )
+            )
         for t, msg in chirp_track.other:
             msg.time = t
             events.append(msg)
@@ -334,20 +400,35 @@ class MIDI(ChiptuneSAKIO):
         Exports metadata to a MIDI track.
         """
         midi_track = mido.MidiTrack()
-        events = [mido.MetaMessage('track_name', name=chirp_song.metadata.name, time=0)]
+        events = [mido.MetaMessage("track_name", name=chirp_song.metadata.name, time=0)]
         if len(chirp_song.metadata.composer) > 0:
-            events.append(mido.MetaMessage('text', text=chirp_song.metadata.composer, time=0))
+            events.append(
+                mido.MetaMessage("text", text=chirp_song.metadata.composer, time=0)
+            )
         if len(chirp_song.metadata.copyright) > 0:
-            events.append(mido.MetaMessage('copyright', text=chirp_song.metadata.copyright, time=0))
+            events.append(
+                mido.MetaMessage(
+                    "copyright", text=chirp_song.metadata.copyright, time=0
+                )
+            )
         #  Put all the time signature changes into the track.
         for t, key in chirp_song.key_signature_changes:
-            events.append(mido.MetaMessage('key_signature', key=key.key_name, time=t))
+            events.append(mido.MetaMessage("key_signature", key=key.key_name, time=t))
         #  Put all the time signature changes into the track.
         for t, numerator, denominator in chirp_song.time_signature_changes:
-            events.append(mido.MetaMessage('time_signature', numerator=numerator, denominator=denominator, time=t))
+            events.append(
+                mido.MetaMessage(
+                    "time_signature",
+                    numerator=numerator,
+                    denominator=denominator,
+                    time=t,
+                )
+            )
         #  Put the tempo changes into the track.
         for t, tempo in chirp_song.tempo_changes:
-            events.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(tempo), time=t))
+            events.append(
+                mido.MetaMessage("set_tempo", tempo=mido.bpm2tempo(tempo), time=t)
+            )
         # Put any other meta-messages that were assign to the song as a whole into the track.
         for t, msg in chirp_song.other:
             msg.time = t
@@ -370,12 +451,13 @@ class MIDI(ChiptuneSAKIO):
         Exports the song to a MIDI Type 1 file.  Exporting to the midi format is privileged because this class
         is tied to many midi concepts and uses midid messages explicitly for some content.
         """
-        if chirp_song.cts_type() != 'Chirp':
-            raise ChiptuneSAKNotImplemented("Only ChirpSong objects can be exported to midi")
+        if chirp_song.cts_type() != "Chirp":
+            raise ChiptuneSAKNotImplemented(
+                "Only ChirpSong objects can be exported to midi"
+            )
         out_midi_file = mido.MidiFile(ticks_per_beat=chirp_song.metadata.ppq)
         out_midi_file.tracks.append(self.meta_to_midi_track(chirp_song))
         for t in chirp_song.tracks:
             out_midi_file.tracks.append(self.chirp_track_to_midi_track(t))
         out_midi_file.save(output_filename)
         return True
-

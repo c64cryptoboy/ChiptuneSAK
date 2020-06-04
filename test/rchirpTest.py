@@ -7,8 +7,8 @@ import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
 
-SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
-GT_TEST_SONG = project_to_absolute_path('test/data/twinkle.sng')
+SONG_TEST_SONG = project_to_absolute_path("test/data/twinkle.mid")
+GT_TEST_SONG = project_to_absolute_path("test/data/twinkle.sng")
 
 
 class RChirpSongTestCase(unittest.TestCase):

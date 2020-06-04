@@ -13,29 +13,35 @@ WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
 # Note: waveform (WF) is a little different in the BASIC, it's
 #    0=triangle, 1=sawtooth, 2=pulse, 3=noise, and 4=ring modulation
 C128_INSTRUMENTS = {
-    'piano': 0,         # ADSR  0, 9,  0, 0, WF 2, PW 1536
-    'accordion': 1,     # ADSR 12, 0, 12, 0, WF 1 
-    'calliope': 2,      # ADSR  0, 0, 15, 0, WF 0
-    'drum': 3,          # ADSR  0, 5,  5, 0, WF 3
-    'flute': 4,         # ADSR  9, 4,  4, 0, WF 0
-    'guitar': 5,        # ADSR  0, 9,  2, 1, WF 1
-    'harpsichord': 6,   # ADSR  0, 9,  0, 0, WF 2, PW  512
-    'organ': 7,         # ADSR  0, 9,  9, 0, WF 2, PW 2048
-    'trumpet': 8,       # ADSR  8, 9,  4, 1, WF 2, PW  512
-    'xylophone': 9,     # ADSR  0, 9,  0, 0, WF 0
+    "piano": 0,  # ADSR  0, 9,  0, 0, WF 2, PW 1536
+    "accordion": 1,  # ADSR 12, 0, 12, 0, WF 1
+    "calliope": 2,  # ADSR  0, 0, 15, 0, WF 0
+    "drum": 3,  # ADSR  0, 5,  5, 0, WF 3
+    "flute": 4,  # ADSR  9, 4,  4, 0, WF 0
+    "guitar": 5,  # ADSR  0, 9,  2, 1, WF 1
+    "harpsichord": 6,  # ADSR  0, 9,  0, 0, WF 2, PW  512
+    "organ": 7,  # ADSR  0, 9,  9, 0, WF 2, PW 2048
+    "trumpet": 8,  # ADSR  8, 9,  4, 1, WF 2, PW  512
+    "xylophone": 9,  # ADSR  0, 9,  0, 0, WF 0
 }
 
 # These types are similar to standard notes and rests but with voice added
-BasicNote = collections.namedtuple('BasicNote', ['start_time', 'note_num', 'duration', 'voice'])
-BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voice'])
+BasicNote = collections.namedtuple(
+    "BasicNote", ["start_time", "note_num", "duration", "voice"]
+)
+BasicRest = collections.namedtuple("BasicRest", ["start_time", "duration", "voice"])
 
 # These appear to be the only allowed note durations for C128 BASIC
 basic_durations = {
-    ctsConstants.Fraction(6, 1): "w.", ctsConstants.Fraction(4, 1): 'w',
-    ctsConstants.Fraction(3, 1): 'h.', ctsConstants.Fraction(2, 1): 'h',
-    ctsConstants.Fraction(3, 2): 'q.', ctsConstants.Fraction(1, 1): 'q',
-    ctsConstants.Fraction(3, 4): 'i.', ctsConstants.Fraction(1, 2): 'i',
-    ctsConstants.Fraction(1, 4): 's'
+    ctsConstants.Fraction(6, 1): "w.",
+    ctsConstants.Fraction(4, 1): "w",
+    ctsConstants.Fraction(3, 1): "h.",
+    ctsConstants.Fraction(2, 1): "h",
+    ctsConstants.Fraction(3, 2): "q.",
+    ctsConstants.Fraction(1, 1): "q",
+    ctsConstants.Fraction(3, 4): "i.",
+    ctsConstants.Fraction(1, 2): "i",
+    ctsConstants.Fraction(1, 4): "s",
 }
 
 
@@ -45,15 +51,18 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     Supports to_bin() and to_file() conversions from mchirp to C128 BASIC
     options: format, arch, instruments
     """
+
     @classmethod
     def cts_type(cls):
-        return 'C128Basic'
+        return "C128Basic"
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        self.set_options(format='prg',
-                         arch=ctsConstants.DEFAULT_ARCH,
-                         instruments=['piano', 'piano', 'piano'])
+        self.set_options(
+            format="prg",
+            arch=ctsConstants.DEFAULT_ARCH,
+            instruments=["piano", "piano", "piano"],
+        )
 
     def set_options(self, **kwargs):
         """
@@ -61,15 +70,15 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         """
         for op, value in kwargs.items():
             op = op.lower()  # All option names must be lowercase
-            if op == 'arch':
+            if op == "arch":
                 if value not in ctsConstants.ARCH.keys():
                     raise ChiptuneSAKValueError(f"Invalid architecture setting {value}")
-            elif op == 'format':
-                if value == 'ascii':
-                    value = 'bas'
-                if value not in ['prg', 'bas']:
+            elif op == "format":
+                if value == "ascii":
+                    value = "bas"
+                if value not in ["prg", "bas"]:
                     ChiptuneSAKValueError(f"Invalid format setting {value}")
-            elif op == 'instruments':
+            elif op == "instruments":
                 if len(value) != 3:
                     raise ChiptuneSAKValueError("3 instruments required for C128")
                 value = [v.lower() for v in value]
@@ -96,12 +105,12 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
                   5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
         """
         self.set_options(**kwargs)
-        if mchirp_song.cts_type() != 'MChirp':
+        if mchirp_song.cts_type() != "MChirp":
             raise Exception("Error: C128Basic to_bin() only supports mchirp so far")
 
         ascii_prog = self.export_mchirp_to_C128_BASIC(mchirp_song)
 
-        if self.get_option('format') == 'bas':
+        if self.get_option("format") == "bas":
             return ascii_prog
 
         tokenized_program = ctsGenPrg.ascii_to_prg_c128(ascii_prog)
@@ -121,11 +130,11 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         """
         prog = self.to_bin(mchirp_song, **kwargs)
 
-        if self.get_option('format') == 'bas':
-            with open(filename, 'w') as out_file:
+        if self.get_option("format") == "bas":
+            with open(filename, "w") as out_file:
                 out_file.write(prog)
         else:  # 'prg'
-            with open(filename, 'wb') as out_file:
+            with open(filename, "wb") as out_file:
                 out_file.write(prog)
 
     def export_mchirp_to_C128_BASIC(self, mchirp_song):
@@ -143,15 +152,20 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         result = []
         current_line = 10
 
-        result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
+        result.append("%d rem %s" % (current_line, mchirp_song.metadata.name))
         current_line += 10
-        
+
         # Tempo 1 is slowest, and 255 is fastest
-        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / 
-            ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
+        tempo = (
+            mchirp_song.metadata.qpm
+            * WHOLE_NOTE
+            / ctsConstants.ARCH[self.get_option("arch")].frame_rate
+            / 60
+            / 4
+        )
         tempo = int(round(tempo))
 
-        result.append('%d tempo %d' % (current_line, tempo))
+        result.append("%d tempo %d" % (current_line, tempo))
 
         current_line = 100
         for measure_num, s in enumerate(basic_strings):
@@ -162,7 +176,9 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
                 # If the line is still too long...
                 if len(tmp_line) >= ctsConstants.BASIC_LINE_MAX_C128:
                     raise ChiptuneSAKContentError(
-                        "C128 BASIC line too long: Line %d length %d" % (current_line, len(tmp_line)))
+                        "C128 BASIC line too long: Line %d length %d"
+                        % (current_line, len(tmp_line))
+                    )
             result.append(tmp_line)
 
             current_line += 10
@@ -171,8 +187,10 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         # Note: U9 = volume 15
         volume = 9
         # FUTURE: For each voice, provide a way to pick (or override) the default envelopes
-        instr_assign = 'u%dv1t%dv2t%dv3t%d' % \
-            (volume, *(C128_INSTRUMENTS[inst] for inst in self.get_option('instruments')))
+        instr_assign = "u%dv1t%dv2t%dv3t%d" % (
+            volume,
+            *(C128_INSTRUMENTS[inst] for inst in self.get_option("instruments")),
+        )
         result.append('%d play"%s":rem init instruments' % (current_line, instr_assign))
         current_line += 10
 
@@ -189,16 +207,16 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         line_buf = []
         for measure_num in range(len(basic_strings)):
             if measure_num != 0 and measure_num % PLAYS_PER_LINE == 0:
-                result.append('%d %s' % (current_line, ':'.join(line_buf)))
+                result.append("%d %s" % (current_line, ":".join(line_buf)))
                 line_buf = []
                 current_line += 10
             line_buf.append("play %s$" % (num_to_str_name(measure_num)))
 
         if len(line_buf) > 0:
-            result.append('%d %s' % (current_line, ':'.join(line_buf)))
+            result.append("%d %s" % (current_line, ":".join(line_buf)))
             current_line += 10
 
-        return '\n'.join(result)
+        return "\n".join(result)
 
 
 def sort_order(c):
@@ -237,7 +255,7 @@ def duration_to_basic_name(duration, ppq):
     :return: C128 BASIC name for the duration
     :rtype: string
     """
-    f = ctsConstants.Fraction(duration/ppq).limit_denominator(16)
+    f = ctsConstants.Fraction(duration / ppq).limit_denominator(16)
     if f not in basic_durations:
         raise ChiptuneSAKValueError("Illegal note duration %s" % str(f))
     return basic_durations[f]
@@ -249,7 +267,9 @@ def trim_note_lengths(song):
     """
     for i_t, t in enumerate(song.tracks):
         for i_n, n in enumerate(t.notes):
-            f = ctsConstants.Fraction(n.duration / song.metadata.ppq).limit_denominator(8)
+            f = ctsConstants.Fraction(n.duration / song.metadata.ppq).limit_denominator(
+                8
+            )
             if f not in basic_durations:
                 for d in sorted(basic_durations, reverse=True):
                     if f >= d:
@@ -265,7 +285,9 @@ def measures_to_basic(mchirp_song):
     :return:
     """
     commands = []
-    n_measures = len(mchirp_song.tracks[0].measures)  # in mchirp, all tracks have the same number of measures.
+    n_measures = len(
+        mchirp_song.tracks[0].measures
+    )  # in mchirp, all tracks have the same number of measures.
     last_voice = 0
     last_octave = -10
     last_duration = 0
@@ -285,17 +307,25 @@ def measures_to_basic(mchirp_song):
                 if isinstance(e, ctsChirp.Note):
                     if not e.tied_to:
                         start_time = e.start_time
-                        for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):
-                            contents.append(BasicNote(start_time, e.note_num, d * ppq, v + 1))
+                        for d in ctsBase.decompose_duration(
+                            e.duration, ppq, basic_durations
+                        ):
+                            contents.append(
+                                BasicNote(start_time, e.note_num, d * ppq, v + 1)
+                            )
                             start_time += d * ppq
                     else:
                         start_time = e.start_time
-                        for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):
+                        for d in ctsBase.decompose_duration(
+                            e.duration, ppq, basic_durations
+                        ):
                             contents.append(BasicRest(start_time, d * ppq, v + 1))
                             start_time += d * ppq
                 elif isinstance(e, ctsBase.Rest):
                     start_time = e.start_time
-                    for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):
+                    for d in ctsBase.decompose_duration(
+                        e.duration, ppq, basic_durations
+                    ):
                         contents.append(BasicRest(start_time, d * ppq, v + 1))
                         start_time += d * ppq
 
@@ -311,13 +341,13 @@ def measures_to_basic(mchirp_song):
                 note_name, octave = pitch_to_basic_note_name(e.note_num)
                 current_command = []  # Build the command for this note
                 if e.voice != last_voice:
-                    current_command.append(' v%d' % e.voice)
+                    current_command.append(" v%d" % e.voice)
                 if octave != last_octave:
-                    current_command.append('o%s' % octave)
+                    current_command.append("o%s" % octave)
                 if e.duration != last_duration:
                     current_command.append(d_name)
                 current_command.append(note_name.lower())
-                measure_commands.append(''.join(current_command))
+                measure_commands.append("".join(current_command))
                 # Set all the state variables
                 last_voice = e.voice
                 last_octave = octave
@@ -326,16 +356,16 @@ def measures_to_basic(mchirp_song):
                 d_name = duration_to_basic_name(e.duration, mchirp_song.metadata.ppq)
                 current_command = []
                 if e.voice != last_voice:
-                    current_command.append(' v%d' % e.voice)
+                    current_command.append(" v%d" % e.voice)
                 if e.duration != last_duration:
                     current_command.append(d_name)
-                current_command.append('r')
-                measure_commands.append(''.join(current_command))
+                current_command.append("r")
+                measure_commands.append("".join(current_command))
                 # Set the state variables
                 last_voice = e.voice
                 last_duration = e.duration
 
-        finished_basic_line = (''.join(measure_commands) + ' m').strip()
+        finished_basic_line = ("".join(measure_commands) + " m").strip()
         commands.append(finished_basic_line)
 
     return commands
@@ -355,8 +385,8 @@ def num_to_str_name(num, upper=False):
     if num < 0 or num > 675:
         raise ChiptuneSAKValueError("number to convert to str var name out of range")
     if upper:
-        offset = ord('A')
+        offset = ord("A")
     else:
-        offset = ord('a')
-    str_name = chr((num // 26)+offset) + chr((num % 26)+offset)
+        offset = ord("a")
+    str_name = chr((num // 26) + offset) + chr((num % 26) + offset)
     return str_name

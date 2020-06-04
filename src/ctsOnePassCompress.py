@@ -15,14 +15,14 @@ Compression routines the work for GoatTracker and may work for other formats
 MAX_PATTERN_LENGTH = 120
 
 
-Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
+Transform = collections.namedtuple("Transform", ["transpose", "stretch"])
 
 
 @dataclass(order=True)
 class Repeat:
-    start_row: int = None       #: Starting row of original pattern
-    repeat_start: int = None    #: Starting row of repeats
-    length: int = 0             #: Length of repeated pattern
+    start_row: int = None  #: Starting row of original pattern
+    repeat_start: int = None  #: Starting row of repeats
+    length: int = 0  #: Length of repeated pattern
     xform: Transform = Transform(0, 0)  #: Transform between repeats
 
 
@@ -35,12 +35,14 @@ def op_row_match(r1, r2, xf=None):
         note_match = r1.note_num + xf.transpose == r2.note_num
     else:
         note_match = r1.note_num == r2.note_num
-    return note_match \
-           and r1.instr_num == r2.instr_num \
-           and r1.new_instrument == r2.new_instrument \
-           and r1.gate == r2.gate \
-           and r1.jiffy_len == r2.jiffy_len \
-           and r1.new_jiffy_tempo == r2.new_jiffy_tempo
+    return (
+        note_match
+        and r1.instr_num == r2.instr_num
+        and r1.new_instrument == r2.new_instrument
+        and r1.gate == r2.gate
+        and r1.jiffy_len == r2.jiffy_len
+        and r1.new_jiffy_tempo == r2.new_jiffy_tempo
+    )
 
 
 def op_pattern_match(p1, p2, xf=None):
@@ -92,12 +94,14 @@ def apply_xform(row, xform):
 class OnePass(ChiptuneSAKCompress):
     @classmethod
     def cts_type(cls):
-        return 'OnePass'
+        return "OnePass"
 
     def __init__(self):
         ChiptuneSAKCompress.__init__(self)
         self.used = []
-        self.set_options(min_transposition=-15, max_transposition=14, min_pattern_length=16)
+        self.set_options(
+            min_transposition=-15, max_transposition=14, min_pattern_length=16
+        )
 
     @staticmethod
     def objective_function(repeats, possible):
@@ -117,8 +121,12 @@ class OnePass(ChiptuneSAKCompress):
         :return: list of optimal repeats
         :rtype: list of Repeat objects
         """
-        min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
-        lengths = list(sorted(set(r.length for r in repeats if r.length >= min_length), reverse=True))
+        min_length = self.get_option("min_pattern_length", MAX_PATTERN_LENGTH)
+        lengths = list(
+            sorted(
+                set(r.length for r in repeats if r.length >= min_length), reverse=True
+            )
+        )
         available_rows = self.used.count(False)
         max_objective = 0
         best_repeats = []
@@ -159,8 +167,12 @@ class OnePass(ChiptuneSAKCompress):
         :rtype: orderlist dictionary
         """
         for r in repeats:
-            self.used[r.start_row:r.start_row + r.length] = [True for i in range(r.length)]
-            self.used[r.repeat_start:r.repeat_start + r.length] = [True for i in range(r.length)]
+            self.used[r.start_row : r.start_row + r.length] = [
+                True for i in range(r.length)
+            ]
+            self.used[r.repeat_start : r.repeat_start + r.length] = [
+                True for i in range(r.length)
+            ]
             order[r.start_row] = (pattern_index, 0)
             # print('length %d at row %d' % (r.length, r.start_row))
             order[r.repeat_start] = (pattern_index, r.xform.transpose)
@@ -175,13 +187,17 @@ class OnePass(ChiptuneSAKCompress):
         :return: list of valid repeats
         :rtype: list of Repeat objects
         """
-        min_length = self.get_option('min_pattern_length', 126)
+        min_length = self.get_option("min_pattern_length", 126)
         ret_repeats = []
         for r in repeats:
             if self.used[r.start_row] or self.used[r.repeat_start]:
                 continue
             l_tmp = 0
-            while l_tmp < r.length and not self.used[r.start_row + l_tmp] and not self.used[r.repeat_start + l_tmp]:
+            while (
+                l_tmp < r.length
+                and not self.used[r.start_row + l_tmp]
+                and not self.used[r.repeat_start + l_tmp]
+            ):
                 l_tmp += 1
             r.length = l_tmp
             if r.length >= min_length:
@@ -275,7 +291,7 @@ class OnePass(ChiptuneSAKCompress):
 class OnePassGlobal(OnePass):
     @classmethod
     def cts_type(cls):
-        return 'OnePassGlobal'
+        return "OnePassGlobal"
 
     def __init__(self):
         OnePass.__init__(self)
@@ -292,10 +308,10 @@ class OnePassGlobal(OnePass):
         :return: list of all repeats found
         :rtype: list of Repeat
         """
-        min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
+        min_length = self.get_option("min_pattern_length", MAX_PATTERN_LENGTH)
         n_rows = len(rows)
-        min_transpose = self.get_option('min_transpose', 0)
-        max_transpose = self.get_option('max_transpose', 0)
+        min_transpose = self.get_option("min_transpose", 0)
+        max_transpose = self.get_option("max_transpose", 0)
         repeats = []
         for base_position in range(n_rows - min_length):
             last_end = base_position
@@ -310,18 +326,22 @@ class OnePassGlobal(OnePass):
                 pattern_length = 0
                 ib = base_position
                 it = trial_position
-                while it < n_rows \
-                        and pattern_length < MAX_PATTERN_LENGTH \
-                        and op_row_match(rows[ib], rows[it], xf) \
-                        and not self.used[ib] \
-                        and not self.used[it]:
+                while (
+                    it < n_rows
+                    and pattern_length < MAX_PATTERN_LENGTH
+                    and op_row_match(rows[ib], rows[it], xf)
+                    and not self.used[ib]
+                    and not self.used[it]
+                ):
                     ib += 1
                     it += 1
                     pattern_length += 1
                     if ib >= trial_position:
                         break
                 if min_length <= pattern_length <= MAX_PATTERN_LENGTH:
-                    repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
+                    repeats.append(
+                        Repeat(base_position, trial_position, pattern_length, xf)
+                    )
                     last_end = trial_position + pattern_length
         return repeats
 
@@ -353,7 +373,11 @@ class OnePassGlobal(OnePass):
                 best_repeats = self.find_best_repeats(repeats)
                 if len(best_repeats) > 0:
                     r0 = best_repeats[0]
-                    rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
+                    rchirp_song.patterns.append(
+                        RChirpPattern(
+                            filled_rows[r0.start_row : r0.start_row + r0.length]
+                        )
+                    )
                     pattern_index = len(rchirp_song.patterns) - 1
                     order = self.apply_pattern(pattern_index, best_repeats, order)
                     repeats = self.trim_repeats(repeats)
@@ -367,15 +391,17 @@ class OnePassGlobal(OnePass):
                     gap_end += 1
                     if gap_end - gap_start >= MAX_PATTERN_LENGTH:
                         break
-                tmp_patt = RChirpPattern(filled_rows[gap_start: gap_end])
+                tmp_patt = RChirpPattern(filled_rows[gap_start:gap_end])
                 pattern_index = self.add_rchirp_pattern_to_song(rchirp_song, tmp_patt)
                 order[gap_start] = (pattern_index, 0)
                 for ig in range(gap_start, gap_end):
                     self.used[ig] = True
             assert all(self.used), "Not all rows were used!"
             last_pattern_count = len(rchirp_song.patterns)
-            if not self.validate_orderlist(rchirp_song.patterns, order, len(filled_rows)):
-                exit('Orderlist mismatch')
+            if not self.validate_orderlist(
+                rchirp_song.patterns, order, len(filled_rows)
+            ):
+                exit("Orderlist mismatch")
             rchirp_song.voices[iv].orderlist = self.make_orderlist(order)
         rchirp_song.compressed = True
         return rchirp_song
@@ -384,7 +410,7 @@ class OnePassGlobal(OnePass):
 class OnePassLeftToRight(OnePass):
     @classmethod
     def cts_type(cls):
-        return 'OnePassLeftToRight'
+        return "OnePassLeftToRight"
 
     def __init__(self):
         OnePass.__init__(self)
@@ -394,10 +420,10 @@ class OnePassLeftToRight(OnePass):
         return self.compress_lr(chirp_song)
 
     def find_repeats_starting_at(self, index, rows):
-        min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
+        min_length = self.get_option("min_pattern_length", MAX_PATTERN_LENGTH)
         n_rows = len(rows)
-        min_transpose = self.get_option('min_transpose', 0)
-        max_transpose = self.get_option('max_transpose', 0)
+        min_transpose = self.get_option("min_transpose", 0)
+        max_transpose = self.get_option("max_transpose", 0)
         repeats = []
         base_position = index
         last_end = base_position
@@ -412,18 +438,22 @@ class OnePassLeftToRight(OnePass):
             pattern_length = 0
             ib = base_position
             it = trial_position
-            while it < n_rows \
-                    and pattern_length < MAX_PATTERN_LENGTH \
-                    and op_row_match(rows[ib], rows[it], xf) \
-                    and not self.used[ib] \
-                    and not self.used[it]:
+            while (
+                it < n_rows
+                and pattern_length < MAX_PATTERN_LENGTH
+                and op_row_match(rows[ib], rows[it], xf)
+                and not self.used[ib]
+                and not self.used[it]
+            ):
                 ib += 1
                 it += 1
                 pattern_length += 1
                 if ib >= trial_position:
                     break
             if min_length <= pattern_length <= MAX_PATTERN_LENGTH:
-                repeats.append(Repeat(base_position, trial_position, pattern_length, xf))
+                repeats.append(
+                    Repeat(base_position, trial_position, pattern_length, xf)
+                )
                 last_end = trial_position + pattern_length
         return repeats
 
@@ -443,7 +473,7 @@ class OnePassLeftToRight(OnePass):
         :return: rchirp_song with compression information added
         :rtype: ctsRChirp.RChirpSong
         """
-        min_length = self.get_option('min_pattern_length', 126)
+        min_length = self.get_option("min_pattern_length", 126)
         rchirp_song.patterns = []  # Get rid of any patterns from previous compression
         for iv, v in enumerate(rchirp_song.voices):
             filled_rows = v.make_filled_rows()
@@ -459,7 +489,11 @@ class OnePassLeftToRight(OnePass):
                     best_repeats = self.find_best_repeats(repeats)
                     if len(best_repeats) > 0:
                         r0 = best_repeats[0]
-                        rchirp_song.patterns.append(RChirpPattern(filled_rows[r0.start_row: r0.start_row + r0.length]))
+                        rchirp_song.patterns.append(
+                            RChirpPattern(
+                                filled_rows[r0.start_row : r0.start_row + r0.length]
+                            )
+                        )
                         pattern_index = len(rchirp_song.patterns) - 1
                         order = self.apply_pattern(pattern_index, best_repeats, order)
                         repeats = self.trim_repeats(repeats)
@@ -473,14 +507,16 @@ class OnePassLeftToRight(OnePass):
                     gap_end += 1
                     if gap_end - gap_start >= MAX_PATTERN_LENGTH:
                         break
-                tmp_patt = RChirpPattern(filled_rows[gap_start: gap_end])
+                tmp_patt = RChirpPattern(filled_rows[gap_start:gap_end])
                 pattern_index = self.add_rchirp_pattern_to_song(rchirp_song, tmp_patt)
                 order[gap_start] = (pattern_index, 0)
                 for ig in range(gap_start, gap_end):
                     self.used[ig] = True
             assert all(self.used), "Not all rows were used!"
-            if not self.validate_orderlist(rchirp_song.patterns, order, len(filled_rows)):
-                exit('Orderlist mismatch')
+            if not self.validate_orderlist(
+                rchirp_song.patterns, order, len(filled_rows)
+            ):
+                exit("Orderlist mismatch")
             rchirp_song.voices[iv].orderlist = self.make_orderlist(order)
         rchirp_song.compressed = True
         return rchirp_song
@@ -489,16 +525,19 @@ class OnePassLeftToRight(OnePass):
 def validate_gt_limits(rchirp_song):
     n_patterns = len(rchirp_song.patterns)
     if n_patterns > ctsGoatTracker.GT_MAX_PATTERNS_PER_SONG:
-        print(f'Too many patterns: {n_patterns}', file=sys.stderr)
+        print(f"Too many patterns: {n_patterns}", file=sys.stderr)
         return False
     for iv, v in enumerate(rchirp_song.voices):
         orderlist_length = get_gt_orderlist_length(v.orderlist)
         if orderlist_length > ctsGoatTracker.GT_MAX_ELM_PER_ORDERLIST:
-            print(f'Orderlist too long in voice {iv+1}: {orderlist_length} bytes', file=sys.stderr)
+            print(
+                f"Orderlist too long in voice {iv+1}: {orderlist_length} bytes",
+                file=sys.stderr,
+            )
             return False
     for ip, p in enumerate(rchirp_song.patterns):
         if len(p.rows) + 1 > ctsGoatTracker.GT_MAX_ROWS_PER_PATTERN:
-            print(f'Pattern {ip} too long: {len(p.rows)} rows', file=sys.stderr)
+            print(f"Pattern {ip} too long: {len(p.rows)} rows", file=sys.stderr)
             return False
     return True
 
@@ -523,7 +562,7 @@ def get_gt_orderlist_length(orderlist):
             retval += 1
             prev_transposition = entry.transposition
         if entry.repeats > 16:
-            retval += (2 * (entry.repeats // 16))  # 2 bytes for each repeat
+            retval += 2 * (entry.repeats // 16)  # 2 bytes for each repeat
         if entry.repeats % 16 != 0:
             retval += 1
             if entry.repeats % 16 != 1:
@@ -532,6 +571,7 @@ def get_gt_orderlist_length(orderlist):
 
 
 GT_PATTERN_OVERHEAD = 5
+
 
 def estimate_song_size(rchirp_song):
     total = GT_PATTERN_OVERHEAD * len(rchirp_song.patterns)

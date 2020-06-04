@@ -2,14 +2,20 @@ from ctsBase import *
 import ctsChirp
 import ctsConstants
 
-'''
+"""
 This file contains functions required to export MidiSimple songs to ML64 format.
-'''
+"""
 
 ml64_durations = {
-    Fraction(6, 1): '1d', Fraction(4, 1): '1', Fraction(3, 1): '2d', Fraction(2, 1): '2',
-    Fraction(3, 2): '4d', Fraction(1, 1): '4', Fraction(3, 4): '8d', Fraction(1, 2): '8',
-    Fraction(1, 4): '16'
+    Fraction(6, 1): "1d",
+    Fraction(4, 1): "1",
+    Fraction(3, 1): "2d",
+    Fraction(2, 1): "2",
+    Fraction(3, 2): "4d",
+    Fraction(1, 1): "4",
+    Fraction(3, 4): "8d",
+    Fraction(1, 2): "8",
+    Fraction(1, 4): "16",
 }
 
 
@@ -26,12 +32,12 @@ def pitch_to_ml64_note_name(note_num, octave_offset=0):
 
 def make_ml64_notes(note_name, duration, ppq):
     durs = decompose_duration(duration, ppq, ml64_durations)
-    if note_name == 'r' or note_name == 'c':
-        retval = ''.join("%s(%s)" % (note_name, ml64_durations[f]) for f in durs)
+    if note_name == "r" or note_name == "c":
+        retval = "".join("%s(%s)" % (note_name, ml64_durations[f]) for f in durs)
     else:
         retval = "%s(%s)" % (note_name, ml64_durations[durs[0]])
         if len(durs) > 1:
-            retval += ''.join("c(%s)" % (ml64_durations[f]) for f in durs[1:])
+            retval += "".join("c(%s)" % (ml64_durations[f]) for f in durs[1:])
     return retval
 
 
@@ -75,23 +81,25 @@ def events_to_ml64(events, song, last_continue=False):
     for e in events:
         if isinstance(e, ctsChirp.Note):
             if last_continue:
-                tmp_note = make_ml64_notes('c', e.duration, song.metadata.ppq)
+                tmp_note = make_ml64_notes("c", e.duration, song.metadata.ppq)
             else:
-                tmp_note = make_ml64_notes(pitch_to_ml64_note_name(e.note_num), e.duration, song.metadata.ppq)
+                tmp_note = make_ml64_notes(
+                    pitch_to_ml64_note_name(e.note_num), e.duration, song.metadata.ppq
+                )
             content.append(tmp_note)
             last_continue = e.tied_from
-            stats['note'] += 1
-            stats['continue'] += tmp_note.count('c(')
+            stats["note"] += 1
+            stats["continue"] += tmp_note.count("c(")
         elif isinstance(e, Rest):
-            tmp_note = make_ml64_notes('r', e.duration, song.metadata.ppq)
+            tmp_note = make_ml64_notes("r", e.duration, song.metadata.ppq)
             content.append(tmp_note)
             last_continue = False
-            stats['rest'] += tmp_note.count('r(')
+            stats["rest"] += tmp_note.count("r(")
         elif isinstance(e, MeasureMarker):
-            content.append('[m%d]' % e.measure_number)
+            content.append("[m%d]" % e.measure_number)
         elif isinstance(e, ProgramEvent):
-            content.append('i(%d)' % e.program)
-            stats['program'] += 1
+            content.append("i(%d)" % e.program)
+            stats["program"] += 1
     return (content, stats, last_continue)
 
 
@@ -102,11 +110,11 @@ class ML64(ChiptuneSAKIO):
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
-        self.set_options(format='standard')
+        self.set_options(format="standard")
 
     @property
     def format(self):
-        return self.get_option('format')[0].lower()
+        return self.get_option("format")[0].lower()
 
     def to_bin(self, song, **kwargs):
         """
@@ -125,19 +133,23 @@ class ML64(ChiptuneSAKIO):
         self.set_options(**kwargs)
         tmp_type = str(type(song))
         if tmp_type == "<class 'ctsChirp.ChirpSong'>":
-            if self.format == 'm':
-                raise ChiptuneSAKTypeError("Cannot export Chirp song to Measures format")
+            if self.format == "m":
+                raise ChiptuneSAKTypeError(
+                    "Cannot export Chirp song to Measures format"
+                )
             else:
                 return self.export_chirp_to_ml64(song)
         elif tmp_type == "<class 'ctsMChirp.MChirpSong'>":
-            if self.format != 'm':
+            if self.format != "m":
                 tmp_song = ctsChirp.ChirpSong(song)
                 tmp_song.quantize(*tmp_song.estimate_quantization())
                 return self.export_chirp_to_ml64(tmp_song)
             else:
                 return self.export_mchirp_to_ml64(song)
         else:
-            raise ChiptuneSAKTypeError("Cannot export object of type {tmp_type} to ML64")
+            raise ChiptuneSAKTypeError(
+                "Cannot export object of type {tmp_type} to ML64"
+            )
 
     def to_file(self, song, filename, **kwargs):
         """
@@ -151,7 +163,7 @@ class ML64(ChiptuneSAKIO):
         :keyword options:  see `to_bin()`
 
         """
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             f.write(self.to_bin(song, **kwargs))
 
     def export_chirp_to_ml64(self, chirp_song):
@@ -165,45 +177,61 @@ class ML64(ChiptuneSAKIO):
         """
         output = []
         if not chirp_song.is_quantized():
-            raise ChiptuneSAKQuantizationError("ChirpSong must be quantized for export to ML64")
-        if any(t.qticks_notes < chirp_song.metadata.ppq // 4 for t in chirp_song.tracks):
-            raise ChiptuneSAKQuantizationError("ChirpSong must be quantized to 16th notes or larger for ML64")
+            raise ChiptuneSAKQuantizationError(
+                "ChirpSong must be quantized for export to ML64"
+            )
+        if any(
+            t.qticks_notes < chirp_song.metadata.ppq // 4 for t in chirp_song.tracks
+        ):
+            raise ChiptuneSAKQuantizationError(
+                "ChirpSong must be quantized to 16th notes or larger for ML64"
+            )
         if chirp_song.is_polyphonic():
-            raise ChiptuneSAKPolyphonyError("All tracks must be non-polyphonic for export to ML64")
+            raise ChiptuneSAKPolyphonyError(
+                "All tracks must be non-polyphonic for export to ML64"
+            )
 
         mode = self.format
 
         stats = collections.Counter()
-        output.append('ML64(1.3)')
-        output.append('song(1)')
-        output.append('tempo(%d)' % chirp_song.metadata.qpm)
+        output.append("ML64(1.3)")
+        output.append("song(1)")
+        output.append("tempo(%d)" % chirp_song.metadata.qpm)
 
         for it, t in enumerate(chirp_song.tracks):
-            output.append('track(%d)' % (it + 1))
+            output.append("track(%d)" % (it + 1))
             track_events = []
             last_note_end = 0
             # Create a list of events for the entire track
             for n in t.notes:
                 if n.start_time > last_note_end:
-                    track_events.append(Rest(last_note_end, n.start_time - last_note_end))
+                    track_events.append(
+                        Rest(last_note_end, n.start_time - last_note_end)
+                    )
                 track_events.append(n)
                 last_note_end = n.start_time + n.duration
             track_events.extend(t.program_changes)
-            if mode == 's':  # Add measures for standard format
-                last_note_end = max(n.start_time + n.duration for t in chirp_song.tracks for n in t.notes)
-                measures = [m.start_time for m in chirp_song.measures_and_beats() if m.beat == 1]
+            if mode == "s":  # Add measures for standard format
+                last_note_end = max(
+                    n.start_time + n.duration
+                    for t in chirp_song.tracks
+                    for n in t.notes
+                )
+                measures = [
+                    m.start_time for m in chirp_song.measures_and_beats() if m.beat == 1
+                ]
                 for im, m in enumerate(measures):
                     if m < last_note_end:
                         track_events.append(MeasureMarker(m, im + 1))
             track_events.sort(key=ml64_sort_order)
             # Now send the entire list of events to the ml64 creator
             track_content, stats, *_ = events_to_ml64(track_events, chirp_song)
-            output.append(''.join(track_content).strip())
-            output.append('track(-)')
-        output.append('song(-)')
-        output.append('ML64(-)')
-        chirp_song.stats['ML64'] = stats
-        return '\n'.join(output)
+            output.append("".join(track_content).strip())
+            output.append("track(-)")
+        output.append("song(-)")
+        output.append("ML64(-)")
+        chirp_song.stats["ML64"] = stats
+        return "\n".join(output)
 
     def export_mchirp_to_ml64(self, mchirp_song):
         """
@@ -215,20 +243,22 @@ class ML64(ChiptuneSAKIO):
         output = []
         stats = collections.Counter()
         ppq = mchirp_song.metadata.ppq
-        output.append('ML64(1.3)')
-        output.append('song(1)')
-        output.append('tempo(%d)' % mchirp_song.metadata.qpm)
+        output.append("ML64(1.3)")
+        output.append("song(1)")
+        output.append("tempo(%d)" % mchirp_song.metadata.qpm)
 
         for it, t in enumerate(mchirp_song.tracks):
-            output.append('track(%d)' % (it + 1))
+            output.append("track(%d)" % (it + 1))
             measures = t.measures
             last_continue = False
             for im, measure in enumerate(measures):
-                measure_content, tmp_stats, last_continue = events_to_ml64(measure.events, mchirp_song, last_continue)
-                output.append(''.join(measure_content))
+                measure_content, tmp_stats, last_continue = events_to_ml64(
+                    measure.events, mchirp_song, last_continue
+                )
+                output.append("".join(measure_content))
                 stats.update(tmp_stats)
-            output.append('track(-)')
-        output.append('song(-)')
-        output.append('ML64(-)')
-        mchirp_song.stats['ML64'] = stats
-        return '\n'.join(output)
+            output.append("track(-)")
+        output.append("song(-)")
+        output.append("ML64(-)")
+        mchirp_song.stats["ML64"] = stats
+        return "\n".join(output)

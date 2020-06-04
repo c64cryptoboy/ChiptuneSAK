@@ -22,21 +22,29 @@ class Note:
     a velocity. 
     """
 
-    def __init__(self, start, note, duration, velocity=100, tied_from=False, tied_to=False):
-        self.note_num = note        #: MIDI note number
-        self.start_time = start     #: In ticks since tick 0
-        self.duration = duration    #: In ticks
-        self.velocity = velocity    #: MIDI velocity 0-127
+    def __init__(
+        self, start, note, duration, velocity=100, tied_from=False, tied_to=False
+    ):
+        self.note_num = note  #: MIDI note number
+        self.start_time = start  #: In ticks since tick 0
+        self.duration = duration  #: In ticks
+        self.velocity = velocity  #: MIDI velocity 0-127
         self.tied_from = tied_from  #: Is the next note tied from this note?
-        self.tied_to = tied_to      #: Is this note tied from the previous note?
+        self.tied_to = tied_to  #: Is this note tied from the previous note?
 
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
         return (self.note_num == other.note_num) and (self.duration == other.duration)
 
     def __str__(self):
-        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" \
-               % (self.note_num, self.start_time, self.duration, self.velocity, self.tied_from, self.tied_to)
+        return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" % (
+            self.note_num,
+            self.start_time,
+            self.duration,
+            self.velocity,
+            self.tied_from,
+            self.tied_to,
+        )
 
 
 class ChirpTrack:
@@ -49,21 +57,27 @@ class ChirpTrack:
     """
 
     # Define the message types to preserve as a static variable
-    other_message_types = ['pitchwheel', 'control_change']
+    other_message_types = ["pitchwheel", "control_change"]
 
     def __init__(self, chirp_song, mchirp_track=None):
         self.chirp_song = chirp_song  #: Parent song
-        self.name = 'none'  #: Track name
+        self.name = "none"  #: Track name
         self.channel = 0  #: This track's midi channel.  Each track should have notes from only one channel.
         self.notes = []  #: The notes in the track
         self.program_changes = []  #: Program (patch) changes in the track
-        self.other = []  #: Other events in the track (includes voice changes and pitchwheel)
+        self.other = (
+            []
+        )  #: Other events in the track (includes voice changes and pitchwheel)
         self.qticks_notes = chirp_song.qticks_notes  #: Not start quantization from song
-        self.qticks_durations = chirp_song.qticks_durations  #: Note duration quantization
+        self.qticks_durations = (
+            chirp_song.qticks_durations
+        )  #: Note duration quantization
         if mchirp_track is not None:
             tmp = str(type(mchirp_track))
             if tmp != "<class 'ctsMChirp.MChirpTrack'>":
-                raise ChiptuneSAKTypeError("ChirpTrack init can only import MChirpTrack objects")
+                raise ChiptuneSAKTypeError(
+                    "ChirpTrack init can only import MChirpTrack objects"
+                )
             else:
                 self.import_mchirp_track(mchirp_track)
 
@@ -74,6 +88,7 @@ class ChirpTrack:
         :param mchirp_track: track to import
         :type mchirp_track: MChirpTrack
         """
+
         def _anneal_notes(notes):
             """
             This function anneals, or combines, notes that crossed measure boundaries.  It's a local
@@ -83,9 +98,15 @@ class ChirpTrack:
             current_note = None
             for n in notes:
                 if current_note is not None:
-                    assert current_note.tied_from, "Continued note should be tied from: %s" % current_note
-                    assert n.tied_to, "Note should be tied to since last note was tied from: %s" % n
-                    assert n.start_time == current_note.start_time + current_note.duration, "Tied notes not adjacent"
+                    assert current_note.tied_from, (
+                        "Continued note should be tied from: %s" % current_note
+                    )
+                    assert n.tied_to, (
+                        "Note should be tied to since last note was tied from: %s" % n
+                    )
+                    assert (
+                        n.start_time == current_note.start_time + current_note.duration
+                    ), "Tied notes not adjacent"
                     current_note.duration += n.duration
                     if n.tied_from:
                         current_note.tied_from = n.tied_from
@@ -103,12 +124,31 @@ class ChirpTrack:
         self.name = mchirp_track.name
         self.channel = mchirp_track.channel
         # Preserve the quantization from the MChirp
-        self.qticks_notes, self.qticks_durations = mchirp_track.qticks_notes, mchirp_track.qticks_durations
-        temp_notes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Note)]
-        temp_triplets = [e for m in mchirp_track.measures for e in m.events if isinstance(e, Triplet)]
-        temp_notes.extend([e for tp in temp_triplets for e in tp.content if isinstance(e, Note)])
-        self.program_changes = [e for m in mchirp_track.measures for e in m.events if isinstance(e, ProgramEvent)]
-        self.other = [e for m in mchirp_track.measures for e in m.events if isinstance(e, OtherMidiEvent)]
+        self.qticks_notes, self.qticks_durations = (
+            mchirp_track.qticks_notes,
+            mchirp_track.qticks_durations,
+        )
+        temp_notes = [
+            e for m in mchirp_track.measures for e in m.events if isinstance(e, Note)
+        ]
+        temp_triplets = [
+            e for m in mchirp_track.measures for e in m.events if isinstance(e, Triplet)
+        ]
+        temp_notes.extend(
+            [e for tp in temp_triplets for e in tp.content if isinstance(e, Note)]
+        )
+        self.program_changes = [
+            e
+            for m in mchirp_track.measures
+            for e in m.events
+            if isinstance(e, ProgramEvent)
+        ]
+        self.other = [
+            e
+            for m in mchirp_track.measures
+            for e in m.events
+            if isinstance(e, OtherMidiEvent)
+        ]
         temp_notes.sort(key=lambda n: n.start_time)
         self.notes = _anneal_notes(temp_notes)
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
@@ -173,7 +213,9 @@ class ChirpTrack:
 
         # Quantize the other MIDI messages in the track
         for i, m in enumerate(self.other):
-            self.other[i] = OtherMidiEvent(quantize_fn(m.start_time, self.qticks_notes), m.msg)
+            self.other[i] = OtherMidiEvent(
+                quantize_fn(m.start_time, self.qticks_notes), m.msg
+            )
 
         # Return the statistics about changes
         return (note_start_changes, duration_changes)
@@ -207,9 +249,11 @@ class ChirpTrack:
         ret_notes = []
         last = self.notes[0]
         for n in self.notes[1:]:
-            if n.start_time == last.start_time + last.duration \
-                    and n.note_num == last.note_num \
-                    and n.duration <= max_merge_length_ticks:
+            if (
+                n.start_time == last.start_time + last.duration
+                and n.note_num == last.note_num
+                and n.duration <= max_merge_length_ticks
+            ):
                 last.duration += n.duration
                 merged += 1
                 continue
@@ -253,7 +297,9 @@ class ChirpTrack:
         """
         extended = 0
         trimmed = 0
-        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
+        self.notes.sort(
+            key=lambda n: (n.start_time, -n.note_num)
+        )  # Notes must be sorted
         for i, n in enumerate(self.notes):
             if 0 < n.duration < min_len_ticks:
                 n.duration = min_len_ticks
@@ -271,7 +317,9 @@ class ChirpTrack:
                     else:
                         break
         self.notes = [n for n in self.notes if n.duration >= min_len_ticks]
-        self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
+        self.notes.sort(
+            key=lambda n: (n.start_time, -n.note_num)
+        )  # Notes must be sorted
         return (extended, trimmed)
 
     def remove_polyphony(self):
@@ -310,7 +358,10 @@ class ChirpTrack:
         :return: True if track is polyphonic.
         :rtype: bool
         """
-        return any(b.start_time - a.start_time < a.duration for a, b in moreit.pairwise(self.notes))
+        return any(
+            b.start_time - a.start_time < a.duration
+            for a, b in moreit.pairwise(self.notes)
+        )
 
     def is_quantized(self):
         """
@@ -322,9 +373,11 @@ class ChirpTrack:
         """
         if self.qticks_notes < 2 or self.qticks_durations < 2:
             return False
-        return all(n.start_time % self.qticks_notes == 0
-                   and n.duration % self.qticks_durations == 0
-                   for n in self.notes)
+        return all(
+            n.start_time % self.qticks_notes == 0
+            and n.duration % self.qticks_durations == 0
+            for n in self.notes
+        )
 
     def remove_keyswitches(self, ks_max=8):
         """
@@ -345,7 +398,9 @@ class ChirpTrack:
         :type max_tick: int
         """
         self.notes = [n for n in self.notes if n.start_time <= max_tick]
-        self.program_changes = [p for p in self.program_changes if p.start_time <= max_tick]
+        self.program_changes = [
+            p for p in self.program_changes if p.start_time <= max_tick
+        ]
         self.other = [e for e in self.other if e.start_time <= max_tick]
 
     def transpose(self, semitones):
@@ -424,7 +479,7 @@ class ChirpTrack:
 
     def __str__(self):
         ret_val = "Track: %s (channel %d)\n" % (self.name, self.channel)
-        return ret_val + '\n'.join(str(n) for n in self.notes)
+        return ret_val + "\n".join(str(n) for n in self.notes)
 
 
 class ChirpSong(ChiptuneSAKBase):
@@ -433,27 +488,36 @@ class ChirpSong(ChiptuneSAKBase):
     approximates traditional music notation (as pitch-duration).  It also stores other
     information, such as time signatures and tempi, in a similar way.
     """
+
     @classmethod
     def cts_type(cls):
-        return 'Chirp'
+        return "Chirp"
 
     def __init__(self, mchirp_song=None):
         ChiptuneSAKBase.__init__(self)
         self.metadata = SongMetadata()
-        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
+        self.metadata.ppq = (
+            DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
+        )
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
-        self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
+        self.qticks_durations = (
+            self.metadata.ppq
+        )  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
         self.other = []  #: List of all meta events that apply to the song as a whole
-        self.midi_meta_tracks = []  #: list of all the midi tracks that only contain metadata
+        self.midi_meta_tracks = (
+            []
+        )  #: list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  #: list of all the tracks that contain notes
         self.time_signature_changes = []  #: List of time signature changes
         self.key_signature_changes = []  #: List of key signature changes
         self.tempo_changes = []  #: List of tempo changes
         self.stats = {}  #: Statistics about the song
         if mchirp_song is not None:
-            if mchirp_song.cts_type() != 'MChirp':
-                raise ChiptuneSAKTypeError("ChirpSong init can only import MChirpSong objects")
+            if mchirp_song.cts_type() != "MChirp":
+                raise ChiptuneSAKTypeError(
+                    "ChirpSong init can only import MChirpSong objects"
+                )
             else:
                 self.import_mchirp_song(mchirp_song)
 
@@ -464,10 +528,14 @@ class ChirpSong(ChiptuneSAKBase):
         self.metadata = SongMetadata()
         self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
-        self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
+        self.qticks_durations = (
+            self.metadata.ppq
+        )  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
         self.other = []  #: List of all meta events that apply to the song as a whole
-        self.midi_meta_tracks = []  #: list of all the midi tracks that only contain metadata
+        self.midi_meta_tracks = (
+            []
+        )  #: list of all the midi tracks that only contain metadata
         self.midi_note_tracks = []  #: list of all the tracks that contain notes
         self.time_signature_changes = []  #: List of time signature changes
         self.key_signature_changes = []  #: List of key signature changes
@@ -510,9 +578,15 @@ class ChirpSong(ChiptuneSAKBase):
         # Now transfer over key signature, time signature, and tempo changes
         # these are stored inside measures for ALL tracks so we only have to extract them from one.
         t = mchirp_song.tracks[0]
-        self.time_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, TimeSignatureEvent)]
-        self.key_signature_changes = [e for m in t.measures for e in m.events if isinstance(e, KeySignatureEvent)]
-        self.tempo_changes = [e for m in t.measures for e in m.events if isinstance(e, TempoEvent)]
+        self.time_signature_changes = [
+            e for m in t.measures for e in m.events if isinstance(e, TimeSignatureEvent)
+        ]
+        self.key_signature_changes = [
+            e for m in t.measures for e in m.events if isinstance(e, KeySignatureEvent)
+        ]
+        self.tempo_changes = [
+            e for m in t.measures for e in m.events if isinstance(e, TempoEvent)
+        ]
         self.other = copy.deepcopy(mchirp_song.other)
         self.set_metadata()
 
@@ -528,7 +602,10 @@ class ChirpSong(ChiptuneSAKBase):
             new_ts_changes = []
             current_ts = self.time_signature_changes[0]
             for i in range(1, len(self.time_signature_changes)):
-                if self.time_signature_changes[i].start_time > self.time_signature_changes[i-1].start_time:
+                if (
+                    self.time_signature_changes[i].start_time
+                    > self.time_signature_changes[i - 1].start_time
+                ):
                     new_ts_changes.append(current_ts)
                 current_ts = self.time_signature_changes[i]
             new_ts_changes.append(current_ts)
@@ -543,7 +620,10 @@ class ChirpSong(ChiptuneSAKBase):
             new_ks_changes = []
             current_ks = self.key_signature_changes[0]
             for i in range(1, len(self.key_signature_changes)):
-                if self.key_signature_changes[i].start_time > self.key_signature_changes[i-1].start_time:
+                if (
+                    self.key_signature_changes[i].start_time
+                    > self.key_signature_changes[i - 1].start_time
+                ):
                     new_ks_changes.append(current_ks)
                 current_ks = self.key_signature_changes[i]
             new_ks_changes.append(current_ks)
@@ -558,7 +638,10 @@ class ChirpSong(ChiptuneSAKBase):
             new_qpm_changes = []
             current_ks = self.tempo_changes[0]
             for i in range(1, len(self.tempo_changes)):
-                if self.tempo_changes[i].start_time > self.tempo_changes[i-1].start_time:
+                if (
+                    self.tempo_changes[i].start_time
+                    > self.tempo_changes[i - 1].start_time
+                ):
                     new_qpm_changes.append(current_ks)
                 current_ks = self.tempo_changes[i]
             new_qpm_changes.append(current_ks)
@@ -578,7 +661,9 @@ class ChirpSong(ChiptuneSAKBase):
         tmp_notes = [n.start_time for t in self.tracks for n in t.notes]
         self.qticks_notes = find_quantization(tmp_notes, self.metadata.ppq)
         tmp_durations = [n.duration for t in self.tracks for n in t.notes]
-        self.qticks_durations = find_duration_quantization(tmp_durations, self.qticks_notes)
+        self.qticks_durations = find_duration_quantization(
+            tmp_durations, self.qticks_notes
+        )
         if self.qticks_durations < self.qticks_notes:
             self.qticks_durations = self.qticks_notes // 2
         return (self.qticks_notes, self.qticks_durations)
@@ -595,28 +680,39 @@ class ChirpSong(ChiptuneSAKBase):
         :type qticks_durations: int
         """
 
-        self.stats['Note Start Deltas'] = collections.Counter()
-        self.stats['Duration Deltas'] = collections.Counter()
+        self.stats["Note Start Deltas"] = collections.Counter()
+        self.stats["Duration Deltas"] = collections.Counter()
         if qticks_notes:
             self.qticks_notes = qticks_notes
         if qticks_durations:
             self.qticks_durations = qticks_durations
         for t in self.tracks:
-            note_start_changes, duration_changes = t.quantize(self.qticks_notes, self.qticks_durations)
-            self.stats['Note Start Deltas'].update(note_start_changes)
-            self.stats['Duration Deltas'].update(duration_changes)
+            note_start_changes, duration_changes = t.quantize(
+                self.qticks_notes, self.qticks_durations
+            )
+            self.stats["Note Start Deltas"].update(note_start_changes)
+            self.stats["Duration Deltas"].update(duration_changes)
 
         for i, m in enumerate(self.tempo_changes):
-            self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.qpm)
+            self.tempo_changes[i] = TempoEvent(
+                quantize_fn(m.start_time, self.qticks_notes), m.qpm
+            )
         for i, m in enumerate(self.time_signature_changes):
-            self.time_signature_changes[i] = \
-                TimeSignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom)
+            self.time_signature_changes[i] = TimeSignatureEvent(
+                quantize_fn(m.start_time, self.qticks_notes), m.num, m.denom
+            )
         for i, m in enumerate(self.key_signature_changes):
-            self.key_signature_changes[i] = KeySignatureEvent(quantize_fn(m.start_time, self.qticks_notes), m.key)
+            self.key_signature_changes[i] = KeySignatureEvent(
+                quantize_fn(m.start_time, self.qticks_notes), m.key
+            )
         for i, m in enumerate(self.other):
-            self.other[i] = OtherMidiEvent(quantize_fn(m.start_time, self.qticks_notes), m.msg)
+            self.other[i] = OtherMidiEvent(
+                quantize_fn(m.start_time, self.qticks_notes), m.msg
+            )
 
-    def quantize_from_note_name(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
+    def quantize_from_note_name(
+        self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False
+    ):
         """
         Quantize song with more user-friendly input than ticks.  Allowed quantizations are the keys for the
         ctsConstants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
@@ -630,13 +726,15 @@ class ChirpSong(ChiptuneSAKBase):
         :type triplets_allowed: bool
         """
 
-        if '.' in min_note_duration_string:
+        if "." in min_note_duration_string:
             dotted_allowed = True
-            min_note_duration_string = min_note_duration_string.replace('.', '')
-        if '-3' in min_note_duration_string:
+            min_note_duration_string = min_note_duration_string.replace(".", "")
+        if "-3" in min_note_duration_string:
             triplets_allowed = True
-            min_note_duration_string = min_note_duration_string.replace('-3', '')
-        qticks = int(self.metadata.ppq * ctsConstants.DURATION_STR[min_note_duration_string])
+            min_note_duration_string = min_note_duration_string.replace("-3", "")
+        qticks = int(
+            self.metadata.ppq * ctsConstants.DURATION_STR[min_note_duration_string]
+        )
         if dotted_allowed:
             qticks //= 2
         if triplets_allowed:
@@ -662,6 +760,7 @@ class ChirpSong(ChiptuneSAKBase):
         :param i_track:  index of the track for the song
         :type i_track: int
         """
+
         def _get_available_tracks(note, current_notes):
             ret = []
             for it, n in enumerate(current_notes):
@@ -669,6 +768,7 @@ class ChirpSong(ChiptuneSAKBase):
                     ret.append(it)
             # ret.sort(key=lambda n: (-current_notes[n].note_num))
             return ret
+
         old_track = self.tracks.pop(i_track)
         old_track.notes.sort(key=lambda n: (n.start_time, -n.note_num))
         new_tracks = [ChirpTrack(self)]
@@ -686,7 +786,7 @@ class ChirpSong(ChiptuneSAKBase):
         for i, t in enumerate(new_tracks):
             new_tracks[i].other = copy.deepcopy(old_track.other)
             new_tracks[i].channel = old_track.channel
-            new_tracks[i].name = old_track.name + ' s%d' % i
+            new_tracks[i].name = old_track.name + " s%d" % i
         for t in new_tracks[::-1]:
             self.tracks.insert(i_track, t)
 
@@ -694,12 +794,12 @@ class ChirpSong(ChiptuneSAKBase):
         """
         Eliminate polyphony from all tracks.
         """
-        self.stats['Truncated'] = 0
-        self.stats['Deleted'] = 0
+        self.stats["Truncated"] = 0
+        self.stats["Deleted"] = 0
         for t in self.tracks:
             deleted, truncated = t.remove_polyphony()
-            self.stats['Truncated'] += truncated
-            self.stats['Deleted'] += deleted
+            self.stats["Truncated"] += truncated
+            self.stats["Deleted"] += deleted
 
     def is_polyphonic(self):
         """
@@ -728,8 +828,12 @@ class ChirpSong(ChiptuneSAKBase):
         :param max_tick:  maximum tick number for events to start (song will play to end of any notes started)
         :type max_tick: int
         """
-        self.time_signature_changes = [ts for ts in self.time_signature_changes if ts.start_time <= max_tick]
-        self.key_signature_changes = [ks for ks in self.key_signature_changes if ks.start_time <= max_tick]
+        self.time_signature_changes = [
+            ts for ts in self.time_signature_changes if ts.start_time <= max_tick
+        ]
+        self.key_signature_changes = [
+            ks for ks in self.key_signature_changes if ks.start_time <= max_tick
+        ]
         self.tempo_changes = [t for t in self.tempo_changes if t.start_time <= max_tick]
         self.other = [e for e in self.other if e.start_time <= max_tick]
         for t in self.tracks:
@@ -779,7 +883,9 @@ class ChirpSong(ChiptuneSAKBase):
                     factor = new_time_signature[1] // 4
                     if all((v % factor) == 0 for v in new_time_signature):
                         new_time_signature = (v // factor for v in new_time_signature)
-            self.time_signature_changes[i] = TimeSignatureEvent((t * num) // denom, *new_time_signature)
+            self.time_signature_changes[i] = TimeSignatureEvent(
+                (t * num) // denom, *new_time_signature
+            )
             if i == 0:
                 self.metadata.time_signature = self.time_signature_changes[0]
         # Now the key signatures
@@ -927,7 +1033,10 @@ class ChirpSong(ChiptuneSAKBase):
         measures = []
         max_time = self.end_time()
         time_signature_changes = sorted(self.time_signature_changes)
-        if len(time_signature_changes) == 0 or time_signature_changes[0].start_time != 0:
+        if (
+            len(time_signature_changes) == 0
+            or time_signature_changes[0].start_time != 0
+        ):
             raise ChiptuneSAKValueError("No starting time signature")
         last = time_signature_changes[0]
         t, m, b = 0, 1, 1
@@ -947,7 +1056,7 @@ class ChirpSong(ChiptuneSAKBase):
             if b > last.num:
                 m += 1
                 b = 1
-        self.stats['Measures'] = m
+        self.stats["Measures"] = m
         return measures
 
     def get_measure_beat(self, time_in_ticks):
@@ -979,12 +1088,18 @@ class ChirpSong(ChiptuneSAKBase):
         :rtype: TimeSignatureChange
         """
         itime = 0
-        if len(self.time_signature_changes) == 0 or self.time_signature_changes[0].start_time != 0:
+        if (
+            len(self.time_signature_changes) == 0
+            or self.time_signature_changes[0].start_time != 0
+        ):
             raise ChiptuneSAKValueError("No starting time signature")
         n_time_signature_changes = len(self.time_signature_changes)
-        while itime < n_time_signature_changes and self.time_signature_changes[itime].start_time < time_in_ticks:
+        while (
+            itime < n_time_signature_changes
+            and self.time_signature_changes[itime].start_time < time_in_ticks
+        ):
             itime += 1
-        return self.time_signature_changes[itime-1]
+        return self.time_signature_changes[itime - 1]
 
     def get_active_key_signature(self, time_in_ticks):
         """
@@ -996,12 +1111,18 @@ class ChirpSong(ChiptuneSAKBase):
         :rtype: KeySignatureChange
         """
         ikey = 0
-        if len(self.key_signature_changes) == 0 or self.key_signature_changes[0].start_time != 0:
+        if (
+            len(self.key_signature_changes) == 0
+            or self.key_signature_changes[0].start_time != 0
+        ):
             raise ChiptuneSAKValueError("No starting time signature")
         n_key_signature_changes = len(self.key_signature_changes)
-        while ikey < n_key_signature_changes and self.key_signature_changes[ikey].start_time < time_in_ticks:
+        while (
+            ikey < n_key_signature_changes
+            and self.key_signature_changes[ikey].start_time < time_in_ticks
+        ):
             ikey += 1
-        return self.key_signature_changes[ikey-1]
+        return self.key_signature_changes[ikey - 1]
 
 
 # --------------------------------------------------------------------------------------
@@ -1009,6 +1130,7 @@ class ChirpSong(ChiptuneSAKBase):
 #  Utility functions
 #
 # --------------------------------------------------------------------------------------
+
 
 def quantization_error(t_ticks, q_ticks):
     """
@@ -1068,7 +1190,9 @@ def find_quantization(time_series, ppq):
     last_err = len(time_series) * ppq
     last_q = ppq
     note_value = 4
-    while note_value <= 128:  # We have arbitrarily chosen 128th notes as the fastest possible
+    while (
+        note_value <= 128
+    ):  # We have arbitrarily chosen 128th notes as the fastest possible
         test_quantization = ppq * 4 // note_value
         e = objective_error(time_series, test_quantization)
         # print(test_quantization, e) # This was useful for observing the behavior of real-world music
@@ -1110,7 +1234,9 @@ def find_duration_quantization(durations, qticks_note):
     """
     min_length = min(durations)
     if not (min_length > 0):
-        raise ChiptuneSAKQuantizationError("Illegal minimum note length (%d)" % min_length)
+        raise ChiptuneSAKQuantizationError(
+            "Illegal minimum note length (%d)" % min_length
+        )
     current_q = qticks_note
     ratio = min_length / current_q
     while ratio < 0.9:
@@ -1143,4 +1269,3 @@ def quantize_fn(t, qticks):
         return current
     else:
         return next
-

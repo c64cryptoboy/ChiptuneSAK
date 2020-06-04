@@ -8,34 +8,37 @@ from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsConstants import project_to_absolute_path
 from ctsErrors import ChiptuneSAKValueError
 
+
 class SidFile:
     def __init__(self):
-        self.magic_id = None            #: PSID or RSID
-        self.version = None             #: 1 to 4
-        self.data_offset = None         #: start of the C64 payload
-        self.load_address = None        #: often the starting memory location
-        self.init_address = None        #: often the init address
-        self.play_address = None        #: often the play address
-        self.num_subtunes = None        #: number of songs
-        self.start_song = None          #: starting song
-        self.speed = None               #: bitfield for each subtune indicating playback considerations
-        self.name = None                #: SID name
-        self.author = None              #: SID author
-        self.released = None            #: SID release details
-        self.c64_payload = None         #: The C64 payload
-        self.load_addr_preamble = False #: True if payload begins with 16-bit load addr        
-        self.flags = 0                  #: Collection of flags
-        self.flag_0 = 0                 #: bit 0 from flags
-        self.flag_1 = 0                 #: bit 1 from flags
-        self.clock = 0                  #: video clock
-        self.sid_model = 0              #: SID1 chip type
-        self.sid2_model = 0             #: SID2 chip type
-        self.sid3_model = 0             #: SID3 chip type
-        self.start_page = 0             #: helps indicate where SID writes to memory
-        self.page_length = 0            #: helps indicate where SID writes to memory
-        self.sid2_address = 0           #: SID2 I/O starting address
-        self.sid3_address = 0           #: SID3 I/O starting address
-        self.sid_count = 1              #: Number of SIDs used (1 to 3)
+        self.magic_id = None  #: PSID or RSID
+        self.version = None  #: 1 to 4
+        self.data_offset = None  #: start of the C64 payload
+        self.load_address = None  #: often the starting memory location
+        self.init_address = None  #: often the init address
+        self.play_address = None  #: often the play address
+        self.num_subtunes = None  #: number of songs
+        self.start_song = None  #: starting song
+        self.speed = (
+            None  #: bitfield for each subtune indicating playback considerations
+        )
+        self.name = None  #: SID name
+        self.author = None  #: SID author
+        self.released = None  #: SID release details
+        self.c64_payload = None  #: The C64 payload
+        self.load_addr_preamble = False  #: True if payload begins with 16-bit load addr
+        self.flags = 0  #: Collection of flags
+        self.flag_0 = 0  #: bit 0 from flags
+        self.flag_1 = 0  #: bit 1 from flags
+        self.clock = 0  #: video clock
+        self.sid_model = 0  #: SID1 chip type
+        self.sid2_model = 0  #: SID2 chip type
+        self.sid3_model = 0  #: SID3 chip type
+        self.start_page = 0  #: helps indicate where SID writes to memory
+        self.page_length = 0  #: helps indicate where SID writes to memory
+        self.sid2_address = 0  #: SID2 I/O starting address
+        self.sid3_address = 0  #: SID3 I/O starting address
+        self.sid_count = 1  #: Number of SIDs used (1 to 3)
 
     def decode_clock(self):
         """
@@ -45,12 +48,12 @@ class SidFile:
         :rtype: string
         """
         if self.clock == 1:
-            return 'PAL'
+            return "PAL"
         if self.clock == 2:
-            return 'NTSC'
+            return "NTSC"
         if self.clock == 3:
-            return 'NTSC and PAL'
-        return 'Unknown'
+            return "NTSC and PAL"
+        return "Unknown"
 
     def decode_sid_model(self, sid_model_inst):
         """
@@ -62,15 +65,15 @@ class SidFile:
         :rtype: string
         """
         if sid_model_inst == 1:
-            return 'MOS6581'
+            return "MOS6581"
         if sid_model_inst == 2:
-            return 'MOS8580'
+            return "MOS8580"
         if sid_model_inst == 3:
-            return 'MOS6581 and MOS8580'            
-        return 'Unknown'
+            return "MOS6581 and MOS8580"
+        return "Unknown"
 
     def parse_file(self, sid_filename):
-        with open(sid_filename, mode='rb') as in_file:
+        with open(sid_filename, mode="rb") as in_file:
             sid_binary = in_file.read()
 
         self.parse_binary(sid_binary)
@@ -86,14 +89,14 @@ class SidFile:
         # sources or do busy looping will cause older SID emulators to lock up or play very wrongly (if
         # at all)."
         self.magic_id = sid_binary[0:4]
-        if self.magic_id not in (b'PSID', b'RSID'):
+        if self.magic_id not in (b"PSID", b"RSID"):
             raise ChiptuneSAKValueError("Error: unexpected sid magic id")
 
         # version is 0x0001 to 0x0004.  IFF >= 0x0002 means PSID v2NG or RSID
         self.version = big_endian_int(sid_binary[4:6])
         if not (1 <= self.version <= 4):
             raise ChiptuneSAKValueError("Error: unexpected SID version number")
-        if self.magic_id == 'RSID' and self.version == 1:
+        if self.magic_id == "RSID" and self.version == 1:
             raise ChiptuneSAKValueError("Error: RSID can't be SID version 1")
 
         # Offset from the start of the file to the C64 binary data area
@@ -110,9 +113,9 @@ class SidFile:
         # Conversely, if this is a PSID with an loading address preamble to the C64 payload, this
         # must be zero.
         self.load_address = big_endian_int(sid_binary[8:10])
-        if self.load_address == 0 or self.magic_id == b'RSID':
+        if self.load_address == 0 or self.magic_id == b"RSID":
             self.load_addr_preamble = True
-        if self.magic_id == 'RSID' and self.load_address < 2024: # < $07E8
+        if self.magic_id == "RSID" and self.load_address < 2024:  # < $07E8
             raise ChiptuneSAKValueError("Error: invalid RSID load address")
 
         # init address is the entry point for the song initialization.
@@ -126,7 +129,7 @@ class SidFile:
         # expected to install an interrupt handler, which then calls the music player at
         # some place. This must always be true for RSID files.""
         self.play_address = big_endian_int(sid_binary[12:14])
-        if self.magic_id == 'RSID' and self.play_address != 0:
+        if self.magic_id == "RSID" and self.play_address != 0:
             raise ChiptuneSAKValueError("Error: RSIDs don't specify a play address")
 
         # From documentation:
@@ -139,7 +142,7 @@ class SidFile:
         # the song number to be played by default
         self.start_song = big_endian_int(sid_binary[16:18])
         if not (1 <= self.start_song <= 256):
-            raise ChiptuneSAKValueError("Error: starting song number out of range")    
+            raise ChiptuneSAKValueError("Error: starting song number out of range")
 
         # From documentation:
         # "For version 1 and 2 and for version 2NG, 3 and 4 with PlaySID specific flag
@@ -153,11 +156,11 @@ class SidFile:
         # Each bit in 'speed' specifies the speed for the corresponding tune number,
         # i.e. bit 0 specifies the speed for tune 1. If there are more than 32 tunes,
         # the speed specified for tune 32 is also used for all higher numbered tunes.
-        # 
+        #
         # For all version counts:
         # A 0 bit specifies vertical blank interrupt (50Hz PAL, 60Hz NTSC), and a 1 bit
         # specifies CIA 1 timer interrupt (default 60Hz).
-        # 
+        #
         # Surplus bits in 'speed' should be set to 0.
         # For RSID files 'speed' must always be set to 0.
         # Note that if 'play' = 0, the bits in 'speed' should still be set for backwards
@@ -168,7 +171,7 @@ class SidFile:
         # v2NG! See also the 'clock' (video standard) field described below for 'flags'."
 
         self.speed = big_endian_int(sid_binary[18:22])
-        if self.magic_id == 'RSID' and self.speed != 0:
+        if self.magic_id == "RSID" and self.speed != 0:
             raise ChiptuneSAKValueError("Error: RSIDs don't specify a speed setting")
 
         # name, author, and released (formerally copyright) fields.  From the docs:
@@ -176,9 +179,9 @@ class SidFile:
         # strings. Upon evaluating the header, these fields may hold a character string of
         # 32 bytes which is not zero terminated. For less than 32 characters the string
         # should be zero terminated
-        self.name = sid_binary[22:54].split(b'\x00')[0]
-        self.author = sid_binary[54:86].split(b'\x00')[0]
-        self.released = sid_binary[86:118].split(b'\x00')[0]
+        self.name = sid_binary[22:54].split(b"\x00")[0]
+        self.author = sid_binary[54:86].split(b"\x00")[0]
+        self.released = sid_binary[86:118].split(b"\x00")[0]
 
         if self.version == 1:
             self.c64_payload = sid_binary[118:]
@@ -223,16 +226,23 @@ class SidFile:
             # for a different purpose: tunes that include a BASIC executable portion will
             # be played (with the BASIC portion executed) if the C64 BASIC flag is set. At
             # the same time, initAddress must be 0.""
-            self.flag_1 = (self.flags & 0b00000010) >> 1 
-            if self.magic_id == 'RSID':
+            self.flag_1 = (self.flags & 0b00000010) >> 1
+            if self.magic_id == "RSID":
                 if self.init_address == 0:
                     if self.flag_1 == 0:
-                        raise ChiptuneSAKValueError("Error: RSID can't have init address zero unless BASIC included")
+                        raise ChiptuneSAKValueError(
+                            "Error: RSID can't have init address zero unless BASIC included"
+                        )
                 else:
                     if self.flag_1 == 1:
-                        raise ChiptuneSAKValueError("Error: RSID flag 1 can't be set (BASIC) if init address != 0")
+                        raise ChiptuneSAKValueError(
+                            "Error: RSID flag 1 can't be set (BASIC) if init address != 0"
+                        )
                     # Now we can finally confirm allowed RSID init address ranges ($07E8 - $9FFF, $C000 - $CFFF)
-                    if not ((2024 <= self.init_address <= 40959) or (49152 <= self.init_address <= 53247)): 
+                    if not (
+                        (2024 <= self.init_address <= 40959)
+                        or (49152 <= self.init_address <= 53247)
+                    ):
                         raise ChiptuneSAKValueError("Error: invalid RSID init address")
 
             # From documentation:
@@ -302,7 +312,7 @@ class SidFile:
             # 'startPage' specifies the start page of the single largest free memory range
             # within the driver ranges. For example, if 'startPage' is 0x1E, this free
             # memory range starts at $1E00."
-            self.start_page = sid_binary[120]        
+            self.start_page = sid_binary[120]
 
             # From documentation:
             # "+79    BYTE pageLength (relocPages)
@@ -318,7 +328,6 @@ class SidFile:
             self.page_length = sid_binary[121]
             # FUTURE: put in the checks mentioned above, generate a warning if violated
 
-
             # From documentation:
             # "+7A    BYTE secondSIDAddress
             # Valid values:
@@ -333,11 +342,15 @@ class SidFile:
             self.sid2_address = sid_binary[122]
             if self.version == 2:
                 if self.sid2_address > 0:
-                    print("Warning: second SID address should not be defined for SID v2NG")
-            elif (self.sid2_address % 2 == 1) or \
-                not ((0x42 <= self.sid2_address <= 0x7f) or (0xe0 <= self.sid2_address <= 0xfe)):
-                    print("Warning: invalid second SID address, therefore no 2nd SID")
-                    self.sid2_address = 0
+                    print(
+                        "Warning: second SID address should not be defined for SID v2NG"
+                    )
+            elif (self.sid2_address % 2 == 1) or not (
+                (0x42 <= self.sid2_address <= 0x7F)
+                or (0xE0 <= self.sid2_address <= 0xFE)
+            ):
+                print("Warning: invalid second SID address, therefore no 2nd SID")
+                self.sid2_address = 0
             else:
                 self.sid2_address = 53248 + (self.sid2_address * 16)
 
@@ -356,11 +369,15 @@ class SidFile:
             self.sid3_address = sid_binary[123]
             if self.version < 4:
                 if self.sid3_address > 0:
-                    print("Warning: second SID address should not be defined for SID version <= 3")
-            elif (self.sid3_address % 2 == 1) or \
-                not ((0x42 <= self.sid3_address <= 0x7f) or (0xe0 <= self.sid3_address <= 0xfe)):
-                    print("Warning: invalid third SID address, therefore no 3rd SID")
-                    self.sid3_address = 0
+                    print(
+                        "Warning: second SID address should not be defined for SID version <= 3"
+                    )
+            elif (self.sid3_address % 2 == 1) or not (
+                (0x42 <= self.sid3_address <= 0x7F)
+                or (0xE0 <= self.sid3_address <= 0xFE)
+            ):
+                print("Warning: invalid third SID address, therefore no 3rd SID")
+                self.sid3_address = 0
             elif self.sid2_address == self.sid3_address and self.sid3_address != 0:
                 print("Warning: SID3 address cannot equal SID2 address")
                 self.sid3_address = 0
@@ -376,12 +393,10 @@ class SidFile:
             self.c64_payload = sid_binary[124:]
             if self.load_addr_preamble:
                 self.load_address = self.get_load_addr_from_payload()
-                self.c64_payload = self.c64_payload[2:]                
-
+                self.c64_payload = self.c64_payload[2:]
 
     def get_payload_length(self):
         return len(self.c64_payload)
-
 
     def get_load_addr_from_payload(self):
         return little_endian_int(self.c64_payload[0:2])
@@ -390,5 +405,5 @@ class SidFile:
 # Debugging stub
 if __name__ == "__main__":
     sid = SidFile()
-    sid.parse_file(project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'))
+    sid.parse_file(project_to_absolute_path("test/sid/Master_of_the_Lamps_PAL.sid"))
     print("Load addr $%s" % (hex(sid.get_load_addr_from_payload()))[2:].upper())

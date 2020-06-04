@@ -3,7 +3,7 @@
 # For now, I'm mostly ignoring C64-specific tests, and focusing on 6502
 # instruction tests
 #
-# Also runs Klaus Dormann's ADC/SBC BCD tests (public domain) 
+# Also runs Klaus Dormann's ADC/SBC BCD tests (public domain)
 #
 # to run: python -m unittest -v tests
 
@@ -26,21 +26,21 @@ def mixed_case_petscii_to_ascii(petscii_string):
         c = ord(c)
         # only doing letter conversions
         if 193 <= c <= 218:
-            c -= 96 # convert lowercase letters
+            c -= 96  # convert lowercase letters
         elif 65 <= c <= 90:
-            c += 32 # convert uppercase letters
-        elif chr(c) == '\r':
-            c = ord('\n')
+            c += 32  # convert uppercase letters
+        elif chr(c) == "\r":
+            c = ord("\n")
         elif chr(c) not in string.printable:
-            c = ord('?')
+            c = ord("?")
         result.append(chr(c))
-    return ''.join(result)
+    return "".join(result)
 
 
 # psuedo-op docs reference http://www.ffd2.com/fridge/docs/6502-NMOS.extra.opcodes
 binary_file_tests = [
     # ADC tests
-    ("adca",  "adc absolute"),
+    ("adca", "adc absolute"),
     ("adcax", "adc absolute,x"),
     ("adcay", "adc absolute,y"),
     ("adcb", "adc immediate"),
@@ -48,11 +48,10 @@ binary_file_tests = [
     ("adciy", "adc (indirect),y"),
     ("adcz", "adc zeropage"),
     ("adczx", "adc zeropage,x"),
-
     # illegal op  not yet supported in our emulator
     #
     # ALR    ***
-    # This opcode ANDs the contents of the A register with an immediate value and 
+    # This opcode ANDs the contents of the A register with an immediate value and
     # then LSRs the result.
     # One supported mode:
     # ALR #ab         ;4B ab       ;No. Cycles= 2
@@ -62,21 +61,19 @@ binary_file_tests = [
     # AND #$FE
     # LSR A
     #
-    #("alrb", "alr immediate"),
-
+    # ("alrb", "alr immediate"),
     # illegal op  not yet supported in our emulator
     #
     # ANC    ***
-    # ANC ANDs the contents of the A register with an immediate value and then 
-    # moves bit 7 of A into the Carry flag.  This opcode works basically 
-    # identically to AND #immed. except that the Carry flag is set to the same 
+    # ANC ANDs the contents of the A register with an immediate value and then
+    # moves bit 7 of A into the Carry flag.  This opcode works basically
+    # identically to AND #immed. except that the Carry flag is set to the same
     # state that the Negative flag is set to.
     # One supported mode:
     # ANC #ab         ;2B ab       ;No. Cycles= 2
     # ANC #ab         ;0B ab
     #
-    #("ancb", "anc immediate"),
-
+    # ("ancb", "anc immediate"),
     # AND tests
     ("anda", "and absolute"),
     ("andax", "and absolute,x"),
@@ -86,22 +83,20 @@ binary_file_tests = [
     ("andiy", "and (indirect),y"),
     ("andz", "and zeropage"),
     ("andzx", "and zeropage,x"),
-
     # illegal op  not yet supported in our emulator
     # Note: the aneb test fails repeatedly in VICE, which I trust more
     #
     # XAA    ***
-    # XAA transfers the contents of the X register to the A register and then 
+    # XAA transfers the contents of the X register to the A register and then
     # ANDs the A register with an immediate value.
     # One supported mode:
     # XAA #ab         ;8B ab       ;No. Cycles= 2
     #
-    #("aneb", "xaa (aka ane) immediate"),
-
+    # ("aneb", "xaa (aka ane) immediate"),
     # illegal op  not yet supported in our emulator
-    # 
+    #
     # ARR    ***
-    # This opcode ANDs the contents of the A register with an immediate value and 
+    # This opcode ANDs the contents of the A register with an immediate value and
     # then RORs the result.
     # One supported mode:
     # ARR #ab         ;6B ab       ;No. Cycles= 2
@@ -110,9 +105,8 @@ binary_file_tests = [
     # Here's the same code using equivalent instructions.
     # AND #$7F
     # ROR A
-    #     
+    #
     # ("arrb", "arr immediate"),
-
     # test shifting (ASL, LSR)
     ("asla", "asl absolute"),
     ("aslax", "asl absolute,x"),
@@ -124,12 +118,11 @@ binary_file_tests = [
     ("lsrn", "lsr"),
     ("lsrz", "lsr zeropage"),
     ("lsrzx", "lsr zeropage,x"),
-
     # illegal op  not yet supported in our emulator
-    # 
+    #
     # ASO    ***    (aka SLO)
-    # This opcode ASLs the contents of a memory location and then ORs the result 
-    # with the accumulator.  
+    # This opcode ASLs the contents of a memory location and then ORs the result
+    # with the accumulator.
     # Supported modes:
     # ASO abcd        ;0F cd ab    ;No. Cycles= 6
     # ASO abcd,X      ;1F cd ab    ;            7
@@ -144,19 +137,18 @@ binary_file_tests = [
     # Here is the same code using equivalent instructions.
     # ASL $C010
     # ORA $C010
-    # 
-    #("asoa", "aso absolute"),
-    #("asoax", "aso absolute,x"),
-    #("asoay", "aso absolute,y"),
-    #("asoix", "aso (indirect,x)"),
-    #("asoiy", "aso (indirect),y"),
-    #("asoz", "aso zeropage"),
-    #("asozx", "aso zeropage,x"),
-
+    #
+    # ("asoa", "aso absolute"),
+    # ("asoax", "aso absolute,x"),
+    # ("asoay", "aso absolute,y"),
+    # ("asoix", "aso (indirect,x)"),
+    # ("asoiy", "aso (indirect),y"),
+    # ("asoz", "aso zeropage"),
+    # ("asozx", "aso zeropage,x"),
     # illegal op  not yet supported in our emulator
-    # 
+    #
     # AXS    ***    (aka SAX)
-    # AXS ANDs the contents of the A and X registers (without changing the 
+    # AXS ANDs the contents of the A and X registers (without changing the
     # contents of either register) and stores the result in memory.
     # AXS does not affect any flags in the processor status register.
     # Supported modes:
@@ -174,11 +166,10 @@ binary_file_tests = [
     # STA $FE
     # PLA
     #
-    #("axsa", "axs absolute"),
-    #("axsix", "axs (indirect,x)"),
-    #("axsz", "axs zeropage"),
-    #("axszy", "axs zeropage,y"),
-
+    # ("axsa", "axs absolute"),
+    # ("axsix", "axs (indirect,x)"),
+    # ("axsz", "axs zeropage"),
+    # ("axszy", "axs zeropage,y"),
     # branch tests
     ("bccr", "bcc relative"),
     ("bcsr", "bcs relative"),
@@ -187,44 +178,40 @@ binary_file_tests = [
     ("bner", "bne relative"),
     ("bplr", "bpl relative"),
     ("bvcr", "bvc relative"),
-    ("bvsr", "bvs relative"),    
+    ("bvsr", "bvs relative"),
     ("branchwrap", "branchwrap"),
-
     # BRK tests
     # Test fills memory from $1100 to $1200 with BRKs, and JMPs to each in turn
     ("brkn", "brk"),
-
     # Going to skip these CIA tests for now, perhaps revisit them later
-    #("cia1pb6", "cia1pb6"),
-    #("cia1pb7", "cia1pb7"),
-    #("cia1ta", "cia1ta"),
-    #("cia1tab", "cia1tab"),
-    #("cia1tb", "cia1tb"),
-    #("cia1tb123", "cia1tb123"),
-    #("cia2pb6", "cia2pb6"),
-    #("cia2pb7", "cia2pb7"),
-    #("cia2ta", "cia2ta"),
-    #("cia2tb", "cia2tb"),
-    #("cia2tb123", "cia2tb123"),
-    #("cntdef", "cntdef"),
-    #("cnto2", "cnto2"),
-    #("flipos", "flipos"),
-    #("icr01", "icr01"),
-    #("imr", "imr"),
-    #("irq", "irq"),
-    #("loadth", "loadth"),
-    #("nmi", "nmi"),
-    #("oneshot", "oneshot"),
-
+    # ("cia1pb6", "cia1pb6"),
+    # ("cia1pb7", "cia1pb7"),
+    # ("cia1ta", "cia1ta"),
+    # ("cia1tab", "cia1tab"),
+    # ("cia1tb", "cia1tb"),
+    # ("cia1tb123", "cia1tb123"),
+    # ("cia2pb6", "cia2pb6"),
+    # ("cia2pb7", "cia2pb7"),
+    # ("cia2ta", "cia2ta"),
+    # ("cia2tb", "cia2tb"),
+    # ("cia2tb123", "cia2tb123"),
+    # ("cntdef", "cntdef"),
+    # ("cnto2", "cnto2"),
+    # ("flipos", "flipos"),
+    # ("icr01", "icr01"),
+    # ("imr", "imr"),
+    # ("irq", "irq"),
+    # ("loadth", "loadth"),
+    # ("nmi", "nmi"),
+    # ("oneshot", "oneshot"),
     # clear flag instruction tests
     ("clcn", "clc"),
     ("cldn", "cld"),
     ("clin", "cli"),
     ("clvn", "clv"),
-
     # compare tests (BIT, CMP, CPX, CPY)
     ("bita", "bit absolute"),
-    ("bitz", "bit zeropage"),    
+    ("bitz", "bit zeropage"),
     ("cmpa", "cmp absolute"),
     ("cmpax", "cmp absolute,x"),
     ("cmpay", "cmp absolute,y"),
@@ -239,14 +226,12 @@ binary_file_tests = [
     ("cpya", "cpy absolute"),
     ("cpyb", "cpy immediate"),
     ("cpyz", "cpy zeropage"),
-
     # Test 6510 ports at mem loc 0 and 1
     # Skipping this for now
     #
-    #("cpuport", "cpuport test, bits 0-7"),
-    #("mmu", "mmu test, bits 0-2"), 
-    #("mmufetch", "mmufetch"),    
-
+    # ("cpuport", "cpuport test, bits 0-7"),
+    # ("mmu", "mmu test, bits 0-2"),
+    # ("mmufetch", "mmufetch"),
     # Test various cycles consumed.  If there's a problem, you'll see this:
     # xx command byte
     # clocks  #measured
@@ -290,13 +275,12 @@ binary_file_tests = [
     # 6   6   RTIn
     # #1 = command execution time without overhead
     # #2 = displayed value including overhead for measurement
-    # R/W/M = Read/Write/Modify    
+    # R/W/M = Read/Write/Modify
     ("cputiming", "cpu cycles-consumed tests"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # DCM    ***    (aka DCP)
-    # This opcode DECs the contents of a memory location and then CMPs the result 
+    # This opcode DECs the contents of a memory location and then CMPs the result
     # with the A register.
     # Supported modes:
     # DCM abcd        ;CF cd ab    ;No. Cycles= 6
@@ -312,15 +296,14 @@ binary_file_tests = [
     # Equivalent instructions:
     # DEC $FF
     # CMP $FF
-    # 
-    #("dcma", "dcm absolute"),
-    #("dcmax", "dcm absolute,x"),
-    #("dcmay", "dcm absolute,y"),
-    #("dcmix", "dcm (indirect,x)"),
-    #("dcmiy", "dcm (indirect),y"),
-    #("dcmz", "dcm zeropage"),
-    #("dcmzx", "dcm zeropage,x"),
-
+    #
+    # ("dcma", "dcm absolute"),
+    # ("dcmax", "dcm absolute,x"),
+    # ("dcmay", "dcm absolute,y"),
+    # ("dcmix", "dcm (indirect,x)"),
+    # ("dcmiy", "dcm (indirect),y"),
+    # ("dcmz", "dcm zeropage"),
+    # ("dcmzx", "dcm zeropage,x"),
     # decrement tests (DEC, DEX, DEY)
     ("deca", "dec absolute"),
     ("decax", "dec absolute,x"),
@@ -328,7 +311,6 @@ binary_file_tests = [
     ("deczx", "dec zeropage,x"),
     ("dexn", "dex"),
     ("deyn", "dey"),
-
     # EOR tests
     ("eora", "eor absolute"),
     ("eorax", "eor absolute,x"),
@@ -338,7 +320,6 @@ binary_file_tests = [
     ("eoriy", "eor (indirect),y"),
     ("eorz", "eor zeropage"),
     ("eorzx", "eor zeropage,x"),
-
     # increment tests (INC, INX, INY)
     ("inca", "inc absolute"),
     ("incax", "inc absolute,x"),
@@ -346,11 +327,10 @@ binary_file_tests = [
     ("inczx", "inc zeropage,x"),
     ("inxn", "inx"),
     ("inyn", "iny"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # INS    ***    (aka ISC)
-    # This opcode INCs the contents of a memory location and then SBCs the result 
+    # This opcode INCs the contents of a memory location and then SBCs the result
     # from the A register.
     # Supported modes:
     # INS abcd        ;EF cd ab    ;No. Cycles= 6
@@ -366,35 +346,32 @@ binary_file_tests = [
     # Equivalent instructions:
     # INC $FF
     # SBC $FF
-    # 
-    #("insa", "ins absolute"),
-    #("insax", "ins absolute,x"),
-    #("insay", "ins absolute,y"),
-    #("insix", "ins (indirect,x)"),
-    #("insiy", "ins (indirect),y"),
-    #("insz", "ins zeropage"),
-    #("inszx", "ins zeropage,x"),
-
+    #
+    # ("insa", "ins absolute"),
+    # ("insax", "ins absolute,x"),
+    # ("insay", "ins absolute,y"),
+    # ("insix", "ins (indirect,x)"),
+    # ("insiy", "ins (indirect),y"),
+    # ("insz", "ins zeropage"),
+    # ("inszx", "ins zeropage,x"),
     # jump tests (JMP, JSR)
     ("jmpi", "jmp indirect"),
     ("jmpw", "jmp absolute"),
     ("jsrw", "jsr absolute"),
-
     # illegal op, most of which has been implemented in our emulator
-    # 
+    #
     # LAS    ***
-    # This opcode ANDs the contents of a memory location with the contents of the 
-    # stack pointer register and stores the result in the accumulator, the X 
+    # This opcode ANDs the contents of a memory location with the contents of the
+    # stack pointer register and stores the result in the accumulator, the X
     # register, and the stack pointer.  Affected flags: N Z.
     # One supported mode:
     # LAS abcd,Y      ;BB cd ab    ;No. Cycles= 4*
-    #     
-    #("lasay", "las absolute,y"),
-
+    #
+    # ("lasay", "las absolute,y"),
     # illegal op not yet supported in our emulator
-    # 
+    #
     # LAX    ***
-    # This opcode loads both the accumulator and the X register with the contents 
+    # This opcode loads both the accumulator and the X register with the contents
     # of a memory location.
     # Supported modes:
     # LAX abcd        ;AF cd ab    ;No. Cycles= 4
@@ -410,12 +387,11 @@ binary_file_tests = [
     # LDA $8400,Y
     # LDX $8400,Y
     ("laxa", "lax absolute"),
-    #("laxay", "lax absolute,y"), # not implemented yet
+    # ("laxay", "lax absolute,y"), # not implemented yet
     ("laxix", "lax (indirect,x)"),
     ("laxiy", "lax (indirect),y"),
     ("laxz", "lax zeropage"),
     ("laxzy", "lax zeropage,y"),
-
     # load tests (LDA, LDX, LDY)
     ("ldaa", "lda absolute"),
     ("ldaax", "lda absolute,x"),
@@ -435,11 +411,10 @@ binary_file_tests = [
     ("ldyb", "ldy immediate"),
     ("ldyz", "ldy zeropage"),
     ("ldyzx", "ldy zeropage,x"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # LSE    ***   (aka SRE)
-    # LSE LSRs the contents of a memory location and then EORs the result with 
+    # LSE LSRs the contents of a memory location and then EORs the result with
     # the accumulator.
     # Supported modes:
     # LSE abcd        ;4F cd ab    ;No. Cycles= 6
@@ -456,16 +431,15 @@ binary_file_tests = [
     # LSR $C100,X
     # EOR $C100,X
     #
-    #("lsea", "lse absolute"),
-    #("lseax", "lse absolute,x"),
-    #("lseay", "lse absolute,y"),
-    #("lseix", "lse (indirect,x)"),
-    #("lseiy", "lse (indirect),y"),
-    #("lsez", "lse zeropage"),
-    #("lsezx", "lse zeropage,x"),
-
+    # ("lsea", "lse absolute"),
+    # ("lseax", "lse absolute,x"),
+    # ("lseay", "lse absolute,y"),
+    # ("lseix", "lse (indirect,x)"),
+    # ("lseiy", "lse (indirect),y"),
+    # ("lsez", "lse zeropage"),
+    # ("lsezx", "lse zeropage,x"),
     # OAL    *** (aka LXA)
-    # This opcode ORs the A register with #$EE, ANDs the result with an immediate 
+    # This opcode ORs the A register with #$EE, ANDs the result with an immediate
     # value, and then stores the result in both A and X.
     # One supported mode:
     # OAL #ab         ;AB ab       ;No. Cycles= 2
@@ -477,30 +451,27 @@ binary_file_tests = [
     # TAX
     #
     # The page goes on to say:
-    # On my 128, xx may be EE,EF,FE, OR FF.  These possibilities appear to depend 
-    # on three factors: the X register, PC, and the previous instruction 
-    # executed.  Bit 0 is ORed from x, and also from PCH.  As for XAA, on my 128 
+    # On my 128, xx may be EE,EF,FE, OR FF.  These possibilities appear to depend
+    # on three factors: the X register, PC, and the previous instruction
+    # executed.  Bit 0 is ORed from x, and also from PCH.  As for XAA, on my 128
     # this opcode appears to work exactly as described in the list.
-    # On my 64, OAL produces all sorts of values for xx: 00,04,06,80, etc... A 
-    # rough scenario I worked out to explain this is here.  The constant value EE 
-    # disappears entirely.  Instead of ORing with EE, the accumulator is ORed 
-    # with certain bits of X and also ORed with certain bits of another 
-    # "register" (nature unknown, whether it be the data bus, or something else).  
-    # However, if OAL is preceded by certain other instructions like NOP, the 
+    # On my 64, OAL produces all sorts of values for xx: 00,04,06,80, etc... A
+    # rough scenario I worked out to explain this is here.  The constant value EE
+    # disappears entirely.  Instead of ORing with EE, the accumulator is ORed
+    # with certain bits of X and also ORed with certain bits of another
+    # "register" (nature unknown, whether it be the data bus, or something else).
+    # However, if OAL is preceded by certain other instructions like NOP, the
     # constant value EE reappears and the foregoing does not take place.
-    # 
-    #("lxab", "lxa immediate"),
-
+    #
+    # ("lxab", "lxa immediate"),
     # NOP tests
     ("nopn", "nop"),  # $ea
-
     # illegal op "NOP" tests
     ("nopa", "nop absolute"),  # $0c
     ("nopax", "nop absolute,x"),  # $1c
     ("nopb", "nop immediate"),  # $80
-    ("nopz", "nop zeropage"),   # $04
+    ("nopz", "nop zeropage"),  # $04
     ("nopzx", "nop zeropage,x"),  # $14
-
     # ORA tests
     ("oraa", "ora absolute"),
     ("oraax", "ora absolute,x"),
@@ -510,17 +481,15 @@ binary_file_tests = [
     ("oraiy", "ora (indirect),y"),
     ("oraz", "ora zeropage"),
     ("orazx", "ora zeropage,x"),
-
     # stack push/pull tests (PHA, PHP, PLA, PLP)
     ("phan", "pha"),
     ("phpn", "php"),
     ("plan", "pla"),
     ("plpn", "plp"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # RLA    ***
-    # RLA ROLs the contents of a memory location and then ANDs the result with 
+    # RLA ROLs the contents of a memory location and then ANDs the result with
     # the accumulator.
     # Supported modes:
     # RLA abcd        ;2F cd ab    ;No. Cycles= 6
@@ -536,15 +505,14 @@ binary_file_tests = [
     # Here's the same code using equivalent instructions.
     # ROL $FC,X
     # AND $FC,X
-    # 
-    #("rlaa", "rla absolute"),
-    #("rlaax", "rla absolute,x"),
-    #("rlaay", "rla absolute,y"),
-    #("rlaix", "rla (indirect,x)"),
-    #("rlaiy", "rla (indirect),y"),
-    #("rlaz", "rla zeropage"),
-    #("rlazx", "rla zeropage,x"),
-
+    #
+    # ("rlaa", "rla absolute"),
+    # ("rlaax", "rla absolute,x"),
+    # ("rlaay", "rla absolute,y"),
+    # ("rlaix", "rla (indirect,x)"),
+    # ("rlaiy", "rla (indirect),y"),
+    # ("rlaz", "rla zeropage"),
+    # ("rlazx", "rla zeropage,x"),
     # rotate tests (ROL, ROR)
     ("rola", "rol absolute"),
     ("rolax", "rol absolute,x"),
@@ -556,11 +524,10 @@ binary_file_tests = [
     ("rorn", "ror"),
     ("rorz", "ror zeropage"),
     ("rorzx", "ror zeropage,x"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # RRA    ***
-    # RRA RORs the contents of a memory location and then ADCs the result with 
+    # RRA RORs the contents of a memory location and then ADCs the result with
     # the accumulator.
     # Supported modes:
     # RRA abcd        ;6F cd ab    ;No. Cycles= 6
@@ -576,18 +543,16 @@ binary_file_tests = [
     # Equivalent instructions:
     # ROR $030C
     # ADC $030C
-    #("rraa", "rra absolute"),
-    #("rraax", "rra absolute,x"),
-    #("rraay", "rra absolute,y"),
-    #("rraix", "rra (indirect,x)"),
-    #("rraiy", "rra (indirect),y"),
-    #("rraz", "rra zeropage"),
-    #("rrazx", "rra zeropage,x"),
-
+    # ("rraa", "rra absolute"),
+    # ("rraax", "rra absolute,x"),
+    # ("rraay", "rra absolute,y"),
+    # ("rraix", "rra (indirect,x)"),
+    # ("rraiy", "rra (indirect),y"),
+    # ("rraz", "rra zeropage"),
+    # ("rrazx", "rra zeropage,x"),
     # return tests (RTI, RTS)
     ("rtin", "rti"),
     ("rtsn", "rts"),
-
     # SBC tests
     ("sbca", "sbc absolute"),
     ("sbcax", "sbc absolute,x"),
@@ -597,24 +562,22 @@ binary_file_tests = [
     ("sbciy", "sbc (indirect),y"),
     ("sbcz", "sbc zeropage"),
     ("sbczx", "sbc zeropage,x"),
-
     # illegal op SBC $EB (equivalent to $E9)
     ("sbcb(eb)", "sbcb(eb)"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # Note:  illegal op names aren't standardized, not just different naming, but
     # sometimes exchanged uses of the same names.  e.g., I've seen some flip
     # their "SAX" and "AXS" labels
-    # 
+    #
     # SAX    *** (aka SBX, aka AXS)
-    # SAX ANDs the contents of the A and X registers (leaving the contents of A 
+    # SAX ANDs the contents of the A and X registers (leaving the contents of A
     # intact), subtracts an immediate value, and then stores the result in X.
-    # ... A few points might be made about the action of subtracting an immediate 
-    # value.  It actually works just like the CMP instruction, except that CMP 
-    # does not store the result of the subtraction it performs in any register.  
-    # This subtract operation is not affected by the state of the Carry flag, 
-    # though it does affect the Carry flag.  It does not affect the Overflow 
+    # ... A few points might be made about the action of subtracting an immediate
+    # value.  It actually works just like the CMP instruction, except that CMP
+    # does not store the result of the subtraction it performs in any register.
+    # This subtract operation is not affected by the state of the Carry flag,
+    # though it does affect the Carry flag.  It does not affect the Overflow
     # flag.
     # One supported mode:
     # SAX #ab         ;CB ab       ;No. Cycles= 2
@@ -629,18 +592,16 @@ binary_file_tests = [
     # TAX
     # LDA $02
     # Note: Memory location $02 would not be altered by the SAX opcode.
-    # 
-    #("sbxb", "sbx immediate"),
-
+    #
+    # ("sbxb", "sbx immediate"),
     # set flag instruction tests
     ("secn", "sec"),
     ("sedn", "sed"),
     ("sein", "sei"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # AXA    ***  (aka SHA)
-    # This opcode stores the result of A AND X AND the high byte of the target 
+    # This opcode stores the result of A AND X AND the high byte of the target
     # address of the operand +1 in memory.
     # Supported modes:
     # AXA abcd,Y      ;9F cd ab    ;No. Cycles= 5
@@ -656,18 +617,17 @@ binary_file_tests = [
     # PLA
     # LDX $02
     # Note: Memory location $02 would not be altered by the AXA opcode.
-    #     
-    #("shaay", "sha absolute,y"),
-    #("shaiy", "sha (indirect),y"),
-
+    #
+    # ("shaay", "sha absolute,y"),
+    # ("shaiy", "sha (indirect),y"),
     # illegal op not yet supported in our emulator
-    # 
+    #
     # TAS    *** (aka SHS)
-    # This opcode ANDs the contents of the A and X registers (without changing 
-    # the contents of either register) and transfers the result to the stack 
-    # pointer.  It then ANDs that result with the contents of the high byte of 
-    # the target address of the operand +1 and stores that final result in 
-    # memory.  
+    # This opcode ANDs the contents of the A and X registers (without changing
+    # the contents of either register) and transfers the result to the stack
+    # pointer.  It then ANDs that result with the contents of the high byte of
+    # the target address of the operand +1 and stores that final result in
+    # memory.
     # One supported mode:
     # TAS abcd,Y      ;9B cd ab    ;No. Cycles= 5
     # (Sub-instructions: STA, TXS)
@@ -685,12 +645,11 @@ binary_file_tests = [
     # LDX $02
     # Note: Memory location $02 would not be altered by the TAS opcode.
     #
-    #("shsay", "shs absolute,y"),
-
+    # ("shsay", "shs absolute,y"),
     # illegal op not yet supported in our emulator
-    # 
+    #
     # XAS    *** (aka SHX)
-    # This opcode ANDs the contents of the X register with <ab+1> and stores the 
+    # This opcode ANDs the contents of the X register with <ab+1> and stores the
     # result in memory.
     # One supported mode:
     # XAS abcd,Y      ;9E cd ab    ;No. Cycles= 5
@@ -704,11 +663,10 @@ binary_file_tests = [
     # PLA
     #
     # ("shxay", "shx absolute,y"),
-
     # illegal op not yet supported in our emulator
-    # 
+    #
     # SAY    *** (aka SHY)
-    # This opcode ANDs the contents of the Y register with <ab+1> and stores the 
+    # This opcode ANDs the contents of the Y register with <ab+1> and stores the
     # result in memory.
     # One supported mode:
     # SAY abcd,X      ;9C cd ab    ;No. Cycles= 5
@@ -721,8 +679,7 @@ binary_file_tests = [
     # STA $7700,X
     # PLA
     #
-    #("shyax", "shy absolute,x"),
-
+    # ("shyax", "shy absolute,x"),
     # store tests (STA, STX, STY)
     ("staa", "sta absolute"),
     ("staax", "sta absolute,x"),
@@ -737,7 +694,6 @@ binary_file_tests = [
     ("stya", "sty absolute"),
     ("styz", "sty zeropage"),
     ("styzx", "sty zeropage,x"),
-
     # register transfer tests (TXS, TXA, TXS, TYA, TAX, TAY)
     ("tsxn", "tsx"),
     ("txan", "txa"),
@@ -745,7 +701,6 @@ binary_file_tests = [
     ("tyan", "tya"),
     ("taxn", "tax"),
     ("tayn", "tay"),
-
     # 6510 IO trap, page boundary, and wrap around tests
     ("trap1", "trap1"),
     ("trap2", "trap2"),
@@ -764,11 +719,11 @@ binary_file_tests = [
     ("trap15", "trap15"),
     ("trap16", "trap16"),
     ("trap17", "trap17"),
-    ]
+]
 
-start_tests_at = 0 # start at the beginning
+start_tests_at = 0  # start at the beginning
 # when debugging, start at the named test:
-start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('adca')
+start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index("adca")
 
 tests_to_run = binary_file_tests[start_tests_at:]
 
@@ -791,28 +746,33 @@ class TestSuitesForC64(unittest.TestCase):
         cpuState = thinC64Emulator.ThinC64Emulator()
 
         # patch $EA31 to jump to the $EA81 exit
-        cpuState.patch_kernal(59953, [0x4c, 0x81, 0xea])
+        cpuState.patch_kernal(59953, [0x4C, 0x81, 0xEA])
 
         # Replace some missing routines with RTS instructions (so they're not BRKs)
         cpuState.patch_kernal(65490, [0x60])  # $FFD2 CHROUT
         cpuState.patch_kernal(65091, [0x60])  # $FE43 NMI Interrupt Entry Point
         cpuState.patch_kernal(64738, [0x60])  # $FCE2 power-on reset routine
         cpuState.patch_kernal(65095, [0x60])  # $FE47 NMI handler
-        cpuState.patch_kernal(65126, [0x60])  # $FE66 init things then BASIC warm start using vec $A002
+        cpuState.patch_kernal(
+            65126, [0x60]
+        )  # $FE66 init things then BASIC warm start using vec $A002
         cpuState.patch_kernal(58260, [0x60])  # $E394 basic cold entry
         cpuState.patch_kernal(58235, [0x60])  # $E37B basic warm entry / NMI entry
 
-        print('\nRunning test "%s"' %(test_name))
+        print('\nRunning test "%s"' % (test_name))
 
         test_prg = read_binary_file(
-            project_to_absolute_path('test/emulatorTests/wolfgangLorenzTestsBin/'+file_name))
+            project_to_absolute_path(
+                "test/emulatorTests/wolfgangLorenzTestsBin/" + file_name
+            )
+        )
         test_prg = test_prg[2:]  # strip off load addr (it's always 2049)
 
         cpuState.inject_bytes(2049, test_prg)
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
-        cpuState.init_cpu(2070) # $816
-        cpuState.stack_wrapping = True # required by TXS test
+        cpuState.init_cpu(2070)  # $816
+        cpuState.stack_wrapping = True  # required by TXS test
 
         # This http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html says when loading
         # a test yourself (instead of using test code's loader), do these settings:
@@ -821,7 +781,7 @@ class TestSuitesForC64(unittest.TestCase):
         #    $A002 = $00; $A003 = $80
         #    $FFFE = $48; $FFFF = $FF (done in setUp())
         #    Set S to $FD and set $01FE = $FF and $01FF = $7F (going to ignore this)
-        cpuState.patch_basic(0xa002, [0x00, 0x80])  # override values from setUp() 
+        cpuState.patch_basic(0xA002, [0x00, 0x80])  # override values from setUp()
 
         # Stack
         #
@@ -835,44 +795,48 @@ class TestSuitesForC64(unittest.TestCase):
         # - e39c return from basic cold start
         #
         # But just this appears to be enough for the C64 tests:
-        cpuState.sp = 0xf6
+        cpuState.sp = 0xF6
 
-        cpuState.patch_basic(42100, [0xea])  # Tests will sometimes exit to BASIC through $A474, trap it later
+        cpuState.patch_basic(
+            42100, [0xEA]
+        )  # Tests will sometimes exit to BASIC through $A474, trap it later
 
         # simulate getting a spacebar keypress from the keyboard buffer whenever $FFE4 is called
-        cpuState.patch_kernal(0xffe4, [0xa9, 0x20, 0x60])  # LDA #$20, RTS
+        cpuState.patch_kernal(0xFFE4, [0xA9, 0x20, 0x60])  # LDA #$20, RTS
 
         output_text = ""
         passed_test = True
         while cpuState.runcpu():
 
-            #debugging:
-            #if cpuState.cpucycles == 3900:
+            # debugging:
+            # if cpuState.cpucycles == 3900:
             #    print("breakpoint")
 
             # Capture petscii characters sent to screen print routine
-            if cpuState.pc == 65490: # $FFD2
+            if cpuState.pc == 65490:  # $FFD2
                 output_text += chr(cpuState.a)
 
             # Don't need test to load the next test, as this python is managing the test loading
-            if cpuState.pc == 57711: # load is $E168, skips entry point and jumps to $E16F
+            if (
+                cpuState.pc == 57711
+            ):  # load is $E168, skips entry point and jumps to $E16F
                 # debugging: pointer to next test name string (zero-terminated) is
                 #    mem($BC) << 8 | mem($BB)
-                break # we're done with this test
+                break  # we're done with this test
 
-            if cpuState.pc == 42100: # if exit to BASIC
+            if cpuState.pc == 42100:  # if exit to BASIC
                 print("DEBUG: exit to BASIC")
 
             # if test program is asking for keyboard input from GETIN, that means we hit an error.
             # It prints the error, and waits for a key press (which we stub in)
-            if cpuState.pc == 0xffe4: # $FFE4
+            if cpuState.pc == 0xFFE4:  # $FFE4
                 passed_test = False
-                #print("\nContext, data, accu, xreg, yreg, flags, sp")
+                # print("\nContext, data, accu, xreg, yreg, flags, sp")
                 print('PRG output: "%s"' % (mixed_case_petscii_to_ascii(output_text)))
                 output_text = ""
-                #break
+                # break
 
-            if cpuState.pc == 59953: # $EA31
+            if cpuState.pc == 59953:  # $EA31
                 print("DEBUG: software IRQ exit routine entered")
 
             if cpuState.pc == 64738:
@@ -882,9 +846,8 @@ class TestSuitesForC64(unittest.TestCase):
             print(mixed_case_petscii_to_ascii(output_text))
         self.assertTrue(passed_test)
 
-
     # on my machine, takes about 1.5 min to run
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_bcd(self):
         global cpuState
 
@@ -892,43 +855,75 @@ class TestSuitesForC64(unittest.TestCase):
         # with bank management, just the 6502 emulator
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
-        test_prg = read_binary_file(project_to_absolute_path(
-            'test/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
+        test_prg = read_binary_file(
+            project_to_absolute_path(
+                "test/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin"
+            )
+        )
 
         # The Klaus Dormann BCD test code assumes it can have ZP $00 through $10,
         # and that code can live at $0200
         cpuState.inject_bytes(0, test_prg)
         cpuState.init_cpu(0x200)
 
-        while cpuState.runcpu(): # will terminated when RTS has no stack to pop
+        while cpuState.runcpu():  # will terminated when RTS has no stack to pop
             pass
 
-        result = cpuState.get_mem(0x000b)
+        result = cpuState.get_mem(0x000B)
         if result != 0:  # if a test failed...
-            print("\n$0000 N1 number to be added or subtracted: ${:02x}" \
-                .format(cpuState.get_mem(0x00)))
-            print("$0001 N2 number to be added or subtracted: ${:02x}" \
-                .format(cpuState.get_mem(0x01)))
-            print("$0002 HA accumulator result when using binary arithmatic: ${:02x}" \
-                .format(cpuState.get_mem(0x02)))
-            print("$0003 HNVZC flag results when using binary arithmatic: ${:08b}" \
-                .format(cpuState.get_mem(0x03)))
-            print("$0004 DA accumulator result when using decimal mode: ${:02x}" \
-                .format(cpuState.get_mem(0x04)))
-            print("$0005 DNVZC flag results when using decimal mode: ${:08b}" \
-                .format(cpuState.get_mem(0x05)))
-            print("$0006 AR predicted accumulator result: ${:02x}" \
-                .format(cpuState.get_mem(0x06)))
-            print("$0007 NF predicted negative flag: ${:08b}" \
-                .format(cpuState.get_mem(0x07)))
-            print("$0008 VF predicted overflow flag: ${:08b}" \
-                .format(cpuState.get_mem(0x08)))
-            print("$0009 ZF predicted zero flag: ${:08b}" \
-                .format(cpuState.get_mem(0x09)))
-            print("$000A CF predicted carry flag: ${:08b}" \
-                .format(cpuState.get_mem(0x0a)))        
+            print(
+                "\n$0000 N1 number to be added or subtracted: ${:02x}".format(
+                    cpuState.get_mem(0x00)
+                )
+            )
+            print(
+                "$0001 N2 number to be added or subtracted: ${:02x}".format(
+                    cpuState.get_mem(0x01)
+                )
+            )
+            print(
+                "$0002 HA accumulator result when using binary arithmatic: ${:02x}".format(
+                    cpuState.get_mem(0x02)
+                )
+            )
+            print(
+                "$0003 HNVZC flag results when using binary arithmatic: ${:08b}".format(
+                    cpuState.get_mem(0x03)
+                )
+            )
+            print(
+                "$0004 DA accumulator result when using decimal mode: ${:02x}".format(
+                    cpuState.get_mem(0x04)
+                )
+            )
+            print(
+                "$0005 DNVZC flag results when using decimal mode: ${:08b}".format(
+                    cpuState.get_mem(0x05)
+                )
+            )
+            print(
+                "$0006 AR predicted accumulator result: ${:02x}".format(
+                    cpuState.get_mem(0x06)
+                )
+            )
+            print(
+                "$0007 NF predicted negative flag: ${:08b}".format(
+                    cpuState.get_mem(0x07)
+                )
+            )
+            print(
+                "$0008 VF predicted overflow flag: ${:08b}".format(
+                    cpuState.get_mem(0x08)
+                )
+            )
+            print(
+                "$0009 ZF predicted zero flag: ${:08b}".format(cpuState.get_mem(0x09))
+            )
+            print(
+                "$000A CF predicted carry flag: ${:08b}".format(cpuState.get_mem(0x0A))
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # ctsTestingTools.env_to_stdout()
     unittest.main(failfast=False)

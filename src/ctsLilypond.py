@@ -8,14 +8,25 @@ from ctsMChirp import MChirpSong
 # TODO:
 # - There's possibly redundant code between export_clip_to_lilypond and export_song_to_lilypond
 
-lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
-              'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
-              }
+lp_pitches = {
+    "sharps": ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
+    "flats": ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"],
+}
 
 lp_durations = {
-    Fraction(4, 1): '1', Fraction(3, 1): '2.', Fraction(2, 1): '2', Fraction(3, 2): '4.', Fraction(1, 1): '4',
-    Fraction(3, 4): '8.', Fraction(1, 2): '8', Fraction(3, 8): '16.', Fraction(1, 4): '16',
-    Fraction(3, 16): '32.', Fraction(1, 8): '32', Fraction(3, 32): '64.', Fraction(1, 16): '64'
+    Fraction(4, 1): "1",
+    Fraction(3, 1): "2.",
+    Fraction(2, 1): "2",
+    Fraction(3, 2): "4.",
+    Fraction(1, 1): "4",
+    Fraction(3, 4): "8.",
+    Fraction(1, 2): "8",
+    Fraction(3, 8): "16.",
+    Fraction(1, 4): "16",
+    Fraction(3, 16): "32.",
+    Fraction(1, 8): "32",
+    Fraction(3, 32): "64.",
+    Fraction(1, 16): "64",
 }
 
 
@@ -49,10 +60,10 @@ def make_lp_notes(note_name, duration, ppq):
     if duration <= 0:
         raise ChiptuneSAKValueError("Illegal note duration: %d" % duration)
     durs = decompose_duration(duration, ppq, lp_durations)
-    if note_name == 'r':
-        retval = ' '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
+    if note_name == "r":
+        retval = " ".join("%s%s" % (note_name, lp_durations[f]) for f in durs)
     else:
-        retval = '~ '.join("%s%s" % (note_name, lp_durations[f]) for f in durs)
+        retval = "~ ".join("%s%s" % (note_name, lp_durations[f]) for f in durs)
     return retval
 
 
@@ -63,8 +74,15 @@ def avg_pitch(track):
         :param track: an MChirpTrack
         :return: average pitch as MIDI note number
     """
-    total = sum(n.note_num for measure in track.measures for n in measure.events if isinstance(n, Note))
-    number = sum(1 for measure in track.measures for n in measure.events if isinstance(n, Note))
+    total = sum(
+        n.note_num
+        for measure in track.measures
+        for n in measure.events
+        if isinstance(n, Note)
+    )
+    number = sum(
+        1 for measure in track.measures for n in measure.events if isinstance(n, Note)
+    )
     if number == 0:
         raise ChiptuneSAKContentError("Track %s has no notes" % track.name)
     return total / number
@@ -73,18 +91,18 @@ def avg_pitch(track):
 class Lilypond(ChiptuneSAKIO):
     @classmethod
     def cts_type(cls):
-        return 'Lilypond'
+        return "Lilypond"
 
     def __init__(self):
         ChiptuneSAKIO.__init__(self)
-        self.set_options(format='song')
-        self.current_pitch_set = lp_pitches['sharps']
-        self.current_clef = 'treble'
+        self.set_options(format="song")
+        self.current_pitch_set = lp_pitches["sharps"]
+        self.current_clef = "treble"
         self.current_ottava = 0
 
     @property
     def format(self):
-        return self.get_option('format')[0].lower()
+        return self.get_option("format")[0].lower()
 
     def to_bin(self, mchirp_song, **kwargs):
         """
@@ -102,10 +120,10 @@ class Lilypond(ChiptuneSAKIO):
               Required for 'clip' format, ignored otherwise.
         """
         self.set_options(**kwargs)
-        if self.format == 'c':
-            measures = list(self.get_option('measures', []))
+        if self.format == "c":
+            measures = list(self.get_option("measures", []))
             return self.export_clip_to_lilypond(mchirp_song, measures)
-        elif self.format == 's':
+        elif self.format == "s":
             return self.export_song_to_lilypond(mchirp_song)
         else:
             raise ChiptuneSAKValueError(f"Unrecognized format {self.format}")
@@ -124,23 +142,26 @@ class Lilypond(ChiptuneSAKIO):
         :keyword options: see to_bin()
         """
         self.set_options(**kwargs)
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             f.write(self.to_bin(mchirp_song, **kwargs))
 
     def clef(self, t_range):
         avg = sum(t_range) / len(t_range)
         clef = self.current_clef
-        if self.current_clef == 'treble' and avg < 60:
-            clef = 'bass'
-        elif self.current_clef == 'bass' and avg > 60:
-            clef = 'treble'
+        if self.current_clef == "treble" and avg < 60:
+            clef = "bass"
+        elif self.current_clef == "bass" and avg > 60:
+            clef = "treble"
         return clef
 
     def ottava(self, note_num):
         ottava = self.current_ottava
-        bass_transitions = (41 - 3*self.current_ottava, 66 + 3*self.current_ottava)
-        treble_transitions = (55 + 3*self.current_ottava, 84 - 3*self.current_ottava)
-        if self.current_clef == 'bass':
+        bass_transitions = (41 - 3 * self.current_ottava, 66 + 3 * self.current_ottava)
+        treble_transitions = (
+            55 + 3 * self.current_ottava,
+            84 - 3 * self.current_ottava,
+        )
+        if self.current_clef == "bass":
             if note_num < bass_transitions[0]:
                 ottava = -1
             elif note_num > bass_transitions[1]:
@@ -179,50 +200,72 @@ class Lilypond(ChiptuneSAKIO):
                 f = Fraction(e.duration / self.ppq).limit_denominator(64)
                 if f in lp_durations:
                     measure_contents.append(
-                        "%s%s%s" % (lp_pitch_to_note_name(e.note_num, self.current_pitch_set),
-                                    lp_durations[f], '~' if e.tied_from else ''))
+                        "%s%s%s"
+                        % (
+                            lp_pitch_to_note_name(e.note_num, self.current_pitch_set),
+                            lp_durations[f],
+                            "~" if e.tied_from else "",
+                        )
+                    )
                 else:
-                    measure_contents.append(make_lp_notes(
-                        lp_pitch_to_note_name(e.note_num, self.current_pitch_set),
-                        e.duration, self.ppq))
+                    measure_contents.append(
+                        make_lp_notes(
+                            lp_pitch_to_note_name(e.note_num, self.current_pitch_set),
+                            e.duration,
+                            self.ppq,
+                        )
+                    )
 
             elif isinstance(e, Rest):
                 f = Fraction(e.duration / self.ppq).limit_denominator(64)
                 if f in lp_durations:
                     measure_contents.append("r%s" % (lp_durations[f]))
                 else:
-                    measure_contents.append(make_lp_notes('r', e.duration, self.ppq))
+                    measure_contents.append(make_lp_notes("r", e.duration, self.ppq))
 
             elif isinstance(e, Triplet):
-                measure_contents.append('\\tuplet 3/2 {')
+                measure_contents.append("\\tuplet 3/2 {")
                 for te in e.content:
                     if isinstance(te, Note):
-                        measure_contents.append(make_lp_notes(
-                            lp_pitch_to_note_name(te.note_num, self.current_pitch_set),
-                            te.duration * Fraction(3/2), self.ppq))
+                        measure_contents.append(
+                            make_lp_notes(
+                                lp_pitch_to_note_name(
+                                    te.note_num, self.current_pitch_set
+                                ),
+                                te.duration * Fraction(3 / 2),
+                                self.ppq,
+                            )
+                        )
                     elif isinstance(te, Rest):
-                        measure_contents.append(make_lp_notes('r', te.duration * Fraction(3 / 2), self.ppq))
+                        measure_contents.append(
+                            make_lp_notes("r", te.duration * Fraction(3 / 2), self.ppq)
+                        )
 
-                measure_contents.append('}')
+                measure_contents.append("}")
 
             elif isinstance(e, MeasureMarker):
-                measure_contents.append('|')
+                measure_contents.append("|")
 
             elif isinstance(e, TimeSignatureEvent):
-                if e.num != self.current_time_signature.num or e.denom != self.current_time_signature.denom:
-                    measure_contents.append('\\time %d/%d' % (e.num, e.denom))
+                if (
+                    e.num != self.current_time_signature.num
+                    or e.denom != self.current_time_signature.denom
+                ):
+                    measure_contents.append("\\time %d/%d" % (e.num, e.denom))
                     self.current_time_signature = copy.copy(e)
 
             elif isinstance(e, KeySignatureEvent):
                 if e.key.key_signature != self.current_key_signature:
                     key_name = e.key.key_name
                     self.current_pitch_set = lp_pitches[e.key.accidentals()]
-                    key_name = key_name.replace('#', 'is')
-                    key_name = key_name.replace('b', 'es')
-                    if e.key.key_signature.type == 'minor':
-                        measure_contents.append('\\key %s \\minor' % (key_name.lower()[:-1]))
+                    key_name = key_name.replace("#", "is")
+                    key_name = key_name.replace("b", "es")
+                    if e.key.key_signature.type == "minor":
+                        measure_contents.append(
+                            "\\key %s \\minor" % (key_name.lower()[:-1])
+                        )
                     else:
-                        measure_contents.append('\\key %s \\major' % (key_name.lower()))
+                        measure_contents.append("\\key %s \\major" % (key_name.lower()))
                     self.current_key_signature = copy.copy(e.key.key_signature)
 
         return measure_contents
@@ -245,37 +288,45 @@ class Lilypond(ChiptuneSAKIO):
             raise ChiptuneSAKContentError("No measures to export!")
         # Set these to the default so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-        self.current_key_signature = ctsKey.ChirpKey('C').key_signature
-        self.current_clef = 'treble'
+        self.current_key_signature = ctsKey.ChirpKey("C").key_signature
+        self.current_clef = "treble"
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
         output = []
         ks = mchirp_song.get_key_signature(measures[0].start_time)
         if ks.start_time < measures[0].start_time:
-            measures[0].events.insert(0, KeySignatureEvent(measures[0].start_time, ks.key))
+            measures[0].events.insert(
+                0, KeySignatureEvent(measures[0].start_time, ks.key)
+            )
 
         ts = mchirp_song.get_time_signature(measures[0].start_time)
         if ts.start_time < measures[0].start_time:
-            measures[0].events.insert(0, TimeSignatureEvent(measures[0].start_time, ts.num, ts.denom))
+            measures[0].events.insert(
+                0, TimeSignatureEvent(measures[0].start_time, ts.num, ts.denom)
+            )
 
         output.append('\\version "2.18.2"')
-        output.append('''
+        output.append(
+            """
             \\paper { 
             indent=0\\mm line-width=120\\mm oddHeaderMarkup = ##f
             evenHeaderMarkup = ##f oddFooterMarkup = ##f evenFooterMarkup = ##f 
             page-breaking = #ly:one-line-breaking }
-        ''')
-        note_range = (min(e.note_num for m in measures for e in m.events if isinstance(e, Note)),
-                      max(e.note_num for m in measures for e in m.events if isinstance(e, Note)))
+        """
+        )
+        note_range = (
+            min(e.note_num for m in measures for e in m.events if isinstance(e, Note)),
+            max(e.note_num for m in measures for e in m.events if isinstance(e, Note)),
+        )
         self.current_clef = self.clef(note_range)
         self.current_ottava = 0
-        output.append('\\new Staff  {')
-        output.append('\\clef %s' % self.current_clef)
+        output.append("\\new Staff  {")
+        output.append("\\clef %s" % self.current_clef)
         for im, m in enumerate(measures):
             measure_contents = self.measure_to_lilypond(m)
-            output.append(' '.join(measure_contents))
-        output.append('}')
-        return '\n'.join(output)
+            output.append(" ".join(measure_contents))
+        output.append("}")
+        return "\n".join(output)
 
     def export_song_to_lilypond(self, mchirp_song):
         """
@@ -292,37 +343,51 @@ class Lilypond(ChiptuneSAKIO):
 
         # Set these to the default, so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-        self.current_key_signature = ctsKey.ChirpKey('C').key_signature
-        self.current_clef = 'treble'
+        self.current_key_signature = ctsKey.ChirpKey("C").key_signature
+        self.current_clef = "treble"
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
         output = []
         output.append('\\version "2.18.2"')
-        output.append('\\header {')
+        output.append("\\header {")
         if len(mchirp_song.metadata.name) > 0:
             output.append(' title = "%s"' % mchirp_song.metadata.name)
         output.append('composer = "%s"' % mchirp_song.metadata.composer)
-        output.append('}')
+        output.append("}")
         #  ---- end of headers ----
         tracks = [t for t in mchirp_song.tracks]
-        if self.get_option('autosort', False):
-            tracks = sorted([t for t in mchirp_song.tracks], key=avg_pitch, reverse=True)
-        output.append('\\new StaffGroup <<')
+        if self.get_option("autosort", False):
+            tracks = sorted(
+                [t for t in mchirp_song.tracks], key=avg_pitch, reverse=True
+            )
+        output.append("\\new StaffGroup <<")
         for it, t in enumerate(tracks):
             self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-            self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+            self.current_key_signature = ctsKey.ChirpKey("C").key_signature
             measures = copy.copy(t.measures)
-            track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)),
-                           max(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)))
+            track_range = (
+                min(
+                    e.note_num
+                    for m in t.measures
+                    for e in m.events
+                    if isinstance(e, Note)
+                ),
+                max(
+                    e.note_num
+                    for m in t.measures
+                    for e in m.events
+                    if isinstance(e, Note)
+                ),
+            )
             self.current_clef = self.clef(track_range)
             self.current_ottava = 0
             output.append('\\new Staff \\with { instrumentName = #"%s" } {' % t.name)
-            output.append('\\clef %s' % self.current_clef)
+            output.append("\\clef %s" % self.current_clef)
             for im, m in enumerate(measures):
                 output.append("%% measure %d" % (im + 1))
                 measure_contents = self.measure_to_lilypond(m)
-                output.append(' '.join(measure_contents))
+                output.append(" ".join(measure_contents))
             output.append('\\bar "||"')
-            output.append('}')
-        output.append('>>\n')
-        return '\n'.join(output)
+            output.append("}")
+        output.append(">>\n")
+        return "\n".join(output)

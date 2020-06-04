@@ -1,6 +1,7 @@
 import sys
 import copy
-sys.path.append('../src/')
+
+sys.path.append("../src/")
 import unittest
 import ctsMidi
 import ctsChirp
@@ -8,14 +9,14 @@ import ctsRChirp
 import ctsMChirp
 from ctsConstants import project_to_absolute_path
 
-SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
+SONG_TEST_SONG = project_to_absolute_path("test/data/twinkle.mid")
 
 
 class ChirpConversionTestCase(unittest.TestCase):
     def setUp(self):
         midi = ctsMidi.MIDI()
         self.test_song = midi.to_chirp(SONG_TEST_SONG)
-        self.test_song.quantize_from_note_name('16')
+        self.test_song.quantize_from_note_name("16")
         self.test_song.remove_polyphony()
 
     def test_chirp_to_mchirp_to_chirp(self):

@@ -1,4 +1,5 @@
 import sys
-sys.path.append('./src')
-sys.path.append('../src')
-sys.path.append('../sandbox')
+
+sys.path.append("./src")
+sys.path.append("../src")
+sys.path.append("../sandbox")

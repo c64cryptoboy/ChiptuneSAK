@@ -17,20 +17,20 @@ This example shows how to process a clip of a song into a PNG file using Lilypon
 
 """
 
-output_folder = str(project_to_absolute_path('examples\\data\\lilypond')) + '\\'
+output_folder = str(project_to_absolute_path("examples\\data\\lilypond")) + "\\"
 input_folder = output_folder
-input_file = input_folder + 'bach_invention_4.mid'
-output_ly_file = output_folder + 'bach_invention_4.ly'
+input_file = input_folder + "bach_invention_4.mid"
+output_ly_file = output_folder + "bach_invention_4.ly"
 
 # Read in the midi song and quantize
-chirp_song = ctsMidi.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
+chirp_song = ctsMidi.MIDI().to_chirp(input_file, quantization="16", polyphony=False)
 # Convert to mchirp
 mchirp_song = chirp_song.to_mchirp()
 
 # Create the lilpond I/O class
 lp = ctsLilypond.Lilypond()
 # Set the format to do a clip and set the measures to those you want
-lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[3:8])
+lp.set_options(format="clip", measures=mchirp_song.tracks[0].measures[3:8])
 # Write it straight to a file
 lp.to_file(mchirp_song, output_ly_file)
 
@@ -40,5 +40,12 @@ os.chdir(output_folder)
 # Adjust the path the the file
 ly_file = os.path.basename(output_ly_file)
 # Run lilypond
-args = ['lilypond', '-ddelete-intermediate-files', '-dbackend=eps', '-dresolution=600', '--png', ly_file]
+args = [
+    "lilypond",
+    "-ddelete-intermediate-files",
+    "-dbackend=eps",
+    "-dresolution=600",
+    "--png",
+    ly_file,
+]
 subprocess.call(args, shell=True)

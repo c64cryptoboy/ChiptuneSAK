@@ -10,69 +10,69 @@ from ctsConstants import ARCH
 
 VERBOSE = False
 
+
 class Test6502Emulator(unittest.TestCase):
     def setUp(self):
         pass
 
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_stack_wrapping(self):
         cpuState = cts6502Emulator.Cpu6502Emulator()
-  
-        cpuState.inject_bytes(32768, [0x60]) # RTS 
+
+        cpuState.inject_bytes(32768, [0x60])  # RTS
         cpuState.stack_wrapping = False
 
         cpuState.init_cpu(32768)
-        self.assertTrue(cpuState.sp == 0xff)
+        self.assertTrue(cpuState.sp == 0xFF)
         # With wrapping suppressed, RTS on an empty stack terminates the execution
-        # (without stack pops)        
-        self.assertTrue(cpuState.runcpu() == 0) 
-
-        cpuState.init_cpu(32768)
-        cpuState.sp = 0xfe
+        # (without stack pops)
         self.assertTrue(cpuState.runcpu() == 0)
 
         cpuState.init_cpu(32768)
-        cpuState.sp = 0xfd
-        self.assertTrue(cpuState.runcpu() == 1)
-        self.assertTrue(cpuState.sp == 0xff)
-
-        cpuState.inject_bytes(32768, [0x40]) # RTI 
-
-        cpuState.init_cpu(32768)
-        cpuState.sp = 0xfd
+        cpuState.sp = 0xFE
         self.assertTrue(cpuState.runcpu() == 0)
 
         cpuState.init_cpu(32768)
-        cpuState.sp = 0xfc
+        cpuState.sp = 0xFD
+        self.assertTrue(cpuState.runcpu() == 1)
+        self.assertTrue(cpuState.sp == 0xFF)
+
+        cpuState.inject_bytes(32768, [0x40])  # RTI
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xFD
+        self.assertTrue(cpuState.runcpu() == 0)
+
+        cpuState.init_cpu(32768)
+        cpuState.sp = 0xFC
         self.assertTrue(cpuState.runcpu() == 1)
 
-        cpuState.inject_bytes(32768, [0x60]) # RTS 
+        cpuState.inject_bytes(32768, [0x60])  # RTS
         cpuState.stack_wrapping = True
 
         cpuState.init_cpu(32768)
-        cpuState.sp = 0xfd
+        cpuState.sp = 0xFD
         self.assertTrue(cpuState.runcpu() == 1)
-        self.assertTrue(cpuState.sp == 0xff)
+        self.assertTrue(cpuState.sp == 0xFF)
 
         cpuState.init_cpu(32768)
-        cpuState.sp = 0xfe
+        cpuState.sp = 0xFE
         self.assertTrue(cpuState.runcpu() == 1)
         self.assertTrue(cpuState.sp == 0x00)
 
-        cpuState.inject_bytes(32768, [0x40]) # RTI 
+        cpuState.inject_bytes(32768, [0x40])  # RTI
 
         cpuState.init_cpu(32768)
-        cpuState.sp = 0xfc
+        cpuState.sp = 0xFC
         self.assertTrue(cpuState.runcpu() == 1)
-        self.assertTrue(cpuState.sp == 0xff)
+        self.assertTrue(cpuState.sp == 0xFF)
 
         cpuState.init_cpu(32768)
-        cpuState.sp = 0xfe
+        cpuState.sp = 0xFE
         self.assertTrue(cpuState.runcpu() == 1)
         self.assertTrue(cpuState.sp == 0x01)
 
-
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_obfuscated_sig(self):
         # Emulate the ML portion of my lemon64 signature
         # Note: signature line is obfuscated by changing XOR mask
@@ -92,23 +92,51 @@ class Test6502Emulator(unittest.TestCase):
         .C:800a  D0 F6       BNE $8002
         .C:800c  60          RTS
         """
-        test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
-            81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
+        test_prog = [
+            160,
+            15,
+            152,
+            89,
+            12,
+            128,
+            32,
+            210,
+            255,
+            136,
+            208,
+            246,
+            96,
+            12,
+            71,
+            81,
+            65,
+            77,
+            38,
+            84,
+            73,
+            94,
+            42,
+            74,
+            74,
+            66,
+            87,
+            2,
+        ]
 
         cpuState.inject_bytes(32768, test_prog)
 
         # Memory Patch:  Since kernal ROM not loaded, make $FFD2 just an RTS
-        cpuState.patch_kernal(0xffd2, [0x60])
+        cpuState.patch_kernal(0xFFD2, [0x60])
 
         cpuState.init_cpu(32768)
-        
+
         output_text = ""
         while cpuState.runcpu():
             # Capture petscii characters sent to screen print routine
-            if cpuState.pc == 0xffd2:
+            if cpuState.pc == 0xFFD2:
                 output_text += chr(cpuState.a)
 
-        self.assertTrue(output_text == '\rYOFA WAS HERE\r')
+        self.assertTrue(output_text == "\rYOFA WAS HERE\r")
 
     """
         Stuff the Commodore 64 Kernal/BASIC boot do not test:
@@ -143,17 +171,18 @@ class Test6502Emulator(unittest.TestCase):
         $96/150 STX zp,Y        $BA/186 TSX         $00/0 BRK 
     """
 
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_C64_kernal_boot(self):
         cpuState = thinC64Emulator.ThinC64Emulator()
 
-        expected_screen_output = \
-            "                                        \n" + \
-            "    **** COMMODORE 64 BASIC V2 ****     \n" + \
-            "                                        \n" + \
-            " 64K RAM SYSTEM  38911 BASIC BYTES FREE \n" + \
-            "                                        \n" + \
-            "READY.                                  "
+        expected_screen_output = (
+            "                                        \n"
+            + "    **** COMMODORE 64 BASIC V2 ****     \n"
+            + "                                        \n"
+            + " 64K RAM SYSTEM  38911 BASIC BYTES FREE \n"
+            + "                                        \n"
+            + "READY.                                  "
+        )
 
         # Looks like it's necessary to have unmodifiable memory in the BASIC ROM area.
         # The startup ram check only stops when, working its way up from $0801, it hits the
@@ -162,7 +191,9 @@ class Test6502Emulator(unittest.TestCase):
         cpuState.load_roms()
 
         if not cpuState.has_kernal:
-            raise unittest.case.SkipTest("KERNAL ROM not loaded, skipping C64 boot test")
+            raise unittest.case.SkipTest(
+                "KERNAL ROM not loaded, skipping C64 boot test"
+            )
         if not cpuState.has_basic:
             raise unittest.case.SkipTest("BASIC ROM not loaded, skipping C64 boot test")
 
@@ -170,8 +201,8 @@ class Test6502Emulator(unittest.TestCase):
         # then continues from there.  This will be 64738, as in the good ol' SYS64738.
         # It tests for an autostart cartridge (which it won't find).  Then
         # IOINIT, RAMTAS, RESTOR, and CINT are called.  Then BASIC entered through
-        # cold start vector at $A000, and we get the start-up message.  
-        reset = cpuState.get_le_word(0xfffc)
+        # cold start vector at $A000, and we get the start-up message.
+        reset = cpuState.get_le_word(0xFFFC)
 
         # I've seen others set the break flag on RESET, but VICE doesn't do that, and
         # pagetable says not to: https://www.pagetable.com/?p=410
@@ -181,10 +212,11 @@ class Test6502Emulator(unittest.TestCase):
         last_raster = -1
         while cpuState.runcpu():
             # fake the raster
-            raster = (cpuState.cpucycles // ARCH['NTSC-C64'].cycles_per_line) \
-                % ARCH['NTSC-C64'].lines_per_frame
+            raster = (cpuState.cpucycles // ARCH["NTSC-C64"].cycles_per_line) % ARCH[
+                "NTSC-C64"
+            ].lines_per_frame
             if raster != last_raster:
-                cpuState.memory[53266] = raster & 0xff
+                cpuState.memory[53266] = raster & 0xFF
                 high = cpuState.memory[53265] & 0b01111111
                 if raster > 255:
                     high |= 0b10000000
@@ -215,17 +247,17 @@ class Test6502Emulator(unittest.TestCase):
             if 1 <= screen_code <= 26:
                 screen_code += 64
             screen_code = chr(screen_code)
-            #if not screen_code.isprintable:
+            # if not screen_code.isprintable:
             #    screen_code = '~'
-            screen_output.append(screen_code) 
-            #print("%s" % (screen_code), end='')
-        actual_screen_output = ''.join(screen_output)
+            screen_output.append(screen_code)
+            # print("%s" % (screen_code), end='')
+        actual_screen_output = "".join(screen_output)
 
         if VERBOSE:
             print(actual_screen_output)
         self.assertTrue(actual_screen_output == expected_screen_output)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # ctsTestingTools.env_to_stdout()
     unittest.main(failfast=False)
-

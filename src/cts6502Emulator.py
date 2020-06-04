@@ -20,14 +20,18 @@
 # TODOs:
 # - Test a mirror set in VICE (on some vic register, not SID)
 
-from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError, ChiptuneSAKContentError
+from ctsErrors import (
+    ChiptuneSAKNotImplemented,
+    ChiptuneSAKValueError,
+    ChiptuneSAKContentError,
+)
 
 DEBUG = False
 
 # 6502 vector locations
-NMI = 0xfffa  # on C64, vector points to NMI routine at $FE43/65091
-RESET = 0xfffc  # on C64, vector points to power-on routine $FCE2/64738
-IRQ = 0xfffe  # on C64, vector points to IRQ handler routine at $FF48/65352
+NMI = 0xFFFA  # on C64, vector points to NMI routine at $FE43/65091
+RESET = 0xFFFC  # on C64, vector points to power-on routine $FCE2/64738
+IRQ = 0xFFFE  # on C64, vector points to IRQ handler routine at $FF48/65352
 
 FN = 0b10000000  # Negative
 FV = 0b01000000  # oVerflow
@@ -40,22 +44,263 @@ FC = 0b00000001  # Carry
 
 # base cycle values for instructions (and pseudo-ops) 0 through 255:
 cpucycles_table = [
-    7, 6, 0, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
-    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-    6, 6, 0, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
-    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-    6, 6, 0, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
-    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-    6, 6, 0, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
-    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-    2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
-    2, 6, 0, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
-    2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
-    2, 5, 0, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
-    2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
-    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-    2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
-    2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7]
+    7,
+    6,
+    0,
+    8,
+    3,
+    3,
+    5,
+    5,
+    3,
+    2,
+    2,
+    2,
+    4,
+    4,
+    6,
+    6,
+    2,
+    5,
+    0,
+    8,
+    4,
+    4,
+    6,
+    6,
+    2,
+    4,
+    2,
+    7,
+    4,
+    4,
+    7,
+    7,
+    6,
+    6,
+    0,
+    8,
+    3,
+    3,
+    5,
+    5,
+    4,
+    2,
+    2,
+    2,
+    4,
+    4,
+    6,
+    6,
+    2,
+    5,
+    0,
+    8,
+    4,
+    4,
+    6,
+    6,
+    2,
+    4,
+    2,
+    7,
+    4,
+    4,
+    7,
+    7,
+    6,
+    6,
+    0,
+    8,
+    3,
+    3,
+    5,
+    5,
+    3,
+    2,
+    2,
+    2,
+    3,
+    4,
+    6,
+    6,
+    2,
+    5,
+    0,
+    8,
+    4,
+    4,
+    6,
+    6,
+    2,
+    4,
+    2,
+    7,
+    4,
+    4,
+    7,
+    7,
+    6,
+    6,
+    0,
+    8,
+    3,
+    3,
+    5,
+    5,
+    4,
+    2,
+    2,
+    2,
+    5,
+    4,
+    6,
+    6,
+    2,
+    5,
+    0,
+    8,
+    4,
+    4,
+    6,
+    6,
+    2,
+    4,
+    2,
+    7,
+    4,
+    4,
+    7,
+    7,
+    2,
+    6,
+    2,
+    6,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    4,
+    4,
+    4,
+    4,
+    2,
+    6,
+    0,
+    6,
+    4,
+    4,
+    4,
+    4,
+    2,
+    5,
+    2,
+    5,
+    5,
+    5,
+    5,
+    5,
+    2,
+    6,
+    2,
+    6,
+    3,
+    3,
+    3,
+    3,
+    2,
+    2,
+    2,
+    2,
+    4,
+    4,
+    4,
+    4,
+    2,
+    5,
+    0,
+    5,
+    4,
+    4,
+    4,
+    4,
+    2,
+    4,
+    2,
+    4,
+    4,
+    4,
+    4,
+    4,
+    2,
+    6,
+    2,
+    8,
+    3,
+    3,
+    5,
+    5,
+    2,
+    2,
+    2,
+    2,
+    4,
+    4,
+    6,
+    6,
+    2,
+    5,
+    0,
+    8,
+    4,
+    4,
+    6,
+    6,
+    2,
+    4,
+    2,
+    7,
+    4,
+    4,
+    7,
+    7,
+    2,
+    6,
+    2,
+    8,
+    3,
+    3,
+    5,
+    5,
+    2,
+    2,
+    2,
+    2,
+    4,
+    4,
+    6,
+    6,
+    2,
+    5,
+    0,
+    8,
+    4,
+    4,
+    6,
+    6,
+    2,
+    4,
+    2,
+    7,
+    4,
+    4,
+    7,
+    7,
+]
 
 
 class Cpu6502Emulator:
@@ -86,27 +331,27 @@ class Cpu6502Emulator:
 
     # define HI() (MEM(pc+1))
     def hi(self):
-        return self.get_mem((self.pc + 1) & 0xffff)
+        return self.get_mem((self.pc + 1) & 0xFFFF)
 
     # define FETCH() (MEM(pc++))
     def fetch(self):
-        self.pc &= 0xffff
+        self.pc &= 0xFFFF
         val = self.get_mem(self.pc)
-        self.pc = (self.pc + 1) & 0xffff
+        self.pc = (self.pc + 1) & 0xFFFF
         return val
 
     # define PUSH(data) (MEM(0x100 + (sp--)) = (data))
     def push(self, data):
         self.set_mem(0x100 + self.sp, data)
         self.sp -= 1
-        self.sp &= 0xff  # this will wrap -1 to 255, as it should
+        self.sp &= 0xFF  # this will wrap -1 to 255, as it should
 
     # define POP() (MEM(0x100 + (++sp)))
     def pop(self):
         self.sp += 1
         # If poping from an empty stack (sp == $FF), this must wrap to 0
-        # http://forum.6502.org/viewtopic.php?f=8&t=1446         
-        self.sp &= 0xff
+        # http://forum.6502.org/viewtopic.php?f=8&t=1446
+        self.sp &= 0xFF
         result = self.get_mem(0x100 + self.sp)
         return result
 
@@ -120,41 +365,47 @@ class Cpu6502Emulator:
 
     # define ABSOLUTEX() (((LO() | (HI() << 8)) + x) & 0xffff)
     def absolute_x(self):
-        return (self.absolute() + self.x) & 0xffff
+        return (self.absolute() + self.x) & 0xFFFF
 
     # define ABSOLUTEY() (((LO() | (HI() << 8)) + y) & 0xffff)
     def absolute_y(self):
-        return (self.absolute() + self.y) & 0xffff
+        return (self.absolute() + self.y) & 0xFFFF
 
     # define ZEROPAGE() (LO() & 0xff)
     def zeropage(self):
-        return self.lo() & 0xff
+        return self.lo() & 0xFF
 
     # define ZEROPAGEX() ((LO() + x) & 0xff)
     def zeropage_x(self):
-        return (self.lo() + self.x) & 0xff
+        return (self.lo() + self.x) & 0xFF
 
     # define ZEROPAGEY() ((LO() + y) & 0xff)
     def zeropage_y(self):
-        return (self.lo() + self.y) & 0xff
+        return (self.lo() + self.y) & 0xFF
 
     # define INDIRECTX() (MEM((LO() + x) & 0xff) | (MEM((LO() + x + 1) & 0xff) << 8))
     def indirect_x(self):
-        return self.get_mem((self.lo() + self.x) & 0xff) | (self.get_mem((self.lo() + self.x + 1) & 0xff) << 8)
+        return self.get_mem((self.lo() + self.x) & 0xFF) | (
+            self.get_mem((self.lo() + self.x + 1) & 0xFF) << 8
+        )
 
     # define INDIRECTY() (((MEM(LO()) | (MEM((LO() + 1) & 0xff) << 8)) + y) & 0xffff)
     def indirect_y(self):
         zp_vec = self.get_mem(self.pc)
-        return ((self.get_mem(zp_vec) | (self.get_mem((zp_vec + 1) & 0xff) << 8)) + self.y) & 0xffff
+        return (
+            (self.get_mem(zp_vec) | (self.get_mem((zp_vec + 1) & 0xFF) << 8)) + self.y
+        ) & 0xFFFF
 
     # define INDIRECTZP() (((MEM(LO()) | (MEM((LO() + 1) & 0xff) << 8)) + 0) & 0xffff)
     def indirect_zp(self):
         zp_vec = self.get_mem(self.pc)
-        return ((self.get_mem(zp_vec) | (self.get_mem((zp_vec + 1) & 0xff) << 8)) + 0) & 0xffff
+        return (
+            (self.get_mem(zp_vec) | (self.get_mem((zp_vec + 1) & 0xFF) << 8)) + 0
+        ) & 0xFFFF
 
     # define EVALPAGECROSSING(baseaddr, realaddr) ((((baseaddr) ^ (realaddr)) & 0xff00) ? 1 : 0)
     def eval_page_crossing(self, baseaddr, realaddr):
-        if (baseaddr ^ realaddr) & 0xff00 != 0:
+        if (baseaddr ^ realaddr) & 0xFF00 != 0:
             return 1
         return 0
 
@@ -207,10 +458,10 @@ class Cpu6502Emulator:
     def set_flags(self, a_byte):
         assert 0 <= a_byte <= 255, "Error: can't set flags using non-byte value"
         if a_byte == 0:
-            self.flags = (self.flags & ~FN & 0xff) | FZ
+            self.flags = (self.flags & ~FN & 0xFF) | FZ
         else:
             # turn off flag's N and Z, then add in a_byte's N
-            self.flags = (self.flags & ~(FN | FZ) & 0xff) | (a_byte & FN)
+            self.flags = (self.flags & ~(FN | FZ) & 0xFF) | (a_byte & FN)
         self.flags |= FU  # might not need this here, but being safe
 
     # #define ASSIGNSETFLAGS(dest, data)      \
@@ -221,7 +472,7 @@ class Cpu6502Emulator:
     #   else                                  \
     #     flags = (flags & ~(FN|FZ)) |        \
     #     (dest & FN);                        \
-    # } 
+    # }
     def assign_then_set_flags(self, dest_operand_ref, src_operand_ref):
         src_byte = src_operand_ref.get_byte(self)
         dest_operand_ref.set_byte(src_byte, self)
@@ -281,44 +532,44 @@ class Cpu6502Emulator:
     # I like the bit logic from here better https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
     def ADC(self, operand_ref):
         data = operand_ref.get_byte(self)
-        if (self.flags & FD):
-            temp = (self.a & 0xf) + (data & 0xf) + (self.flags & FC)  # not a byte
-            if (temp > 0x9):
+        if self.flags & FD:
+            temp = (self.a & 0xF) + (data & 0xF) + (self.flags & FC)  # not a byte
+            if temp > 0x9:
                 temp += 0x6
-            if (temp <= 0x0f):
-                temp = (temp & 0xf) + (self.a & 0xf0) + (data & 0xf0)
+            if temp <= 0x0F:
+                temp = (temp & 0xF) + (self.a & 0xF0) + (data & 0xF0)
             else:
-                temp = (temp & 0xf) + (self.a & 0xf0) + (data & 0xf0) + 0x10
-            if not ((self.a + data + (self.flags & FC)) & 0xff):
+                temp = (temp & 0xF) + (self.a & 0xF0) + (data & 0xF0) + 0x10
+            if not ((self.a + data + (self.flags & FC)) & 0xFF):
                 self.flags |= FZ
             else:
-                self.flags &= (~FZ & 0xff)
-            if (temp & 0x80):
+                self.flags &= ~FZ & 0xFF
+            if temp & 0x80:
                 self.flags |= FN
             else:
-                self.flags &= (~FN & 0xff)
+                self.flags &= ~FN & 0xFF
             if ((self.a ^ temp) & 0x80) and not ((self.a ^ data) & 0x80):
                 self.flags |= FV
             else:
-                self.flags &= (~FV & 0xff)
-            if (temp & 0x1f0) > 0x90:
+                self.flags &= ~FV & 0xFF
+            if (temp & 0x1F0) > 0x90:
                 temp += 0x60
-            if (temp & 0xff0) > 0xf0:
+            if (temp & 0xFF0) > 0xF0:
                 self.flags |= FC
             else:
-                self.flags &= (~FC & 0xff)
+                self.flags &= ~FC & 0xFF
         else:
             temp = data + self.a + (self.flags & FC)
-            self.set_flags(temp & 0xff)
+            self.set_flags(temp & 0xFF)
             if not ((self.a ^ data) & 0x80) and ((self.a ^ temp) & 0x80):
                 self.flags |= FV
             else:
-                self.flags &= (~FV & 0xff)
-            if (temp > 0xff):
+                self.flags &= ~FV & 0xFF
+            if temp > 0xFF:
                 self.flags |= FC
             else:
-                self.flags &= (~FC & 0xff)
-        self.a = temp & 0xff
+                self.flags &= ~FC & 0xFF
+        self.a = temp & 0xFF
 
     # #define SBC(data)                                                        \
     # {                                                                        \
@@ -365,38 +616,44 @@ class Cpu6502Emulator:
     def SBC(self, operand_ref):
         # TODO: once this all works, clean up temp vars
         tempval = operand_ref.get_byte(self)
-        temp = (self.a - tempval - ((self.flags & FC) ^ FC)) & 0xffff  # not a byte
+        temp = (self.a - tempval - ((self.flags & FC) ^ FC)) & 0xFFFF  # not a byte
 
-        if (self.flags & FD):
-            tempval2 = ((self.a & 0xf) - (tempval & 0xf) - ((self.flags & FC) ^ FC)) & 0xffff  # not a byte
-            if (tempval2 & 0x10):
-                tempval2 = (((tempval2 - 6) & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0) - 0x10)) & 0xffff
+        if self.flags & FD:
+            tempval2 = (
+                (self.a & 0xF) - (tempval & 0xF) - ((self.flags & FC) ^ FC)
+            ) & 0xFFFF  # not a byte
+            if tempval2 & 0x10:
+                tempval2 = (
+                    ((tempval2 - 6) & 0xF) | ((self.a & 0xF0) - (tempval & 0xF0) - 0x10)
+                ) & 0xFFFF
             else:
-                tempval2 = ((tempval2 & 0xf) | ((self.a & 0xf0) - (tempval & 0xf0))) & 0xffff
-            if (tempval2 & 0x100):
+                tempval2 = (
+                    (tempval2 & 0xF) | ((self.a & 0xF0) - (tempval & 0xF0))
+                ) & 0xFFFF
+            if tempval2 & 0x100:
                 tempval2 -= 0x60
-                tempval2 &= 0xffff
-            if (temp < 0x100):
+                tempval2 &= 0xFFFF
+            if temp < 0x100:
                 self.flags |= FC
             else:
-                self.flags &= (~FC & 0xff)
-            self.set_flags(temp & 0xff)
+                self.flags &= ~FC & 0xFF
+            self.set_flags(temp & 0xFF)
             if ((self.a ^ temp) & 0x80) and ((self.a ^ tempval) & 0x80):
                 self.flags |= FV
             else:
-                self.flags &= (~FV & 0xff)
-            self.a = tempval2 & 0xff
+                self.flags &= ~FV & 0xFF
+            self.a = tempval2 & 0xFF
         else:
-            self.set_flags(temp & 0xff)
-            if (temp < 0x100):
+            self.set_flags(temp & 0xFF)
+            if temp < 0x100:
                 self.flags |= FC
             else:
-                self.flags &= (~FC & 0xff)
+                self.flags &= ~FC & 0xFF
             if ((self.a ^ temp) & 0x80) and ((self.a ^ tempval) & 0x80):
                 self.flags |= FV
             else:
-                self.flags &= (~FV & 0xff)
-            self.a = temp & 0xff
+                self.flags &= ~FV & 0xFF
+            self.a = temp & 0xFF
 
     # #define CMP(src, data)                  \
     # {                                       \
@@ -413,8 +670,8 @@ class Cpu6502Emulator:
     def CMP(self, reg_operand_ref, operand_ref):
         src = reg_operand_ref.get_byte(self)  # byte from a, x, or y
         data = operand_ref.get_byte(self)  # byte from immediate or memory lookup
-        temp = (src - data) & 0xff
-        self.flags = (self.flags & ~(FC | FN | FZ) & 0xff) | (temp & FN)
+        temp = (src - data) & 0xFF
+        self.flags = (self.flags & ~(FC | FN | FZ) & 0xFF) | (temp & FN)
         if not temp:
             self.flags |= FZ
         if src >= data:
@@ -431,11 +688,11 @@ class Cpu6502Emulator:
     def ASL(self, operand_ref):
         temp = operand_ref.get_byte(self)
         temp <<= 1
-        if (temp & 0x100):
+        if temp & 0x100:
             self.flags |= FC
         else:
-            self.flags &= (~FC & 0xff)
-        temp &= 0xff
+            self.flags &= ~FC & 0xFF
+        temp &= 0xFF
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
     # #define LSR(data)                       \
@@ -448,10 +705,10 @@ class Cpu6502Emulator:
     # }
     def LSR(self, operand_ref):
         temp = operand_ref.get_byte(self)
-        if (temp & 1):
+        if temp & 1:
             self.flags |= FC
         else:
-            self.flags &= (~FC & 0xff)
+            self.flags &= ~FC & 0xFF
         temp >>= 1
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
@@ -467,13 +724,13 @@ class Cpu6502Emulator:
     def ROL(self, operand_ref):
         temp = operand_ref.get_byte(self)
         temp <<= 1
-        if (self.flags & FC):
+        if self.flags & FC:
             temp |= 1  # aka FC
-        if (temp & 0x100):
+        if temp & 0x100:
             self.flags |= FC
         else:
-            self.flags &= (~FC & 0xff)
-        temp &= 0xff
+            self.flags &= ~FC & 0xFF
+        temp &= 0xFF
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
     # #define ROR(data)                       \
@@ -487,12 +744,12 @@ class Cpu6502Emulator:
     # }
     def ROR(self, operand_ref):
         temp = operand_ref.get_byte(self)
-        if (self.flags & FC):
+        if self.flags & FC:
             temp |= 0x100
-        if (temp & 1):
+        if temp & 1:
             self.flags |= FC
         else:
-            self.flags &= (~FC & 0xff)
+            self.flags &= ~FC & 0xFF
         temp >>= 1
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
@@ -503,7 +760,7 @@ class Cpu6502Emulator:
     # }
     def DEC(self, operand_ref):
         temp = operand_ref.get_byte(self) - 1
-        temp &= 0xff
+        temp &= 0xFF
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
     # #define INC(data)                       \
@@ -513,7 +770,7 @@ class Cpu6502Emulator:
     # }
     def INC(self, operand_ref):
         temp = operand_ref.get_byte(self) + 1
-        temp &= 0xff
+        temp &= 0xFF
         self.assign_then_set_flags(operand_ref, OperandRef(BYTE_VAL, temp))
 
     # #define EOR(data)                       \
@@ -552,11 +809,11 @@ class Cpu6502Emulator:
     # }
     def BIT(self, operand_ref):
         temp = operand_ref.get_byte(self)
-        self.flags = (self.flags & ~(FN | FV) & 0xff) | (temp & (FN | FV))
+        self.flags = (self.flags & ~(FN | FV) & 0xFF) | (temp & (FN | FV))
         if not (temp & self.a):
             self.flags |= FZ
         else:
-            self.flags &= (~FZ & 0xff)
+            self.flags &= ~FZ & 0xFF
 
     # void initcpu(unsigned short newpc, unsigned char newa, unsigned char newx, unsigned char newy)
     # {
@@ -574,7 +831,7 @@ class Cpu6502Emulator:
         self.x = newx
         self.y = newy
         self.flags = flags
-        self.sp = 0xff
+        self.sp = 0xFF
         self.cpucycles = 0
 
     # ---------------------------------------------------------------------------
@@ -582,7 +839,7 @@ class Cpu6502Emulator:
     # int runcpu(void)
     # {
     #   unsigned temp;
-    # 
+    #
     #   unsigned char op = FETCH();
     #   /* printf("PC: %04x OP: %02x A:%02x X:%02x Y:%02x\n", pc-1, op, a, x, y); */
     #   cpucycles += cpucycles_table[op];
@@ -590,8 +847,9 @@ class Cpu6502Emulator:
     #   {
     def runcpu(self):
         if DEBUG:
-            output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
-                .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
+            output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}".format(
+                self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags
+            )
             print(output_str)
 
             # Useful for some of the Wolfgang Lorenz tests:
@@ -616,46 +874,46 @@ class Cpu6502Emulator:
         # ADC(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x65:
         # ADC(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x75:
         # ADC(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x6d:
         # ADC(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x7d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ADC(MEM(ABSOLUTEX()));
         #  pc += 2;
         # break;
-        # 
+        #
         # case 0x79:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ADC(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x61:
         # ADC(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x71:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ADC(MEM(INDIRECTY()));
         # pc++;
         # break;
 
-        # ADC instructions    
+        # ADC instructions
         if instruction == 0x69:  # $69/105 ADC #n
             self.ADC(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
@@ -671,12 +929,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x6d:  # $6D/109 ADC abs
+        if instruction == 0x6D:  # $6D/109 ADC abs
             self.ADC(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x7d:  # $7D/125 ADC abs,X
+        if instruction == 0x7D:  # $7D/125 ADC abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.ADC(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
@@ -703,46 +961,46 @@ class Cpu6502Emulator:
         # AND(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x25:
         # AND(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x35:
         # AND(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x2d:
         # AND(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x3d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # AND(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x39:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # AND(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x21:
         # AND(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x31:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # AND(MEM(INDIRECTY()));
         # pc++;
         # break;
 
-        # AND instructions    
+        # AND instructions
         if instruction == 0x29:  # $29/41 AND #n
             self.AND(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
@@ -758,12 +1016,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x2d:  # $2D/45 AND abs
+        if instruction == 0x2D:  # $2D/45 AND abs
             self.AND(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x3d:  # $3D/61 AND abs,X
+        if instruction == 0x3D:  # $3D/61 AND abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.AND(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
@@ -789,29 +1047,29 @@ class Cpu6502Emulator:
         # case 0x0a:
         # ASL(a);
         # break;
-        # 
+        #
         # case 0x06:
         # ASL(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x16:
         # ASL(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x0e:
         # ASL(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x1e:
         # ASL(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
 
         # ASL instructions
-        if instruction == 0x0a:  # $0A/10 ASL A
+        if instruction == 0x0A:  # $0A/10 ASL A
             self.ASL(A_OPREF)
             return 1
 
@@ -825,12 +1083,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x0e:  # $0E/14 ASL abs
+        if instruction == 0x0E:  # $0E/14 ASL abs
             self.ASL(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x1e:  # $1E/30 ASL abs,X
+        if instruction == 0x1E:  # $1E/30 ASL abs,X
             self.ASL(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
@@ -854,8 +1112,8 @@ class Cpu6502Emulator:
         # break;
 
         # BCS instruction
-        if instruction == 0xb0:  # $B0/176 BCS rel
-            if (self.flags & FC):
+        if instruction == 0xB0:  # $B0/176 BCS rel
+            if self.flags & FC:
                 self.branch()
             else:
                 self.pc += 1
@@ -867,8 +1125,8 @@ class Cpu6502Emulator:
         # break;
 
         # BEQ instruction
-        if instruction == 0xf0:  # $F0/240 BEQ rel
-            if (self.flags & FZ):
+        if instruction == 0xF0:  # $F0/240 BEQ rel
+            if self.flags & FZ:
                 self.branch()
             else:
                 self.pc += 1
@@ -878,7 +1136,7 @@ class Cpu6502Emulator:
         # BIT(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x2c:
         # BIT(MEM(ABSOLUTE()));
         # pc += 2;
@@ -890,7 +1148,7 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x2c:  # $2C/44 BIT abs
+        if instruction == 0x2C:  # $2C/44 BIT abs
             self.BIT(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
@@ -902,7 +1160,7 @@ class Cpu6502Emulator:
 
         # BMI instruction
         if instruction == 0x30:  # $30/48 BMI rel
-            if (self.flags & FN):
+            if self.flags & FN:
                 self.branch()
             else:
                 self.pc += 1
@@ -914,7 +1172,7 @@ class Cpu6502Emulator:
         # break;
 
         # BNE instruction
-        if instruction == 0xd0:  # $D0/208 BNE rel
+        if instruction == 0xD0:  # $D0/208 BNE rel
             if not (self.flags & FZ):
                 self.branch()
             else:
@@ -954,7 +1212,7 @@ class Cpu6502Emulator:
 
         # BVS instruction
         if instruction == 0x70:  # $70/112 BVS rel
-            if (self.flags & FV):
+            if self.flags & FV:
                 self.branch()
             else:
                 self.pc += 1
@@ -966,7 +1224,7 @@ class Cpu6502Emulator:
 
         # CLC instruction
         if instruction == 0x18:  # $18/24 CLC
-            self.flags &= (~FC & 0xff)
+            self.flags &= ~FC & 0xFF
             return 1
 
         # case 0xd8:
@@ -974,8 +1232,8 @@ class Cpu6502Emulator:
         # break;
 
         # CLD instruction
-        if instruction == 0xd8:  # $D8/216 CLD
-            self.flags &= (~FD & 0xff)
+        if instruction == 0xD8:  # $D8/216 CLD
+            self.flags &= ~FD & 0xFF
             return 1
 
         # case 0x58:
@@ -984,7 +1242,7 @@ class Cpu6502Emulator:
 
         # CLI instruction
         if instruction == 0x58:  # $58/88 CLI
-            self.flags &= (~FI & 0xff)
+            self.flags &= ~FI & 0xFF
             return 1
 
         # case 0xb8:
@@ -992,47 +1250,47 @@ class Cpu6502Emulator:
         # break;
 
         # CLV instruction
-        if instruction == 0xb8:  # $B8/184 CLV
-            self.flags &= (~FV & 0xff)
+        if instruction == 0xB8:  # $B8/184 CLV
+            self.flags &= ~FV & 0xFF
             return 1
 
         # case 0xc9:
         # CMP(a, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xc5:
         # CMP(a, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xd5:
         # CMP(a, MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xcd:
         # CMP(a, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xdd:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # CMP(a, MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xd9:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # CMP(a, MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xc1:
         # CMP(a, MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xd1:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # CMP(a, MEM(INDIRECTY()));
@@ -1040,44 +1298,44 @@ class Cpu6502Emulator:
         # break;
 
         # CMP instructions
-        if instruction == 0xc9:  # $C9/201 CMP #n
+        if instruction == 0xC9:  # $C9/201 CMP #n
             self.CMP(A_OPREF, OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xc5:  # $C5/197 CMP zp
+        if instruction == 0xC5:  # $C5/197 CMP zp
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xd5:  # $D5/213 CMP zp,X
+        if instruction == 0xD5:  # $D5/213 CMP zp,X
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xcd:  # $CD/205 CMP abs
+        if instruction == 0xCD:  # $CD/205 CMP abs
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xdd:  # $DD/221 CMP abs,X
+        if instruction == 0xDD:  # $DD/221 CMP abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
 
-        if instruction == 0xd9:  # $D9/217 CMP abs,Y
+        if instruction == 0xD9:  # $D9/217 CMP abs,Y
             self.cpucycles += self.eval_page_crossing_absolute_y()
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.absolute_y()))
             self.pc += 2
             return 1
 
-        if instruction == 0xc1:  # $C1/193 CMP (zp,X)
+        if instruction == 0xC1:  # $C1/193 CMP (zp,X)
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.indirect_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xd1:  # $D1/209 CMP (zp),Y
+        if instruction == 0xD1:  # $D1/209 CMP (zp),Y
             self.cpucycles += self.eval_page_crossing_indirect_y()
             self.CMP(A_OPREF, OperandRef(LOC_VAL, self.indirect_y()))
             self.pc += 1
@@ -1087,29 +1345,29 @@ class Cpu6502Emulator:
         # CMP(x, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xe4:
         # CMP(x, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xec:
         # CMP(x, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
 
         # CPX instructions
-        if instruction == 0xe0:  # $E0/224 CPX #n
+        if instruction == 0xE0:  # $E0/224 CPX #n
             self.CMP(X_OPREF, OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xe4:  # $E4/228 CPX zp
+        if instruction == 0xE4:  # $E4/228 CPX zp
             self.CMP(X_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xec:  # $EC/236 CPX abs
+        if instruction == 0xEC:  # $EC/236 CPX abs
             self.CMP(X_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
@@ -1118,29 +1376,29 @@ class Cpu6502Emulator:
         # CMP(y, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xc4:
         # CMP(y, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xcc:
         # CMP(y, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
 
         # CPY instructions
-        if instruction == 0xc0:  # $C0/192 CPY #n
+        if instruction == 0xC0:  # $C0/192 CPY #n
             self.CMP(Y_OPREF, OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xc4:  # $C4/196 CPY zp
+        if instruction == 0xC4:  # $C4/196 CPY zp
             self.CMP(Y_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xcc:  # $CC/204 CPY abs
+        if instruction == 0xCC:  # $CC/204 CPY abs
             self.CMP(Y_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
@@ -1150,19 +1408,19 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xd6:
         # DEC(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0xce:
         # DEC(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xde:
         # DEC(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1170,22 +1428,22 @@ class Cpu6502Emulator:
         # break;
 
         # DEC instructions
-        if instruction == 0xc6:  # $C6/198 DEC zp
+        if instruction == 0xC6:  # $C6/198 DEC zp
             self.DEC(OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xd6:  # $D6/214 DEC zp,X
+        if instruction == 0xD6:  # $D6/214 DEC zp,X
             self.DEC(OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xce:  # $CE/206 DEC abs
+        if instruction == 0xCE:  # $CE/206 DEC abs
             self.DEC(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xde:  # $DE/222 DEC abs,X
+        if instruction == 0xDE:  # $DE/222 DEC abs,X
             self.DEC(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
@@ -1196,9 +1454,9 @@ class Cpu6502Emulator:
         # break;
 
         # DEX instruction
-        if instruction == 0xca:  # $CA/202 DEX
+        if instruction == 0xCA:  # $CA/202 DEX
             self.x -= 1
-            self.x &= 0xff
+            self.x &= 0xFF
             self.set_flags(self.x)
             return 1
 
@@ -1210,7 +1468,7 @@ class Cpu6502Emulator:
         # DEY instruction
         if instruction == 0x88:  # $88/136 DEY
             self.y -= 1
-            self.y &= 0xff
+            self.y &= 0xFF
             self.set_flags(self.y)
             return 1
 
@@ -1218,39 +1476,39 @@ class Cpu6502Emulator:
         # EOR(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x45:
         # EOR(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x55:
         # EOR(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x4d:
         # EOR(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x5d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # EOR(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x59:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # EOR(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x41:
         # EOR(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x51:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # EOR(MEM(INDIRECTY()));
@@ -1273,12 +1531,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x4d:  # $4D/77 EOR abs
+        if instruction == 0x4D:  # $4D/77 EOR abs
             self.EOR(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x5d:  # $5D/93 EOR abs,X
+        if instruction == 0x5D:  # $5D/93 EOR abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.EOR(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
@@ -1306,19 +1564,19 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xf6:
         # INC(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0xee:
         # INC(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xfe:
         # INC(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1326,22 +1584,22 @@ class Cpu6502Emulator:
         # break;
 
         # INC instructions
-        if instruction == 0xe6:  # $E6/230 INC zp
+        if instruction == 0xE6:  # $E6/230 INC zp
             self.INC(OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xf6:  # $F6/246 INC zp,X
+        if instruction == 0xF6:  # $F6/246 INC zp,X
             self.INC(OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xee:  # $EE/238 INC abs
+        if instruction == 0xEE:  # $EE/238 INC abs
             self.INC(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xfe:  # $FE/254 INC abs,X
+        if instruction == 0xFE:  # $FE/254 INC abs,X
             self.INC(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
@@ -1352,9 +1610,9 @@ class Cpu6502Emulator:
         # break;
 
         # INX instruction
-        if instruction == 0xe8:  # $E8/232 INX
+        if instruction == 0xE8:  # $E8/232 INX
             self.x += 1
-            self.x &= 0xff
+            self.x &= 0xFF
             self.set_flags(self.x)
             return 1
 
@@ -1364,9 +1622,9 @@ class Cpu6502Emulator:
         # break;
 
         # INY instruction
-        if instruction == 0xc8:  # $C8/200 INY
+        if instruction == 0xC8:  # $C8/200 INY
             self.y += 1
-            self.y &= 0xff
+            self.y &= 0xFF
             self.set_flags(self.y)
             return 1
 
@@ -1379,14 +1637,14 @@ class Cpu6502Emulator:
         # JSR instruction
         if instruction == 0x20:  # $20/32 JSR abs
             self.push((self.pc + 1) >> 8)
-            self.push((self.pc + 1) & 0xff)
+            self.push((self.pc + 1) & 0xFF)
             self.pc = self.absolute()
             return 1
 
         # case 0x4c:
         # pc = ABSOLUTE();
         # break;
-        # 
+        #
         # case 0x6c:
         # {
         #   unsigned short adr = ABSOLUTE();
@@ -1395,53 +1653,55 @@ class Cpu6502Emulator:
         # break;
 
         # JMP instructions
-        if instruction == 0x4c:  # $4C/76 JMP abs
+        if instruction == 0x4C:  # $4C/76 JMP abs
             self.pc = self.absolute()
             return 1
 
-        if instruction == 0x6c:  # $6C/108 JMP (abs)
+        if instruction == 0x6C:  # $6C/108 JMP (abs)
             adr = self.absolute()
             # Yup, indirect JMP is bug compatible
-            self.pc = (self.get_mem(adr) | (self.get_mem(((adr + 1) & 0xff) | (adr & 0xff00)) << 8))
+            self.pc = self.get_mem(adr) | (
+                self.get_mem(((adr + 1) & 0xFF) | (adr & 0xFF00)) << 8
+            )
             return 1
 
         # case 0xa9:
         # ASSIGNSETFLAGS(a, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xa5:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb5:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xad:
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xbd:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xb9:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xa1:
         # ASSIGNSETFLAGS(a, MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb1:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
@@ -1449,44 +1709,44 @@ class Cpu6502Emulator:
         # break;
 
         # LDA instructions
-        if instruction == 0xa9:  # $A9/169 LDA #n
+        if instruction == 0xA9:  # $A9/169 LDA #n
             self.assign_then_set_flags(A_OPREF, OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xa5:  # $A5/165 LDA zp
+        if instruction == 0xA5:  # $A5/165 LDA zp
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xb5:  # $B5/181 LDA zp,X
+        if instruction == 0xB5:  # $B5/181 LDA zp,X
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xad:  # $AD/173 LDA abs
+        if instruction == 0xAD:  # $AD/173 LDA abs
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xbd:  # $BD/189 LDA abs,X
+        if instruction == 0xBD:  # $BD/189 LDA abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
 
-        if instruction == 0xb9:  # $B9/185 LDA abs,Y
+        if instruction == 0xB9:  # $B9/185 LDA abs,Y
             self.cpucycles += self.eval_page_crossing_absolute_y()
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.absolute_y()))
             self.pc += 2
             return 1
 
-        if instruction == 0xa1:  # $A1/161 LDA (zp,X)
+        if instruction == 0xA1:  # $A1/161 LDA (zp,X)
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.indirect_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xb1:  # $B1/177 LDA (zp),Y
+        if instruction == 0xB1:  # $B1/177 LDA (zp),Y
             self.cpucycles += self.eval_page_crossing_indirect_y()
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.indirect_y()))
             self.pc += 1
@@ -1496,22 +1756,22 @@ class Cpu6502Emulator:
         # ASSIGNSETFLAGS(x, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xa6:
         # ASSIGNSETFLAGS(x, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb6:
         # ASSIGNSETFLAGS(x, MEM(ZEROPAGEY()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xae:
         # ASSIGNSETFLAGS(x, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xbe:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ASSIGNSETFLAGS(x, MEM(ABSOLUTEY()));
@@ -1519,27 +1779,27 @@ class Cpu6502Emulator:
         # break;
 
         # LDX instructions
-        if instruction == 0xa2:  # $A2/162 LDX #n
+        if instruction == 0xA2:  # $A2/162 LDX #n
             self.assign_then_set_flags(X_OPREF, OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xa6:  # $A6/166 LDX zp
+        if instruction == 0xA6:  # $A6/166 LDX zp
             self.assign_then_set_flags(X_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xb6:  # $B6/182 LDX zp,Y
+        if instruction == 0xB6:  # $B6/182 LDX zp,Y
             self.assign_then_set_flags(X_OPREF, OperandRef(LOC_VAL, self.zeropage_y()))
             self.pc += 1
             return 1
 
-        if instruction == 0xae:  # $AE/174 LDX abs
+        if instruction == 0xAE:  # $AE/174 LDX abs
             self.assign_then_set_flags(X_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xbe:  # $BE/190 LDX abs,Y
+        if instruction == 0xBE:  # $BE/190 LDX abs,Y
             self.cpucycles += self.eval_page_crossing_absolute_y()
             self.assign_then_set_flags(X_OPREF, OperandRef(LOC_VAL, self.absolute_y()))
             self.pc += 2
@@ -1549,22 +1809,22 @@ class Cpu6502Emulator:
         # ASSIGNSETFLAGS(y, IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xa4:
         # ASSIGNSETFLAGS(y, MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xb4:
         # ASSIGNSETFLAGS(y, MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xac:
         # ASSIGNSETFLAGS(y, MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xbc:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ASSIGNSETFLAGS(y, MEM(ABSOLUTEX()));
@@ -1572,27 +1832,27 @@ class Cpu6502Emulator:
         # break;
 
         # LDY instructions
-        if instruction == 0xa0:  # $A0/160 LDY #n
+        if instruction == 0xA0:  # $A0/160 LDY #n
             self.assign_then_set_flags(Y_OPREF, OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xa4:  # $A4/164 LDY zp
+        if instruction == 0xA4:  # $A4/164 LDY zp
             self.assign_then_set_flags(Y_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xb4:  # $B4/180 LDY zp,X
+        if instruction == 0xB4:  # $B4/180 LDY zp,X
             self.assign_then_set_flags(Y_OPREF, OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xac:  # $AC/172 LDY abs
+        if instruction == 0xAC:  # $AC/172 LDY abs
             self.assign_then_set_flags(Y_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xbc:  # $BC/188 LDY abs,X
+        if instruction == 0xBC:  # $BC/188 LDY abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.assign_then_set_flags(Y_OPREF, OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
@@ -1601,25 +1861,25 @@ class Cpu6502Emulator:
         # case 0x4a:
         # LSR(a);
         # break;
-        # 
+        #
         # case 0x46:
         # LSR(MEM(ZEROPAGE()));
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x56:
         # LSR(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x4e:
         # LSR(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x5e:
         # LSR(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1627,7 +1887,7 @@ class Cpu6502Emulator:
         # break;
 
         # LSR instructions
-        if instruction == 0x4a:  # $4A/74 LSR A
+        if instruction == 0x4A:  # $4A/74 LSR A
             self.LSR(A_OPREF)
             return 1
 
@@ -1641,12 +1901,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x4e:  # $4E/78 LSR abs
+        if instruction == 0x4E:  # $4E/78 LSR abs
             self.LSR(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x5e:  # $5E/94 LSR abs,X
+        if instruction == 0x5E:  # $5E/94 LSR abs,X
             self.LSR(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
@@ -1655,46 +1915,46 @@ class Cpu6502Emulator:
         # break;
 
         # NOP instruction
-        if instruction == 0xea:  # $EA/234 NOP
+        if instruction == 0xEA:  # $EA/234 NOP
             return 1
 
         # case 0x09:
         # ORA(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x05:
         # ORA(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x15:
         # ORA(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x0d:
         # ORA(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x1d:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # ORA(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x19:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # ORA(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x01:
         # ORA(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0x11:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ORA(MEM(INDIRECTY()));
@@ -1717,12 +1977,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x0d:  # $0D/13 ORA abs
+        if instruction == 0x0D:  # $0D/13 ORA abs
             self.ORA(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x1d:  # $1D/29 ORA abs,X
+        if instruction == 0x1D:  # $1D/29 ORA abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.ORA(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
@@ -1786,25 +2046,25 @@ class Cpu6502Emulator:
         # case 0x2a:
         # ROL(a);
         # break;
-        # 
+        #
         # case 0x26:
         # ROL(MEM(ZEROPAGE()));
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x36:
         # ROL(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x2e:
         # ROL(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x3e:
         # ROL(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1812,7 +2072,7 @@ class Cpu6502Emulator:
         # break;
 
         # ROL instructions
-        if instruction == 0x2a:  # $2A/42 ROL A
+        if instruction == 0x2A:  # $2A/42 ROL A
             self.ROL(A_OPREF)
             return 1
 
@@ -1826,12 +2086,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x2e:  # $2E/46 ROL abs
+        if instruction == 0x2E:  # $2E/46 ROL abs
             self.ROL(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x3e:  # $3E/62 ROL abs,X
+        if instruction == 0x3E:  # $3E/62 ROL abs,X
             self.ROL(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
@@ -1839,25 +2099,25 @@ class Cpu6502Emulator:
         # case 0x6a:
         # ROR(a);
         # break;
-        # 
+        #
         # case 0x66:
         # ROR(MEM(ZEROPAGE()));
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x76:
         # ROR(MEM(ZEROPAGEX()));
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x6e:
         # ROR(MEM(ABSOLUTE()));
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x7e:
         # ROR(MEM(ABSOLUTEX()));
         # WRITE(ABSOLUTEX());
@@ -1865,7 +2125,7 @@ class Cpu6502Emulator:
         # break;
 
         # ROR instructions
-        if instruction == 0x6a:  # $6A/106 ROR A
+        if instruction == 0x6A:  # $6A/106 ROR A
             self.ROR(A_OPREF)
             return 1
 
@@ -1879,12 +2139,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x6e:  # $6E/110 ROR abs
+        if instruction == 0x6E:  # $6E/110 ROR abs
             self.ROR(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0x7e:  # $7E/126 ROR abs,X
+        if instruction == 0x7E:  # $7E/126 ROR abs,X
             self.ROR(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
@@ -1898,17 +2158,17 @@ class Cpu6502Emulator:
 
         # RTI instruction
         if instruction == 0x40:  # $40/64 RTI
-            if not self.stack_wrapping and self.sp >= 0xfd:
-                return 0            
+            if not self.stack_wrapping and self.sp >= 0xFD:
+                return 0
             # siddump.c did the following, but it's bad, since the stack needs to wrap
             # if self.sp == 0xff:
-            #     return 0             
+            #     return 0
             self.flags = self.pop()  # no action taken on B flag
-            self.flags |= FU  # needed for Wolfgang Lorenz tests  
+            self.flags |= FU  # needed for Wolfgang Lorenz tests
             # Note that unlike RTS, the return address on the stack is the actual
-            # address rather than the address-1.                    
+            # address rather than the address-1.
             self.pc = self.pop()
-            self.pc |= (self.pop() << 8)
+            self.pc |= self.pop() << 8
             return 1
 
         # case 0x60:
@@ -1920,10 +2180,10 @@ class Cpu6502Emulator:
 
         # RTS instruction
         if instruction == 0x60:  # $60/96 RTS
-            if not self.stack_wrapping and self.sp >= 0xfe:
+            if not self.stack_wrapping and self.sp >= 0xFE:
                 return 0
             self.pc = self.pop()
-            self.pc |= (self.pop() << 8)
+            self.pc |= self.pop() << 8
             self.pc += 1
             return 1
 
@@ -1931,39 +2191,39 @@ class Cpu6502Emulator:
         # SBC(IMMEDIATE());
         # pc++;
         # break;
-        # 
+        #
         # case 0xe5:
         # SBC(MEM(ZEROPAGE()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xf5:
         # SBC(MEM(ZEROPAGEX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xed:
         # SBC(MEM(ABSOLUTE()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xfd:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEX();
         # SBC(MEM(ABSOLUTEX()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xf9:
         # cpucycles += EVALPAGECROSSING_ABSOLUTEY();
         # SBC(MEM(ABSOLUTEY()));
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xe1:
         # SBC(MEM(INDIRECTX()));
         # pc++;
         # break;
-        # 
+        #
         # case 0xf1:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # SBC(MEM(INDIRECTY()));
@@ -1972,45 +2232,45 @@ class Cpu6502Emulator:
 
         # SBC instructions
         # $E9 or (equivalent pseudo op) $EB will work here, see:
-        #    https://wiki.nesdev.com/w/index.php/Programming_with_unofficial_opcodes#Duplicated_instructions        
-        if instruction == 0xe9 or instruction == 0xeb:  # $E9/233 (or $EB/235) SBC #n
+        #    https://wiki.nesdev.com/w/index.php/Programming_with_unofficial_opcodes#Duplicated_instructions
+        if instruction == 0xE9 or instruction == 0xEB:  # $E9/233 (or $EB/235) SBC #n
             self.SBC(OperandRef(BYTE_VAL, self.immediate()))
             self.pc += 1
             return 1
 
-        if instruction == 0xe5:  # $E5/229 SBC zp
+        if instruction == 0xE5:  # $E5/229 SBC zp
             self.SBC(OperandRef(LOC_VAL, self.zeropage()))
             self.pc += 1
             return 1
 
-        if instruction == 0xf5:  # $F5/245 SBC zp,X
+        if instruction == 0xF5:  # $F5/245 SBC zp,X
             self.SBC(OperandRef(LOC_VAL, self.zeropage_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xed:  # $ED/237 SBC abs
+        if instruction == 0xED:  # $ED/237 SBC abs
             self.SBC(OperandRef(LOC_VAL, self.absolute()))
             self.pc += 2
             return 1
 
-        if instruction == 0xfd:  # $FD/253 SBC abs,X
+        if instruction == 0xFD:  # $FD/253 SBC abs,X
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.SBC(OperandRef(LOC_VAL, self.absolute_x()))
             self.pc += 2
             return 1
 
-        if instruction == 0xf9:  # $F9/249 SBC abs,Y
+        if instruction == 0xF9:  # $F9/249 SBC abs,Y
             self.cpucycles += self.eval_page_crossing_absolute_y()
             self.SBC(OperandRef(LOC_VAL, self.absolute_y()))
             self.pc += 2
             return 1
 
-        if instruction == 0xe1:  # $E1/225 SBC (zp,X)
+        if instruction == 0xE1:  # $E1/225 SBC (zp,X)
             self.SBC(OperandRef(LOC_VAL, self.indirect_x()))
             self.pc += 1
             return 1
 
-        if instruction == 0xf1:  # $F1/241 SBC (zp),Y
+        if instruction == 0xF1:  # $F1/241 SBC (zp),Y
             self.cpucycles += self.eval_page_crossing_indirect_y()
             self.SBC(OperandRef(LOC_VAL, self.indirect_y()))
             self.pc += 1
@@ -2030,7 +2290,7 @@ class Cpu6502Emulator:
         # break;
 
         # SED instruction
-        if instruction == 0xf8:  # $F8/248 SED
+        if instruction == 0xF8:  # $F8/248 SED
             self.flags |= FD
             return 1
 
@@ -2048,37 +2308,37 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x95:
         # MEM(ZEROPAGEX()) = a;
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x8d:
         # MEM(ABSOLUTE()) = a;
         # WRITE(ABSOLUTE());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x9d:
         # MEM(ABSOLUTEX()) = a;
         # WRITE(ABSOLUTEX());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x99:
         # MEM(ABSOLUTEY()) = a;
         # WRITE(ABSOLUTEY());
         # pc += 2;
         # break;
-        # 
+        #
         # case 0x81:
         # MEM(INDIRECTX()) = a;
         # WRITE(INDIRECTX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x91:
         # MEM(INDIRECTY()) = a;
         # WRITE(INDIRECTY());
@@ -2097,12 +2357,12 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x8d:  # $8D/141 STA abs
+        if instruction == 0x8D:  # $8D/141 STA abs
             self.set_mem(self.absolute(), self.a)
             self.pc += 2
             return 1
 
-        if instruction == 0x9d:  # $9D/157 STA abs,X
+        if instruction == 0x9D:  # $9D/157 STA abs,X
             self.set_mem(self.absolute_x(), self.a)
             self.pc += 2
             return 1
@@ -2127,13 +2387,13 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x96:
         # MEM(ZEROPAGEY()) = x;
         # WRITE(ZEROPAGEY());
         # pc++;
         # break;
-        # 
+        #
         # case 0x8e:
         # MEM(ABSOLUTE()) = x;
         # WRITE(ABSOLUTE());
@@ -2151,7 +2411,7 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x8e:  # $8E/142 STX abs
+        if instruction == 0x8E:  # $8E/142 STX abs
             self.set_mem(self.absolute(), self.x)
             self.pc += 2
             return 1
@@ -2161,13 +2421,13 @@ class Cpu6502Emulator:
         # WRITE(ZEROPAGE());
         # pc++;
         # break;
-        # 
+        #
         # case 0x94:
         # MEM(ZEROPAGEX()) = y;
         # WRITE(ZEROPAGEX());
         # pc++;
         # break;
-        # 
+        #
         # case 0x8c:
         # MEM(ABSOLUTE()) = y;
         # WRITE(ABSOLUTE());
@@ -2185,7 +2445,7 @@ class Cpu6502Emulator:
             self.pc += 1
             return 1
 
-        if instruction == 0x8c:  # $8C/140 STY abs
+        if instruction == 0x8C:  # $8C/140 STY abs
             self.set_mem(self.absolute(), self.y)
             self.pc += 2
             return 1
@@ -2195,7 +2455,7 @@ class Cpu6502Emulator:
         # break;
 
         # TAX instruction
-        if instruction == 0xaa:  # $AA/170 TAX
+        if instruction == 0xAA:  # $AA/170 TAX
             self.assign_then_set_flags(X_OPREF, A_OPREF)
             return 1
 
@@ -2204,7 +2464,7 @@ class Cpu6502Emulator:
         # break;
 
         # TSX instruction
-        if instruction == 0xba:  # $BA/186 TSX
+        if instruction == 0xBA:  # $BA/186 TSX
             self.assign_then_set_flags(X_OPREF, SP_OPREF)
             return 1
 
@@ -2213,7 +2473,7 @@ class Cpu6502Emulator:
         # break;
 
         # TXA instruction
-        if instruction == 0x8a:  # $8A/138 TXA
+        if instruction == 0x8A:  # $8A/138 TXA
             self.assign_then_set_flags(A_OPREF, X_OPREF)
             return 1
 
@@ -2222,7 +2482,7 @@ class Cpu6502Emulator:
         # break;
 
         # TXS instruction
-        if instruction == 0x9a:  # $9A/154 TXS
+        if instruction == 0x9A:  # $9A/154 TXS
             # Bug in siddump.c, TXS does NOT set flags
             self.assign_no_flag_changes(SP_OPREF, X_OPREF)
             return 1
@@ -2241,7 +2501,7 @@ class Cpu6502Emulator:
         # break;
 
         # TAY instruction
-        if instruction == 0xa8:  # $A8/168 TAY
+        if instruction == 0xA8:  # $A8/168 TAY
             self.assign_then_set_flags(Y_OPREF, A_OPREF)
             return 1
 
@@ -2260,9 +2520,9 @@ class Cpu6502Emulator:
             # This is unnecessary to implement from a SID playback perspective
             # so siddump.c ignored it
             self.pc += 1  # BRK is a 2-byte opcode (2nd byte is padding)
-            self.pc &= 0xf000
+            self.pc &= 0xF000
             self.push((self.pc) >> 8)
-            self.push((self.pc) & 0xff)
+            self.push((self.pc) & 0xFF)
             self.push(self.flags | FB)
             self.flags |= FI
             self.pc = self.get_le_word(IRQ)
@@ -2273,25 +2533,25 @@ class Cpu6502Emulator:
         # x = a;
         # pc++;
         # break;
-        # 
+        #
         # case 0xb7:
         # ASSIGNSETFLAGS(a, MEM(ZEROPAGEY()));
         # x = a;
         # pc++;
         # break;
-        # 
+        #
         # case 0xaf:
         # ASSIGNSETFLAGS(a, MEM(ABSOLUTE()));
         # x = a;
         # pc += 2;
         # break;
-        # 
+        #
         # case 0xa3:
         # ASSIGNSETFLAGS(a, MEM(INDIRECTX()));
         # x = a;
         # pc++;
         # break;
-        # 
+        #
         # case 0xb3:
         # cpucycles += EVALPAGECROSSING_INDIRECTY();
         # ASSIGNSETFLAGS(a, MEM(INDIRECTY()));
@@ -2300,31 +2560,31 @@ class Cpu6502Emulator:
         # break;
 
         # "LAX" pseudo-ops
-        if instruction == 0xa7:  # $A7/167 LDA-LDX zp
+        if instruction == 0xA7:  # $A7/167 LDA-LDX zp
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.zeropage()))
             self.x = self.a
             self.pc += 1
             return 1
 
-        if instruction == 0xb7:  # $B7/183 LDA-LDX zp,Y
+        if instruction == 0xB7:  # $B7/183 LDA-LDX zp,Y
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.zeropage_y()))
             self.x = self.a
             self.pc += 1
             return 1
 
-        if instruction == 0xaf:  # $AF/175 LDA-LDX abs
+        if instruction == 0xAF:  # $AF/175 LDA-LDX abs
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.absolute()))
             self.x = self.a
             self.pc += 2
             return 1
 
-        if instruction == 0xa3:  # $A3/163 LDA-LDX (zp,X)
+        if instruction == 0xA3:  # $A3/163 LDA-LDX (zp,X)
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.indirect_x()))
             self.x = self.a
             self.pc += 1
             return 1
 
-        if instruction == 0xb3:  # $B3/179 LDA-LDX (zp),Y
+        if instruction == 0xB3:  # $B3/179 LDA-LDX (zp),Y
             self.cpucycles += self.eval_page_crossing_indirect_y()
             self.assign_then_set_flags(A_OPREF, OperandRef(LOC_VAL, self.indirect_y()))
             self.x = self.a
@@ -2338,7 +2598,7 @@ class Cpu6502Emulator:
         # case 0xda:
         # case 0xfa:
         # break;
-        # 
+        #
         # case 0x80:
         # case 0x82:
         # case 0x89:
@@ -2355,7 +2615,7 @@ class Cpu6502Emulator:
         # case 0xf4:
         # pc++;
         # break;
-        # 
+        #
         # case 0x0c:
         # case 0x1c:
         # case 0x3c:
@@ -2376,7 +2636,7 @@ class Cpu6502Emulator:
         # $7A/122 NOP
         # $DA/218 NOP
         # $FA/250 NOP
-        if instruction in (0x1a, 0x3a, 0x5a, 0x7a, 0xda, 0xfa):
+        if instruction in (0x1A, 0x3A, 0x5A, 0x7A, 0xDA, 0xFA):
             return 1
 
         # NOP (aka SKB) of size 2
@@ -2385,18 +2645,20 @@ class Cpu6502Emulator:
         # $89/137 NOP zp
         # $C2/194 NOP (or HALT?)
         # $E2/226 NOP (or HALT?)
-        if (instruction in (0x80, 0x82, 0x89, 0xc2, 0xe2)  # 2 cycle
-                # $04/4 NOP zp
-                # $44/68 NOP zp
-                # $64/100 NOP zp
-                or instruction in (0x04, 0x44, 0x64)  # 3 cycle
-                # $14/20 NOP zp
-                # $34/52 NOP zp
-                # $54/84 NOP zp
-                # $74/116 NOP zp
-                # $D4/212 NOP zp
-                # $F4/244 NOP zp
-                or instruction in (0x14, 0x34, 0x54, 0x74, 0xd4, 0xf4)):  # 4 cycle
+        if (
+            instruction in (0x80, 0x82, 0x89, 0xC2, 0xE2)  # 2 cycle
+            # $04/4 NOP zp
+            # $44/68 NOP zp
+            # $64/100 NOP zp
+            or instruction in (0x04, 0x44, 0x64)  # 3 cycle
+            # $14/20 NOP zp
+            # $34/52 NOP zp
+            # $54/84 NOP zp
+            # $74/116 NOP zp
+            # $D4/212 NOP zp
+            # $F4/244 NOP zp
+            or instruction in (0x14, 0x34, 0x54, 0x74, 0xD4, 0xF4)
+        ):  # 4 cycle
             self.pc += 1
             return 1
 
@@ -2410,7 +2672,7 @@ class Cpu6502Emulator:
         # $7C/124 NOP abs,X
         # $DC/220 NOP abs,X
         # $FC/252 NOP abs,X
-        if instruction in (0x0c, 0x1c, 0x3c, 0x5c, 0x7c, 0xdc, 0xfc):
+        if instruction in (0x0C, 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC):
             self.cpucycles += self.eval_page_crossing_absolute_x()
             self.pc += 2
             return 1
@@ -2433,8 +2695,20 @@ class Cpu6502Emulator:
         # $B2/178 HALT
         # $D2/210 HALT
         # $F2/242 HALT
-        if instruction in (0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92,
-                           0xb2, 0xd2, 0xf2):
+        if instruction in (
+            0x02,
+            0x12,
+            0x22,
+            0x32,
+            0x42,
+            0x52,
+            0x62,
+            0x72,
+            0x92,
+            0xB2,
+            0xD2,
+            0xF2,
+        ):
             raise ChiptuneSAKValueError("Error: CPU halt at %s\n" % hex(self.pc - 1))
 
         # Pseudo-ops I'm not likely to need for SID playback (TODO: implement later)
@@ -2499,13 +2773,13 @@ class Cpu6502Emulator:
         # $FB/251 INC-SBC abs,Y
         # $FF/255 INC-SBC abs,X
 
-        raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s"
-            % (hex(instruction), hex(self.pc - 1)))
-
+        raise ChiptuneSAKNotImplemented(
+            "Error: unknown/unimplemented opcode %s at %s"
+            % (hex(instruction), hex(self.pc - 1))
+        )
 
     def get_le_word(self, mem_loc):
-        return self.get_mem(mem_loc) | (self.get_mem(mem_loc+1) << 8)
-
+        return self.get_mem(mem_loc) | (self.get_mem(mem_loc + 1) << 8)
 
     def inject_bytes(self, mem_loc, bytes):
         for i, a_byte in enumerate(bytes):
@@ -2517,10 +2791,18 @@ class Cpu6502Emulator:
 # OperandRef can be a reference to registers, byte vals (often immediates), and memory locations
 class OperandRef:
     def __init__(self, type, val_or_loc=None):
-        assert type in (A_REG, X_REG, Y_REG, SP_REG, BYTE_VAL, LOC_VAL), \
-            "Error: invalid enum type when instantiating a new OperandRef"
+        assert type in (
+            A_REG,
+            X_REG,
+            Y_REG,
+            SP_REG,
+            BYTE_VAL,
+            LOC_VAL,
+        ), "Error: invalid enum type when instantiating a new OperandRef"
         if type in (A_REG, X_REG, Y_REG, SP_REG) and val_or_loc is not None:
-            raise ChiptuneSAKValueError("Error: value not needed for operand of type register")
+            raise ChiptuneSAKValueError(
+                "Error: value not needed for operand of type register"
+            )
         if type in (BYTE_VAL, LOC_VAL) and val_or_loc is None:
             raise ChiptuneSAKValueError("Error: value needed for operand")
         if type == BYTE_VAL and not (0 <= val_or_loc <= 255):
@@ -2544,7 +2826,9 @@ class OperandRef:
         elif self.type == LOC_VAL:
             cpuInstance.set_mem(self.val_or_loc, byte_val)
         else:
-            raise ChiptuneSAKValueError("Error: unable to set OperandRef to a byte value")
+            raise ChiptuneSAKValueError(
+                "Error: unable to set OperandRef to a byte value"
+            )
 
     # this returns the register value, the fixed value, or the memory location's
     #    content value

@@ -1,5 +1,5 @@
 # Code to import and export goattracker .sng files (both regular and stereo)
-# 
+#
 # Notes:
 # - This code ignores multispeed (for now)
 #
@@ -15,18 +15,18 @@ from os.path import isfile, join
 import sys
 import copy
 from dataclasses import dataclass
-import ctsConstants #import ARCH, C0_MIDI_NUM, project_to_absolute_path
+import ctsConstants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
 import ctsBase
 from ctsBytesUtil import read_binary_file, write_binary_file
 import ctsRChirp
 from ctsErrors import *
 
 
-DEFAULT_INSTR_PATH = 'res/gtInstruments/'
+DEFAULT_INSTR_PATH = "res/gtInstruments/"
 DEFAULT_MAX_PAT_LEN = 126
 
 # GoatTracker constants
-GT_FILE_HEADER = b'GTS5'
+GT_FILE_HEADER = b"GTS5"
 GT_INSTR_BYTE_LEN = 25
 GT_DEFAULT_TEMPO = 6
 GT_DEFAULT_FUNKTEMPOS = [9, 6]  # default alternating tempos, from GT's gplay.c
@@ -36,7 +36,9 @@ GT_DEFAULT_FUNKTEMPOS = [9, 6]  # default alternating tempos, from GT's gplay.c
 # Most found in gcommon.h
 GT_MAX_SUBTUNES_PER_SONG = 32  # Each subtune gets its own orderlist of patterns
 # "song" means a collection of independently-playable subtunes
-GT_MAX_ELM_PER_ORDERLIST = 255  # at minimum, it must contain the endmark and following byte
+GT_MAX_ELM_PER_ORDERLIST = (
+    255  # at minimum, it must contain the endmark and following byte
+)
 GT_MAX_INSTR_PER_SONG: int = 63
 GT_MAX_PATTERNS_PER_SONG = 208  # patterns can be shared across channels and subtunes
 # Can populate rows 0-127, 128 is end marker.  Min row count allowed is 1.
@@ -58,16 +60,19 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
     The IO interface for GoatTracker and GoatTracker Stereo
     Supports conversions between RChirp and GoatTracker .sng format
     """
+
     @classmethod
     def cts_type(cls):
-        return 'GoatTracker'
+        return "GoatTracker"
 
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
-        self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
-                         instruments=[],          # gt instrument assignments, in order
-                         end_with_repeat=False,   # default is to stop GoatTracker from repeating music
-                         arch=ctsConstants.DEFAULT_ARCH)  # architecture (for import to RChirp)
+        self.set_options(
+            max_pattern_len=DEFAULT_MAX_PAT_LEN,  # max pattern length if no given patterns
+            instruments=[],  # gt instrument assignments, in order
+            end_with_repeat=False,  # default is to stop GoatTracker from repeating music
+            arch=ctsConstants.DEFAULT_ARCH,
+        )  # architecture (for import to RChirp)
 
     def set_options(self, **kwargs):
         """
@@ -79,17 +84,17 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         for op, val in kwargs.items():
             op = op.lower()  # All option names must be lowercase
             # Check for legal maximum pattern length
-            if op == 'max_pattern_len':
+            if op == "max_pattern_len":
                 if not (1 <= val <= GT_MAX_ROWS_PER_PATTERN):
                     raise Exception("Error: max rows for a pattern out of range")
-            elif op == 'instruments':
+            elif op == "instruments":
                 # Check to be sure instrument names don't include extensions
                 for i, ins_name in enumerate(val):
-                    if ins_name[-4:] == '.ins':
+                    if ins_name[-4:] == ".ins":
                         val[i] = ins_name[:-4]
-            elif op == 'arch':
+            elif op == "arch":
                 if val not in ctsConstants.ARCH:
-                    raise ChiptuneSAKValueError(f'Unknown architecture {val}')
+                    raise ChiptuneSAKValueError(f"Unknown architecture {val}")
             # Now set the option
             self._options[op] = val
 
@@ -107,7 +112,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
             * **max_pattern_len** (int) - Maximum pattern length to use. Must be <= 127
             * **instruments** (list of str) - Instrument names
         """
-        if rchirp_song.cts_type() != 'RChirp':
+        if rchirp_song.cts_type() != "RChirp":
             raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")
 
         self.set_options(**kwargs)
@@ -115,9 +120,11 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         self.append_instruments_to_rchirp(rchirp_song)
 
         parsed_gt = GTSong()
-        parsed_gt.export_rchirp_to_parsed_gt(rchirp_song,
-                     self.get_option('end_with_repeat', False),
-                     self.get_option('max_pattern_len', DEFAULT_MAX_PAT_LEN))
+        parsed_gt.export_rchirp_to_parsed_gt(
+            rchirp_song,
+            self.get_option("end_with_repeat", False),
+            self.get_option("max_pattern_len", DEFAULT_MAX_PAT_LEN),
+        )
         return parsed_gt.export_parsed_gt_to_gt_binary()
 
     def to_file(self, rchirp_song, filename, **kwargs):
@@ -132,7 +139,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         :keyword options:  see `to_bin()`
 
         """
-        with open(filename, 'wb') as f:
+        with open(filename, "wb") as f:
             f.write(self.to_bin(rchirp_song, **kwargs))
 
     def to_rchirp(self, filename, **kwargs):
@@ -149,23 +156,23 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
             * **arch** (str) - architecture string. Must be one defined in ctsConstants.py
         """
         self.set_options(**kwargs)
-        subtune = int(self.get_option('subtune', 0))
-        arch = self.get_option('arch', ctsConstants.DEFAULT_ARCH)
+        subtune = int(self.get_option("subtune", 0))
+        arch = self.get_option("arch", ctsConstants.DEFAULT_ARCH)
         rchirp_song = import_sng_file_to_rchirp(filename, subtune_number=subtune)
         rchirp_song.arch = arch
         return rchirp_song
 
     def append_instruments_to_rchirp(self, rchirp_song):
-        for instrument in list(self.get_option('instruments')):
+        for instrument in list(self.get_option("instruments")):
             add_gt_instrument_to_rchirp(rchirp_song, instrument)
 
 
 @dataclass
 class GtHeader:
     id: str = GT_FILE_HEADER
-    song_name: str = ''
-    author_name: str = ''
-    copyright: str = ''
+    song_name: str = ""
+    author_name: str = ""
+    copyright: str = ""
     num_subtunes: int = 0
 
     def to_bytes(self):
@@ -173,7 +180,7 @@ class GtHeader:
         Converts header information into GT bytes.
         :return: bytes that represet the header fields
         :rtype: bytes
-        """        
+        """
         result = bytearray()
         result += GT_FILE_HEADER
         result += pad_or_truncate(self.song_name, 32)
@@ -199,15 +206,21 @@ class GtPatternRow:
         :return: bytes that represet the pattern row
         :rtype: bytes
         """
-        if self.note_data is not None \
-                and not (GT_NOTE_OFFSET <= self.note_data <= GT_MAX_NOTE_VALUE) \
-                and self.note_data != GT_PAT_END:
-            raise ChiptuneSAKValueError(f'Illegal GT note value number: {self.note_data:02X}')
+        if (
+            self.note_data is not None
+            and not (GT_NOTE_OFFSET <= self.note_data <= GT_MAX_NOTE_VALUE)
+            and self.note_data != GT_PAT_END
+        ):
+            raise ChiptuneSAKValueError(
+                f"Illegal GT note value number: {self.note_data:02X}"
+            )
         if self.note_data is None:
             self.note_data = GT_REST
         else:
             assert self.instr_num is not None, "None instrument number"
-            return bytes([self.note_data, self.instr_num, self.command, self.command_data])
+            return bytes(
+                [self.note_data, self.instr_num, self.command, self.command_data]
+            )
 
 
 PATTERN_END_ROW = GtPatternRow(note_data=GT_PAT_END)
@@ -224,6 +237,7 @@ class GtInstrument:
     to which they point are 0-based, except for in the GoatTracker GUI where they're
     displayed as 1-based.
     """
+
     instr_num: int = 0
     attack_decay: int = 0
     sustain_release: int = 0
@@ -234,19 +248,28 @@ class GtInstrument:
     vib_delay: int = 0
     gateoff_timer: int = 0x02
     hard_restart_1st_frame_wave: int = 0x09
-    inst_name: str = ''
+    inst_name: str = ""
 
     def to_bytes(self):
         """
         Converts an instrument instance into GT bytes.
         :return: bytes that represet the instrument
         :rtype: bytes
-        """        
+        """
         result = bytearray()
-        result += bytes([self.attack_decay, self.sustain_release,
-                        self.wave_ptr, self.pulse_ptr, self.filter_ptr,
-                        self.vib_speedtable_ptr, self.vib_delay, self.gateoff_timer,
-                        self.hard_restart_1st_frame_wave])
+        result += bytes(
+            [
+                self.attack_decay,
+                self.sustain_release,
+                self.wave_ptr,
+                self.pulse_ptr,
+                self.filter_ptr,
+                self.vib_speedtable_ptr,
+                self.vib_delay,
+                self.gateoff_timer,
+                self.hard_restart_1st_frame_wave,
+            ]
+        )
         result += pad_or_truncate(self.inst_name, 16)
         return result
 
@@ -267,21 +290,25 @@ class GtInstrument:
         :return: new GtInstrument instance
         :rtype: GtInstrument
         """
-        if starting_index+GT_INSTR_BYTE_LEN-1 > len(bytes):
-            raise ChiptuneSAKValueError("Error: index out of range when instantiating GTInstrument")
+        if starting_index + GT_INSTR_BYTE_LEN - 1 > len(bytes):
+            raise ChiptuneSAKValueError(
+                "Error: index out of range when instantiating GTInstrument"
+            )
 
         result = cls()
-        result.instr_num = instr_num        
+        result.instr_num = instr_num
         result.attack_decay = bytes[starting_index + 0]
         result.sustain_release = bytes[starting_index + 1]
-        result.wave_ptr = bytes[starting_index + 2]   
-        result.pulse_ptr = bytes[starting_index + 3]      
-        result.filter_ptr = bytes[starting_index + 4]      
-        result.vib_speedtable_ptr = bytes[starting_index + 5] 
+        result.wave_ptr = bytes[starting_index + 2]
+        result.pulse_ptr = bytes[starting_index + 3]
+        result.filter_ptr = bytes[starting_index + 4]
+        result.vib_speedtable_ptr = bytes[starting_index + 5]
         result.vib_delay = bytes[starting_index + 6]
         result.gateoff_timer = bytes[starting_index + 7]
         result.hard_restart_1st_frame_wave = bytes[starting_index + 8]
-        result.inst_name = get_chars(bytes[starting_index + 9: starting_index + GT_INSTR_BYTE_LEN])
+        result.inst_name = get_chars(
+            bytes[starting_index + 9 : starting_index + GT_INSTR_BYTE_LEN]
+        )
 
         return result
 
@@ -289,8 +316,8 @@ class GtInstrument:
 @dataclass
 class GtTable:
     row_cnt: int = 0
-    left_col: bytes = b''
-    right_col: bytes = b''
+    left_col: bytes = b""
+    right_col: bytes = b""
 
     def append_table(self, a_table):
         """
@@ -310,14 +337,14 @@ class GtTable:
         Converts a table into GT bytes.
         :return: bytes that represet the table
         :rtype: bytes
-        """        
+        """
         result = bytearray()
         result.append(self.row_cnt)
         result += self.left_col
         result += self.right_col
         return result
 
-    @classmethod   
+    @classmethod
     def from_bytes(cls, bytes):
         """
         Constructor that builds a table from GT bytes
@@ -329,12 +356,14 @@ class GtTable:
         """
         col_len = bytes[0]
         if len(bytes) != (col_len * 2) + 1:
-            raise ChiptuneSAKValueError("Error: malformed table bytes in construction of GtTable instance") 
+            raise ChiptuneSAKValueError(
+                "Error: malformed table bytes in construction of GtTable instance"
+            )
 
         result = cls()
         result.row_cnt = col_len
-        result.left_col = bytes[1:col_len+1]
-        result.right_col = bytes[col_len+1:]
+        result.left_col = bytes[1 : col_len + 1]
+        result.right_col = bytes[col_len + 1 :]
         return result
 
     def __eq__(self, other):
@@ -352,7 +381,7 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     :return: An RChirp song for the subtune
     :rtype: RChirpSong        
     """
-    if not input_filename.lower().endswith(r'.sng'):
+    if not input_filename.lower().endswith(r".sng"):
         raise ChiptuneSAKIOError(r'Error: Expecting input filename that ends in ".sng"')
     if not path.exists(input_filename):
         raise ChiptuneSAKIOError('Cannot find "%s"' % input_filename)
@@ -363,12 +392,12 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     max_subtune_number = len(parsed_gt.subtune_orderlists) - 1
 
     if subtune_number < 0:
-        raise ChiptuneSAKValueError('subtune_number must be >= 0')
+        raise ChiptuneSAKValueError("subtune_number must be >= 0")
     if subtune_number > max_subtune_number:
-        raise ChiptuneSAKValueError('subtune_number must be <= %d' % max_subtune_number)
+        raise ChiptuneSAKValueError("subtune_number must be <= %d" % max_subtune_number)
 
     rchirp = parsed_gt.import_parsed_gt_to_rchirp(subtune_number)
-    
+
     return rchirp
 
 
@@ -383,9 +412,15 @@ def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     :return: Midi note number
     :rtype: int
     """
-    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (octave_offset * 12)
+    midi_note = (
+        pattern_note_byte
+        - (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM)
+        + (octave_offset * 12)
+    )
     if not (0 <= midi_note < 128):
-        raise ChiptuneSAKValueError(f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}")
+        raise ChiptuneSAKValueError(
+            f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}"
+        )
     return midi_note
 
 
@@ -404,10 +439,10 @@ def get_table(an_index, file_bytes):
     # no point in checking rows > GT_MAX_TABLE_LEN, since GT_MAX_TABLE_LEN is a $FF (max byte val)
     an_index += 1
 
-    left_entries = file_bytes[an_index:an_index + rows]
+    left_entries = file_bytes[an_index : an_index + rows]
     an_index += rows
 
-    right_entries = file_bytes[an_index:an_index + rows]
+    right_entries = file_bytes[an_index : an_index + rows]
 
     return GtTable(row_cnt=rows, left_col=left_entries, right_col=right_entries)
 
@@ -423,8 +458,8 @@ def pad_or_truncate(to_pad, length):
     :rtype: 
     """
     if isinstance(to_pad, str):
-        to_pad = to_pad.encode('latin-1')
-    return to_pad.ljust(length, b'\0')[0:length]
+        to_pad = to_pad.encode("latin-1")
+    return to_pad.ljust(length, b"\0")[0:length]
 
 
 def get_chars(in_bytes, trim_nulls=True):
@@ -438,9 +473,9 @@ def get_chars(in_bytes, trim_nulls=True):
     :return: String conversion
     :rtype: string
     """
-    result = in_bytes.decode('Latin-1')
+    result = in_bytes.decode("Latin-1")
     if trim_nulls:
-        result = result.strip('\0')  # no interpretation, preserve encoding
+        result = result.strip("\0")  # no interpretation, preserve encoding
     return result
 
 
@@ -452,7 +487,7 @@ def get_ins_filenames():
     :rtype: list
     """
     dir = ctsConstants.project_to_absolute_path(DEFAULT_INSTR_PATH)
-    ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == '.ins']
+    ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == ".ins"]
     return ins_files
 
 
@@ -470,24 +505,33 @@ def create_gt_metadata_if_missing(rchirp_song):
 
     # stub in tables with a single entry
     if "gt.wave_table" not in extensions:
-        extensions["gt.wave_table"] = bytearray(b'\x00')
+        extensions["gt.wave_table"] = bytearray(b"\x00")
     if "gt.pulse_table" not in extensions:
-        extensions["gt.pulse_table"] = bytearray(b'\x00')
+        extensions["gt.pulse_table"] = bytearray(b"\x00")
     if "gt.filter_table" not in extensions:
-        extensions["gt.filter_table"] = bytearray(b'\x00')       
+        extensions["gt.filter_table"] = bytearray(b"\x00")
     if "gt.speed_table" not in extensions:
-        extensions["gt.speed_table"] = bytearray(b'\x00')
+        extensions["gt.speed_table"] = bytearray(b"\x00")
 
 
-def instrument_appender(gt_inst_name, new_instr_num, in_wave_table, in_pulse_table, \
-    in_filter_table, in_speed_table, path = DEFAULT_INSTR_PATH):
+def instrument_appender(
+    gt_inst_name,
+    new_instr_num,
+    in_wave_table,
+    in_pulse_table,
+    in_filter_table,
+    in_speed_table,
+    path=DEFAULT_INSTR_PATH,
+):
     """
     Load the named instrument's ins file and generate updated wavetables
     """
 
-    ins_bytes = read_binary_file(ctsConstants.project_to_absolute_path(path + gt_inst_name + '.ins'))
+    ins_bytes = read_binary_file(
+        ctsConstants.project_to_absolute_path(path + gt_inst_name + ".ins")
+    )
 
-    if ins_bytes[0:4] != b'GTI5':
+    if ins_bytes[0:4] != b"GTI5":
         raise ChiptuneSAKValueError("Invalid instrument file structure")
     file_index = 4
 
@@ -529,11 +573,17 @@ def instrument_appender(gt_inst_name, new_instr_num, in_wave_table, in_pulse_tab
         an_instrument.vib_speedtable_ptr = in_speed_table.row_cnt + 1
     in_speed_table.append_table(tables[3])
 
-    return (an_instrument, in_wave_table, in_pulse_table, in_filter_table, in_speed_table)
+    return (
+        an_instrument,
+        in_wave_table,
+        in_pulse_table,
+        in_filter_table,
+        in_speed_table,
+    )
 
 
 # load GoatTracker v2 instrument (.ins file) and append to song
-def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_PATH):
+def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path=DEFAULT_INSTR_PATH):
     """
     Appends a instrument binary to the RChirp metadata extensions.
 
@@ -564,7 +614,8 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_
         GtTable.from_bytes(extensions["gt.wave_table"]),
         GtTable.from_bytes(extensions["gt.pulse_table"]),
         GtTable.from_bytes(extensions["gt.filter_table"]),
-        GtTable.from_bytes(extensions["gt.speed_table"]))
+        GtTable.from_bytes(extensions["gt.speed_table"]),
+    )
 
     # append instrument
     extensions["gt.instruments"] += instr.to_bytes()
@@ -572,7 +623,7 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_
     # assign updated wavetables
     extensions["gt.wave_table"] = wt.to_bytes()
     extensions["gt.pulse_table"] = pt.to_bytes()
-    extensions["gt.filter_table"] = ft.to_bytes()    
+    extensions["gt.filter_table"] = ft.to_bytes()
     extensions["gt.speed_table"] = st.to_bytes()
 
 
@@ -584,7 +635,9 @@ class GTSong:
     def __init__(self):
         self.headers = GtHeader()  #: goattracker file headers
         self.num_channels = 3  #: 3 or 6 voices
-        self.subtune_orderlists = [[[], [], []]]  #: Nested lists: Subtunes->channels->orderlist
+        self.subtune_orderlists = [
+            [[], [], []]
+        ]  #: Nested lists: Subtunes->channels->orderlist
         self.instruments = []  #: list of GtInstrument instances
         self.wave_table = GtTable()  #: wave table
         self.pulse_table = GtTable()  #: pulse table
@@ -649,11 +702,12 @@ class GTSong:
         length = file_bytes[an_index] + 1  # add one for restart
         an_index += 1
 
-        orderlist = file_bytes[an_index:an_index + length]
+        orderlist = file_bytes[an_index : an_index + length]
         an_index += length
         # check that next-to-last byte is $FF
-        assert file_bytes[an_index - 2] == 255, \
-            "Error: Did not find expected $FF RST endmark in channel's orderlist"
+        assert (
+            file_bytes[an_index - 2] == 255
+        ), "Error: Did not find expected $FF RST endmark in channel's orderlist"
 
         return orderlist
 
@@ -674,8 +728,10 @@ class GTSong:
 
         orderlist_count = 0
         while True:
-            index_of_ff = sng_bytes[file_index]  # get length (minus 1) of orderlist for voice
-            if sng_bytes[file_index + index_of_ff] != 0xff: # if orderlist, will be $FF
+            index_of_ff = sng_bytes[
+                file_index
+            ]  # get length (minus 1) of orderlist for voice
+            if sng_bytes[file_index + index_of_ff] != 0xFF:  # if orderlist, will be $FF
                 break
             orderlist_count += 1
             file_index += index_of_ff + 2  # account for the byte after the 0xff
@@ -686,10 +742,14 @@ class GTSong:
         if orderlist_count == expected_num_orderlists_for_6sid:
             return True
 
-        raise ChiptuneSAKContentError("Error: found %d orderlists (expected %d or %d)" %
-            (orderlist_count, expected_num_orderlists_for_3sid,
-            expected_num_orderlists_for_6sid))                      
-
+        raise ChiptuneSAKContentError(
+            "Error: found %d orderlists (expected %d or %d)"
+            % (
+                orderlist_count,
+                expected_num_orderlists_for_3sid,
+                expected_num_orderlists_for_6sid,
+            )
+        )
 
     def import_sng_file_to_parsed_gt(self, input_filename):
         """
@@ -699,7 +759,7 @@ class GTSong:
         :param input_filename: Filename for input .sng file
         :type input_filename: string
         """
-        with open(input_filename, 'rb') as f:
+        with open(input_filename, "rb") as f:
             sng_bytes = f.read()
 
         self.import_sng_binary_to_parsed_gt(sng_bytes)
@@ -783,7 +843,7 @@ class GTSong:
 
         instruments = [GtInstrument()]  # start with empty instrument number 0
 
-        inst_count = sng_bytes[file_index] # doesn't include the NOP instrument 0
+        inst_count = sng_bytes[file_index]  # doesn't include the NOP instrument 0
         file_index += 1
 
         for i in range(inst_count):
@@ -810,7 +870,12 @@ class GTSong:
             tables.append(a_table)
             file_index += a_table.row_cnt * 2 + 1
 
-        (self.wave_table, self.pulse_table, self.filter_table, self.speed_table) = tables
+        (
+            self.wave_table,
+            self.pulse_table,
+            self.filter_table,
+            self.speed_table,
+        ) = tables
 
         # From goattracker documentation:
         #    6.1.5 Patterns header
@@ -845,11 +910,18 @@ class GTSong:
             assert num_rows <= GT_MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
             file_index += 1
             for row_num in range(num_rows):
-                a_row = GtPatternRow(note_data=sng_bytes[file_index], instr_num=sng_bytes[file_index + 1],
-                                    command=sng_bytes[file_index + 2], command_data=sng_bytes[file_index + 3])
-                assert (GT_NOTE_OFFSET <= a_row.note_data <= GT_MAX_NOTE_VALUE) or a_row.note_data == GT_PAT_END, \
-                    "Error: unexpected note data value"
-                assert a_row.instr_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
+                a_row = GtPatternRow(
+                    note_data=sng_bytes[file_index],
+                    instr_num=sng_bytes[file_index + 1],
+                    command=sng_bytes[file_index + 2],
+                    command_data=sng_bytes[file_index + 3],
+                )
+                assert (
+                    GT_NOTE_OFFSET <= a_row.note_data <= GT_MAX_NOTE_VALUE
+                ) or a_row.note_data == GT_PAT_END, "Error: unexpected note data value"
+                assert (
+                    a_row.instr_num <= GT_MAX_INSTR_PER_SONG
+                ), "Error: instrument number out of range"
                 assert a_row.command <= 0x0F, "Error: command number out of range"
                 file_index += 4
                 a_pattern.append(a_row)
@@ -857,7 +929,9 @@ class GTSong:
 
         self.patterns = patterns
 
-        assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
+        assert file_index == len(
+            sng_bytes
+        ), "Error: bytes parsed didn't match file bytes length"
 
     def midi_note_to_pattern_note(self, midi_note, octave_offset=0):
         """
@@ -870,12 +944,20 @@ class GTSong:
         :return: GT note value
         :rtype: int
         """
-        gt_note_value = midi_note + (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (-1 * octave_offset * 12)
+        gt_note_value = (
+            midi_note
+            + (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM)
+            + (-1 * octave_offset * 12)
+        )
         if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
-            raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
+            raise ChiptuneSAKValueError(
+                f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}"
+            )
         return gt_note_value
 
-    def make_orderlist_entry(self, pattern_number, transposition, repeats, prev_transposition):
+    def make_orderlist_entry(
+        self, pattern_number, transposition, repeats, prev_transposition
+    ):
         """
         Makes orderlist entries from a pattern number, a transposition, and a number of repeats.
 
@@ -901,7 +983,7 @@ class GTSong:
                 transposition -= 12
             while transposition < -15:
                 transposition += 12
-            assert(-15 <= transposition <= 14), "bad transposition = %d" % transposition
+            assert -15 <= transposition <= 14, "bad transposition = %d" % transposition
             transposition += 0xF0
 
         # Longest possible repeat is 16, so generate as many of those as needed
@@ -990,10 +1072,14 @@ class GTSong:
         rchirp_song.metadata.copyright = self.headers.copyright
 
         # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
-        channels_state = [GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i])
-                        for i in range(self.num_channels)]
+        channels_state = [
+            GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i])
+            for i in range(self.num_channels)
+        ]
 
-        rchirp_song.voices = [ctsRChirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
+        rchirp_song.voices = [
+            ctsRChirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)
+        ]
 
         # TODO: Make track assignment to SID groupings not hardcoded
         if self.is_stereo:
@@ -1044,7 +1130,7 @@ class GTSong:
                 # KeyOn (only recorded if there's a curr_note defined)
                 if cs.row_has_key_on:
                     rc_row.note_num = cs.curr_note
-                    rc_row.instr_num = gt_row.instr_num # Why not...
+                    rc_row.instr_num = gt_row.instr_num  # Why not...
                     rc_row.gate = True
 
                 # if note_data is an actual note, then cs.curr_note has been updated
@@ -1063,7 +1149,9 @@ class GTSong:
                     else:  # it's an index to a funktable tempo
                         cs.curr_funktable_index = cs.local_tempo_update
                         # convert into a normal tempo change
-                        cs.curr_tempo = GtChannelState.funktable[cs.curr_funktable_index]
+                        cs.curr_tempo = GtChannelState.funktable[
+                            cs.curr_funktable_index
+                        ]
                     rc_row.jiffy_len = cs.curr_tempo
 
                 # this channel signals a global tempo change that will affect all the channels
@@ -1077,12 +1165,16 @@ class GTSong:
             # If more than one channel made a tempo change, the global tempo change on the highest
             # voice/channel number wins (consistent with goattracker behavior)
             if global_tempo_change is not None:
-                for j, cs in enumerate(channels_state):  # Time to apply the global changes:
+                for j, cs in enumerate(
+                    channels_state
+                ):  # Time to apply the global changes:
                     if global_tempo_change >= 2:
                         cs.curr_funktable_index = None  # funk tempo mode off
                         new_tempo = global_tempo_change
                     else:  # it's an index to a funktable tempo
-                        cs.curr_funktable_index = global_tempo_change  # stateful funky tracking
+                        cs.curr_funktable_index = (
+                            global_tempo_change  # stateful funky tracking
+                        )
                         # convert into a normal tempo change
                         new_tempo = GtChannelState.funktable[cs.curr_funktable_index]
 
@@ -1104,7 +1196,9 @@ class GTSong:
         for i, cs in enumerate(channels_state):
             rows = rchirp_song.voices[i].rows
             reversed_index = list(reversed(list(rows.keys())))
-            for seek_index in reversed_index[1:]:  # skip largest row num, and work backwards
+            for seek_index in reversed_index[
+                1:
+            ]:  # skip largest row num, and work backwards
                 if rows[seek_index].note_num is not None:
                     rows[reversed_index[0]].note_num = rows[seek_index].note_num
                     rows[reversed_index[0]].gate = False  # gate off
@@ -1115,12 +1209,16 @@ class GTSong:
         rchirp_song.metadata.extensions["gt.instruments"] = self.get_instruments_bytes()
         rchirp_song.metadata.extensions["gt.wave_table"] = self.wave_table.to_bytes()
         rchirp_song.metadata.extensions["gt.pulse_table"] = self.pulse_table.to_bytes()
-        rchirp_song.metadata.extensions["gt.filter_table"] = self.filter_table.to_bytes()
+        rchirp_song.metadata.extensions[
+            "gt.filter_table"
+        ] = self.filter_table.to_bytes()
         rchirp_song.metadata.extensions["gt.speed_table"] = self.speed_table.to_bytes()
 
         # Before returning the rchirp song, might as well make use of our test cases here
         rchirp_song.integrity_check()  # Will throw assertions if there are any problems
-        assert rchirp_song.is_contiguous(), "Error: rchirp representation should not be sparse"
+        assert (
+            rchirp_song.is_contiguous()
+        ), "Error: rchirp representation should not be sparse"
 
         return rchirp_song
 
@@ -1137,15 +1235,28 @@ class GTSong:
         :type path: string, optional
 
         """
-        new_instr_num = len(self.instruments) # no +1 here
+        new_instr_num = len(self.instruments)  # no +1 here
 
-        (instr, self.wave_table, self.pulse_table, self.filter_table, self.speed_table) = \
-            instrument_appender(gt_inst_name, new_instr_num, self.wave_table, \
-            self.pulse_table, self.filter_table, self.speed_table)
+        (
+            instr,
+            self.wave_table,
+            self.pulse_table,
+            self.filter_table,
+            self.speed_table,
+        ) = instrument_appender(
+            gt_inst_name,
+            new_instr_num,
+            self.wave_table,
+            self.pulse_table,
+            self.filter_table,
+            self.speed_table,
+        )
 
         self.instruments.append(instr)
 
-    def export_rchirp_to_parsed_gt(self, rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN):
+    def export_rchirp_to_parsed_gt(
+        self, rchirp_song, end_with_repeat=False, max_pattern_len=DEFAULT_MAX_PAT_LEN
+    ):
         """
         Populate GTSong instance from RChirp data.
 
@@ -1171,12 +1282,15 @@ class GTSong:
             song_name=rchirp_song.metadata.name[:32],
             author_name=rchirp_song.metadata.composer[:32],
             copyright=rchirp_song.metadata.copyright[:32],
-            num_subtunes=1)
+            num_subtunes=1,
+        )
         self.headers = headers
 
         is_stereo = len(rchirp_song.voices) >= 4
         if len(rchirp_song.voices) > 6:
-            raise ChiptuneSAKContentError("Error: Stereo SID can only support up to 6 voices")
+            raise ChiptuneSAKContentError(
+                "Error: Stereo SID can only support up to 6 voices"
+            )
 
         if is_stereo:
             num_channels = 6
@@ -1185,7 +1299,9 @@ class GTSong:
         self.num_channels = num_channels
 
         patterns = []  # can be shared across all channels
-        orderlists = [[] for _ in range(num_channels)]  # Note: this is bad: [[]] * len(tracknums)
+        orderlists = [
+            [] for _ in range(num_channels)
+        ]  # Note: this is bad: [[]] * len(tracknums)
         instrument_nums_seen = set()
         too_many_patterns = False
 
@@ -1203,7 +1319,9 @@ class GTSong:
                         gt_row.note_data = self.midi_note_to_pattern_note(r.note_num)
                         gt_row.instr_num = r.instr_num
                         instrument_nums_seen.add(r.instr_num)
-                    elif r.gate is False:  # if ending a note ('false' check because tri-state)
+                    elif (
+                        r.gate is False
+                    ):  # if ending a note ('false' check because tri-state)
                         gt_row.note_data = GT_KEY_OFF
                         gt_row.instr_num = r.instr_num
                     if r.new_jiffy_tempo is not None:
@@ -1215,12 +1333,16 @@ class GTSong:
                 patterns.append(pattern)
 
             for i, v in enumerate(rchirp_song.voices):
-                prev_transposition = 0  # Start out each voice with default transposition of 0
+                prev_transposition = (
+                    0  # Start out each voice with default transposition of 0
+                )
                 for entry in v.orderlist:
-                    ol_entry = self.make_orderlist_entry(entry.pattern_num,
-                                                    entry.transposition,
-                                                    entry.repeats,
-                                                    prev_transposition)
+                    ol_entry = self.make_orderlist_entry(
+                        entry.pattern_num,
+                        entry.transposition,
+                        entry.repeats,
+                        prev_transposition,
+                    )
                     orderlists[i].extend(ol_entry)
                     prev_transposition = entry.transposition
 
@@ -1228,7 +1350,7 @@ class GTSong:
         else:
             curr_pattern_num = 0
 
-            # for each channel, get its rows, and create patterns, adding them to the 
+            # for each channel, get its rows, and create patterns, adding them to the
             # channel's orderlist
             for i, rchirp_voice in enumerate(rchirp_song.voices):
                 rchirp_rows = rchirp_voice.rows
@@ -1248,8 +1370,12 @@ class GTSong:
                         gt_row = GtPatternRow()
 
                         if rchirp_row.gate:  # if starting a note
-                            gt_row.note_data = self.midi_note_to_pattern_note(rchirp_row.note_num)
-                            assert GT_NOTE_OFFSET <= gt_row.note_data <= GT_MAX_NOTE_VALUE, 'Illegal note number'
+                            gt_row.note_data = self.midi_note_to_pattern_note(
+                                rchirp_row.note_num
+                            )
+                            assert (
+                                GT_NOTE_OFFSET <= gt_row.note_data <= GT_MAX_NOTE_VALUE
+                            ), "Illegal note number"
 
                             if rchirp_row.new_instrument is not None:
                                 gt_row.instr_num = rchirp_row.new_instrument
@@ -1261,7 +1387,9 @@ class GTSong:
                                 # (goattracker can assert instrument without note, but that's a NOP)
                                 gt_row.instr_num = prev_instrument
 
-                        elif rchirp_row.gate is False:  # if ending a note ('false' check because tri-state)
+                        elif (
+                            rchirp_row.gate is False
+                        ):  # if ending a note ('false' check because tri-state)
                             gt_row.note_data = GT_KEY_OFF
 
                         if rchirp_row.new_jiffy_tempo is not None:
@@ -1277,7 +1405,9 @@ class GTSong:
                     if pattern_row_index == max_pattern_len:  # if pattern is full
                         pattern.append(PATTERN_END_ROW)  # finish with end row marker
                         patterns.append(pattern)
-                        orderlists[i].append(curr_pattern_num)  # append to orderlist for this channel
+                        orderlists[i].append(
+                            curr_pattern_num
+                        )  # append to orderlist for this channel
                         curr_pattern_num += 1
                         if curr_pattern_num >= GT_MAX_PATTERNS_PER_SONG:
                             too_many_patterns = True
@@ -1286,7 +1416,9 @@ class GTSong:
                         pattern_row_index = 0
                 if too_many_patterns:
                     break
-                if len(pattern) > 0:  # if there's a final partially-filled pattern, add it
+                if (
+                    len(pattern) > 0
+                ):  # if there's a final partially-filled pattern, add it
                     pattern.append(PATTERN_END_ROW)
                     patterns.append(pattern)
                     orderlists[i].append(curr_pattern_num)
@@ -1297,8 +1429,10 @@ class GTSong:
                 if TRUNCATE_IF_TOO_BIG:
                     print("Warning: too much note data, truncated patterns")
                 else:
-                    raise ChiptuneSAKContentError("Error: More than %d goattracker patterns created"
-                        % GT_MAX_PATTERNS_PER_SONG)
+                    raise ChiptuneSAKContentError(
+                        "Error: More than %d goattracker patterns created"
+                        % GT_MAX_PATTERNS_PER_SONG
+                    )
 
         # Usually, songs repeat.  Each channel's orderlist ends with RST00, which means restart at the
         # 1st entry in that channel's pattern list (note: orderlist is normally full of pattern numbers,
@@ -1321,17 +1455,23 @@ class GTSong:
             patterns.append(loop_pattern)
             loop_pattern_num = len(patterns) - 1
             for i in range(num_channels):
-                orderlists[i].append(loop_pattern_num)  # pattern caps all voices' orderlists
+                orderlists[i].append(
+                    loop_pattern_num
+                )  # pattern caps all voices' orderlists
 
         for i in range(num_channels):
             orderlists[i].append(GT_OL_RST)  # all patterns end with restart indicator
             if end_with_repeat:  # if each voice starts completely over...
                 orderlists[i].append(0)  # index of start of channel order list
             else:
-                orderlists[i].append(len(orderlists[i]) - 2)  # index of the empty loop pattern
+                orderlists[i].append(
+                    len(orderlists[i]) - 2
+                )  # index of the empty loop pattern
 
         self.patterns = patterns
-        self.subtune_orderlists = [orderlists]  # only one subtune, so nested in a pair of list brackets
+        self.subtune_orderlists = [
+            orderlists
+        ]  # only one subtune, so nested in a pair of list brackets
 
         create_gt_metadata_if_missing(rchirp_song)
         extensions = rchirp_song.metadata.extensions
@@ -1348,19 +1488,21 @@ class GTSong:
         ignore = GT_MAX_INSTR_PER_SONG - 1
 
         # find all instrument numbers for which an instrument binary is not already defined
-        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )            
+        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )
         rchirp_inst_count = len(rchirp_song.metadata.extensions["gt.instruments"])
-        unmapped_inst_nums = [x for x in instrument_nums_seen if x > rchirp_inst_count and x != ignore]
+        unmapped_inst_nums = [
+            x for x in instrument_nums_seen if x > rchirp_inst_count and x != ignore
+        ]
 
         # since we're in an instrument append-only world (at least for now), just append
         # simple triangle instrument up to the max unmatched instrument
         # This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
         # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
-        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive 
+        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive
         # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
         # exist here.
         if len(unmapped_inst_nums) > 0:
-            for i in range(rchirp_inst_count, max(unmapped_inst_nums)+1):
+            for i in range(rchirp_inst_count, max(unmapped_inst_nums) + 1):
                 self.add_gt_instrument_to_parsed_gt("SimpleTriangle")
 
 
@@ -1370,12 +1512,14 @@ class GtChannelState:
     # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
     # to and processing different songs at the same time (seems unlikely).
     # FUTURE: add instrument handling
-    # FUTURE: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
+    # FUTURE: ignoring multispeed considerations for now (would act as a simple multiplier for each)
     funktable = GT_DEFAULT_FUNKTEMPOS
 
     def __init__(self, voice_num, channel_orderlist):
         self.voice_num = voice_num
-        self.orderlist_index = -1  # -1 = bootstrapping value only, None = stuck in loop with no patterns
+        self.orderlist_index = (
+            -1
+        )  # -1 = bootstrapping value only, None = stuck in loop with no patterns
         self.row_index = -1  # -1 = bootstrapping value only
         self.pat_remaining_plays = 1  # default is to play a pattern once
         self.row_ticks_left = 1  # required value when bootstrapping
@@ -1388,8 +1532,12 @@ class GtChannelState:
         self.local_tempo_update = None
         self.global_tempo_update = None
         self.restarted = False  # channel has encountered restart one or more times
-        self.channel_orderlist = channel_orderlist  # just this channel's orderlist from the subtune
-        self.curr_funktable_index = None  # None = no funk tempos, 0 or 1 indicates current funktable index
+        self.channel_orderlist = (
+            channel_orderlist  # just this channel's orderlist from the subtune
+        )
+        self.curr_funktable_index = (
+            None  # None = no funk tempos, 0 or 1 indicates current funktable index
+        )
         self.curr_tempo = GT_DEFAULT_TEMPO
 
         # position atop first pattern in orderlist for channel
@@ -1414,9 +1562,15 @@ class GtChannelState:
             return None
 
         new_row_duration = None
-        self.inc_to_next_row(a_song.patterns)  # finished last pattern row, advance to the next
+        self.inc_to_next_row(
+            a_song.patterns
+        )  # finished last pattern row, advance to the next
         # get the current row in the current pattern from this channel's orderlist
-        row = copy.deepcopy(a_song.patterns[self.channel_orderlist[self.orderlist_index]][self.row_index])
+        row = copy.deepcopy(
+            a_song.patterns[self.channel_orderlist[self.orderlist_index]][
+                self.row_index
+            ]
+        )
 
         # If row contains a note, transpose if necessary (0 = no transform)
         if GT_NOTE_OFFSET <= row.note_data < GT_REST:  # range $60 (C0) to $BC (G#7)
@@ -1424,7 +1578,9 @@ class GtChannelState:
             assert note >= GT_NOTE_OFFSET, "Error: transpose dropped note below midi C0"
             # According to docs, allowed to transpose +3 halfsteps above the highest note (G#7)
             #    that can be entered in the GT GUI, to create a B7
-            assert note <= GT_MAX_NOTE_VALUE, "Error: transpose raised note above midi B7"
+            assert (
+                note <= GT_MAX_NOTE_VALUE
+            ), "Error: transpose raised note above midi B7"
             self.curr_note = pattern_note_to_midi_note(note)
             self.row_has_note = True
 
@@ -1447,11 +1603,11 @@ class GtChannelState:
                 self.row_has_key_on = True
 
         # Notes on funktempo (all this logic gleaned from reading through gplay.c)
-        # 
+        #
         # Funktempo allows switching between two tempos on alternating pattern rows, to achieve
         # a "swing" or more organic feel.
-        # - for non-multispeed songs, it defaults to 9 and 6 
-        # 
+        # - for non-multispeed songs, it defaults to 9 and 6
+        #
         # The funktempo command is $E followed by an index to a single row in the speed table
         # - The left/right values in the speedtable row contain the two (alternating) tempo values
         # - Under the covers (in gplay.c), the array funktable[2] holds the two tempos
@@ -1461,7 +1617,7 @@ class GtChannelState:
         #    - the two values in funktable[] are global to all participating channels
         # - The command applies to all channels (3 or 6 for stereo) and all channels are set to
         #   tempo 0
-        # 
+        #
         # The tempo command is $F, and "tempos" $00 and $01 change all channels to the tempo that's
         # been previously set in funktable[0] or funktable[1] respectively, and every subsequent
         # row will alternate between the [0] and [1] entries of the funktable.  In otherwords,
@@ -1474,18 +1630,24 @@ class GtChannelState:
         if row.command == 0x0E:  # funktempo command
             speed_table_index = row.command_data
             if speed_table_index > a_song.speed_table.row_cnt:
-                raise ChiptuneSAKContentError("Error: speed table index %d too big for table of size %d"
-                                              % (speed_table_index, a_song.speed_table.row_cnt))
+                raise ChiptuneSAKContentError(
+                    "Error: speed table index %d too big for table of size %d"
+                    % (speed_table_index, a_song.speed_table.row_cnt)
+                )
 
             # look up the two funk tempos in the speed table and set the channel-shared funktable
             speed_table_index -= 1  # convert to zero-indexing
             GtChannelState.funktable[0] = a_song.speed_table.left_col[speed_table_index]
-            GtChannelState.funktable[1] = a_song.speed_table.right_col[speed_table_index]
+            GtChannelState.funktable[1] = a_song.speed_table.right_col[
+                speed_table_index
+            ]
 
             new_row_duration = GtChannelState.funktable[0]
 
             # Record global funktempo change
-            self.global_tempo_update = 0  # 0 will later become the tempo in funktable entry 0
+            self.global_tempo_update = (
+                0  # 0 will later become the tempo in funktable entry 0
+            )
         elif row.command == GT_TEMPO_CHNG_CMD:
             # From docs:
             #    Values $03-$7F set tempo on all channels, values $83-$FF only on current channel (subtract
@@ -1493,10 +1655,14 @@ class GtChannelState:
 
             # Note: The higher voice number seems to win ties on simultaneous speed changes
 
-            assert row.command_data not in [0x02, 0x82], \
-                "Unimplemented: Don't know how to support tempo change with value %d" % row.command_data
+            assert row.command_data not in [0x02, 0x82], (
+                "Unimplemented: Don't know how to support tempo change with value %d"
+                % row.command_data
+            )
 
-            new_row_duration = row.command_data & 127  # don't care if it's global or local
+            new_row_duration = (
+                row.command_data & 127
+            )  # don't care if it's global or local
             if new_row_duration < 2:
                 new_row_duration = GtChannelState.funktable[new_row_duration]
 
@@ -1546,7 +1712,7 @@ class GtChannelState:
         #    target note)
         #
         #    Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-        #    copied to the timing mark location, which is playeraddress+$3F.    
+        #    copied to the timing mark location, which is playeraddress+$3F.
 
         return row
 
@@ -1559,13 +1725,17 @@ class GtChannelState:
         row = patterns[self.channel_orderlist[self.orderlist_index]][self.row_index]
         if row == PATTERN_END_ROW:
             self.pat_remaining_plays -= 1
-            assert self.pat_remaining_plays >= 0, "Error: negative number of remaining plays for pattern"
+            assert (
+                self.pat_remaining_plays >= 0
+            ), "Error: negative number of remaining plays for pattern"
             self.row_index = 0  # all patterns are guaranteed to start with at least one meaningful (not end mark) row
             if self.pat_remaining_plays == 0:  # all done with this pattern, moving on
                 self.__inc_orderlist_to_next_pattern()
 
     def __inc_orderlist_to_next_pattern(self):
-        self.pat_remaining_plays = 1  # patterns default to one playthrough unless otherwise specified
+        self.pat_remaining_plays = (
+            1  # patterns default to one playthrough unless otherwise specified
+        )
         while True:
             self.orderlist_index += 1  # bootstraps at -1
             a_byte = self.channel_orderlist[self.orderlist_index]
@@ -1576,7 +1746,9 @@ class GtChannelState:
             #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
             #   Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
             #   I'm assuming byte 224 is never used in orderlists
-            assert a_byte != 0xE0, "Unimplemented: Don't believe byte E0 should occur in the orderlist"
+            assert (
+                a_byte != 0xE0
+            ), "Unimplemented: Don't believe byte E0 should occur in the orderlist"
             if 0xE1 <= a_byte <= 0xFE:  # F0 = +0 = no transposition
                 self.curr_transposition = a_byte - 0xF0  # transpose range is -15 to +14
                 continue
@@ -1595,11 +1767,21 @@ class GtChannelState:
                 self.restarted = True
 
                 start_index = self.channel_orderlist[
-                    self.orderlist_index + 1]  # byte following RST is orderlist restart index
+                    self.orderlist_index + 1
+                ]  # byte following RST is orderlist restart index
                 end_index = self.orderlist_index  # byte containing RST
-                self.orderlist_index = self.channel_orderlist[self.orderlist_index + 1]  # perform orderlist "goto" jump
+                self.orderlist_index = self.channel_orderlist[
+                    self.orderlist_index + 1
+                ]  # perform orderlist "goto" jump
                 # check if there's at least one pattern between the restart location and the RST
-                if sum(1 for p in self.channel_orderlist[start_index:end_index] if p < GT_MAX_PATTERNS_PER_SONG) == 0:
+                if (
+                    sum(
+                        1
+                        for p in self.channel_orderlist[start_index:end_index]
+                        if p < GT_MAX_PATTERNS_PER_SONG
+                    )
+                    == 0
+                ):
                     self.orderlist_index = None
                     break  # no pattern to ultimately end up on, so we're done
                 # continue loop, just in case we land on a repeat or transpose that needs resolving
@@ -1610,8 +1792,10 @@ class GtChannelState:
             if a_byte < GT_MAX_PATTERNS_PER_SONG:  # if it's a pattern
                 break  # found one, done parsing
 
-            raise ChiptuneSAKException("Error: found uninterpretable value %d in orderlist" % a_byte)
+            raise ChiptuneSAKException(
+                "Error: found uninterpretable value %d in orderlist" % a_byte
+            )
 
 
-#if __name__ == "__main__":
+# if __name__ == "__main__":
 #    pass

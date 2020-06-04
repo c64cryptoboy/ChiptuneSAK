@@ -6,7 +6,7 @@ import ctsConstants
 import ctsRChirp
 import ctsMidi
 
-COMPRESS_TEST_SONG = ctsConstants.project_to_absolute_path('test/data/BWV_799.mid')
+COMPRESS_TEST_SONG = ctsConstants.project_to_absolute_path("test/data/BWV_799.mid")
 
 
 class TestCompression(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestCompression(unittest.TestCase):
 
     def test_one_pass_compression(self):
         self.compress_test_song = ctsMidi.MIDI().to_chirp(COMPRESS_TEST_SONG)
-        self.compress_test_song.quantize_from_note_name('16')
+        self.compress_test_song.quantize_from_note_name("16")
         for i, program in enumerate([11, 10, 6]):
             self.compress_test_song.tracks[i].set_program(program)
 
@@ -35,7 +35,7 @@ class TestCompression(unittest.TestCase):
         rchirp_song = compressor.compress(rchirp_song, min_length=8)
 
         exporter = ctsGoatTracker.GoatTracker()
-        exporter.to_file(rchirp_song, '../test/data/gt_test_out.sng')
+        exporter.to_file(rchirp_song, "../test/data/gt_test_out.sng")
 
         self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
@@ -50,7 +50,9 @@ class TestCompression(unittest.TestCase):
         gt_io = ctsGoatTracker.GoatTracker()
 
         # Convert goattracker sng to an rchirp
-        rchirp_song = gt_io.to_rchirp(str(ctsConstants.project_to_absolute_path('test/data/gtTestData.sng')))
+        rchirp_song = gt_io.to_rchirp(
+            str(ctsConstants.project_to_absolute_path("test/data/gtTestData.sng"))
+        )
 
         # create patterns and orderlists
         compressor = ctsOnePassCompress.OnePassLeftToRight()
@@ -61,5 +63,5 @@ class TestCompression(unittest.TestCase):
         self.assertTrue(True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

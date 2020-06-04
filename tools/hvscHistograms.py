@@ -8,13 +8,32 @@ import itertools
 from ctsConstants import project_to_absolute_path
 import ctsSID
 
-HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')
+HVSC_LOG = project_to_absolute_path("res/HVSC72.zip")
 
-histograms_categories = ['magic_id', 'version', 'data_offset', 'load_address', 'init_address',
-    'play_address', 'num_subtunes', 'start_song', 'speed', 'flag_0', 'flag_1', 'clock',
-    'sid_model', 'sid2_model', 'sid3_model', 'start_page', 'page_length', 'sid2_address',
-    'sid3_address', 'sid_count']
+histograms_categories = [
+    "magic_id",
+    "version",
+    "data_offset",
+    "load_address",
+    "init_address",
+    "play_address",
+    "num_subtunes",
+    "start_song",
+    "speed",
+    "flag_0",
+    "flag_1",
+    "clock",
+    "sid_model",
+    "sid2_model",
+    "sid3_model",
+    "start_page",
+    "page_length",
+    "sid2_address",
+    "sid3_address",
+    "sid_count",
+]
 histograms = {category: {} for category in histograms_categories}
+
 
 def update_hist(category, value):
     global histograms
@@ -22,35 +41,36 @@ def update_hist(category, value):
         histograms[category][value] = 0
     histograms[category][value] += 1
 
-with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
-    sid_files = [fn for fn in hvsc_zip.namelist() if fn.lower().endswith('.sid')]
+
+with zipfile.ZipFile(HVSC_LOG, "r") as hvsc_zip:
+    sid_files = [fn for fn in hvsc_zip.namelist() if fn.lower().endswith(".sid")]
     for sid_file in sid_files:
         bytes = hvsc_zip.read(sid_file)
         # print("Processing %s (%d bytes)" % (sid_file, len(bytes)))
 
         parsed = ctsSID.SidFile()
-        parsed.parse_binary(bytes)   
-        
-        update_hist('magic_id', parsed.magic_id)
-        update_hist('version', parsed.version)
-        update_hist('data_offset', parsed.data_offset)
-        update_hist('load_address', parsed.load_address)
-        update_hist('init_address', parsed.init_address)
-        update_hist('play_address', parsed.play_address)
-        update_hist('num_subtunes', parsed.num_subtunes)
-        update_hist('start_song', parsed.start_song)
-        update_hist('speed', parsed.speed)
-        update_hist('flag_0', parsed.flag_0)
-        update_hist('flag_1', parsed.flag_1)
-        update_hist('clock', parsed.decode_clock())
-        update_hist('sid_model', parsed.decode_sid_model(parsed.sid_model))
-        update_hist('sid2_model', parsed.decode_sid_model(parsed.sid2_model))
-        update_hist('sid3_model', parsed.decode_sid_model(parsed.sid3_model))
-        update_hist('start_page', parsed.start_page)
-        update_hist('page_length', parsed.page_length)
-        update_hist('sid2_address', parsed.sid2_address)
-        update_hist('sid3_address', parsed.sid3_address)
-        update_hist('sid_count', parsed.sid_count)
+        parsed.parse_binary(bytes)
+
+        update_hist("magic_id", parsed.magic_id)
+        update_hist("version", parsed.version)
+        update_hist("data_offset", parsed.data_offset)
+        update_hist("load_address", parsed.load_address)
+        update_hist("init_address", parsed.init_address)
+        update_hist("play_address", parsed.play_address)
+        update_hist("num_subtunes", parsed.num_subtunes)
+        update_hist("start_song", parsed.start_song)
+        update_hist("speed", parsed.speed)
+        update_hist("flag_0", parsed.flag_0)
+        update_hist("flag_1", parsed.flag_1)
+        update_hist("clock", parsed.decode_clock())
+        update_hist("sid_model", parsed.decode_sid_model(parsed.sid_model))
+        update_hist("sid2_model", parsed.decode_sid_model(parsed.sid2_model))
+        update_hist("sid3_model", parsed.decode_sid_model(parsed.sid3_model))
+        update_hist("start_page", parsed.start_page)
+        update_hist("page_length", parsed.page_length)
+        update_hist("sid2_address", parsed.sid2_address)
+        update_hist("sid3_address", parsed.sid3_address)
+        update_hist("sid_count", parsed.sid_count)
 
 print("\nHistograms:")
 max_hist_entries_to_display = 20
@@ -66,9 +86,9 @@ for category, hist in histograms.items():
     lmax = max(len(str(v)) for v in hist)
 
     print(f"\n{category}{trunc_note}:")
-    print('  ' + '\n  '.join(f'{str(value):>{lmax}}: {hist[value]}' for value in hist))
+    print("  " + "\n  ".join(f"{str(value):>{lmax}}: {hist[value]}" for value in hist))
 
-'''
+"""
 Histograms:
 
 magic_id:       
@@ -309,4 +329,4 @@ sid_count:
   1: 52121
   2: 189
   3: 17  
-'''
+"""
