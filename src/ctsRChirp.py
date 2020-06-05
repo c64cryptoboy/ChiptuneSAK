@@ -2,7 +2,7 @@
 #
 # RChirp is a row-based verison of chirp, useful for export from and to trackers,
 # and other jiffy-based music players.
-# Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms. 
+# Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms.
 # Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
 import copy
@@ -99,7 +99,7 @@ class RChirpVoice:
             if tmp != "<class 'ctsChirp.ChirpTrack'>":
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
-                self.import_chirp_track(chirp_track)     
+                self.import_chirp_track(chirp_track)
 
     @property
     def jiffy_indexed_rows(self):
@@ -107,7 +107,7 @@ class RChirpVoice:
         Returns dictionary of rows indexed by jiffy number
 
         A voice holds onto a dictionary of rows keyed by row number.  This method returns
-        a dictionary of rows keyed by jiffy number. 
+        a dictionary of rows keyed by jiffy number.
 
         :return: A dictionary of rows keyed by jiffy number
         :rtype: defaultdict
@@ -115,7 +115,7 @@ class RChirpVoice:
         return_val = {v.jiffy_num: v for k, v in self.rows.items()}
         return_val = collections.defaultdict(RChirpRow, return_val)
         return return_val
-        
+
     @property
     def sorted_rows(self):
         """
@@ -132,7 +132,7 @@ class RChirpVoice:
 
         This is a helper method for treating rchirp like a list of contiguous rows,
         instead of a sparse dictionary of rows
-        
+
         :param rchirp_row: A row to "append"
         :type rchirp_row: RChirpRow
         """
@@ -164,7 +164,7 @@ class RChirpVoice:
         """
         Determines if the voice's rows are contiguous.  This function requires that row numbers
         are consecutive and that the corresponding jiffy numbers have no gaps.
-        
+
         :return: True if rows are contiguous, False if not
         :rtype: boolean
         """
@@ -196,7 +196,7 @@ class RChirpVoice:
             assert row.jiffy_num >= 0, "Error: RChirpRow row cannot have a negative jiffy_num"
             if row.note_num is not None:
                 assert row.note_num >= 0, "Error: RChirpRow row cannot have a negative note_num"
-            if row.new_instrument is not None:    
+            if row.new_instrument is not None:
                 assert row.new_instrument >= 0, "Error: RChirpRow row cannot have a negative instrument"
             assert row.jiffy_len is not None, "Error: RChirpRow row cannot have jiffy_len = None"
             assert row.jiffy_len >= 0, "Error: RChirpRow row cannot have a negative jiffy_len"
@@ -328,7 +328,7 @@ class RChirpVoice:
         """
         Imports a Chirp track into a raw RChirpVoice object.  No compression or conversion to patterns
            and orderlists performed.  Track must be non-polyphonic and quantized.
-        
+
         :param chirp_track: A chirp track
         :type chirp_track: ctsChirp.ChirpTrack
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
@@ -423,7 +423,7 @@ class RChirpSong(ChiptuneSAKBase):
     def import_chirp_song(self, chirp_song):
         """
         Imports a ChirpSong
-        
+
         :param chirp_song: A chirp song
         :type chirp_song: ctsChirp.ChirpSong
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
@@ -503,7 +503,7 @@ class RChirpSong(ChiptuneSAKBase):
     def is_contiguous(self):
         """
         Determines if the voices' rows are contiguous, without gaps in time
-        
+
         :return: True if rows are contiguous, False if not
         :rtype: boolean
         """
@@ -515,7 +515,7 @@ class RChirpSong(ChiptuneSAKBase):
 
         :return: True if integrity checks pass for all voices
         :raises AssertionError: Various integrity failure assertions possible
-        """    
+        """
         return all(voice.integrity_check() for voice in self.voices)
 
     def set_row_delta_values(self):
@@ -557,7 +557,7 @@ class RChirpSong(ChiptuneSAKBase):
     def note_time_data_str(self):
         """
         Returns a comma-separated value list representation of the rchirp data
-        
+
         :return: CSV string
         :rtype: str
         """
@@ -574,7 +574,7 @@ class RChirpSong(ChiptuneSAKBase):
             csv_header.append("v%d note" % (i+1))
             csv_header.append("v%d on/off/none" % (i+1))
             csv_header.append("v%d tempo update" % (i+1))
- 
+
         csv_rows = []
         prev_tempo = [-1] * len(self.voices)
         for tick in range(max_tick+1):
@@ -600,13 +600,13 @@ class RChirpSong(ChiptuneSAKBase):
                 csv_rows.append(','.join(a_csv_row))
         spreadsheet = '\n'.join(csv_rows)
         spreadsheet = ','.join(csv_header) + '\n' + spreadsheet
-   
+
         return spreadsheet
 
     def convert_to_chirp(self):
         """
         Convert rchirp song to chirp
-        
+
         :return: chirp conversion
         :rtype: ChirpSong
         """

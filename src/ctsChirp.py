@@ -19,7 +19,7 @@ from ctsConstants import DEFAULT_MIDI_PPQN
 class Note:
     """
     This class represents a note in human-friendly form:  as a note with a start time, a duration, and
-    a velocity. 
+    a velocity.
     """
 
     def __init__(self, start, note, duration, velocity=100, tied_from=False, tied_to=False):
@@ -116,12 +116,12 @@ class ChirpTrack:
         self.other.sort(key=lambda n: n.start_time)
 
     def estimate_quantization(self):
-        """ 
+        """
         This method estimates the optimal quantization for note starts and durations from the note
         data itself. This version only uses the current track for the optimization.  If the track
         is a part with long notes or not much movement, I recommend using the get_quantization()
-        on the entire song instead. Many pieces have fairly well-defined note start spacing, but 
-        no discernable duration quantization, so in that case the default is half the note start 
+        on the entire song instead. Many pieces have fairly well-defined note start spacing, but
+        no discernable duration quantization, so in that case the default is half the note start
         quantization.  These values are easily overridden.
 
         :return: tuple of quantization values for (start, duration)
@@ -458,7 +458,7 @@ class ChirpSong(ChiptuneSAKBase):
                 self.import_mchirp_song(mchirp_song)
 
     def reset_all(self):
-        """ 
+        """
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
@@ -569,10 +569,10 @@ class ChirpSong(ChiptuneSAKBase):
             self.metadata.qpm = self.tempo_changes[0].qpm
 
     def estimate_quantization(self):
-        """ 
+        """
         This method estimates the optimal quantization for note starts and durations from the note
-        data itself. This version all note data in the tracks. Many pieces have no discernable 
-        duration quantization, so in that case the default is half the note start quantization.  
+        data itself. This version all note data in the tracks. Many pieces have no discernable
+        duration quantization, so in that case the default is half the note start quantization.
         These values are easily overridden.
         """
         tmp_notes = [n.start_time for t in self.tracks for n in t.notes]
@@ -1143,4 +1143,3 @@ def quantize_fn(t, qticks):
         return current
     else:
         return next
-

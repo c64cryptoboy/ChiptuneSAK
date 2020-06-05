@@ -10,7 +10,7 @@ class TestExportPRG(unittest.TestCase):
         ascii_prg += '1337 print"print"+chr$(67)+"chr$(67)"'
 
         #print(' '.join('%02X' % b for b in ctsGenPrg.ascii_to_c128prg(ascii_prg)))
-        
+
         # ground truth from VICE:
         tmp = '''01 1C 1C 1C 0A 00 99 20 22 52 45 4D 22 3A 8F 20 22 50 52
                  49 4E 54 22 3A 20 45 4E 44 00 3A 1C 39 05 99 22 50 52 49

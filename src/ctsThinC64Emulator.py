@@ -9,8 +9,8 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         super().__init__()
 
         # True if C64 ROM loaded, if False, all zeros
-        self.has_basic = False  
-        self.has_kernal = False  
+        self.has_basic = False
+        self.has_kernal = False
         self.has_char = False
 
         # True if paged in
@@ -38,10 +38,10 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         # cartridge vectors
         # - $A000, basic cold start vector, points to $E394
         # = $A002, basic warm start / NMI entry vector, points to $E37B
-        self.patch_basic(0xa000, [0x94, 0xe3, 0x7b, 0xe3])       
+        self.patch_basic(0xa000, [0x94, 0xe3, 0x7b, 0xe3])
 
         # inject into $EA81 (instructions PLA, TAY, PLA, TAX, PLA, RTI)
-        self.patch_kernal(59953, [0x68, 0xa8, 0x68, 0xa4, 0x68, 0x40]) 
+        self.patch_kernal(59953, [0x68, 0xa8, 0x68, 0xa4, 0x68, 0x40])
 
         # inject into $FF48 (ROM IRQ/BRK Interrupt Entry routine)
         # FF48  48        PHA         ; put accumulator, x, and y on stack
@@ -51,10 +51,10 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         # FF4C  48        PHA
         # FF4D  BA        TSX         ; look at flags put on the stack
         # FF4E  BD 04 01  LDA $0104,X
-        # FF51  29 10     AND #$10 
+        # FF51  29 10     AND #$10
         # FF53  F0 03     BEQ $FF58
         # FF55  6C 16 03  JMP ($0316) ; if software irq (break flag set)
-        # FF58  6C 14 03  JMP ($0314) ; if hardware irq        
+        # FF58  6C 14 03  JMP ($0314) ; if hardware irq
         self.patch_kernal(65352,
             [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
             0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
@@ -88,9 +88,9 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         #
         # When character ROM banked in:
         # - $D000-$DFFF: reads from Character ROM, writes go to RAM
-        # 
+        #
         # When I/O banked in:
-        # - $D000-$D02E: reads/writes go to VIC-II chip registers 
+        # - $D000-$D02E: reads/writes go to VIC-II chip registers
         # - $D02F-$D03F: In a real C64, always read as $FF, and cannot be altered
         # - $D040-$D3FF: In a real C64, every 64-byte block here is a "mirror" of VIC-II registers at $D000
         # - $D400-$D418: Write-only SID registers (read value is not SID register or the RAM underneath)
@@ -111,10 +111,10 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
 
             if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirroring
                 return self.memory[0xd000 + ((loc - 0xd040) % 64)]
-            
+
             # no special treatment for $D400-$D418
             #    In this low-fidelity emulator, you can read anything that was stored in a
-            #    write-only SID register, which is useful for our SID value extraction 
+            #    write-only SID register, which is useful for our SID value extraction
 
             if 0xd420 <= loc <= 0xd4ff:  # SID mirroring
                 return self.memory[0xd000 + ((loc - 0xd420) % 32)]
@@ -139,19 +139,19 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
             if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirror set
                 self.memory[0xd000 + ((loc - 0xd040) % 64)] = val
                 return
-            
+
             if 0xd420 <= loc <= 0xd4ff:  # SID mirror set
                 self.memory[0xd000 + ((loc - 0xd420) % 32)] = val
                 return
-            
+
             if 0xdc10 <= loc <= 0xdcff:  # CIA1 mirror set
                 self.memory[0xd000 + ((loc - 0xdc10) % 16)] = val
-                return    
-            
+                return
+
             if 0xdd10 <= loc <= 0xddff:  # CIA2 mirror set
                 self.memory[0xd000 + ((loc - 0xdd10) % 16)] = val
                 return
-        
+
         self.memory[loc] = val
 
         if loc == 1:  # hook writes to loc $0001 to update memory banking
@@ -163,7 +163,7 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
             # here's the banks for the other three PLA latch states:
 
             # m1:b2   m1:b1   m1:b0   $1000-  $8000-  $A000-  $C000-  $D000-  $E000-
-            # CHAREN  HIRAM   LORAM   $7FFF   $9FFF   $BFFF   $CFFF   $DFFF   $FFFF 
+            # CHAREN  HIRAM   LORAM   $7FFF   $9FFF   $BFFF   $CFFF   $DFFF   $FFFF
             # 1       1       1       RAM     RAM     BASIC   RAM     I/O     KERNAL
             # 1       1       0       RAM     RAM     RAM     RAM     I/O     KERNAL
             # 1       0       1       RAM     RAM     RAM     RAM     I/O     RAM
@@ -171,7 +171,7 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
             # 0       1       1       RAM     RAM     BASIC   RAM     CHAR    KERNAL
             # 0       1       0       RAM     RAM     RAM     RAM     CHAR    KERNAL
             # 0       0       1       RAM     RAM     RAM     RAM     CHAR    RAM
-            # 0       0       0       RAM     RAM     RAM     RAM     RAM     RAM 
+            # 0       0       0       RAM     RAM     RAM     RAM     RAM     RAM
             # (I/O = VIC-II, SID, Color, CIA-1, CIA-2)
 
             banks = self.memory[0x0001] & 0b00000111
@@ -226,4 +226,3 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
 if __name__ == "__main__":
     test = ThinC64Emulator()
     print("nothing to do")
-

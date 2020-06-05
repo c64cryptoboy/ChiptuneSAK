@@ -1,5 +1,5 @@
 # Code to import and export goattracker .sng files (both regular and stereo)
-# 
+#
 # Notes:
 # - This code ignores multispeed (for now)
 #
@@ -173,7 +173,7 @@ class GtHeader:
         Converts header information into GT bytes.
         :return: bytes that represet the header fields
         :rtype: bytes
-        """        
+        """
         result = bytearray()
         result += GT_FILE_HEADER
         result += pad_or_truncate(self.song_name, 32)
@@ -241,7 +241,7 @@ class GtInstrument:
         Converts an instrument instance into GT bytes.
         :return: bytes that represet the instrument
         :rtype: bytes
-        """        
+        """
         result = bytearray()
         result += bytes([self.attack_decay, self.sustain_release,
                         self.wave_ptr, self.pulse_ptr, self.filter_ptr,
@@ -271,13 +271,13 @@ class GtInstrument:
             raise ChiptuneSAKValueError("Error: index out of range when instantiating GTInstrument")
 
         result = cls()
-        result.instr_num = instr_num        
+        result.instr_num = instr_num
         result.attack_decay = bytes[starting_index + 0]
         result.sustain_release = bytes[starting_index + 1]
-        result.wave_ptr = bytes[starting_index + 2]   
-        result.pulse_ptr = bytes[starting_index + 3]      
-        result.filter_ptr = bytes[starting_index + 4]      
-        result.vib_speedtable_ptr = bytes[starting_index + 5] 
+        result.wave_ptr = bytes[starting_index + 2]
+        result.pulse_ptr = bytes[starting_index + 3]
+        result.filter_ptr = bytes[starting_index + 4]
+        result.vib_speedtable_ptr = bytes[starting_index + 5]
         result.vib_delay = bytes[starting_index + 6]
         result.gateoff_timer = bytes[starting_index + 7]
         result.hard_restart_1st_frame_wave = bytes[starting_index + 8]
@@ -310,14 +310,14 @@ class GtTable:
         Converts a table into GT bytes.
         :return: bytes that represet the table
         :rtype: bytes
-        """        
+        """
         result = bytearray()
         result.append(self.row_cnt)
         result += self.left_col
         result += self.right_col
         return result
 
-    @classmethod   
+    @classmethod
     def from_bytes(cls, bytes):
         """
         Constructor that builds a table from GT bytes
@@ -329,7 +329,7 @@ class GtTable:
         """
         col_len = bytes[0]
         if len(bytes) != (col_len * 2) + 1:
-            raise ChiptuneSAKValueError("Error: malformed table bytes in construction of GtTable instance") 
+            raise ChiptuneSAKValueError("Error: malformed table bytes in construction of GtTable instance")
 
         result = cls()
         result.row_cnt = col_len
@@ -350,7 +350,7 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     :param subtune_number: the subtune number, defaults to 0
     :type subtune_number: int, optional
     :return: An RChirp song for the subtune
-    :rtype: RChirpSong        
+    :rtype: RChirpSong
     """
     if not input_filename.lower().endswith(r'.sng'):
         raise ChiptuneSAKIOError(r'Error: Expecting input filename that ends in ".sng"')
@@ -368,7 +368,7 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
         raise ChiptuneSAKValueError('subtune_number must be <= %d' % max_subtune_number)
 
     rchirp = parsed_gt.import_parsed_gt_to_rchirp(subtune_number)
-    
+
     return rchirp
 
 
@@ -420,7 +420,7 @@ def pad_or_truncate(to_pad, length):
     :param length: grow or shrink input to this length ("Procrustean bed")
     :type length: int
     :return: processed text field
-    :rtype: 
+    :rtype:
     """
     if isinstance(to_pad, str):
         to_pad = to_pad.encode('latin-1')
@@ -474,7 +474,7 @@ def create_gt_metadata_if_missing(rchirp_song):
     if "gt.pulse_table" not in extensions:
         extensions["gt.pulse_table"] = bytearray(b'\x00')
     if "gt.filter_table" not in extensions:
-        extensions["gt.filter_table"] = bytearray(b'\x00')       
+        extensions["gt.filter_table"] = bytearray(b'\x00')
     if "gt.speed_table" not in extensions:
         extensions["gt.speed_table"] = bytearray(b'\x00')
 
@@ -572,7 +572,7 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path = DEFAULT_INSTR_
     # assign updated wavetables
     extensions["gt.wave_table"] = wt.to_bytes()
     extensions["gt.pulse_table"] = pt.to_bytes()
-    extensions["gt.filter_table"] = ft.to_bytes()    
+    extensions["gt.filter_table"] = ft.to_bytes()
     extensions["gt.speed_table"] = st.to_bytes()
 
 
@@ -595,7 +595,7 @@ class GTSong:
     def is_stereo(self):
         """
         Determines if this is stereo GoatTracker
-        
+
         :return: True if stereo, False if not
         :rtype: boolean
         """
@@ -688,14 +688,14 @@ class GTSong:
 
         raise ChiptuneSAKContentError("Error: found %d orderlists (expected %d or %d)" %
             (orderlist_count, expected_num_orderlists_for_3sid,
-            expected_num_orderlists_for_6sid))                      
+            expected_num_orderlists_for_6sid))
 
 
     def import_sng_file_to_parsed_gt(self, input_filename):
         """
         Parse a goat tracker '.sng' file and put it into a GTSong instance.
         Supports 1SID and 2SID (stereo) goattracker '.sng' files.
-        
+
         :param input_filename: Filename for input .sng file
         :type input_filename: string
         """
@@ -708,7 +708,7 @@ class GTSong:
         """
         Parse a goat tracker '.sng' binary and put it into a GTSong instance.
         Supports 1SID and 2SID (stereo) goattracker '.sng' file binaries.
-        
+
         :param sng_bytes: Binary contents of a sng file
         :type sng_bytes: bytes
         """
@@ -929,7 +929,7 @@ class GTSong:
         Convert parsed_gt into a goattracker .sng binary.
 
         :return: a GoatTracker sng file binary
-        :rtype: bytes        
+        :rtype: bytes
         """
 
         gt_binary = bytearray()
@@ -962,7 +962,7 @@ class GTSong:
 
     def import_parsed_gt_to_rchirp(self, subtune_num=0):
         """
-        Convert the parsed GoatTracker file into rchirp 
+        Convert the parsed GoatTracker file into rchirp
 
         In GoatTracker any channel can change all the channels' tempos or just its own tempo
         at any time.  This is too complex for RChirp representation.  So this code simulates
@@ -974,7 +974,7 @@ class GTSong:
         mapped 1-to-1 with rchirp.patterns and rchirp.voices[].orderlist without all of this
         complex processing.  However, we expect many C64 game music engines to have patterns
         and orderlists that can be directly mapped without much effort.
-        
+
         :param sng_data: Parsed goattracker file
         :type sng_data: GTSong
         :param subtune_num: The subtune number to convert to rchirp, defaults to 0
@@ -1228,7 +1228,7 @@ class GTSong:
         else:
             curr_pattern_num = 0
 
-            # for each channel, get its rows, and create patterns, adding them to the 
+            # for each channel, get its rows, and create patterns, adding them to the
             # channel's orderlist
             for i, rchirp_voice in enumerate(rchirp_song.voices):
                 rchirp_rows = rchirp_voice.rows
@@ -1348,7 +1348,7 @@ class GTSong:
         ignore = GT_MAX_INSTR_PER_SONG - 1
 
         # find all instrument numbers for which an instrument binary is not already defined
-        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )            
+        # (defined from importing from an sng and/or using add_gt_instrument_to_rchirp() )
         rchirp_inst_count = len(rchirp_song.metadata.extensions["gt.instruments"])
         unmapped_inst_nums = [x for x in instrument_nums_seen if x > rchirp_inst_count and x != ignore]
 
@@ -1356,7 +1356,7 @@ class GTSong:
         # simple triangle instrument up to the max unmatched instrument
         # This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
         # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
-        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive 
+        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive
         # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
         # exist here.
         if len(unmapped_inst_nums) > 0:
@@ -1370,7 +1370,7 @@ class GtChannelState:
     # class-side var.  Note, this approach won't work if we want GtChannelState instances belonging
     # to and processing different songs at the same time (seems unlikely).
     # FUTURE: add instrument handling
-    # FUTURE: ignoring multispeed considerations for now (would act as a simple multiplier for each)       
+    # FUTURE: ignoring multispeed considerations for now (would act as a simple multiplier for each)
     funktable = GT_DEFAULT_FUNKTEMPOS
 
     def __init__(self, voice_num, channel_orderlist):
@@ -1447,11 +1447,11 @@ class GtChannelState:
                 self.row_has_key_on = True
 
         # Notes on funktempo (all this logic gleaned from reading through gplay.c)
-        # 
+        #
         # Funktempo allows switching between two tempos on alternating pattern rows, to achieve
         # a "swing" or more organic feel.
-        # - for non-multispeed songs, it defaults to 9 and 6 
-        # 
+        # - for non-multispeed songs, it defaults to 9 and 6
+        #
         # The funktempo command is $E followed by an index to a single row in the speed table
         # - The left/right values in the speedtable row contain the two (alternating) tempo values
         # - Under the covers (in gplay.c), the array funktable[2] holds the two tempos
@@ -1461,7 +1461,7 @@ class GtChannelState:
         #    - the two values in funktable[] are global to all participating channels
         # - The command applies to all channels (3 or 6 for stereo) and all channels are set to
         #   tempo 0
-        # 
+        #
         # The tempo command is $F, and "tempos" $00 and $01 change all channels to the tempo that's
         # been previously set in funktable[0] or funktable[1] respectively, and every subsequent
         # row will alternate between the [0] and [1] entries of the funktable.  In otherwords,
@@ -1546,7 +1546,7 @@ class GtChannelState:
         #    target note)
         #
         #    Command DXY: Set mastervolume to Y, if X is $0. If X is not $0, value XY is
-        #    copied to the timing mark location, which is playeraddress+$3F.    
+        #    copied to the timing mark location, which is playeraddress+$3F.
 
         return row
 

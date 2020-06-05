@@ -80,7 +80,7 @@ class Ultima4Song:
                 #print("voice", index, " offset: ", voice.song_pos)
                 if voice.playback():
                     any_voice_played = True
-                
+
 
     def set_tempo(self, ticks, tempo):
         """
@@ -314,4 +314,3 @@ for song in info:
     chirp_song = music.import_song_to_chirp(int(song['songno']) - 1)
     midi_song = MIDI()
     midi_song.export_chirp_to_midi(chirp_song, song['title']+'.mid')
-

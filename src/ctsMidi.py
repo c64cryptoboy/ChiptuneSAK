@@ -378,4 +378,3 @@ class MIDI(ChiptuneSAKIO):
             out_midi_file.tracks.append(self.chirp_track_to_midi_track(t))
         out_midi_file.save(output_filename)
         return True
-

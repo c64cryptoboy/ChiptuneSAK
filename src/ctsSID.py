@@ -23,7 +23,7 @@ class SidFile:
         self.author = None              #: SID author
         self.released = None            #: SID release details
         self.c64_payload = None         #: The C64 payload
-        self.load_addr_preamble = False #: True if payload begins with 16-bit load addr        
+        self.load_addr_preamble = False #: True if payload begins with 16-bit load addr
         self.flags = 0                  #: Collection of flags
         self.flag_0 = 0                 #: bit 0 from flags
         self.flag_1 = 0                 #: bit 1 from flags
@@ -66,7 +66,7 @@ class SidFile:
         if sid_model_inst == 2:
             return 'MOS8580'
         if sid_model_inst == 3:
-            return 'MOS6581 and MOS8580'            
+            return 'MOS6581 and MOS8580'
         return 'Unknown'
 
     def parse_file(self, sid_filename):
@@ -139,7 +139,7 @@ class SidFile:
         # the song number to be played by default
         self.start_song = big_endian_int(sid_binary[16:18])
         if not (1 <= self.start_song <= 256):
-            raise ChiptuneSAKValueError("Error: starting song number out of range")    
+            raise ChiptuneSAKValueError("Error: starting song number out of range")
 
         # From documentation:
         # "For version 1 and 2 and for version 2NG, 3 and 4 with PlaySID specific flag
@@ -153,11 +153,11 @@ class SidFile:
         # Each bit in 'speed' specifies the speed for the corresponding tune number,
         # i.e. bit 0 specifies the speed for tune 1. If there are more than 32 tunes,
         # the speed specified for tune 32 is also used for all higher numbered tunes.
-        # 
+        #
         # For all version counts:
         # A 0 bit specifies vertical blank interrupt (50Hz PAL, 60Hz NTSC), and a 1 bit
         # specifies CIA 1 timer interrupt (default 60Hz).
-        # 
+        #
         # Surplus bits in 'speed' should be set to 0.
         # For RSID files 'speed' must always be set to 0.
         # Note that if 'play' = 0, the bits in 'speed' should still be set for backwards
@@ -223,7 +223,7 @@ class SidFile:
             # for a different purpose: tunes that include a BASIC executable portion will
             # be played (with the BASIC portion executed) if the C64 BASIC flag is set. At
             # the same time, initAddress must be 0.""
-            self.flag_1 = (self.flags & 0b00000010) >> 1 
+            self.flag_1 = (self.flags & 0b00000010) >> 1
             if self.magic_id == 'RSID':
                 if self.init_address == 0:
                     if self.flag_1 == 0:
@@ -232,7 +232,7 @@ class SidFile:
                     if self.flag_1 == 1:
                         raise ChiptuneSAKValueError("Error: RSID flag 1 can't be set (BASIC) if init address != 0")
                     # Now we can finally confirm allowed RSID init address ranges ($07E8 - $9FFF, $C000 - $CFFF)
-                    if not ((2024 <= self.init_address <= 40959) or (49152 <= self.init_address <= 53247)): 
+                    if not ((2024 <= self.init_address <= 40959) or (49152 <= self.init_address <= 53247)):
                         raise ChiptuneSAKValueError("Error: invalid RSID init address")
 
             # From documentation:
@@ -302,7 +302,7 @@ class SidFile:
             # 'startPage' specifies the start page of the single largest free memory range
             # within the driver ranges. For example, if 'startPage' is 0x1E, this free
             # memory range starts at $1E00."
-            self.start_page = sid_binary[120]        
+            self.start_page = sid_binary[120]
 
             # From documentation:
             # "+79    BYTE pageLength (relocPages)
@@ -376,7 +376,7 @@ class SidFile:
             self.c64_payload = sid_binary[124:]
             if self.load_addr_preamble:
                 self.load_address = self.get_load_addr_from_payload()
-                self.c64_payload = self.c64_payload[2:]                
+                self.c64_payload = self.c64_payload[2:]
 
 
     def get_payload_length(self):

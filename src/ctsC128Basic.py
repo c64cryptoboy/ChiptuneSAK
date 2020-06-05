@@ -14,7 +14,7 @@ WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
 #    0=triangle, 1=sawtooth, 2=pulse, 3=noise, and 4=ring modulation
 C128_INSTRUMENTS = {
     'piano': 0,         # ADSR  0, 9,  0, 0, WF 2, PW 1536
-    'accordion': 1,     # ADSR 12, 0, 12, 0, WF 1 
+    'accordion': 1,     # ADSR 12, 0, 12, 0, WF 1
     'calliope': 2,      # ADSR  0, 0, 15, 0, WF 0
     'drum': 3,          # ADSR  0, 5,  5, 0, WF 3
     'flute': 4,         # ADSR  9, 4,  4, 0, WF 0
@@ -145,9 +145,9 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
 
         result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
         current_line += 10
-        
+
         # Tempo 1 is slowest, and 255 is fastest
-        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / 
+        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE /
             ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
         tempo = int(round(tempo))
 

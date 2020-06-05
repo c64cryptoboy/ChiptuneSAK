@@ -19,4 +19,3 @@ for midi_num in range(ctsConstants.C0_MIDI_NUM, ctsConstants.C0_MIDI_NUM+(8*12))
     print("%d, %s, % 0.3f, %d, %s, %d, %s" %
         (midi_num, ctsBase.pitch_to_note_name(midi_num), freq, ntsc_freq,
         hexit(ntsc_freq), pal_freq, hexit(pal_freq)))
-
