@@ -14,8 +14,8 @@ It shows the steps needed for this conversion:
   1. Scale and adjust the note data to correspond to musical notes and durations
   2. Split a track with chords into 3 separate tracks
   3. Assign GoatTracker instruments to the voices
-  4. Export the GoatTracker .sng file 
-  
+  4. Export the GoatTracker .sng file
+
 """
 
 input_file = str(project_to_absolute_path('examples/data/lechuck/MonkeyIsland_LechuckTheme.mid'))

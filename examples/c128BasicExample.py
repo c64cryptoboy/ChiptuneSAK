@@ -39,4 +39,3 @@ exporter = ctsC128Basic.C128Basic()
 exporter.set_options(instruments=['trumpet', 'guitar', 'guitar'])
 exporter.to_file(mchirp_song, output_bas_file, format='bas')
 exporter.to_file(mchirp_song, output_prg_file, format='prg')
-

@@ -12,7 +12,7 @@ from ctsConstants import project_to_absolute_path
 This example processes a MIDI file captured from Betrayal at Krondor to both sheet music and
 a GoatTracker song.
 
-It is an example of extremely complex music processing, done entirely in ChiptuneSAK. 
+It is an example of extremely complex music processing, done entirely in ChiptuneSAK.
 One external tool, a windows program called Midi Editor, was used to inspect the MIDI file,
 evaluate and plan the required transformations, and verify the results.
 
@@ -24,10 +24,10 @@ It shows the steps needed for this conversion:
  5. Truncate the captured song to a reasonable stopping point
  6. Convert the ChirpSong to an MChirpSong
  7. Use the Lilypond I/O object to write lilypond markup for the piece
- 8. Convert the ChirpSong to an RChirpSong  
+ 8. Convert the ChirpSong to an RChirpSong
  9. Assign GoatTracker instruments to the voices
 10. Find repeated loops and compress the song
-11. Export the GoatTracker .sng file 
+11. Export the GoatTracker .sng file
 
 """
 

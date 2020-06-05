@@ -10,9 +10,9 @@ import ctsMidi
 """ This module contains an algorithm to estimate offset and scale factors for MIDI songs that do not have
     an accurate ppq.  It attempts to infer the ppq from the note starts alone, assuming a minimum note-to-note
     interval of a 16th note.  It then writes out an adjusted midi file set to a ppq of 960 for that inferred
-    16th note speed.  
-    
-    NOTE:  This function does NOT quantize the song.  It puts it into a state from which it may be quantized, but 
+    16th note speed.
+
+    NOTE:  This function does NOT quantize the song.  It puts it into a state from which it may be quantized, but
     does not perform any quantization.
 """
 

@@ -10,7 +10,7 @@ import ctsLilypond
 """
 Prints a MIDI file to Lilypond sheet music.
 
-NOTE:  You must have lilypond in your path for this script to work. 
+NOTE:  You must have lilypond in your path for this script to work.
 """
 
 

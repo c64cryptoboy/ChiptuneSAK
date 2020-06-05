@@ -15,7 +15,7 @@ def main():
     parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('-s', '--subtune_number', type=int, default=0,
         help='subtune number (default: 0)')
-    
+
     args = parser.parse_args()
 
     rchirp_song = ctsGoatTracker.GoatTracker().to_rchirp(args.sng_in_file, subtune=args.subtune_number)
@@ -31,10 +31,10 @@ def main():
 
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
     # chirp_song.time_signature_changes.insert(0, ctsSong.TimeSignature(0, 3, 4))
-    
+
     ctsMidi.MIDI().to_file(chirp_song, args.midi_out_file)
 
     print("\ndone")
-    
+
 if __name__ == "__main__":
     main()
