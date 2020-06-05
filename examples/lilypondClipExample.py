@@ -1,5 +1,3 @@
-import sys
-import examplesPath
 import os
 import subprocess
 import ctsMidi

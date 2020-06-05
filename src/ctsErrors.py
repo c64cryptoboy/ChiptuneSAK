@@ -23,6 +23,7 @@ class ChiptuneSAKIOError(Exception):
     """
     pass
 
+
 class ChiptuneSAKValueError(ChiptuneSAKException, ValueError):
     """
     Value error
@@ -49,6 +50,7 @@ class ChiptuneSAKContentError(ChiptuneSAKException):
     Content error (such as no measures or no tracks)
     """
     pass
+
 
 class ChiptuneSAKNotImplemented(ChiptuneSAKException):
     """

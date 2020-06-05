@@ -1,8 +1,5 @@
-import sys
 import argparse
 import os
-import toolsPath
-import ctsChirp
 import ctsMidi
 
 

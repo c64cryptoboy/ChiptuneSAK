@@ -1,7 +1,6 @@
 # Script to make sid header histograms for all the sids in an HVSC zip file
 # TODO: Currently assumes that the file is not double zipped
 
-import toolsPath
 import operator
 import zipfile
 import itertools
@@ -10,17 +9,21 @@ import ctsSID
 
 HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')
 
-histograms_categories = ['magic_id', 'version', 'data_offset', 'load_address', 'init_address',
+histograms_categories = [
+    'magic_id', 'version', 'data_offset', 'load_address', 'init_address',
     'play_address', 'num_subtunes', 'start_song', 'speed', 'flag_0', 'flag_1', 'clock',
     'sid_model', 'sid2_model', 'sid3_model', 'start_page', 'page_length', 'sid2_address',
-    'sid3_address', 'sid_count']
+    'sid3_address', 'sid_count',
+]
 histograms = {category: {} for category in histograms_categories}
+
 
 def update_hist(category, value):
     global histograms
     if value not in histograms[category]:
         histograms[category][value] = 0
     histograms[category][value] += 1
+
 
 with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
     sid_files = [fn for fn in hvsc_zip.namelist() if fn.lower().endswith('.sid')]
@@ -29,8 +32,8 @@ with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
         # print("Processing %s (%d bytes)" % (sid_file, len(bytes)))
 
         parsed = ctsSID.SidFile()
-        parsed.parse_binary(bytes)   
-        
+        parsed.parse_binary(bytes)
+
         update_hist('magic_id', parsed.magic_id)
         update_hist('version', parsed.version)
         update_hist('data_offset', parsed.data_offset)
@@ -71,13 +74,13 @@ for category, hist in histograms.items():
 '''
 Histograms:
 
-magic_id:       
+magic_id:
   b'PSID': 49119
-  b'RSID': 3208 
+  b'RSID': 3208
 
-version:        
-  2: 52121      
-  3: 189        
+version:
+  2: 52121
+  3: 189
   4: 17
 
 data_offset:
@@ -308,5 +311,5 @@ sid3_address:
 sid_count:
   1: 52121
   2: 189
-  3: 17  
+  3: 17
 '''

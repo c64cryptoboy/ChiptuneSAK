@@ -1,13 +1,13 @@
-import sys
 import argparse
 from os import path
-import toolsPath
 import ctsMidi
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Perform transformations on MIDI files.",
-                                     epilog="Operations are performed in the order given in this help.")
+    parser = argparse.ArgumentParser(
+        description="Perform transformations on MIDI files.",
+        epilog="Operations are performed in the order given in this help."
+    )
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('midi_out_file', help='midi filename to export')
     parser.add_argument('-n', '--name', type=str, help='set name of song')

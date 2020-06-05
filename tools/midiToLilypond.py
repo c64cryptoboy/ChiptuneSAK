@@ -1,16 +1,12 @@
-import sys
 import argparse
 import subprocess
-from os import path
-import toolsPath
 import ctsMidi
-from ctsMChirp import MChirpSong
 import ctsLilypond
 
 """
 Prints a MIDI file to Lilypond sheet music.
 
-NOTE:  You must have lilypond in your path for this script to work. 
+NOTE:  You must have lilypond in your path for this script to work.
 """
 
 

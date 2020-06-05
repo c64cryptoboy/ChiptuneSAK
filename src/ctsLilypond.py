@@ -2,15 +2,15 @@ import copy
 
 from ctsBase import *
 from ctsChirp import Note
-from ctsMChirp import MChirpSong
 
 
 # TODO:
 # - There's possibly redundant code between export_clip_to_lilypond and export_song_to_lilypond
 
-lp_pitches = {'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
-              'flats':  ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"]
-              }
+lp_pitches = {
+    'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
+    'flats': ["c", "des", "d", "ees", "e", "f", "ges", "g", "aes", "a", "bes", "b"],
+}
 
 lp_durations = {
     Fraction(4, 1): '1', Fraction(3, 1): '2.', Fraction(2, 1): '2', Fraction(3, 2): '4.', Fraction(1, 1): '4',
@@ -138,8 +138,8 @@ class Lilypond(ChiptuneSAKIO):
 
     def ottava(self, note_num):
         ottava = self.current_ottava
-        bass_transitions = (41 - 3*self.current_ottava, 66 + 3*self.current_ottava)
-        treble_transitions = (55 + 3*self.current_ottava, 84 - 3*self.current_ottava)
+        bass_transitions = (41 - 3 * self.current_ottava, 66 + 3 * self.current_ottava)
+        treble_transitions = (55 + 3 * self.current_ottava, 84 - 3 * self.current_ottava)
         if self.current_clef == 'bass':
             if note_num < bass_transitions[0]:
                 ottava = -1
@@ -199,7 +199,7 @@ class Lilypond(ChiptuneSAKIO):
                     if isinstance(te, Note):
                         measure_contents.append(make_lp_notes(
                             lp_pitch_to_note_name(te.note_num, self.current_pitch_set),
-                            te.duration * Fraction(3/2), self.ppq))
+                            te.duration * Fraction(3 / 2), self.ppq))
                     elif isinstance(te, Rest):
                         measure_contents.append(make_lp_notes('r', te.duration * Fraction(3 / 2), self.ppq))
 

@@ -20,7 +20,7 @@
 # TODOs:
 # - Test a mirror set in VICE (on some vic register, not SID)
 
-from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError, ChiptuneSAKContentError
+from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError
 
 DEBUG = False
 
@@ -2499,13 +2499,10 @@ class Cpu6502Emulator:
         # $FB/251 INC-SBC abs,Y
         # $FF/255 INC-SBC abs,X
 
-        raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s"
-            % (hex(instruction), hex(self.pc - 1)))
-
+        raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s" % (hex(instruction), hex(self.pc - 1)))
 
     def get_le_word(self, mem_loc):
-        return self.get_mem(mem_loc) | (self.get_mem(mem_loc+1) << 8)
-
+        return self.get_mem(mem_loc) | (self.get_mem(mem_loc + 1) << 8)
 
     def inject_bytes(self, mem_loc, bytes):
         for i, a_byte in enumerate(bytes):

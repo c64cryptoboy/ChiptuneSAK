@@ -1,9 +1,5 @@
-import sys
-import examplesPath
-from ctsBase import *
+# from ctsBase import *  # Flake8 thinks this is unused
 import ctsMidi
-import ctsLilypond
-import ctsOnePassCompress
 import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
@@ -23,15 +19,15 @@ print(f'Reading and converting {input_file}')
 rchirp_song = ctsGoatTracker.GoatTracker().to_rchirp(input_file, arch='PAL-C64')
 
 # The song has a ritard at the end that will mess up the algorithm finding the beat, so eliminate it.
-print(f'Removing the ritard at the end of the song')
+print('Removing the ritard at the end of the song')
 rchirp_song.remove_tempo_changes()
 
 # Turn the song into a ChirpSong object
-print(f'Converting from RChirp to Chirp')
+print('Converting from RChirp to Chirp')
 chirp_song = rchirp_song.to_chirp()
 
 # We know the key signature and the time signature for the piece so set them (not required for playback)
-print(f'Setting time and key signatures')
+print('Setting time and key signatures')
 chirp_song.set_key_signature('G')
 chirp_song.set_time_signature(3, 8)
 

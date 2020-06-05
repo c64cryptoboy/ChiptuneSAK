@@ -3,7 +3,7 @@
 
 import os
 from fractions import Fraction
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from math import log2
 from ctsErrors import *
@@ -42,7 +42,7 @@ DURATIONS = {
         Fraction(3, 2): 'dotted quarter', Fraction(1, 1): 'quarter', Fraction(3, 4): 'dotted eighth',
         Fraction(2, 3): 'quarter triplet', Fraction(1, 2): 'eighth', Fraction(3, 8): 'dotted sixteenth',
         Fraction(1, 3): 'eighth triplet', Fraction(1, 4): 'sixteenth',
-        Fraction(3, 16): 'dotted thirty-second',  Fraction(1, 6): 'sixteenth triplet',
+        Fraction(3, 16): 'dotted thirty-second', Fraction(1, 6): 'sixteenth triplet',
         Fraction(1, 8): 'thirty-second', Fraction(3, 32): 'dotted sixty-fourth',
         Fraction(1, 12): 'thirty-second triplet', Fraction(1, 16): 'sixty-fourth',
         Fraction(1, 24): 'sixty-fourth triplet'

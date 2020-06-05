@@ -1,5 +1,3 @@
-import sys
-import examplesPath
 import subprocess
 from ctsBase import *
 import ctsMidi
@@ -12,7 +10,7 @@ from ctsConstants import project_to_absolute_path
 This example processes a MIDI file captured from Betrayal at Krondor to both sheet music and
 a GoatTracker song.
 
-It is an example of extremely complex music processing, done entirely in ChiptuneSAK. 
+It is an example of extremely complex music processing, done entirely in ChiptuneSAK.
 One external tool, a windows program called Midi Editor, was used to inspect the MIDI file,
 evaluate and plan the required transformations, and verify the results.
 
@@ -24,10 +22,10 @@ It shows the steps needed for this conversion:
  5. Truncate the captured song to a reasonable stopping point
  6. Convert the ChirpSong to an MChirpSong
  7. Use the Lilypond I/O object to write lilypond markup for the piece
- 8. Convert the ChirpSong to an RChirpSong  
+ 8. Convert the ChirpSong to an RChirpSong
  9. Assign GoatTracker instruments to the voices
 10. Find repeated loops and compress the song
-11. Export the GoatTracker .sng file 
+11. Export the GoatTracker .sng file
 
 """
 
@@ -44,7 +42,7 @@ chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
 
-print(f'Original song:')
+print('Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')
@@ -97,7 +95,7 @@ chirp_song.truncate(197280)
 # Set the key (D minor)
 chirp_song.set_key_signature('Dm')
 
-print(f'Modified song:')
+print('Modified song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')

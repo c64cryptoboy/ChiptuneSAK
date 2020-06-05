@@ -133,7 +133,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: Chirp song
         :rtype: ctsChirp.ChirpSong object
         """
-        raise ChiptuneSAKNotImplemented(f"Not implemented")
+        raise ChiptuneSAKNotImplemented("Not implemented")
 
     def to_rchirp(self, filename, **kwargs):
         """
@@ -144,7 +144,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: RChirp song
         :rtype: ctsRChirp.RChirpSong object
         """
-        raise ChiptuneSAKNotImplemented(f"Not implemented")
+        raise ChiptuneSAKNotImplemented("Not implemented")
 
     def to_mchirp(self, filename, **kwargs):
         """
@@ -155,7 +155,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: MChirp song
         :rtype: ctsMChirp.MChirpSong object
         """
-        raise ChiptuneSAKNotImplemented(f"Not implemented")
+        raise ChiptuneSAKNotImplemented("Not implemented")
 
     def to_bin(self, ir_song, **kwargs):
         """
@@ -197,7 +197,7 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         :return: rchirp_song with compression
         :rtype: ctsRChirp.RChirpSong
         """
-        raise ChiptuneSAKNotImplemented(f"Not implemented")
+        raise ChiptuneSAKNotImplemented("Not implemented")
 
 
 # --------------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ def is_triplet(note, ppq):
     :return:      True of the note is a triplet type
     :rtype:       bool
     """
-    f = Fraction(note.duration/ppq).limit_denominator(16)
+    f = Fraction(note.duration / ppq).limit_denominator(16)
     if f.denominator % 3 == 0:
         return True
     return False

@@ -528,7 +528,7 @@ class ChirpSong(ChiptuneSAKBase):
             new_ts_changes = []
             current_ts = self.time_signature_changes[0]
             for i in range(1, len(self.time_signature_changes)):
-                if self.time_signature_changes[i].start_time > self.time_signature_changes[i-1].start_time:
+                if self.time_signature_changes[i].start_time > self.time_signature_changes[i - 1].start_time:
                     new_ts_changes.append(current_ts)
                 current_ts = self.time_signature_changes[i]
             new_ts_changes.append(current_ts)
@@ -543,7 +543,7 @@ class ChirpSong(ChiptuneSAKBase):
             new_ks_changes = []
             current_ks = self.key_signature_changes[0]
             for i in range(1, len(self.key_signature_changes)):
-                if self.key_signature_changes[i].start_time > self.key_signature_changes[i-1].start_time:
+                if self.key_signature_changes[i].start_time > self.key_signature_changes[i - 1].start_time:
                     new_ks_changes.append(current_ks)
                 current_ks = self.key_signature_changes[i]
             new_ks_changes.append(current_ks)
@@ -558,7 +558,7 @@ class ChirpSong(ChiptuneSAKBase):
             new_qpm_changes = []
             current_ks = self.tempo_changes[0]
             for i in range(1, len(self.tempo_changes)):
-                if self.tempo_changes[i].start_time > self.tempo_changes[i-1].start_time:
+                if self.tempo_changes[i].start_time > self.tempo_changes[i - 1].start_time:
                     new_qpm_changes.append(current_ks)
                 current_ks = self.tempo_changes[i]
             new_qpm_changes.append(current_ks)
@@ -984,7 +984,7 @@ class ChirpSong(ChiptuneSAKBase):
         n_time_signature_changes = len(self.time_signature_changes)
         while itime < n_time_signature_changes and self.time_signature_changes[itime].start_time < time_in_ticks:
             itime += 1
-        return self.time_signature_changes[itime-1]
+        return self.time_signature_changes[itime - 1]
 
     def get_active_key_signature(self, time_in_ticks):
         """
@@ -1001,7 +1001,7 @@ class ChirpSong(ChiptuneSAKBase):
         n_key_signature_changes = len(self.key_signature_changes)
         while ikey < n_key_signature_changes and self.key_signature_changes[ikey].start_time < time_in_ticks:
             ikey += 1
-        return self.key_signature_changes[ikey-1]
+        return self.key_signature_changes[ikey - 1]
 
 
 # --------------------------------------------------------------------------------------
