@@ -5,7 +5,7 @@
 import testingPath
 import unittest
 import cts6502Emulator
-import thinC64Emulator
+import ctsThinC64Emulator
 from ctsConstants import ARCH
 
 VERBOSE = False
@@ -77,7 +77,7 @@ class Test6502Emulator(unittest.TestCase):
         # Emulate the ML portion of my lemon64 signature
         # Note: signature line is obfuscated by changing XOR mask
 
-        cpuState = thinC64Emulator.ThinC64Emulator()
+        cpuState = ctsThinC64Emulator.ThinC64Emulator()
 
         """
         10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
@@ -145,7 +145,7 @@ class Test6502Emulator(unittest.TestCase):
 
     #@unittest.skip("Debugging, so skipping this test for now")
     def test_C64_kernal_boot(self):
-        cpuState = thinC64Emulator.ThinC64Emulator()
+        cpuState = ctsThinC64Emulator.ThinC64Emulator()
 
         expected_screen_output = \
             "                                        \n" + \

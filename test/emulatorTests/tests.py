@@ -10,7 +10,7 @@
 import emulatorTestsPath
 import unittest
 import cts6502Emulator
-import thinC64Emulator
+import ctsThinC64Emulator
 import string
 from parameterized import parameterized, parameterized_class
 from ctsBytesUtil import read_binary_file
@@ -788,7 +788,7 @@ class TestSuitesForC64(unittest.TestCase):
 
     @parameterized.expand(tests_to_run)
     def test_wl(self, file_name, test_name):
-        cpuState = thinC64Emulator.ThinC64Emulator()
+        cpuState = ctsThinC64Emulator.ThinC64Emulator()
 
         # patch $EA31 to jump to the $EA81 exit
         cpuState.patch_kernal(59953, [0x4c, 0x81, 0xea])
