@@ -767,7 +767,7 @@ binary_file_tests = [
     ]
 
 start_tests_at = 0 # start at the beginning
-# when debugging, start at the named test:
+# when debugging, start at the named test ('adca' to start at the beginning)
 start_tests_at = [a_tuple[0] for a_tuple in binary_file_tests].index('adca')
 
 tests_to_run = binary_file_tests[start_tests_at:]
