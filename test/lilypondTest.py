@@ -27,4 +27,3 @@ class TestExportLilypond(unittest.TestCase):
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 
         self.assertEqual(known_good_ly_hash, test_ly_hash)
-

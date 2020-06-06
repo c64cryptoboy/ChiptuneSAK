@@ -51,5 +51,3 @@ song = ctsMidi.import_midi_to_chirp(sys.argv[1])
 print('\n'.join("%s: %s" % (s, song.stats[s]) for s in song.stats))
 
 plot_hist(song.tracks[2])
-
-
