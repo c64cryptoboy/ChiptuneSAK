@@ -1,3 +1,8 @@
+# Adds C64-specific behaviors to Cpu6502Emulator
+#
+# TODO:
+# - get_mem and set_mem mirroring needs to be overriden (or just removed) when we start to support
+#   2SID and 3SID
 
 from ctsConstants import project_to_absolute_path
 from ctsBytesUtil import read_binary_file
@@ -16,12 +21,13 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         # True if paged in
         self.see_basic = True
         self.see_kernal = True
+        self.see_char = False        
         self.see_io = True
-        self.see_char = False
 
-        self.rom_kernal = [0] * 8192  # KERNAL ROM 57344-65535 ($E000-$FFFF)
-        self.rom_basic = [0] * 8192  # BASIC ROM 40960-49151 ($A000-$BFFF)
-        self.rom_char = [0] * 4096  # Character set ROM 53248-57343 ($D000-$DFFF)
+        self.rom_kernal = [0] * 8192   # KERNAL ROM 57344-65535 ($E000-$FFFF)
+        self.rom_basic = [0] * 8192     # BASIC ROM 40960-49151 ($A000-$BFFF)
+        self.rom_char = [0] * 4096      # Character set ROM 53248-57343 ($D000-$DFFF)
+        self.registers_io = [0] * 4096  # Pretending I/O ($D000-$DFFF) are all registers
 
         # set kernal ROM hardware vectors to their kernal entry points
         # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
@@ -105,27 +111,29 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         # - $DE00-$DEFF: TODO: When no cart present, read/write behavior here is confusing
         # - $DF00-$DFFF: TODO: When no cart present, read/write behavior here is confusing
 
-        if self.see_io:
+        if self.see_io:  # If the I/O is banked in
             if 0xd02f <= loc <= 0xd03f or 0xd41d <= loc <= 0xd41f:
                 return 0xff
 
             if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirroring
-                return self.memory[0xd000 + ((loc - 0xd040) % 64)]
-
-            # no special treatment for $D400-$D418
-            #    In this low-fidelity emulator, you can read anything that was stored in a
-            #    write-only SID register, which is useful for our SID value extraction
+                return self.registers_io[((loc - 0xd040) % 64) + 0x040]
 
             if 0xd420 <= loc <= 0xd4ff:  # SID mirroring
-                return self.memory[0xd000 + ((loc - 0xd420) % 32)]
+                return self.registers_io[((loc - 0xd420) % 32) + 0x420]
 
             if 0xdc10 <= loc <= 0xdcff:  # CIA1 mirroring
-                return self.memory[0xd000 + ((loc - 0xdc10) % 16)]
+                return self.registers_io[((loc - 0xdc10) % 16) + 0xc10]
 
             if 0xdd10 <= loc <= 0xddff:  # CIA2 mirroring
-                return self.memory[0xd000 + ((loc - 0xdd10) % 16)]
+                return self.registers_io[((loc - 0xdd10) % 16) + 0xd10]
 
-        return self.memory[loc]  # Return memory (from somewhere in $Dxxx range)
+            # Note: no special treatment for $D400-$D418
+            #    In this low-fidelity emulator, you can read anything that was stored in a
+            #    write-only SID register, which is useful for our capture of SID values
+            return self.registers_io[loc - 0xd000]
+
+        # nothing bad RAM here in the $Dxxx range...
+        return self.memory[loc]
 
 
     def set_mem(self, loc, val):
@@ -137,22 +145,25 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
                 return  # unsettable
 
             if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirror set
-                self.memory[0xd000 + ((loc - 0xd040) % 64)] = val
+                self.registers_io[((loc - 0xd040) % 64) + 0x040] = val
                 return
 
             if 0xd420 <= loc <= 0xd4ff:  # SID mirror set
-                self.memory[0xd000 + ((loc - 0xd420) % 32)] = val
+                self.registers_io[((loc - 0xd420) % 32) + 0x420] = val
                 return
 
             if 0xdc10 <= loc <= 0xdcff:  # CIA1 mirror set
-                self.memory[0xd000 + ((loc - 0xdc10) % 16)] = val
+                self.registers_io[((loc - 0xdc10) % 16) + 0xc10] = val
                 return
 
             if 0xdd10 <= loc <= 0xddff:  # CIA2 mirror set
-                self.memory[0xd000 + ((loc - 0xdd10) % 16)] = val
+                self.registers_io[((loc - 0xdd10) % 16) + 0xd10] = val
                 return
 
-        self.memory[loc] = val
+            self.registers_io[loc - 0xd000] = val
+            return
+
+        self.memory[loc] = val  # Set RAM
 
         if loc == 1:  # hook writes to loc $0001 to update memory banking
             # Assuming that loc $0000 is always xxxxx111
@@ -175,7 +186,7 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
             # (I/O = VIC-II, SID, Color, CIA-1, CIA-2)
 
             banks = self.memory[0x0001] & 0b00000111
-            if banks & 0b00000011:
+            if banks & 0b00000011 == 0b00000011:
                 self.see_basic = True
             if banks & 0b00000010:
                 self.see_kernal = True

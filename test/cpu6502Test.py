@@ -184,11 +184,11 @@ class Test6502Emulator(unittest.TestCase):
             raster = (cpuState.cpucycles // ARCH['NTSC-C64'].cycles_per_line) \
                 % ARCH['NTSC-C64'].lines_per_frame
             if raster != last_raster:
-                cpuState.memory[53266] = raster & 0xff
-                high = cpuState.memory[53265] & 0b01111111
+                cpuState.set_mem(53266, raster & 0xff)
+                high = cpuState.get_mem(53265) & 0b01111111 
                 if raster > 255:
                     high |= 0b10000000
-                cpuState.memory[53265] = high
+                cpuState.set_mem(53265, high)
                 last_raster = raster
             # A non-changing raster will cause an infinite loop here:
             # 65371 $FF5B CINT: "Initialize Screen Editor and VIC-Chip"
@@ -211,7 +211,7 @@ class Test6502Emulator(unittest.TestCase):
         for i in range(rows_to_read * col_width):
             if i > 0 and i % col_width == 0:
                 screen_output.append("\n")
-            screen_code = cpuState.memory[screen_memory_loc + i]
+            screen_code = cpuState.get_mem(screen_memory_loc + i)
             if 1 <= screen_code <= 26:
                 screen_code += 64
             screen_code = chr(screen_code)
