@@ -36,9 +36,6 @@ def main():
 
     print("\ndone")
 
-<<<<<<< HEAD
 
-=======
->>>>>>> master
 if __name__ == "__main__":
     main()
