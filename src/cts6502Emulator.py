@@ -19,10 +19,9 @@
 
 # TODOs:
 # - Test a mirror set in VICE (on some vic register, not SID)
+# - throw an exception if the break flag ever appears on flags
 
 from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError, ChiptuneSAKContentError
-
-DEBUG = False
 
 # 6502 vector locations
 NMI = 0xfffa  # on C64, vector points to NMI routine at $FE43/65091
@@ -70,6 +69,8 @@ class Cpu6502Emulator:
         self.cpucycles = 0  #: count of cpu cycles processed
         self.last_instruction = None  #: last instruction processed
         self.stack_wrapping = False  #: True = empty stack wraps when popped
+        self.debug = False
+        self.invocationCount = -1 
 
     def get_mem(self, loc):
         return self.memory[loc]
@@ -589,9 +590,18 @@ class Cpu6502Emulator:
     #   switch(op)
     #   {
     def runcpu(self):
-        if DEBUG:
-            output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
-                .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
+        # execute instruction.
+        # If RTS/RTI (when stack empty) or BRK, return 0, else return 1
+        # Throw exception on not-yet-implemented pseduo-op codes
+        if self.debug:
+            self.invocationCount += 1
+            #output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
+            #    .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
+            
+            # match siddump.c output...
+            output_str = "count: {:08d} PC: {:04x} A: {:02x} X: {:02x} Y: {:02x} flags: {:02x}" \
+                .format(self.invocationCount, self.pc, self.a, self.x, self.y, self.flags)
+
             print(output_str)
 
             # Useful for some of the Wolfgang Lorenz tests:
@@ -1779,7 +1789,16 @@ class Cpu6502Emulator:
 
         # PLP instruction
         if instruction == 0x28:  # $28/40 PLP
-            self.flags = self.pop()  # no action taken on B flag
+            self.flags = self.pop()
+
+            # https://en.wikipedia.org/wiki/MOS_Technology_6502
+            # The "Break" flag of the processor is very different from the other
+            # flag bits. It has no flag setting, resetting, or testing instructions
+            # of its own, and is not affected by the PHP and PLP instructions. It
+            # exists only on the stack, where BRK and PHP always write a 1, while
+            # IRQ and NMI always write a 0.
+            self.flags &= (~FB & 0xff)  # not done in siddump.c
+
             self.flags |= FU  # needed for Wolfgang Lorenz tests
             return 1
 
@@ -2254,13 +2273,13 @@ class Cpu6502Emulator:
         # Articles say there is no B flag in the processor status register,
         # the bit is unused.  PHP and BRK pushes the P register onto the stack with break
         # bit set, and IRQ/NMI pushes P register with break bit clear.  The "actual" B flag
-        # goes unchanged.  I did a BRK in Vice, and sure enough, the B flag wasn't set.
+        # doesn't exist.  I did a BRK in VICE, and sure enough, the B flag wasn't set.
 
         if instruction == 0x00:  # $00/0 BRK
             # This is unnecessary to implement from a SID playback perspective
             # so siddump.c ignored it
             self.pc += 1  # BRK is a 2-byte opcode (2nd byte is padding)
-            self.pc &= 0xf000
+            self.pc &= 0xffff
             self.push((self.pc) >> 8)
             self.push((self.pc) & 0xff)
             self.push(self.flags | FB)
