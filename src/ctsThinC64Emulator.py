@@ -3,6 +3,10 @@
 # TODO:
 # - get_mem and set_mem mirroring needs to be overriden (or just removed) when we start to support
 #   2SID and 3SID
+# - add hook of some kind:  If PC within BASIC or KERNAL, and that ROM is paged in, but
+#   the ROM wasn't loaded, then throw a stern warning
+#   NOTE: This needs to be optional (default off), since in many places we stub our own ROM stuff,
+#   but this could be useful for SIDs
 
 from ctsConstants import project_to_absolute_path
 from ctsBytesUtil import read_binary_file

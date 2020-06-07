@@ -27,3 +27,6 @@ test/data/Yofa_test.mid
 /test/Betrayal_test_q.mid
 /test/data/bach_invention_4.pdf
 *.doctree
+# mine below this line
+/htmlcov/*
+/youd/*
