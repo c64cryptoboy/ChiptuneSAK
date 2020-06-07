@@ -1,3 +1,4 @@
+import examplesPath  # noqa
 import ctsMidi
 import ctsC128Basic
 from ctsConstants import project_to_absolute_path

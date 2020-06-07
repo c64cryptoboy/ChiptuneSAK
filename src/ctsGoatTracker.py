@@ -924,7 +924,7 @@ class GTSong:
                 retval.append(repeats - 1 + 0xD0)  # Repeat N times
             retval.append(pattern_number)
 
-        assert all(0 <= x <= 0xFF for x in retval), "Byte value error in orderlist"
+        assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
         return retval
 
     def export_parsed_gt_to_gt_binary(self):

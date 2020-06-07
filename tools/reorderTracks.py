@@ -1,6 +1,7 @@
 import copy
 import argparse
 import os
+import toolsPath  # noqa
 from ctsErrors import *
 import ctsMidi
 

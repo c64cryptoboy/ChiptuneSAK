@@ -1,3 +1,4 @@
+import examplesPath  # noqa
 import copy
 import ctsMidi
 import ctsRChirp
@@ -22,7 +23,7 @@ output_gt_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.sng
 
 chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 
-print('Original song:')
+print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')
@@ -99,12 +100,12 @@ ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.
 # Since we want control over the instruments we specify the GT ones in order.
-print('Setting GoatTracker instruments...')
+print(f'Setting GoatTracker instruments...')
 for i, program in enumerate([1, 2, 2, 2, 3]):
     chirp_song.tracks[i].set_program(program)
 
 # Now that everything is C64 compatible, we convert the song to goattracker format.
-print('Converting ChirpSong to RChirpSong...')
+print(f'Converting ChirpSong to RChirpSong...')
 rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 
 # Perform loop-finding to compress the song and to take advantage of repetition

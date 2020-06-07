@@ -1,3 +1,4 @@
+import examplesPath  # noqa
 import os
 import subprocess
 import ctsMidi

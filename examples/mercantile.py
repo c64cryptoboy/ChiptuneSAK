@@ -1,3 +1,4 @@
+import examplesPath  # noqa
 import subprocess
 from ctsBase import *
 import ctsMidi
@@ -42,7 +43,7 @@ chirp_song = ctsMidi.MIDI().to_chirp(input_file)
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
 
-print('Original song:')
+print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')
@@ -95,7 +96,7 @@ chirp_song.truncate(197280)
 # Set the key (D minor)
 chirp_song.set_key_signature('Dm')
 
-print('Modified song:')
+print(f'Modified song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
 print(f'    ppq = {chirp_song.metadata.ppq}')
 print(f'  tempo = {chirp_song.metadata.qpm} qpm')

@@ -1,5 +1,6 @@
 import argparse
 import functools
+import toolsPath  # noqa
 # from ctsBase import *  # flake8 thinks this is unused
 import ctsChirp
 from ctsConstants import DURATION_STR, DEFAULT_MIDI_PPQN

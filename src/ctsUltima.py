@@ -1,11 +1,8 @@
 import os
 import csv
-# import ctsMidi
 import ctsConstants
-from ctsBase import *  # noqa
+from ctsBase import *
 from ctsChirp import ChirpSong, ChirpTrack, Note
-# from ctsBytesUtil import big_endian_int, little_endian_int
-# from ctsMidi import export_chirp_to_midi
 from ctsMidi import MIDI
 
 

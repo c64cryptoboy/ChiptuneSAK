@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+import toolsPath  # noqa
 import ctsMidi
 import ctsLilypond
 

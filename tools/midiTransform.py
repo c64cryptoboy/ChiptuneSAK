@@ -1,5 +1,6 @@
 import argparse
 from os import path
+import toolsPath  # noqa
 import ctsMidi
 
 

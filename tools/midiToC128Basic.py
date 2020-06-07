@@ -1,6 +1,7 @@
 # Convert midi .mid file into Commodore 128 BASIC .bas (ascii text) or .prg (native) files
 
 import os
+import toolsPath  # noqa
 import ctsConstants
 import argparse
 import ctsMidi

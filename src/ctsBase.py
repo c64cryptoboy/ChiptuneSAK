@@ -133,7 +133,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: Chirp song
         :rtype: ctsChirp.ChirpSong object
         """
-        raise ChiptuneSAKNotImplemented("Not implemented")
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
     def to_rchirp(self, filename, **kwargs):
         """
@@ -144,7 +144,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: RChirp song
         :rtype: ctsRChirp.RChirpSong object
         """
-        raise ChiptuneSAKNotImplemented("Not implemented")
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
     def to_mchirp(self, filename, **kwargs):
         """
@@ -155,7 +155,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :return: MChirp song
         :rtype: ctsMChirp.MChirpSong object
         """
-        raise ChiptuneSAKNotImplemented("Not implemented")
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
     def to_bin(self, ir_song, **kwargs):
         """
@@ -197,7 +197,7 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         :return: rchirp_song with compression
         :rtype: ctsRChirp.RChirpSong
         """
-        raise ChiptuneSAKNotImplemented("Not implemented")
+        raise ChiptuneSAKNotImplemented(f"Not implemented")
 
 
 # --------------------------------------------------------------------------------------
