@@ -1,5 +1,4 @@
-import sys
-import examplesPath
+import examplesPath  # noqa
 import subprocess
 from ctsBase import *
 import ctsMidi

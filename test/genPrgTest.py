@@ -1,7 +1,7 @@
-import sys
-sys.path.append('../src/')
+import testingPath  # noqa
 import unittest
-import ctsGenPrg # src/
+import ctsGenPrg  # src/
+
 
 class TestExportPRG(unittest.TestCase):
     def test_quotes_and_rem(self):
@@ -9,7 +9,7 @@ class TestExportPRG(unittest.TestCase):
         ascii_prg = '10 print "rem":rem "print": end\n'
         ascii_prg += '1337 print"print"+chr$(67)+"chr$(67)"'
 
-        #print(' '.join('%02X' % b for b in ctsGenPrg.ascii_to_c128prg(ascii_prg)))
+        # print(' '.join('%02X' % b for b in ctsGenPrg.ascii_to_c128prg(ascii_prg)))
 
         # ground truth from VICE:
         tmp = '''01 1C 1C 1C 0A 00 99 20 22 52 45 4D 22 3A 8F 20 22 50 52

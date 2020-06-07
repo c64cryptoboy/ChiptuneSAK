@@ -309,7 +309,7 @@ def is_triplet(note, ppq):
     :return:      True of the note is a triplet type
     :rtype:       bool
     """
-    f = Fraction(note.duration/ppq).limit_denominator(16)
+    f = Fraction(note.duration / ppq).limit_denominator(16)
     if f.denominator % 3 == 0:
         return True
     return False

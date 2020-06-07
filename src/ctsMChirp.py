@@ -72,8 +72,11 @@ class Measure:
             if carry.duration <= 0:
                 raise ChiptuneSAKValueError("Illegal carry note duration %d" % carry.duration, str(carry))
             if carry_end > end:  # Does the carried note extend past the end of this measure?
-                self.events.append(ctsChirp.Note(self.start_time, carry.note_num, end - self.start_time, 100,
-                                        tied_from=True, tied_to=True))
+                self.events.append(
+                    ctsChirp.Note(
+                        self.start_time, carry.note_num, end - self.start_time, 100, tied_from=True, tied_to=True
+                    )
+                )
                 carry.duration -= end - self.start_time
                 last_note_end = end
             else:  # Carried note ends during this measure

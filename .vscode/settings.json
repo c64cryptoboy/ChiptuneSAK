@@ -14,8 +14,11 @@
     "python.linting.pylintEnabled": true,
     "python.linting.flake8Enabled": false,
     "python.linting.enabled": true,
-
-	"python.linting.flake8Args": [
+    "python.linting.lintOnSave": true,
+    "python.linting.flake8Path": "~/.virtualenvs/python3/bin/flake8",
+    "python.linting.flake8Args": [
         "--max-line-length=120",
+        // "--ignore=E501,E731,F403,F405,W503",
+        // "--config setup.cfg",
     ],
 }

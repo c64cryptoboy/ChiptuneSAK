@@ -1,11 +1,9 @@
-import sys
-import copy
-import testingPath
+import testingPath  # noqa
 import unittest
 import ctsMidi
 from ctsBase import *
-from ctsMChirp import MChirpSong, MChirpTrack
-from ctsChirp import ChirpSong, ChirpTrack
+from ctsMChirp import MChirpSong
+from ctsChirp import ChirpSong
 from ctsConstants import project_to_absolute_path
 
 TEST_SONG = project_to_absolute_path('test/data/bach_invention_4.mid')
@@ -34,7 +32,7 @@ class SongTestCase(unittest.TestCase):
             for m in t.measures:
                 s = sum(n.duration for n in m.get_notes())
                 r = sum(r.duration for r in m.get_rests())
-                self.assertEqual(s+r, m.duration)
+                self.assertEqual(s + r, m.duration)
 
     def test_conversion(self):
         """
@@ -64,5 +62,5 @@ class SongTestCase(unittest.TestCase):
                              for e in m.events if isinstance(e, Triplet))
         self.assertEqual(total_triplets, 21)
 
-        #tmp_song = ChirpSong(test_mchirp)
-        #ctsMidi.export_chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')
+        # tmp_song = ChirpSong(test_mchirp)
+        # ctsMidi.export_chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')

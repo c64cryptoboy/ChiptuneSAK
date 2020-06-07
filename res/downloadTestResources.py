@@ -1,7 +1,7 @@
 # Download additional resources that could be used in testing / demonstrations
-# that don't belong in the github code base 
+# that don't belong in the github code base
 
-import resourcePath
+import resourcePath  # noqa
 import os
 import time
 import requests
@@ -14,7 +14,7 @@ last_site = None
 
 class ResourceFile:
     def __init__(self, remote_url, local_path, local_name=None):
-        self.remote_url = remote_url 
+        self.remote_url = remote_url
         self.local_path = local_path
         self.local_name = local_name
         if local_name is None:  # if filename not specified, use filename from url
@@ -72,25 +72,25 @@ def main():
         'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
         'examples/data',
         'MonkeyIsland_LechuckTheme.mid'
-        )) 
+    ))
 
     resources.append(ResourceFile(
         'http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/kernal.901227-03.bin',
         'res',
         'c64kernal.bin'
-        )) 
+    ))
 
     resources.append(ResourceFile(
         'http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/basic.901226-01.bin',
         'res',
         'c64basic.bin'
-        )) 
+    ))
 
     resources.append(ResourceFile(
         'http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/characters.901225-01.bin',
         'res',
         'c64char.bin'
-        ))
+    ))
 
     # An HVSC mirror:
     an_hvsc_mirror = 'https://www.sannic.nl/hvsc/C64Music/MUSICIANS'

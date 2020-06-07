@@ -1,23 +1,22 @@
 # Convert midi .mid file into Commodore 128 BASIC .bas (ascii text) or .prg (native) files
 
 import os
-import toolsPath
+import toolsPath  # noqa
 import ctsConstants
 import argparse
 import ctsMidi
-from ctsMChirp import MChirpSong
 import ctsC128Basic
-import ctsGenPrg
 
 
 def main():
     parser = argparse.ArgumentParser(description="Convert a midi file into a C128 BASIC program.")
     parser.add_argument('midi_in_file', help='midi filename to import')
     parser.add_argument('basic_out_file', help='filename to export')
-    parser.add_argument('-t', '--type', choices=['bas', 'prg'],
-        help='basic output file type (default: prg)')
+    parser.add_argument(
+        '-t', '--type', choices=['bas', 'prg'], help='basic output file type (default: prg)'
+    )
     parser.add_argument('-i', '--instruments', nargs=3, help="instrument names (3 required)")
-    parser.add_argument('-a', '--arch', help="architecture (NTSC or PAL)")
+    parser.add_argument('-a', '--arch', default=ctsConstants.DEFAULT_ARCH, help="architecture (NTSC or PAL)")
 
     args = parser.parse_args()
 
@@ -28,7 +27,7 @@ def main():
 
     # midi -> mchirp
 
-    #song = ctsMidi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
+    # song = ctsMidi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
     song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
 
     song.remove_keyswitches(8)
@@ -44,7 +43,7 @@ def main():
 
     # chirp -> mchirp
 
-    #mchirp_song = MChirpSong(song) # TODO remove this line
+    # mchirp_song = MChirpSong(song) # TODO remove this line
     mchirp_song = song.to_mchirp()
 
     # mchirp -> C128 Basic
@@ -52,10 +51,6 @@ def main():
     instruments = ('piano', 'piano', 'piano')
     if args.instruments:
         instruments = (i.lower() for i in args.instruments)
-
-    arch = ctsConstants.DEFAULT_ARCH
-    if args.arch:
-        arch = args.arch
 
     # if -t flag not used, look at output filename extension
     if args.type is None:

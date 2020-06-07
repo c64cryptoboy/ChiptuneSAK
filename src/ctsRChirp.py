@@ -13,6 +13,7 @@ from ctsBase import *
 import ctsConstants
 from dataclasses import dataclass
 
+
 @dataclass(order=True)
 class RChirpRow:
     """
@@ -342,8 +343,7 @@ class RChirpVoice:
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
-                            / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
+        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
         jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
@@ -570,14 +570,14 @@ class RChirpSong(ChiptuneSAKBase):
 
         csv_header = ["jiffy"]
         for i in range(len(self.voices)):
-            csv_header.append("v%d row #" % (i+1))
-            csv_header.append("v%d note" % (i+1))
-            csv_header.append("v%d on/off/none" % (i+1))
-            csv_header.append("v%d tempo update" % (i+1))
+            csv_header.append("v%d row #" % (i + 1))
+            csv_header.append("v%d note" % (i + 1))
+            csv_header.append("v%d on/off/none" % (i + 1))
+            csv_header.append("v%d tempo update" % (i + 1))
 
         csv_rows = []
         prev_tempo = [-1] * len(self.voices)
-        for tick in range(max_tick+1):
+        for tick in range(max_tick + 1):
             # if any channel has a entry at this tick, create a row for all channels
             if any(tick in channels_time_events[i] for i in range(len(self.voices))):
                 a_csv_row = ["%d" % tick]

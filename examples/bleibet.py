@@ -1,9 +1,6 @@
-import sys
-import examplesPath
-from ctsBase import *
+import examplesPath  # noqa
+# from ctsBase import *  # Flake8 thinks this is unused
 import ctsMidi
-import ctsLilypond
-import ctsOnePassCompress
 import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 

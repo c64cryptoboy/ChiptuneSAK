@@ -6,6 +6,7 @@ import ctsChirp
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
+
 @dataclass(init=True, repr=True, eq=True, order=True)
 class Repeat:
     track: int
@@ -56,8 +57,10 @@ def find_all_repeats(song, min_repeat_length):
                 xform = find_xform(notes[first_position], notes[start_position])
                 for i in range(1, n_notes - start_position):
                     start_diff = (notes[start_position + i].start_time - notes[start_position + i - 1].start_time)
-                    first_diff = int((notes[first_position + i].start_time -
-                                      notes[first_position + i - 1].start_time) * xform.stretch + 0.1)
+                    first_diff = int(
+                        (notes[first_position + i].start_time - notes[first_position + i - 1].start_time)
+                        * xform.stretch + 0.1
+                    )
                     first_note = notes[first_position + i]
                     tmpxf = apply_xform(first_note, xform)
                     start_note = notes[start_position + i]
@@ -139,4 +142,3 @@ if __name__ == '__main__':
     find_best_compression(in_song, repeats, 1, 4, 1)
 
     # print('\n'.join(str(r) for r in repeats))
-

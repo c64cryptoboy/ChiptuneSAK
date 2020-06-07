@@ -1,7 +1,6 @@
 # Script to make sid header histograms for all the sids in an HVSC zip file
 # TODO: Currently assumes that the file is not double zipped
 
-import toolsPath
 import operator
 import zipfile
 import itertools
@@ -10,17 +9,21 @@ import ctsSID
 
 HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')
 
-histograms_categories = ['magic_id', 'version', 'data_offset', 'load_address', 'init_address',
+histograms_categories = [
+    'magic_id', 'version', 'data_offset', 'load_address', 'init_address',
     'play_address', 'num_subtunes', 'start_song', 'speed', 'flag_0', 'flag_1', 'clock',
     'sid_model', 'sid2_model', 'sid3_model', 'start_page', 'page_length', 'sid2_address',
-    'sid3_address', 'sid_count']
+    'sid3_address', 'sid_count',
+]
 histograms = {category: {} for category in histograms_categories}
+
 
 def update_hist(category, value):
     global histograms
     if value not in histograms[category]:
         histograms[category][value] = 0
     histograms[category][value] += 1
+
 
 with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
     sid_files = [fn for fn in hvsc_zip.namelist() if fn.lower().endswith('.sid')]

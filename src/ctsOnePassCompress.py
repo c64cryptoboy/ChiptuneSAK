@@ -35,12 +35,14 @@ def op_row_match(r1, r2, xf=None):
         note_match = r1.note_num + xf.transpose == r2.note_num
     else:
         note_match = r1.note_num == r2.note_num
-    return note_match \
-           and r1.instr_num == r2.instr_num \
-           and r1.new_instrument == r2.new_instrument \
-           and r1.gate == r2.gate \
-           and r1.jiffy_len == r2.jiffy_len \
-           and r1.new_jiffy_tempo == r2.new_jiffy_tempo
+    return (
+        note_match
+        and r1.instr_num == r2.instr_num
+        and r1.new_instrument == r2.new_instrument
+        and r1.gate == r2.gate
+        and r1.jiffy_len == r2.jiffy_len
+        and r1.new_jiffy_tempo == r2.new_jiffy_tempo
+    )
 
 
 def op_pattern_match(p1, p2, xf=None):
@@ -341,14 +343,12 @@ class OnePassGlobal(OnePass):
         """
 
         rchirp_song.patterns = []  # Get rid of any patterns from previous compression
-        last_pattern_count = 0
         for iv, v in enumerate(rchirp_song.voices):
             filled_rows = v.make_filled_rows()
             self.used = [False for r in filled_rows]
             n_rows = len(filled_rows)
             order = {}
             repeats = self.find_all_repeats(filled_rows)
-            it = 0
             while len(repeats) > 0:
                 best_repeats = self.find_best_repeats(repeats)
                 if len(best_repeats) > 0:
@@ -357,9 +357,6 @@ class OnePassGlobal(OnePass):
                     pattern_index = len(rchirp_song.patterns) - 1
                     order = self.apply_pattern(pattern_index, best_repeats, order)
                     repeats = self.trim_repeats(repeats)
-                it += 1
-                holes = self.get_hole_lengths()
-                avg_hole_length = sum(h for h in holes) / len(holes)
             while any(not u for u in self.used):
                 gap_start = next(iu for iu, u in enumerate(self.used) if not u)
                 gap_end = gap_start
@@ -373,7 +370,6 @@ class OnePassGlobal(OnePass):
                 for ig in range(gap_start, gap_end):
                     self.used[ig] = True
             assert all(self.used), "Not all rows were used!"
-            last_pattern_count = len(rchirp_song.patterns)
             if not self.validate_orderlist(rchirp_song.patterns, order, len(filled_rows)):
                 exit('Orderlist mismatch')
             rchirp_song.voices[iv].orderlist = self.make_orderlist(order)
@@ -454,7 +450,6 @@ class OnePassLeftToRight(OnePass):
                 if self.used[i]:
                     continue
                 repeats = self.find_repeats_starting_at(i, filled_rows)
-                it = 0
                 while len(repeats) > 0:
                     best_repeats = self.find_best_repeats(repeats)
                     if len(best_repeats) > 0:
@@ -463,9 +458,6 @@ class OnePassLeftToRight(OnePass):
                         pattern_index = len(rchirp_song.patterns) - 1
                         order = self.apply_pattern(pattern_index, best_repeats, order)
                         repeats = self.trim_repeats(repeats)
-                    holes = self.get_hole_lengths()
-                    avg_hole_length = sum(h for h in holes) / len(holes)
-                    it += 1
             while any(not u for u in self.used):
                 gap_start = next(iu for iu, u in enumerate(self.used) if not u)
                 gap_end = gap_start
@@ -532,6 +524,7 @@ def get_gt_orderlist_length(orderlist):
 
 
 GT_PATTERN_OVERHEAD = 5
+
 
 def estimate_song_size(rchirp_song):
     total = GT_PATTERN_OVERHEAD * len(rchirp_song.patterns)

@@ -1,6 +1,5 @@
-import sys
 import copy
-sys.path.append('../src/')
+import testingPath  # noqa
 import unittest
 import ctsMidi
 import ctsChirp
