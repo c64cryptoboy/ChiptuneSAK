@@ -1,8 +1,7 @@
 # Tests of 6502 Emulation
 #
 
-
-import testingPath
+import testingPath  # noqa
 import unittest
 import cts6502Emulator
 import ctsThinC64Emulator
@@ -10,15 +9,16 @@ from ctsConstants import ARCH
 
 VERBOSE = False
 
+
 class Test6502Emulator(unittest.TestCase):
     def setUp(self):
         pass
 
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_stack_wrapping(self):
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
-        cpuState.inject_bytes(32768, [0x60]) # RTS
+        cpuState.inject_bytes(32768, [0x60])  # RTS
         cpuState.stack_wrapping = False
 
         cpuState.init_cpu(32768)
@@ -36,7 +36,7 @@ class Test6502Emulator(unittest.TestCase):
         self.assertTrue(cpuState.runcpu() == 1)
         self.assertTrue(cpuState.sp == 0xff)
 
-        cpuState.inject_bytes(32768, [0x40]) # RTI
+        cpuState.inject_bytes(32768, [0x40])  # RTI
 
         cpuState.init_cpu(32768)
         cpuState.sp = 0xfd
@@ -46,7 +46,7 @@ class Test6502Emulator(unittest.TestCase):
         cpuState.sp = 0xfc
         self.assertTrue(cpuState.runcpu() == 1)
 
-        cpuState.inject_bytes(32768, [0x60]) # RTS
+        cpuState.inject_bytes(32768, [0x60])  # RTS
         cpuState.stack_wrapping = True
 
         cpuState.init_cpu(32768)
@@ -59,7 +59,7 @@ class Test6502Emulator(unittest.TestCase):
         self.assertTrue(cpuState.runcpu() == 1)
         self.assertTrue(cpuState.sp == 0x00)
 
-        cpuState.inject_bytes(32768, [0x40]) # RTI
+        cpuState.inject_bytes(32768, [0x40])  # RTI
 
         cpuState.init_cpu(32768)
         cpuState.sp = 0xfc
@@ -71,8 +71,7 @@ class Test6502Emulator(unittest.TestCase):
         self.assertTrue(cpuState.runcpu() == 1)
         self.assertTrue(cpuState.sp == 0x01)
 
-
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_obfuscated_sig(self):
         # Emulate the ML portion of my lemon64 signature
         # Note: signature line is obfuscated by changing XOR mask
@@ -92,8 +91,10 @@ class Test6502Emulator(unittest.TestCase):
         .C:800a  D0 F6       BNE $8002
         .C:800c  60          RTS
         """
-        test_prog = [160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
-            81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2]
+        test_prog = [
+            160, 15, 152, 89, 12, 128, 32, 210, 255, 136, 208, 246, 96, 12, 71,
+            81, 65, 77, 38, 84, 73, 94, 42, 74, 74, 66, 87, 2
+        ]
 
         cpuState.inject_bytes(32768, test_prog)
 
@@ -143,7 +144,7 @@ class Test6502Emulator(unittest.TestCase):
         $96/150 STX zp,Y        $BA/186 TSX         $00/0 BRK
     """
 
-    #@unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Debugging, so skipping this test for now")
     def test_C64_kernal_boot(self):
         cpuState = ctsThinC64Emulator.ThinC64Emulator()
 
@@ -215,15 +216,16 @@ class Test6502Emulator(unittest.TestCase):
             if 1 <= screen_code <= 26:
                 screen_code += 64
             screen_code = chr(screen_code)
-            #if not screen_code.isprintable:
+            # if not screen_code.isprintable:
             #    screen_code = '~'
             screen_output.append(screen_code)
-            #print("%s" % (screen_code), end='')
+            # print("%s" % (screen_code), end='')
         actual_screen_output = ''.join(screen_output)
 
         if VERBOSE:
             print(actual_screen_output)
         self.assertTrue(actual_screen_output == expected_screen_output)
+
 
 if __name__ == '__main__':
     # ctsTestingTools.env_to_stdout()

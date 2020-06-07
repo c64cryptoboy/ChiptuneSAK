@@ -70,7 +70,7 @@ class Cpu6502Emulator:
         self.last_instruction = None  #: last instruction processed
         self.stack_wrapping = False  #: True = empty stack wraps when popped
         self.debug = False
-        self.invocationCount = -1 
+        self.invocationCount = -1
 
     def get_mem(self, loc):
         return self.memory[loc]
@@ -595,9 +595,9 @@ class Cpu6502Emulator:
         # Throw exception on not-yet-implemented pseduo-op codes
         if self.debug:
             self.invocationCount += 1
-            #output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
+            # output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
             #    .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
-            
+
             # match siddump.c output...
             output_str = "count: {:08d} PC: {:04x} A: {:02x} X: {:02x} Y: {:02x} flags: {:02x}" \
                 .format(self.invocationCount, self.pc, self.a, self.x, self.y, self.flags)

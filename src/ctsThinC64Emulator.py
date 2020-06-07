@@ -1,8 +1,9 @@
 
 from ctsConstants import project_to_absolute_path
 from ctsBytesUtil import read_binary_file
-from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError, ChiptuneSAKContentError
+from ctsErrors import ChiptuneSAKContentError
 import cts6502Emulator
+
 
 class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
     def __init__(self):
@@ -55,10 +56,10 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         # FF53  F0 03     BEQ $FF58
         # FF55  6C 16 03  JMP ($0316) ; if software irq (break flag set)
         # FF58  6C 14 03  JMP ($0314) ; if hardware irq
-        self.patch_kernal(65352,
-            [0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
-            0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03])
-
+        self.patch_kernal(65352, [
+            0x48, 0x8a, 0x48, 0x98, 0x48, 0xba, 0xbd, 0x04, 0x01, 0x29,
+            0x10, 0xf0, 0x03, 0x6c, 0x16, 0x03, 0x6c, 0x14, 0x03
+        ])
 
     def get_mem(self, loc):
         if loc < 0xa000 or (0xc000 <= loc <= 0xcfff):
@@ -78,7 +79,7 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
 
         # only $D000 to $DFFF left to process:
         if self.see_char:
-            return self.rom_char[loc-0xd000]
+            return self.rom_char[loc - 0xd000]
 
         # Normally, for a given memory location, you can write to RAM, or read from either RAM
         # or what's banked in instead.  But it's more complicated in the $D000 to $DFFF range:
@@ -126,7 +127,6 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
                 return self.memory[0xd000 + ((loc - 0xdd10) % 16)]
 
         return self.memory[loc]  # Return memory (from somewhere in $Dxxx range)
-
 
     def set_mem(self, loc, val):
         if not (0 <= val <= 255):
@@ -184,7 +184,6 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
             if 1 <= banks <= 3:
                 self.see_char = True
 
-
     def load_rom(self, path_and_filename, expected_size):
         binary = read_binary_file(path_and_filename)
         if binary is None:
@@ -210,12 +209,10 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
             self.rom_char = binary
             self.has_char = True
 
-
     def patch_kernal(self, mem_loc, bytes):
         mem_loc -= 0xe000
         for i, a_byte in enumerate(bytes):
             self.rom_kernal[mem_loc + i] = a_byte
-
 
     def patch_basic(self, mem_loc, bytes):
         mem_loc -= 0xa000

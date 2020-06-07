@@ -3,14 +3,12 @@
 # TODOs:
 # - Add an additional subtune to gtTestData.sng and create tests here for it
 
-import testingPath
+import testingPath  # noqa
 import unittest
 import ctsGoatTracker
 import ctsBase
-import ctsRChirp
-import collections
 from ctsConstants import project_to_absolute_path
-from ctsBytesUtil import read_binary_file, write_binary_file
+from ctsBytesUtil import read_binary_file
 
 
 # Description of test/data/gtTestData.sng test data
@@ -83,7 +81,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     def test_sng_to_parsed_to_sng(self):
         gt_binary2 = self.parsed_gt.export_parsed_gt_to_gt_binary()
 
-        #write_binary_file(project_to_absolute_path('test/data/gtTestData_deleteMe.sng'), gt_binary2)
+        # write_binary_file(project_to_absolute_path('test/data/gtTestData_deleteMe.sng'), gt_binary2)
         self.assertTrue(self.gt_binary == gt_binary2)
 
     # Test that .sng binary to rchirp has expected note content after conversion
@@ -103,7 +101,6 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         chirp_song = rchirp_song.to_chirp()
         test_rchirp = chirp_song.to_rchirp()
         self.assertTrue(self.found_expected_note_content(test_rchirp))
-
 
     # Tests for consistency under transformations
     # This ASCII art chart (below) shows a sequence of 6 transformations, which will allow
@@ -150,23 +147,23 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp()
         extensions = rchirp_song.metadata.extensions
         self.assertTrue(
-            extensions["gt.wave_table"][0] == 2 and
-            extensions["gt.pulse_table"][0] == 0 and
-            extensions["gt.filter_table"][0] == 0 and
-            extensions["gt.speed_table"][0] == 0)
+            extensions["gt.wave_table"][0] == 2
+            and extensions["gt.pulse_table"][0] == 0
+            and extensions["gt.filter_table"][0] == 0
+            and extensions["gt.speed_table"][0] == 0)
 
         ctsGoatTracker.add_gt_instrument_to_rchirp(rchirp_song, "SlepBass", 'test/data/')
 
         self.assertTrue(
-            extensions["gt.wave_table"][0] == 2 + 4 and  # adds 4
-            extensions["gt.pulse_table"][0] == 5 and     # adds 5
-            extensions["gt.filter_table"][0] == 6 and    # adds 6
-            extensions["gt.speed_table"][0] == 1)        # adds 1
+            extensions["gt.wave_table"][0] == 2 + 4    # adds 4
+            and extensions["gt.pulse_table"][0] == 5   # adds 5
+            and extensions["gt.filter_table"][0] == 6  # adds 6
+            and extensions["gt.speed_table"][0] == 1)  # adds 1
 
         # Code to check out result in GoatTracker:
-        #converter = ctsGoatTracker.GoatTracker()
-        #converter.set_instruments(['HarpsiSolo', 'FluteVibro', 'SawtoothLegato'])
-        #converter.to_file(rchirp_song, project_to_absolute_path('test/data/deleteMe.sng'))
+        # converter = ctsGoatTracker.GoatTracker()
+        # converter.set_instruments(['HarpsiSolo', 'FluteVibro', 'SawtoothLegato'])
+        # converter.to_file(rchirp_song, project_to_absolute_path('test/data/deleteMe.sng'))
 
 
 if __name__ == '__main__':

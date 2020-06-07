@@ -1,10 +1,10 @@
 import sys
-sys.path.append('../src')
+import testingPath  # noqa
 import collections
 
 import matplotlib.pyplot as plt
 import ctsMidi
-import ctsChirp
+
 
 def plot_hist(track):
     ctr = collections.Counter()
@@ -43,7 +43,6 @@ def plot_hist(track):
     ax.legend()
     ax.set_title('Statistics')
     plt.show()
-
 
 
 song = ctsMidi.import_midi_to_chirp(sys.argv[1])
