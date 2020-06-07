@@ -577,6 +577,7 @@ class Cpu6502Emulator:
         self.flags = flags
         self.sp = 0xff
         self.cpucycles = 0
+        self.invocationCount = -1
 
     # ---------------------------------------------------------------------------
 
@@ -599,8 +600,8 @@ class Cpu6502Emulator:
             #    .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
 
             # match siddump.c output...
-            output_str = "count: {:08d} PC: {:04x} A: {:02x} X: {:02x} Y: {:02x} flags: {:02x}" \
-                .format(self.invocationCount, self.pc, self.a, self.x, self.y, self.flags)
+            output_str = "count: {:08d} PC: {:04x} A: {:02x} X: {:02x} Y: {:02x} flags: {:02x} SP: {:02x}" \
+                .format(self.invocationCount, self.pc, self.a, self.x, self.y, self.flags, self.sp)
 
             print(output_str)
 
@@ -2454,7 +2455,7 @@ class Cpu6502Emulator:
         # $F2/242 HALT
         if instruction in (0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92,
                            0xb2, 0xd2, 0xf2):
-            raise ChiptuneSAKValueError("Error: CPU halt at %s\n" % hex(self.pc - 1))
+            raise ChiptuneSAKValueError("Error: CPU halt on ${:02X} at ${:04X}\n".format(instruction, self.pc - 1))
 
         # Pseudo-ops I'm not likely to need for SID playback (TODO: implement later)
         # $03/3 ASL-ORA (zp,X)

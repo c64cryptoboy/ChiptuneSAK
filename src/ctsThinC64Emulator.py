@@ -8,14 +8,14 @@
 #   NOTE: This needs to be optional (default off), since in many places we stub our own ROM stuff,
 #   but this could be useful for SIDs
 
-from ctsConstants import project_to_absolute_path
+import ctsConstants
 from ctsBytesUtil import read_binary_file
 from ctsErrors import ChiptuneSAKContentError
 import cts6502Emulator
 
 
 class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
-    def __init__(self):
+    def __init__(self, arch=ctsConstants.DEFAULT_ARCH):
         super().__init__()
 
         # True if C64 ROM loaded, if False, all zeros
@@ -26,13 +26,19 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         # True if paged in
         self.see_basic = True
         self.see_kernal = True
-        self.see_char = False        
+        self.see_char = False
         self.see_io = True
 
         self.rom_kernal = [0] * 8192   # KERNAL ROM 57344-65535 ($E000-$FFFF)
         self.rom_basic = [0] * 8192     # BASIC ROM 40960-49151 ($A000-$BFFF)
         self.rom_char = [0] * 4096      # Character set ROM 53248-57343 ($D000-$DFFF)
         self.registers_io = [0] * 4096  # Pretending I/O ($D000-$DFFF) are all registers
+
+        # RSID and PSID require this from an emulated environment
+        if arch.startswith("PAL-"):  # TODO Q: Should we be doing this based on partial string matching?
+            self.memory[0x02a6] = 0x01  # PAL
+        else:
+            self.memory[0x02a6] = 0x00  # NTSC
 
         # set kernal ROM hardware vectors to their kernal entry points
         # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
@@ -209,17 +215,17 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         return binary
 
     def load_roms(self):
-        binary = self.load_rom(project_to_absolute_path('res/c64kernal.bin'), 8192)
+        binary = self.load_rom(ctsConstants.project_to_absolute_path('res/c64kernal.bin'), 8192)
         if binary is not None:
             self.rom_kernal = binary
             self.has_kernal = True
 
-        binary = self.load_rom(project_to_absolute_path('res/c64basic.bin'), 8192)
+        binary = self.load_rom(ctsConstants.project_to_absolute_path('res/c64basic.bin'), 8192)
         if binary is not None:
             self.rom_basic = binary
             self.has_basic = True
 
-        binary = self.load_rom(project_to_absolute_path('res/c64char.bin'), 4096)
+        binary = self.load_rom(ctsConstants.project_to_absolute_path('res/c64char.bin'), 4096)
         if binary is not None:
             self.rom_char = binary
             self.has_char = True
