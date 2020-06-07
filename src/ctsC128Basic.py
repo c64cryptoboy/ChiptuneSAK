@@ -147,8 +147,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         current_line += 10
 
         # Tempo 1 is slowest, and 255 is fastest
-        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE /
-            ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
+        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
         tempo = int(round(tempo))
 
         result.append('%d tempo %d' % (current_line, tempo))
@@ -237,7 +236,7 @@ def duration_to_basic_name(duration, ppq):
     :return: C128 BASIC name for the duration
     :rtype: string
     """
-    f = ctsConstants.Fraction(duration/ppq).limit_denominator(16)
+    f = ctsConstants.Fraction(duration / ppq).limit_denominator(16)
     if f not in basic_durations:
         raise ChiptuneSAKValueError("Illegal note duration %s" % str(f))
     return basic_durations[f]
@@ -358,5 +357,5 @@ def num_to_str_name(num, upper=False):
         offset = ord('A')
     else:
         offset = ord('a')
-    str_name = chr((num // 26)+offset) + chr((num % 26)+offset)
+    str_name = chr((num // 26) + offset) + chr((num % 26) + offset)
     return str_name

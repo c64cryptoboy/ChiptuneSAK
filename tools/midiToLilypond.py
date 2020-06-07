@@ -1,10 +1,7 @@
-import sys
 import argparse
 import subprocess
-from os import path
-import toolsPath
+import toolsPath  # noqa
 import ctsMidi
-from ctsMChirp import MChirpSong
 import ctsLilypond
 
 """

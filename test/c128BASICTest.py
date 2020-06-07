@@ -1,7 +1,6 @@
-import testingPath
+import testingPath  # noqa
 import unittest
 import ctsTestingTools
-import ctsChirp
 import ctsMChirp
 import ctsMidi
 import ctsC128Basic
@@ -27,6 +26,7 @@ class TestC128BASIC(unittest.TestCase):
         test_hash = ctsTestingTools.md5_hash_no_spaces(basic_program)
 
         self.assertEqual(known_good_basic_program_hash, test_hash)
+
 
 if __name__ == '__main__':
     unittest.main(failfast=False)

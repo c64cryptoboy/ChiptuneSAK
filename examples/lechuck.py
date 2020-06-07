@@ -1,5 +1,4 @@
-import sys
-import examplesPath
+import examplesPath  # noqa
 import copy
 import ctsMidi
 import ctsRChirp

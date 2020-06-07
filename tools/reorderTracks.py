@@ -1,8 +1,7 @@
-import sys
 import copy
 import argparse
 import os
-import toolsPath
+import toolsPath  # noqa
 from ctsErrors import *
 import ctsMidi
 
@@ -27,7 +26,7 @@ def main():
 
     old_tracks = copy.deepcopy(song.tracks)
 
-    new_tracks = [old_tracks[it-1] for it in args.track_order]
+    new_tracks = [old_tracks[it - 1] for it in args.track_order]
     song.tracks = new_tracks
 
     print("New track order:")

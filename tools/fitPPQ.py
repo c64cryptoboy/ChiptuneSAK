@@ -1,8 +1,7 @@
-import sys
 import argparse
 import functools
-import toolsPath
-from ctsBase import *
+import toolsPath  # noqa
+# from ctsBase import *  # flake8 thinks this is unused
 import ctsChirp
 from ctsConstants import DURATION_STR, DEFAULT_MIDI_PPQN
 import ctsMidi
@@ -42,7 +41,6 @@ def find_best_f(notes, desired_q, f_start, f_end, step, offset):
 def find_best_offset(notes, desired_q, o_start, o_end, f):
     min_e = objective_function(notes, desired_q, o_start, f)
     best_offset = o_start
-    n_steps = (o_end - o_start)
     for offset in range(o_start, o_end + 1):
         e = objective_function(notes, desired_q, offset, f)
         if e < min_e:
@@ -87,7 +85,7 @@ def main():
     last_min_e = 1.e9
 
     get_best_f = functools.partial(find_best_f, notes, desired_q)
-    get_best_offset = functools.partial(find_best_offset, notes, desired_q, offset_est-20, offset_est+20)
+    get_best_offset = functools.partial(find_best_offset, notes, desired_q, offset_est - 20, offset_est + 20)
 
     print('Finding initial parameters...')
     # Do wide-range search for best scale factor and offset.

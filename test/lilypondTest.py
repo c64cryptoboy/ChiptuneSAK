@@ -1,4 +1,4 @@
-import testingPath
+import testingPath  # noqa
 import unittest
 import ctsMChirp
 import ctsMidi

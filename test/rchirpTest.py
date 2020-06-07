@@ -1,9 +1,7 @@
-import testingPath
-import copy
+import testingPath  # noqa
 import unittest
 import ctsMidi
 import ctsRChirp
-import ctsGoatTracker
 from ctsConstants import project_to_absolute_path
 
 

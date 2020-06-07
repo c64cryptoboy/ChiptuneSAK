@@ -21,7 +21,7 @@
 # - Test a mirror set in VICE (on some vic register, not SID)
 # - throw an exception if the break flag ever appears on flags
 
-from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError, ChiptuneSAKContentError
+from ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError
 
 # 6502 vector locations
 NMI = 0xfffa  # on C64, vector points to NMI routine at $FE43/65091
@@ -70,7 +70,7 @@ class Cpu6502Emulator:
         self.last_instruction = None  #: last instruction processed
         self.stack_wrapping = False  #: True = empty stack wraps when popped
         self.debug = False
-        self.invocationCount = -1 
+        self.invocationCount = -1
 
     def get_mem(self, loc):
         return self.memory[loc]
@@ -595,9 +595,9 @@ class Cpu6502Emulator:
         # Throw exception on not-yet-implemented pseduo-op codes
         if self.debug:
             self.invocationCount += 1
-            #output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
+            # output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
             #    .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
-            
+
             # match siddump.c output...
             output_str = "count: {:08d} PC: {:04x} A: {:02x} X: {:02x} Y: {:02x} flags: {:02x}" \
                 .format(self.invocationCount, self.pc, self.a, self.x, self.y, self.flags)
@@ -2518,13 +2518,10 @@ class Cpu6502Emulator:
         # $FB/251 INC-SBC abs,Y
         # $FF/255 INC-SBC abs,X
 
-        raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s"
-            % (hex(instruction), hex(self.pc - 1)))
-
+        raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s" % (hex(instruction), hex(self.pc - 1)))
 
     def get_le_word(self, mem_loc):
-        return self.get_mem(mem_loc) | (self.get_mem(mem_loc+1) << 8)
-
+        return self.get_mem(mem_loc) | (self.get_mem(mem_loc + 1) << 8)
 
     def inject_bytes(self, mem_loc, bytes):
         for i, a_byte in enumerate(bytes):

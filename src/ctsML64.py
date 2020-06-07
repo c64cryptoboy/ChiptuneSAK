@@ -214,7 +214,6 @@ class ML64(ChiptuneSAKIO):
         """
         output = []
         stats = collections.Counter()
-        ppq = mchirp_song.metadata.ppq
         output.append('ML64(1.3)')
         output.append('song(1)')
         output.append('tempo(%d)' % mchirp_song.metadata.qpm)

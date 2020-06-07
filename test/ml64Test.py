@@ -1,7 +1,6 @@
-import testingPath
+import testingPath  # noqa
 import unittest
 import ctsTestingTools
-import ctsChirp
 import ctsMChirp
 import ctsMidi
 import ctsML64

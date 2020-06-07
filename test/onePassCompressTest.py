@@ -1,4 +1,4 @@
-import testingPath
+import testingPath  # noqa
 import unittest
 import ctsGoatTracker
 import ctsOnePassCompress
@@ -57,7 +57,7 @@ class TestCompression(unittest.TestCase):
         rchirp_song = compressor.compress(rchirp_song)
 
         # convert rchirp back to goattracker sng
-        sng = gt_io.to_bin(rchirp_song)
+        # sng = gt_io.to_bin(rchirp_song)  # flake8 this this is unused
         self.assertTrue(True)
 
 

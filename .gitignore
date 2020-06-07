@@ -1,11 +1,11 @@
 venv/
 .vscode/
+!.vscode/settings.json
 __pycache__/
 docs/_build/
 .env
 *.code-workspace
 .idea/
-# .vscode/settings.json
 sandbox/consultant.sng
 test/data/Yofa_test.mid
 /test/bach_invention_4-1.eps
