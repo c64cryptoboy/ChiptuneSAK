@@ -19,7 +19,7 @@ class Test6502Emulator(unittest.TestCase):
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
         cpuState.inject_bytes(32768, [0x60])  # RTS
-        cpuState.stack_wrapping = False
+        cpuState.exit_on_empty_stack = True
 
         cpuState.init_cpu(32768)
         self.assertTrue(cpuState.sp == 0xff)
@@ -47,7 +47,7 @@ class Test6502Emulator(unittest.TestCase):
         self.assertTrue(cpuState.runcpu() == 1)
 
         cpuState.inject_bytes(32768, [0x60])  # RTS
-        cpuState.stack_wrapping = True
+        cpuState.exit_on_empty_stack = False
 
         cpuState.init_cpu(32768)
         cpuState.sp = 0xfd
@@ -186,7 +186,7 @@ class Test6502Emulator(unittest.TestCase):
                 % ARCH['NTSC-C64'].lines_per_frame
             if raster != last_raster:
                 cpuState.set_mem(53266, raster & 0xff)
-                high = cpuState.get_mem(53265) & 0b01111111 
+                high = cpuState.get_mem(53265) & 0b01111111
                 if raster > 255:
                     high |= 0b10000000
                 cpuState.set_mem(53265, high)

@@ -1,6 +1,7 @@
 # Script to make sid header histograms for all the sids in an HVSC zip file
 # TODO: Currently assumes that the file is not double zipped
 
+import toolsPath  # noqa
 import operator
 import zipfile
 import itertools
@@ -13,7 +14,7 @@ histograms_categories = [
     'magic_id', 'version', 'data_offset', 'load_address', 'init_address',
     'play_address', 'num_subtunes', 'start_song', 'speed', 'flag_0', 'flag_1', 'clock',
     'sid_model', 'sid2_model', 'sid3_model', 'start_page', 'page_length', 'sid2_address',
-    'sid3_address', 'sid_count',
+    'sid3_address', 'sid_count', 'init_sets_irq', 'init_no_irq'
 ]
 histograms = {category: {} for category in histograms_categories}
 
@@ -40,6 +41,16 @@ with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
         update_hist('load_address', parsed.load_address)
         update_hist('init_address', parsed.init_address)
         update_hist('play_address', parsed.play_address)
+        if parsed.magic_id == b'PSID':
+            if parsed.play_address == 0:
+                update_hist('init_sets_irq', 'PSID')
+            else:
+                update_hist('init_no_irq', 'PSID')
+        else:
+            if parsed.play_address == 0:
+                update_hist('init_sets_irq', 'RSID')
+            else:
+                update_hist('init_no_irq', 'RSID')
         update_hist('num_subtunes', parsed.num_subtunes)
         update_hist('start_song', parsed.start_song)
         update_hist('speed', parsed.speed)
@@ -74,7 +85,7 @@ for category, hist in histograms.items():
 '''
 Histograms:
 
-magic_id:
+magic_id:       
   b'PSID': 49119
   b'RSID': 3208
 
@@ -312,4 +323,11 @@ sid_count:
   1: 52121
   2: 189
   3: 17
+
+init_sets_irq:
+  RSID: 3208
+  PSID: 103
+
+init_no_irq:
+  PSID: 49016
 '''
