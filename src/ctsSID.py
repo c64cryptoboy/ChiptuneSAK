@@ -1,11 +1,36 @@
-# Parse SID header information
+# Classes for SID processing (SID header parsing, SID note extraction, etc.)
 #
-# TODO:
+# siddump.c was very helpful as a conceptual reference for SidImport:
+# - https://csdb.dk/release/?id=152422
+#
+# Playback details for PSID/RSID ("The SID file environment")
+# - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
+#
+# SidImport TODO:
+# - First priority:  big refactoring needed...
+#   1) right now CSV logic mixed in with extraction, need to separate
+#   2) flag strings extracted out into Chip and Channel methods
+#   3) change detection happens in CSV logic.  Create delta row instead.
+#      Collection of delta rows will be turned into CSV and/or RChirp
+# - siddump.c has an option -c for frequency recalibration, where the user can
+#   manually supply a base frequency for better note matching.  We need to
+#   automate tuning detection.  Two pass approach?
+# - iterate over a collection a SIDs for code coverage testing
+# - implement the SID header speed settings?
+# - merge this functionality in with ctsSID.py at some point
+#
+# SidFile TODO:
 # - search all the SIDs to see if they contain the KERNAL or BASIC ROMs
 
 
+import csv
+import copy
+from dataclasses import dataclass
+from typing import List
+from ctsConstants import project_to_absolute_path, DEFAULT_ARCH, ARCH
 from ctsBytesUtil import big_endian_int, little_endian_int
-from ctsConstants import project_to_absolute_path
+from ctsBase import ChiptuneSAKIO
+import ctsThinC64Emulator
 from ctsErrors import ChiptuneSAKValueError
 
 
@@ -383,8 +408,642 @@ class SidFile:
         return little_endian_int(self.c64_payload[0:2])
 
 
-# Debugging stub
+MAX_INSTR = 0x100000
+
+# attack, decay, and release times in seconds (4-bit setting range)
+# Values should be close enough: according to https://www.c64-wiki.com/wiki/ADSR
+#     "these values assume a clock rate of 1MHz, while in fact the clock rate
+#     of a C64 is either 985.248 kHz PAL or 1.022727 MHz NTSC"
+attack_time = [0.002, 0.008, 0.016, 0.024, 0.038, 0.056, 0.068, 0.080,
+               0.10, 0.25, 0.5, 0.8, 1, 3, 5, 8]
+decay_release_time = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204,
+                      0.240, 0.30, 0.75, 1.5, 2.4, 3, 9, 15, 24]
+
+
+class SID(ChiptuneSAKIO):
+
+    @classmethod
+    def cts_type(cls):
+        return "SID"
+
+    def __init__(self):
+        ChiptuneSAKIO.__init__(self)
+
+        self.options_with_defaults = dict(
+            sid_in_filename=None,
+            subtune=0,           # subtune to extract
+            first_frame=0,
+            old_note_factor=1,
+            seconds=60,          # seconds to capture
+            arch=DEFAULT_ARCH)   # architecture (for import to RChirp)
+
+        self.set_options(**self.options_with_defaults)
+
+    def set_options(self, **kwargs):
+        """
+        Sets options for this module, with validation when required
+
+        Note: set_options gets called on __init__ (setting defaults), and a 2nd
+        time if options are to be set after object instantiation.
+
+        :param kwargs: keyword arguments for options
+        :type kwargs: keyword arguments
+        """
+        for op, val in kwargs.items():
+            op = op.lower()  # All option names must be lowercase
+            if op not in self.options_with_defaults:
+                raise ChiptuneSAKValueError('Error: Unexpected option "%s"' % (op))
+
+            if op == 'old_note_factor':
+                if val < 1:
+                    val = 1
+
+            self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
+
+    def capture(self):
+        importer = SidImport(self.get_option('arch'))
+        capture = importer.import_sid(
+            filename=self.get_option('sid_in_filename'),
+            subtune=self.get_option('subtune'),
+            first_frame=self.get_option('first_frame'),
+            old_note_factor=self.get_option('old_note_factor'),
+            seconds=self.get_option('seconds')
+        )
+        return capture
+
+    def to_rchirp(self, filename):
+        rows = self.capture()
+        print(rows)
+        # TODO: Convert capture into rchirp
+
+    def to_csv_file(self, filename):
+        rows = self.capture()
+
+        with open(filename, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerows(rows)
+
+
+@dataclass
+class Channel:
+    freq: int = 0  # 16-bit
+    note: int = 0
+    adsr: int = 0  # 4 nibbles
+    attack: int = 0
+    decay: int = 0
+    sustain: int = 0
+    release: int = 0
+    release_frame: int = None  # If release possibly still in progress, frame # when it started
+    gate_on: bool = False  # True = gate on
+    sync_on: bool = False  # True = Synchronize c's Oscillator with (c-1)'s Oscillator frequency
+    ring_on: bool = False  # True = c's triangle output becomes ring mod oscillators c and c-1
+    oscil_on: bool = True  # False = oscillator off via test bit set (so no sound)
+    waveforms: int = 0  # 4-bit waveform flags
+    triangle_on: bool = False
+    saw_on: bool = False
+    pulse_on: bool = False
+    noise_on: bool = False
+    pulse_width: int = 0  # 12-bit
+    filtered: bool = False  # True = channel passes through filter
+    new_note: bool = False  # This state considered to be the start of a new note
+
+
+@dataclass
+class Chip:
+    vol: int = 0
+    filters: int = 0  # 3 bits showing if hi, band, and/or lo filters enabled
+    cutoff: int = 0  # 11-bit filter cutoff
+    resonance: int = 0  # 4-bit filter resonance
+    no_sound_v3: bool = False  # True = channel 3 doesn't produce sound
+    channels: List[Channel] = None  # three Channel instances
+
+
+@dataclass
+class Row:
+    frame_num: int = None
+    chips: List[Chip] = None  # 1 to 3 SID chips
+
+
+@dataclass
+class Dump:
+    sid_file: SidFile = None
+    sid_base_addrs: List[int] = None  # ordered list of where SIDs are memory mapped
+    rows: List[Row] = None
+
+
+class SidImport:
+    def __init__(self, arch=DEFAULT_ARCH):
+        self.arch = arch
+
+        self.cpu_state = ctsThinC64Emulator.ThinC64Emulator()
+        self.cpu_state.exit_on_empty_stack = True
+        self.first_frame = 0
+        self.frame_cnt = 0
+
+        # 8-octave range
+        # TODO: Generate these at runtime, as was done in tools/sidFreqs.py
+        self.freq_lo = [
+            0x17, 0x27, 0x39, 0x4b, 0x5f, 0x74, 0x8a, 0xa1, 0xba, 0xd4, 0xf0, 0x0e,
+            0x2d, 0x4e, 0x71, 0x96, 0xbe, 0xe8, 0x14, 0x43, 0x74, 0xa9, 0xe1, 0x1c,
+            0x5a, 0x9c, 0xe2, 0x2d, 0x7c, 0xcf, 0x28, 0x85, 0xe8, 0x52, 0xc1, 0x37,
+            0xb4, 0x39, 0xc5, 0x5a, 0xf7, 0x9e, 0x4f, 0x0a, 0xd1, 0xa3, 0x82, 0x6e,
+            0x68, 0x71, 0x8a, 0xb3, 0xee, 0x3c, 0x9e, 0x15, 0xa2, 0x46, 0x04, 0xdc,
+            0xd0, 0xe2, 0x14, 0x67, 0xdd, 0x79, 0x3c, 0x29, 0x44, 0x8d, 0x08, 0xb8,
+            0xa1, 0xc5, 0x28, 0xcd, 0xba, 0xf1, 0x78, 0x53, 0x87, 0x1a, 0x10, 0x71,
+            0x42, 0x89, 0x4f, 0x9b, 0x74, 0xe2, 0xf0, 0xa6, 0x0e, 0x33, 0x20, 0xff]
+
+        self.freq_hi = [
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02,
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03, 0x03, 0x04,
+            0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x07, 0x07, 0x08,
+            0x08, 0x09, 0x09, 0x0a, 0x0a, 0x0b, 0x0c, 0x0d, 0x0d, 0x0e, 0x0f, 0x10,
+            0x11, 0x12, 0x13, 0x14, 0x15, 0x17, 0x18, 0x1a, 0x1b, 0x1d, 0x1f, 0x20,
+            0x22, 0x24, 0x27, 0x29, 0x2b, 0x2e, 0x31, 0x34, 0x37, 0x3a, 0x3e, 0x41,
+            0x45, 0x49, 0x4e, 0x52, 0x57, 0x5c, 0x62, 0x68, 0x6e, 0x75, 0x7c, 0x83,
+            0x8b, 0x93, 0x9c, 0xa5, 0xaf, 0xb9, 0xc4, 0xd0, 0xdd, 0xea, 0xf8, 0xff]
+
+        # TODO: use ctsBase.pitch_to_note_name(midi_num) instead of this table
+        self.note_name = [
+            "C-0", "C#0", "D-0", "D#0", "E-0", "F-0", "F#0", "G-0", "G#0", "A-0", "A#0", "B-0",
+            "C-1", "C#1", "D-1", "D#1", "E-1", "F-1", "F#1", "G-1", "G#1", "A-1", "A#1", "B-1",
+            "C-2", "C#2", "D-2", "D#2", "E-2", "F-2", "F#2", "G-2", "G#2", "A-2", "A#2", "B-2",
+            "C-3", "C#3", "D-3", "D#3", "E-3", "F-3", "F#3", "G-3", "G#3", "A-3", "A#3", "B-3",
+            "C-4", "C#4", "D-4", "D#4", "E-4", "F-4", "F#4", "G-4", "G#4", "A-4", "A#4", "B-4",
+            "C-5", "C#5", "D-5", "D#5", "E-5", "F-5", "F#5", "G-5", "G#5", "A-5", "A#5", "B-5",
+            "C-6", "C#6", "D-6", "D#6", "E-6", "F-6", "F#6", "G-6", "G#6", "A-6", "A#6", "B-6",
+            "C-7", "C#7", "D-7", "D#7", "E-7", "F-7", "F#7", "G-7", "G#7", "A-7", "A#7", "B-7"]
+
+    @classmethod
+    def get_note(cls, freq, prev_note, old_note_factor, freq_lo, freq_hi):
+        # TODO:  This functionality might move out of this class when replaced
+        # by Knapp logic
+
+        # siddump.c described the old_note_factor thusly:
+        #     -o<value> "Oldnote-sticky" factor. Default 1, increase for better vibrato display
+        #               (when increased, requires well calibrated frequencies)
+        dist = 0x7fffffff
+        return_note = None
+        for d in range(96):
+            cmp_freq = freq_lo[d] | freq_hi[d] << 8
+            if abs(freq - cmp_freq) < dist:
+                dist = abs(freq - cmp_freq)
+                # Favor the old note to help ignore vibrato
+                if prev_note == d:
+                    dist /= old_note_factor
+                return_note = d
+        return return_note
+
+    def call_sid_init(self, init_addr, subtune):
+        self.cpu_state.init_cpu(init_addr, subtune)
+        while self.cpu_state.runcpu():
+            if self.cpu_state.pc > MAX_INSTR:
+                raise Exception("CPU executed a high number of instructions in init routine")
+
+    def call_sid_play(self, play_addr):
+        # This resets the stack each time
+        self.cpu_state.init_cpu(play_addr)
+
+        # While loop to process play routine
+        # Exits on BRK, on RTI or RTS if stack empty(ish), and any exit criteria in the
+        #     while loop body (PC in certain memory ranges, etc.)
+        while self.cpu_state.runcpu():
+            if self.cpu_state.pc > MAX_INSTR:
+                raise Exception("CPU executed a high number of instructions in play routine")
+
+            # siddump.c (reference code) has an interesting bug that appears to be a feature.
+            # It exits emulation on RTI and RTS if called when stack is exactly $FF (empty)
+            # If the stack is nearly empty (the RTI or RTS will make it wrap) or if the stack
+            # has already wrapped, it won't exit that way.  However, on the very next
+            # instruction, it will exit with a BRK.  Here's how:
+            # siddump.c calls the play routine with an empty stack (pointer $ff), so an RTI or
+            # RTS can often cause a stack wrap.  For example:
+            # the Master_of_the_Lamps_PAL.sid can exit the play routine this way:
+            #     PC: 3e81 sp: ff instr: 68 PLA
+            #     PC: 3e82 sp: 00 instr: a8 TAY
+            #     PC: 3e83 sp: 00 instr: 68 PLA
+            #     PC: 3e84 sp: 01 instr: aa TAX
+            #     PC: 3e85 sp: 01 instr: 68 PLA
+            #     PC: 3e86 sp: 02 instr: 40 RTI
+            # This wrapped the stack all the way to x05.  This is a low-fidelity emulation, and
+            # the 256-byte stack was initialized to zero, so the PC gets set to $0000
+            #     PC: 0000 sp: 05 instr: 00 BRK
+            # Again, low-fidelity emulation means location 0 contains a 0, and BRK is fetched
+            # as the next instruction.  This exits the PLAY loop, and only one instruction past
+            # the intended exit.
+            # This python code base doesn't require SP to exactly == $FF for an RTS or RTI
+            # to return, so we won't be using this bug/feature to exit play routines.
+
+            # Test if exiting through KERNAL interrupt handler
+            #     e.g., $EA31, $EA73, and $EA81 exit attempts:
+            if self.cpu_state.see_kernal and (0xea31 <= self.cpu_state.pc <= 0xea83):
+                return  # done with play call
+
+    def delta_val(self, curr, last, alt_val=None):
+        if alt_val is None:
+            alt_val = curr
+        if self.frame_cnt == self.first_frame or curr != last:
+            return alt_val
+        return ''
+
+    def delta_bool(self, curr, last, true_str, false_str):
+        if self.frame_cnt == self.first_frame or curr != last:
+            if curr:
+                return true_str
+            else:
+                return false_str
+        return ''
+
+    def import_sid(self, filename, subtune=0, first_frame=0, old_note_factor=1, seconds=60):
+        sid_dump = Dump()
+        sid_dump.sid_file = SidFile()
+        sid_dump.sid_file.parse_file(filename)
+        sid_dump.rows = []
+
+        # If 2SID or 3SID, note where the chips are memory mapped
+        sid_dump.sid_base_addrs = [0xd400]
+        if sid_dump.sid_file.sid_count > 1:
+            sid_dump.sid_base_addrs.append(sid_dump.sid_file.sid2_address)
+        if sid_dump.sid_file.sid_count > 2:
+            sid_dump.sid_base_addrs.append(sid_dump.sid_file.sid3_address)
+
+        # TODO: Implement this documentation (below)
+        """
+        From: https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
+
+        TODO: PSID/RSID: when speed flag set to CIA for the subtune, then 16,421 cycle
+        delay for PAL, and 17,045 cycle delay for NTSC
+
+        For PSID Files
+        --------------
+
+        The default C64 environment for PSID files is as follows:
+
+        VIC           : IRQ set to any raster value less than 0x100. Enabled when
+                    speed flag is 0, otherwise disabled.
+        CIA 1 timer A : set to 60Hz (0x4025 for PAL and 0x4295 for NTSC) with the
+                    counter running. IRQs active when speed flag is 1, otherwise
+                    IRQs are disabled.
+        Other timers  : disabled and loaded with 0xFFFF.
+
+        When the init and play addresses are called the bank register value must be
+        written for every call and the value is calculated as follows:
+
+        if   address <  $A000 -> 0x37 // I/O, Kernal-ROM, Basic-ROM
+        else address <  $D000 -> 0x36 // I/O, Kernal-ROM
+        else address >= $E000 -> 0x35 // I/O only
+        else                  -> 0x34 // RAM only
+
+        For RSID Files
+        --------------
+
+        The default C64 environment for RSID files is as follows:
+
+        VIC           : IRQ set to raster 0x137, but not enabled.
+        CIA 1 timer A : set to 60Hz (0x4025 for PAL and 0x4295 for NTSC) with the
+                    counter running and IRQs active.
+        Other timers  : disabled and loaded with 0xFFFF.
+        Bank register : 0x37
+
+        A side effect of the bank register is that init MUST NOT be located under a
+        ROM/IO memory area (addresses $A000-$BFFF and $D000-$FFFF) or outside the
+        load image. Since every effort needs to be made to run the tune on a real
+        C64 the load address of the image MUST NOT be set lower than $07E8.
+
+        If the C64 BASIC flag is set, the value at $030C must be set with the song
+        number to be played (0x00 for song 1).
+        """
+
+        if len(sid_dump.sid_file.c64_payload) + sid_dump.sid_file.load_address >= 0x10000:
+            raise ChiptuneSAKValueError("Error: SID data continues past end of C64 memory")
+
+        self.cpu_state.inject_bytes(sid_dump.sid_file.load_address, sid_dump.sid_file.c64_payload)
+
+        self.cpu_state.set_mem(0x01, 0b00110111)  # set default memory banking
+
+        self.cpu_state.debug = False
+        self.call_sid_init(sid_dump.sid_file.init_address, subtune)
+
+        # When play address is 0, the init routine installs an interrupt handler which calls
+        # the music player (always the case with RSID files).  This attempts to get the play
+        # address from the interrupt vector:
+        # TODO? Could actually monitor memory to see which one(s) the init changed.
+        if sid_dump.sid_file.play_address == 0:
+            if self.cpu_state.see_kernal:
+                # get play address from the pointer to the routine normally called by
+                # the CIA #1 timer B ($0314 defaults to $EA31)
+                sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0x0314)
+            else:
+                # get play address from 6502-defined IRQ vector ($FFFE defaults to $FF48)
+                sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0xfffe)
+
+        self.frame_cnt = 0  # TODO:  Not really frames if multi-speed, rename to play_call_cnt?
+
+        frames_to_capture = int(seconds * ARCH[self.arch].frame_rate)
+
+        row = Row()
+        prev_row = Row()
+
+        row.frame_num = self.frame_cnt
+        row.chips = [Chip() for _ in range(sid_dump.sid_file.sid_count)]
+        for chip in row.chips:
+            chip.channels = [Channel() for _ in range(3)]
+
+        prev_row.frame_num = self.frame_cnt - 1
+        prev_row.chips = [Chip() for _ in range(sid_dump.sid_file.sid_count)]
+        for chip in prev_row.chips:
+            chip.channels = [Channel() for _ in range(3)]
+
+        csv_row = ['Frame']
+        for chip_cnt in range(sid_dump.sid_file.sid_count):
+            csv_row.extend(['FltCut', 'FltPas', 'Vol'])
+            for _ in range(3):
+                csv_row.extend(['Freq', 'DeltaFreq', 'Note', 'Abs', 'wf', 'gate', 'sync',
+                                'ring', 'oscil', 'ADSR', 'Pulse'])
+        csv_rows = [csv_row]
+
+        # Note: We could set a reasonable stack pointer here if we wanted, but our
+        # exit_on_empty_stack setting hopefully means we don't have to.
+        # But if we did, a PSID is normally called with a JSR, so the stack pointer
+        # would be $FD (only PC goes on stack) in our low-fidelity emulation when calling
+        # the play routine.
+        # However if play address was 0, the init routine is expected to set up an interrupt
+        # to call it.  This is true for all 3,208 RSIDs in HVSC72, and for 103 of the PSIDs
+        # as well.
+        # On interrupt, the CPU will push the PC (hi/lo) and flags to stack.  The KERNAL
+        # then pushes A, X, and Y if banked in.  If not banked in, generally user code
+        # will take over that responsibility.  This means we could set the stack pointer
+        # to $F9 when calling the play routine.
+
+        self.cpu_state.debug = False
+        while self.frame_cnt < first_frame + frames_to_capture:
+            self.call_sid_play(sid_dump.sid_file.play_address)
+
+            # TODO: Temporarily make sure I/O is swapped in (in case end of play routine swaps
+            # it out), then restore to what it was, since we're using get_mem to look at SID
+            # registers
+
+            # record what happened to the SID(s) by the end of the most recent frame
+            for chip_num, sid_addr in enumerate(sid_dump.sid_base_addrs):
+                # 11-bit filter
+                # According to Leemon's Mapping the Commodore 64
+                #     The range of cutoff frequencies stretches form 30Hz to ~12,000Hz
+                #     frequency = (register value * 5.8) + 30Hz
+                row.chips[chip_num].cutoff = (
+                    (self.cpu_state.get_mem(sid_addr + 0x16) << 3)
+                    | (self.cpu_state.get_mem(sid_addr + 0x15) & 0b00000111))
+
+                # Filter Resonance Control Register
+                #     Note: bits 0-2 parsed out later, bit 3 ignored
+                # Bit 0: Filter the output of voice 1? 1=yes
+                # Bit 1: Filter the output of voice 2? 1=yes
+                # Bit 2: Filter the output of voice 3? 1=yes
+                # Bit 3: Filter the output from the external input? 1=yes
+                # Bit 4-7: Select filter resonance 0-15
+                filt_ctrl = self.cpu_state.get_mem(sid_addr + 0x17)
+                row.chips[chip_num].resonance = filt_ctrl >> 4
+
+                # Volume and Filter Select Register
+                # Bits 0-3: Select output volume (0-15)
+                # Bit 4: Select low-pass filter, 1=low-pass on
+                # Bit 5: Select band-pass filter, 1=band-pass on
+                # Bit 6: Select high-pass filter, 1=high-pass on
+                # Bit 7: Disconnect output of voice 3, 1=voice 3 off
+                vol_filt_reg = self.cpu_state.get_mem(sid_addr + 0x18)
+                row.chips[chip_num].vol = vol_filt_reg & 0b00001111
+                row.chips[chip_num].filters = (vol_filt_reg >> 4) & 0b00000111
+                row.chips[chip_num].no_sound_v3 = (vol_filt_reg & 0b10000000) != 0
+
+                for chn_num, chn in enumerate(row.chips[chip_num].channels):
+                    chn.freq = self.cpu_state.get_le_word(sid_addr + 7 * chn_num)
+
+                    # 12-bit pulse
+                    # According to Leemon's Mapping the Commodore 64
+                    #     pulse width = (register value / 40.95)%
+                    chn.pulse_width = \
+                        self.cpu_state.get_le_word(sid_addr + 0x02 + 7 * chn_num) & 0xfff
+
+                    vcr = self.cpu_state.get_mem(sid_addr + 0x04 + 7 * chn_num)
+                    chn.waveforms = vcr >> 4
+
+                    # Voice Control Register
+                    # Bit 0: Gate Bit: 1=Start attack/decay/sustain, 0=Start release
+                    # Bit 1: Sync Bit: 1=Synchronize c's Oscillator with (c-1)'s Oscillator frequency
+                    # Bit 2: Ring Modulation: 1=c's triangle output = ring mod oscillators c and c-1
+                    # Bit 3: Test Bit: 1=Disable Oscillator (no sound)
+                    # Bit 4: Select triangle waveform
+                    # Bit 5: Select sawtooth waveform
+                    # Bit 6: Select pulse waveform
+                    # Bit 7: Select random noise waveform
+                    chn.gate_on     = vcr & 0b00000001 != 0  # noqa
+                    chn.sync_on     = vcr & 0b00000010 != 0  # noqa
+                    chn.ring_on     = vcr & 0b00000100 != 0  # noqa
+                    chn.oscil_on    = vcr & 0b00001000 == 0  # noqa
+                    chn.triangle_on = vcr & 0b00010000 != 0  # noqa
+                    chn.saw_on      = vcr & 0b00100000 != 0  # noqa    
+                    chn.pulse_on    = vcr & 0b01000000 != 0  # noqa                 
+                    chn.noise_on    = vcr & 0b10000000 != 0  # noqa               
+
+                    if chn.gate_on:
+                        chn.release_frame = None
+                    elif prev_row.chips[chip_num].channels[chn_num].gate_on and not chn.gate_on:
+                        chn.release_frame = self.frame_cnt
+
+                    # ADSR as four nibbles
+                    chn.adsr = ((self.cpu_state.get_mem(sid_addr + 0x05 + 7 * chn_num) << 8)
+                                | self.cpu_state.get_mem(sid_addr + 0x06 + 7 * chn_num))
+                    chn.attack = chn.adsr >> 12
+                    chn.decay = (chn.adsr & 0x0f00) >> 8
+                    chn.sustain = (chn.adsr & 0x00f0) >> 4
+                    chn.release = (chn.adsr & 0x000f)
+
+                    # See comments on Filter Resonance Control Filter (above)
+                    voices_filtered = filt_ctrl & 0b00000111
+                    chn.filtered = (voices_filtered & (2 ** chn_num)) != 0
+
+            # Build a csv_row
+
+            # TODO: this is not well thought out, fix it
+            if self.frame_cnt >= first_frame:
+                time = self.frame_cnt - first_frame
+
+            csv_row = ['{:05d}'.format(time)]
+
+            # for each SID chip:
+            for chip_num, chip in enumerate(row.chips):
+                prev_chip = prev_row.chips[chip_num]
+
+                csv_row.append(self.delta_val(
+                    chip.cutoff, prev_chip.cutoff))
+
+                if chip.filters & 0b00000100:
+                    filt_desc = 'h'
+                else:
+                    filt_desc = '.'
+                if chip.filters & 0b00000010:
+                    filt_desc += 'b'
+                else:
+                    filt_desc += '.'
+                if chip.filters & 0b00000001:
+                    filt_desc += 'l'
+                else:
+                    filt_desc += '.'
+
+                csv_row.append(self.delta_val(
+                    chip.filters, prev_chip.filters, filt_desc))
+
+                csv_row.append(self.delta_val(
+                    chip.vol, prev_chip.vol))
+
+                # for each SID chip channel:
+                for chn_num, chn in enumerate(row.chips[chip_num].channels):
+                    prev_chn = prev_chip.channels[chn_num]
+
+                    # is a released note still in the process of releasing?
+                    within_release_window = (
+                        chn.release_frame is not None
+                        and (self.frame_cnt - chn.release_frame)
+                        * ARCH[self.arch].ms_per_frame * 1000
+                        < decay_release_time[chn.release])
+
+                    # has sound been turned off for the channel?
+                    channel_off = not chn.oscil_on
+                    if (chn_num == 2) and chip.no_sound_v3:
+                        channel_off = True
+
+                    # is a note playing?  (if so, it may or may not turn into a new note)
+                    note_playing = (
+                        chn.waveforms > 0 and not channel_off
+                        and (chn.gate_on or within_release_window))
+
+                    # was no note playing on the previous play routine invocation?
+                    prev_note_off = not (prev_chn.gate_on and prev_chn.waveforms > 0)
+
+                    chn.note = SidImport.get_note(
+                        chn.freq, prev_chn.note, old_note_factor,
+                        self.freq_lo, self.freq_hi)
+
+                    # The following logic should allow for new notes to be asserted when
+                    # - gate is on and one or more waveforms defined, but on the previous
+                    #   frame, the gate was off or the waveform(s) undefined
+                    # - or when waveform(s) on and frequency changed enough (more than mere
+                    #   vibrato)
+                    # - or above when gate is off but there's still enough time left on the
+                    #   release that large changes in frequencies are worth turning into notes
+                    make_new_note = (
+                        note_playing and (prev_note_off or chn.note != prev_chn.note))
+
+                    if (self.frame_cnt == first_frame or make_new_note):
+                        chn.new_note = True
+
+                    if chn.new_note:
+                        csv_row.append(chn.freq)
+                    else:
+                        csv_row.append('')
+
+                    # if frequency delta not significant enough to make a new note, it's
+                    # still worth mentioning
+                    if not chn.new_note:
+                        delta = chn.freq - prev_chn.freq
+                        if chn.note == prev_chn.note and delta != 0:
+                            if delta > 0:
+                                csv_row.append('+ {:05d}'.format(delta))
+                            else:
+                                csv_row.append('- {:05d}'.format(delta * -1))
+                        else:
+                            csv_row.append('')
+                    else:
+                        csv_row.append('')
+
+                    if chn.new_note:
+                        csv_row.append(self.note_name[chn.note])
+                        csv_row.append(chn.note)
+                    else:
+                        csv_row.extend(['', ''])
+
+                    if chn.noise_on:
+                        waveforms = 'n'
+                    else:
+                        waveforms = '.'
+                    if chn.pulse_on:
+                        waveforms += 'p'
+                    else:
+                        waveforms += '.'
+                    if chn.saw_on:
+                        waveforms += 's'
+                    else:
+                        waveforms += '.'
+                    if chn.triangle_on:
+                        waveforms += 't'
+                    else:
+                        waveforms += '.'
+
+                    csv_row.append(self.delta_val(
+                        chn.waveforms, prev_chn.waveforms, waveforms))
+
+                    csv_row.append(self.delta_bool(
+                        chn.gate_on, prev_chn.gate_on, 'on', 'off'))
+
+                    oscil = chn_num + 1  # change 0 offset to 1 offset for display
+                    other_oscil = ((chn_num - 1) % 3) + 1  # same
+
+                    csv_row.append(self.delta_bool(
+                        chn.sync_on, prev_chn.sync_on,
+                        "sync%dWith%d" % (oscil, other_oscil), 'off'))
+
+                    csv_row.append(self.delta_bool(
+                        chn.ring_on, prev_chn.ring_on,
+                        "ring%dWith%d" % (oscil, other_oscil), 'off'))
+
+                    csv_row.append(self.delta_bool(
+                        chn.oscil_on, prev_chn.oscil_on, 'on', 'off'))
+
+                    csv_row.append(self.delta_val(
+                        chn.adsr, prev_chn.adsr, '{:04X}'.format(chn.adsr)))
+
+                    csv_row.append(self.delta_val(chn.pulse_width, prev_chn.pulse_width))
+
+                    # end of per-channel loop
+
+            if self.frame_cnt >= first_frame:
+                csv_rows.append(csv_row)
+
+            sid_dump.rows.append(row)  # TODO:  Will be appending a delta_row instead
+
+            # setup chips and channels for next iteration:
+
+            self.frame_cnt += 1
+
+            prev_row = copy.deepcopy(row)
+
+            row = Row()
+            row.chips = []
+            row.frame_num = self.frame_cnt
+
+            for chip_num in range(sid_dump.sid_file.sid_count):
+                new_chip = Chip()
+                new_chip.channels = []
+                for chn_num in range(3):
+                    new_channel = Channel()
+                    new_channel.release_frame = \
+                        prev_row.chips[chip_num].channels[chn_num].release_frame
+                    new_chip.channels.append(new_channel)
+                row.chips.append(new_chip)
+
+        return csv_rows
+
+
 if __name__ == "__main__":
-    sid = SidFile()
-    sid.parse_file(project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'))
-    print("Load addr $%s" % (hex(sid.get_load_addr_from_payload()))[2:].upper())
+    # TODO: Stuff for development/debugging, delete all this later
+    s = SID()
+    s.set_options(
+        sid_in_filename=project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'),
+        subtune=6,
+        old_note_factor=1,
+        seconds=50
+    )
+
+    # Sound comparison:
+    # https://deepsid.chordian.net/?file=/MUSICIANS/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid&subtune=7
+    # Dump comparison:
+    # ./siddump.exe Master_of_the_Lamps_PAL.sid -a6
+    s.to_csv_file(project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.csv'))
