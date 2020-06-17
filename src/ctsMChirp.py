@@ -67,20 +67,27 @@ class Measure:
                 beat_division = beat_type // 3  # Get the beat size from the offset from the triplet start
                 # The triplet start time is the previous beat of the required size
                 triplet_start_time = (shortest_triplet.start_time * beat_division // ppq) * ppq // beat_division
+                # Deduce the triplet length from the position of the note; it is on sub-beat 2 or 3
                 min_duration = min(shortest_triplet.duration, shortest_triplet.start_time - triplet_start_time)
                 triplet_duration = 3 * min_duration
-            else:  # Triplet starts on the beat
+            else:  # Note is on the beat so triplet starts on the beat
                 triplet_start_time = shortest_triplet.start_time
+                # Assume the note is a triplet (remember it is the shortest) unless proven otherwise
                 triplet_duration = 3 * shortest_triplet.duration
+                # Triplet cannot cross measure boundaries
                 if triplet_start_time + triplet_duration > self.start_time + self.duration:
                     triplet_duration //= 2
-                # check for non-triplet notes now inside the triplet
+                # All notes inside the triplet have to be triplets themselves
                 if any(not is_triplet(n, ppq) for n in measure_notes if
                        triplet_start_time <= n.start_time < triplet_start_time + triplet_duration):
                     triplet_duration //= 2
+            # Make a new triplet with the right start time and duration
             new_triplet = Triplet(triplet_start_time, triplet_duration)
+            # Now take notes and fill in the triplet
             measure_notes = self.populate_triplet(new_triplet, measure_notes)
+            # Check for any remaining triplets in the measure. Interstingly, the triplet object is not a triplet-note!
             triplets = [n for n in measure_notes if is_triplet(n, ppq)]
+        # Sort the measure notes before returning
         return sorted(measure_notes, key=lambda n: n.start_time)
 
     def populate_triplet(self, triplet, measure_notes):
@@ -95,14 +102,17 @@ class Measure:
         :rtype: list of notes/triplets
         """
         triplet_end = triplet.start_time + triplet.duration
+        # We will make a new list of notes to return
         new_measure_notes = []
         for n in measure_notes:
             note_end = n.start_time + n.duration
+            # Notes that start before the triplet and end after the triplet has started
             if n.start_time < triplet.start_time and note_end > triplet.start_time:
                 assert note_end <= triplet_end, "Error in triplet processing!"
                 new_notes = n.split(triplet.start_time)
                 new_measure_notes.append(new_notes[0])
                 triplet.content.append(new_notes[-1])
+            # Notes that start inside the triplet
             elif triplet.start_time <= n.start_time < triplet_end:
                 if note_end > triplet_end:
                     new_notes = n.split(triplet_end)
@@ -110,6 +120,7 @@ class Measure:
                     new_measure_notes.append(new_notes[-1])
                 else:
                     triplet.content.append(n)
+            # Notes not involved in the triplet
             else:
                 new_measure_notes.append(n)
 
@@ -125,6 +136,7 @@ class Measure:
             triplet_rests.append(Rest(current_position, triplet_end - current_position))
         triplet.content.extend(triplet_rests)
         triplet.content.sort(key=lambda n: n.start_time)
+        # Add the triplet to the measure events
         new_measure_notes.append(triplet)
         return sorted(new_measure_notes, key=lambda n: n.start_time)
 
