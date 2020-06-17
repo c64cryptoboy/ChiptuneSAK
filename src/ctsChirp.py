@@ -13,7 +13,7 @@ import more_itertools as moreit
 from ctsBase import *
 import ctsMChirp
 import ctsRChirp
-from ctsConstants import DEFAULT_MIDI_PPQN
+import ctsConstants
 
 
 class Note:
@@ -33,6 +33,25 @@ class Note:
     def __eq__(self, other):
         """ Two notes are equal when their note numbers and durations are the same """
         return (self.note_num == other.note_num) and (self.duration == other.duration)
+
+    def split(self, tick_position):
+        """
+        Splits a note into two notes at time tick_position, if the tick position falls
+        within the note's duration.
+
+        :param tick_position: position to split at
+        :type tick_position: int
+        :return: list with split note
+        :rtype: list of Note
+        """
+        if tick_position < self.start_time or tick_position >= self.start_time + self.duration:
+            return [self]
+        else:
+            new_duration = self.start_time + self.duration - tick_position
+            new_note = Note(tick_position, self.note_num, new_duration, self.velocity, tied_to=True)
+            self.duration = tick_position - self.start_time
+            self.tied_from = True
+            return [n for n in [self, new_note] if n.duration > 0]
 
     def __str__(self):
         return "pit=%3d  st=%4d  dur=%4d  vel=%4d, tfrom=%d tto=%d" \
@@ -440,7 +459,7 @@ class ChirpSong(ChiptuneSAKBase):
     def __init__(self, mchirp_song=None):
         ChiptuneSAKBase.__init__(self)
         self.metadata = SongMetadata()
-        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
+        self.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
@@ -462,7 +481,7 @@ class ChirpSong(ChiptuneSAKBase):
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
+        self.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks

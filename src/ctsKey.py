@@ -1,7 +1,6 @@
 # flake8: noqa
 
 import collections
-from ctsErrors import *
 
 KeySignature = collections.namedtuple('Key', ['name', 'offset', 'type', 'sharps', 'flats'])
 
