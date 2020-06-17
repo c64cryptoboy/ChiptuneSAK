@@ -3,6 +3,10 @@
 # This module can emulate 6502 machine language programs at an instruction-level
 # of granularity (not a cycle-level).
 #
+# runcpu() can be called in a while loop.  (Non-error) Exit conditions:
+# - BRK
+# - RTI or RTS if exit_on_empty_stack is True and stack is empty or has already wrapped
+#
 # Code references used during development:
 # 1) C code: siddumper: https://csdb.dk/release/?id=152422
 #    This started as a direct python adaptation of siddumper.  At this time, the original
@@ -15,7 +19,6 @@
 #    Nice docs: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
 # 4) python code: pyc64, a C64 simulator in python, using py65
 #    https://github.com/irmen/pyc64
-
 
 # TODOs:
 # - Test a mirror set in VICE (on some vic register, not SID)
@@ -56,6 +59,10 @@ cpucycles_table = [
     2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
     2, 5, 0, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7]
 
+# A cutoff point for determining if an RTI or RTS should exit emulation when the
+# stack has wrapped (i.e. 0 <= SP < STACK_WRAP_AREA).
+STACK_WRAP_AREA = 0x0f
+
 
 class Cpu6502Emulator:
     def __init__(self):
@@ -68,7 +75,7 @@ class Cpu6502Emulator:
         self.pc = 0  #: program counter (16-bit)
         self.cpucycles = 0  #: count of cpu cycles processed
         self.last_instruction = None  #: last instruction processed
-        self.stack_wrapping = False  #: True = empty stack wraps when popped
+        self.exit_on_empty_stack = False  #: True = RTI/RTS exists on empty stack
         self.debug = False
         self.invocationCount = -1
 
@@ -1918,15 +1925,14 @@ class Cpu6502Emulator:
 
         # RTI instruction
         if instruction == 0x40:  # $40/64 RTI
-            if not self.stack_wrapping and self.sp >= 0xfd:
+            if (self.exit_on_empty_stack
+                    and (self.sp >= 0xfd or 0x00 <= self.sp <= STACK_WRAP_AREA)):
+                # If there's not enough stack left for the return or
+                # if the stack has already wrapped, then exit.
                 return 0
-            # siddump.c did the following, but it's bad, since the stack needs to wrap
-            # if self.sp == 0xff:
-            #     return 0
-            self.flags = self.pop()  # no action taken on B flag
+            self.flags = self.pop()  # TODO: clear B flag like we did with PLP?
             self.flags |= FU  # needed for Wolfgang Lorenz tests
-            # Note that unlike RTS, the return address on the stack is the actual
-            # address rather than the address-1.
+            # Note that unlike RTS, the return address on the stack is the actual address
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)
             return 1
@@ -1940,7 +1946,10 @@ class Cpu6502Emulator:
 
         # RTS instruction
         if instruction == 0x60:  # $60/96 RTS
-            if not self.stack_wrapping and self.sp >= 0xfe:
+            if (self.exit_on_empty_stack
+                    and (self.sp >= 0xfe or 0x00 <= self.sp <= STACK_WRAP_AREA)):
+                # If there's not enough stack left for the return or
+                # if the stack has already wrapped, then exit.
                 return 0
             self.pc = self.pop()
             self.pc |= (self.pop() << 8)

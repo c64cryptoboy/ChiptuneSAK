@@ -814,7 +814,7 @@ class TestSuitesForC64(unittest.TestCase):
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
         cpuState.init_cpu(2070)  # $816
-        cpuState.stack_wrapping = True  # required by TXS test
+        cpuState.exit_on_empty_stack = False  # wrapping required by TXS test
 
         # This http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html says when loading
         # a test yourself (instead of using test code's loader), do these settings:
