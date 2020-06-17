@@ -74,6 +74,10 @@ class Measure:
                 triplet_duration = 3 * shortest_triplet.duration
                 if triplet_start_time + triplet_duration > self.start_time + self.duration:
                     triplet_duration //= 2
+                # check for non-triplet notes now inside the triplet
+                if any(not is_triplet(n, ppq) for n in measure_notes if
+                       triplet_start_time <= n.start_time < triplet_start_time + triplet_duration):
+                    triplet_duration //= 2
             new_triplet = Triplet(triplet_start_time, triplet_duration)
             measure_notes = self.populate_triplet(new_triplet, measure_notes)
             triplets = [n for n in measure_notes if is_triplet(n, ppq)]
