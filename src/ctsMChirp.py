@@ -48,6 +48,16 @@ class Measure:
         self.events = []
 
     def process_triplets(self, measure_notes, ppq):
+        """
+        Processes and accounts for all triplets in the measure
+
+        :param measure_notes: list of notes in the measure
+        :type measure_notes: list of notes/triplets
+        :param ppq: pulses per quarter from song
+        :type ppq: int
+        :return: new measure contents
+        :rtype: list of notes/triplet
+        """
         triplets = [n for n in measure_notes if is_triplet(n, ppq)]
         while len(triplets) > 0:
             shortest_triplet = sorted(triplets, key=lambda t: (t.duration, t.start_time))[0]
@@ -70,6 +80,16 @@ class Measure:
         return sorted(measure_notes, key=lambda n: n.start_time)
 
     def populate_triplet(self, triplet, measure_notes):
+        """
+        Given a triplet, populate it from the ntoes in the measure, splitting them if required
+
+        :param triplet: triplet to be populated
+        :type triplet: Triplet
+        :param measure_notes: notes in the measure
+        :type measure_notes: list of notes
+        :return: measure notes now including triplet
+        :rtype: list of notes/triplets
+        """
         triplet_end = triplet.start_time + triplet.duration
         new_measure_notes = []
         for n in measure_notes:
@@ -105,6 +125,14 @@ class Measure:
         return sorted(new_measure_notes, key=lambda n: n.start_time)
 
     def add_rests(self, measure_notes):
+        """
+        Add rests to a measure content
+
+        :param measure_notes: notes in the measure
+        :type measure_notes: list of notes
+        :return: new list of events including rests
+        :rtype: list of events in measure
+        """
         rests = []
         measure_notes.sort(key=lambda n: n.start_time)
         current_time = self.start_time
