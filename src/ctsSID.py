@@ -7,17 +7,15 @@
 # - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
 #
 # SidImport TODO:
-# - First priority:  big refactoring needed...
-#   1) right now CSV logic mixed in with extraction, need to separate
-#   2) flag strings extracted out into Chip and Channel methods
-#   3) change detection happens in CSV logic.  Create delta row instead.
-#      Collection of delta rows will be turned into CSV and/or RChirp
+# - top priority: change detection between frames happens in CSV logic.
+#      Create delta row instead.  Collection of delta rows will be later turned
+#      into CSV and/or RChirp
 # - siddump.c has an option -c for frequency recalibration, where the user can
 #   manually supply a base frequency for better note matching.  We need to
 #   automate tuning detection.  Two pass approach?
 # - iterate over a collection a SIDs for code coverage testing
 # - implement the SID header speed settings?
-# - merge this functionality in with ctsSID.py at some point
+# - csv headers preface with "s1v1:" (s if chips > 1, v IFF channel-based)
 #
 # SidFile TODO:
 # - search all the SIDs to see if they contain the KERNAL or BASIC ROMs
@@ -32,6 +30,70 @@ from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsBase import ChiptuneSAKIO
 import ctsThinC64Emulator
 from ctsErrors import ChiptuneSAKValueError
+
+
+class SID(ChiptuneSAKIO):
+
+    @classmethod
+    def cts_type(cls):
+        return "SID"
+
+    def __init__(self):
+        ChiptuneSAKIO.__init__(self)
+
+        self.options_with_defaults = dict(
+            sid_in_filename=None,
+            subtune=0,           # subtune to extract
+            first_frame=0,
+            old_note_factor=1,
+            seconds=60,          # seconds to capture
+            arch=DEFAULT_ARCH)   # architecture (for import to RChirp)
+
+        self.set_options(**self.options_with_defaults)
+
+    def set_options(self, **kwargs):
+        """
+        Sets options for this module, with validation when required
+
+        Note: set_options gets called on __init__ (setting defaults), and a 2nd
+        time if options are to be set after object instantiation.
+
+        :param kwargs: keyword arguments for options
+        :type kwargs: keyword arguments
+        """
+        for op, val in kwargs.items():
+            op = op.lower()  # All option names must be lowercase
+            if op not in self.options_with_defaults:
+                raise ChiptuneSAKValueError('Error: Unexpected option "%s"' % (op))
+
+            if op == 'old_note_factor':
+                if val < 1:
+                    val = 1
+
+            self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
+
+    def capture(self):
+        importer = SidImport(self.get_option('arch'))
+        capture = importer.import_sid(
+            filename=self.get_option('sid_in_filename'),
+            subtune=self.get_option('subtune'),
+            first_frame=self.get_option('first_frame'),
+            old_note_factor=self.get_option('old_note_factor'),
+            seconds=self.get_option('seconds')
+        )
+        return capture
+
+    def to_rchirp(self, filename):
+        rows = self.capture()
+        print(rows)
+        # TODO: Convert capture into rchirp
+
+    def to_csv_file(self, filename):
+        rows = self.capture()
+
+        with open(filename, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerows(rows)
 
 
 class SidFile:
@@ -420,70 +482,6 @@ decay_release_time = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204,
                       0.240, 0.30, 0.75, 1.5, 2.4, 3, 9, 15, 24]
 
 
-class SID(ChiptuneSAKIO):
-
-    @classmethod
-    def cts_type(cls):
-        return "SID"
-
-    def __init__(self):
-        ChiptuneSAKIO.__init__(self)
-
-        self.options_with_defaults = dict(
-            sid_in_filename=None,
-            subtune=0,           # subtune to extract
-            first_frame=0,
-            old_note_factor=1,
-            seconds=60,          # seconds to capture
-            arch=DEFAULT_ARCH)   # architecture (for import to RChirp)
-
-        self.set_options(**self.options_with_defaults)
-
-    def set_options(self, **kwargs):
-        """
-        Sets options for this module, with validation when required
-
-        Note: set_options gets called on __init__ (setting defaults), and a 2nd
-        time if options are to be set after object instantiation.
-
-        :param kwargs: keyword arguments for options
-        :type kwargs: keyword arguments
-        """
-        for op, val in kwargs.items():
-            op = op.lower()  # All option names must be lowercase
-            if op not in self.options_with_defaults:
-                raise ChiptuneSAKValueError('Error: Unexpected option "%s"' % (op))
-
-            if op == 'old_note_factor':
-                if val < 1:
-                    val = 1
-
-            self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
-
-    def capture(self):
-        importer = SidImport(self.get_option('arch'))
-        capture = importer.import_sid(
-            filename=self.get_option('sid_in_filename'),
-            subtune=self.get_option('subtune'),
-            first_frame=self.get_option('first_frame'),
-            old_note_factor=self.get_option('old_note_factor'),
-            seconds=self.get_option('seconds')
-        )
-        return capture
-
-    def to_rchirp(self, filename):
-        rows = self.capture()
-        print(rows)
-        # TODO: Convert capture into rchirp
-
-    def to_csv_file(self, filename):
-        rows = self.capture()
-
-        with open(filename, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerows(rows)
-
-
 @dataclass
 class Channel:
     freq: int = 0  # 16-bit
@@ -507,6 +505,26 @@ class Channel:
     filtered: bool = False  # True = channel passes through filter
     new_note: bool = False  # This state considered to be the start of a new note
 
+    def waveforms_str(self):
+        result = ''
+        if self.noise_on:
+            result = 'n'
+        else:
+            result = '.'
+        if self.pulse_on:
+            result += 'p'
+        else:
+            result += '.'
+        if self.saw_on:
+            result += 's'
+        else:
+            result += '.'
+        if self.triangle_on:
+            result += 't'
+        else:
+            result += '.'
+        return result
+
 
 @dataclass
 class Chip:
@@ -516,6 +534,22 @@ class Chip:
     resonance: int = 0  # 4-bit filter resonance
     no_sound_v3: bool = False  # True = channel 3 doesn't produce sound
     channels: List[Channel] = None  # three Channel instances
+
+    def filters_str(self):
+        result = ''
+        if self.filters & 0b00000100:
+            result = 'h'
+        else:
+            result = '.'
+        if self.filters & 0b00000010:
+            result += 'b'
+        else:
+            result += '.'
+        if self.filters & 0b00000001:
+            result += 'l'
+        else:
+            result += '.'
+        return result
 
 
 @dataclass
@@ -782,7 +816,9 @@ class SidImport:
             # it out), then restore to what it was, since we're using get_mem to look at SID
             # registers
 
-            # record what happened to the SID(s) by the end of the most recent frame
+            # record the SID(s) state at the end of the frame
+
+            # first, capture values that apply to all three channels
             for chip_num, sid_addr in enumerate(sid_dump.sid_base_addrs):
                 # 11-bit filter
                 # According to Leemon's Mapping the Commodore 64
@@ -813,6 +849,7 @@ class SidImport:
                 row.chips[chip_num].filters = (vol_filt_reg >> 4) & 0b00000111
                 row.chips[chip_num].no_sound_v3 = (vol_filt_reg & 0b10000000) != 0
 
+                # Next, capture channel-specific values
                 for chn_num, chn in enumerate(row.chips[chip_num].channels):
                     chn.freq = self.cpu_state.get_le_word(sid_addr + 7 * chn_num)
 
@@ -860,43 +897,7 @@ class SidImport:
                     voices_filtered = filt_ctrl & 0b00000111
                     chn.filtered = (voices_filtered & (2 ** chn_num)) != 0
 
-            # Build a csv_row
-
-            # TODO: this is not well thought out, fix it
-            if self.frame_cnt >= first_frame:
-                time = self.frame_cnt - first_frame
-
-            csv_row = ['{:05d}'.format(time)]
-
-            # for each SID chip:
-            for chip_num, chip in enumerate(row.chips):
-                prev_chip = prev_row.chips[chip_num]
-
-                csv_row.append(self.delta_val(
-                    chip.cutoff, prev_chip.cutoff))
-
-                if chip.filters & 0b00000100:
-                    filt_desc = 'h'
-                else:
-                    filt_desc = '.'
-                if chip.filters & 0b00000010:
-                    filt_desc += 'b'
-                else:
-                    filt_desc += '.'
-                if chip.filters & 0b00000001:
-                    filt_desc += 'l'
-                else:
-                    filt_desc += '.'
-
-                csv_row.append(self.delta_val(
-                    chip.filters, prev_chip.filters, filt_desc))
-
-                csv_row.append(self.delta_val(
-                    chip.vol, prev_chip.vol))
-
-                # for each SID chip channel:
-                for chn_num, chn in enumerate(row.chips[chip_num].channels):
-                    prev_chn = prev_chip.channels[chn_num]
+                    prev_chn = prev_row.chips[chip_num].channels[chn_num]
 
                     # is a released note still in the process of releasing?
                     within_release_window = (
@@ -927,13 +928,38 @@ class SidImport:
                     #   frame, the gate was off or the waveform(s) undefined
                     # - or when waveform(s) on and frequency changed enough (more than mere
                     #   vibrato)
-                    # - or above when gate is off but there's still enough time left on the
+                    # - or (above) when gate is off but there's still enough time left on the
                     #   release that large changes in frequencies are worth turning into notes
                     make_new_note = (
                         note_playing and (prev_note_off or chn.note != prev_chn.note))
 
                     if (self.frame_cnt == first_frame or make_new_note):
                         chn.new_note = True
+
+            # Build a csv_row
+
+            # TODO: this is not well thought out, fix it
+            if self.frame_cnt >= first_frame:
+                time = self.frame_cnt - first_frame
+
+            csv_row = ['{:05d}'.format(time)]
+
+            # for each SID chip:
+            for chip_num, chip in enumerate(row.chips):
+                prev_chip = prev_row.chips[chip_num]
+
+                csv_row.append(self.delta_val(
+                    chip.cutoff, prev_chip.cutoff))
+
+                csv_row.append(self.delta_val(
+                    chip.filters, prev_chip.filters, chip.filters_str()))
+
+                csv_row.append(self.delta_val(
+                    chip.vol, prev_chip.vol))
+
+                # for each SID chip channel:
+                for chn_num, chn in enumerate(row.chips[chip_num].channels):
+                    prev_chn = prev_chip.channels[chn_num]
 
                     if chn.new_note:
                         csv_row.append(chn.freq)
@@ -960,25 +986,8 @@ class SidImport:
                     else:
                         csv_row.extend(['', ''])
 
-                    if chn.noise_on:
-                        waveforms = 'n'
-                    else:
-                        waveforms = '.'
-                    if chn.pulse_on:
-                        waveforms += 'p'
-                    else:
-                        waveforms += '.'
-                    if chn.saw_on:
-                        waveforms += 's'
-                    else:
-                        waveforms += '.'
-                    if chn.triangle_on:
-                        waveforms += 't'
-                    else:
-                        waveforms += '.'
-
                     csv_row.append(self.delta_val(
-                        chn.waveforms, prev_chn.waveforms, waveforms))
+                        chn.waveforms, prev_chn.waveforms, chn.waveforms_str()))
 
                     csv_row.append(self.delta_bool(
                         chn.gate_on, prev_chn.gate_on, 'on', 'off'))
