@@ -8,6 +8,7 @@ from ctsConstants import project_to_absolute_path
 
 MIDI_TEST_FILE = project_to_absolute_path('test/data/bach_invention_4.mid')
 KNOWN_GOOD_LY_FILE_CLIP = project_to_absolute_path('test/data/bach_invention_4_clip_good.ly')
+TEST_LY_FILE_CLIP = project_to_absolute_path('test/data/test_bach_invention_4_clip_good.ly')
 
 
 class TestExportLilypond(unittest.TestCase):
@@ -23,6 +24,7 @@ class TestExportLilypond(unittest.TestCase):
         lilypond = ctsLilypond.Lilypond()
 
         lilypond.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
+        # lilypond.to_file(m_song, TEST_LY_FILE_CLIP)
         test_ly = lilypond.to_bin(m_song)
         test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
 

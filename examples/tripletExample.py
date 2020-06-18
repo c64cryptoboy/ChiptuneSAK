@@ -26,7 +26,7 @@ original_ppq = chirp_song.metadata.ppq
 
 # First thing, we rename the song
 chirp_song.metadata.name = "SkyFox - Main Theme"
-chirp_song.metadata.composer = "Ray Tobey"
+chirp_song.metadata.composer = "Douglas Fulton"
 
 # Now name the tracks
 for t, name in zip(chirp_song.tracks, ['Square1', 'Square2', 'Square3']):

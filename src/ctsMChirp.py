@@ -171,6 +171,11 @@ class Measure:
         """
         ppq = track.chirp_song.metadata.ppq
         end = self.start_time + self.duration
+
+        # Measure number is obtained from the song.
+        measure_number = track.chirp_song.get_measure_beat(self.start_time).measure
+        self.events.append(MeasureMarker(self.start_time, measure_number))
+
         # Find all the notes that start in this measure; not the fastest but it works
         measure_notes = [copy.copy(n) for n in track.notes if self.start_time <= n.start_time < end]
 
@@ -188,7 +193,7 @@ class Measure:
 
         measure_notes = self.process_triplets(measure_notes, ppq)
         measure_notes = self.add_rests(measure_notes)
-        self.events = copy.deepcopy(measure_notes)
+        self.events.extend(copy.deepcopy(measure_notes))
 
         # Add program changes to measure:
         for pc in track.program_changes:
