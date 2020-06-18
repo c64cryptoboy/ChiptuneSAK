@@ -197,9 +197,17 @@ class Lilypond(ChiptuneSAKIO):
                 measure_contents.append('\\tuplet 3/2 {')
                 for te in e.content:
                     if isinstance(te, Note):
-                        measure_contents.append(make_lp_notes(
-                            lp_pitch_to_note_name(te.note_num, self.current_pitch_set),
-                            te.duration * Fraction(3 / 2), self.ppq))
+                        te_duration = te.duration * Fraction(3 / 2)
+                        f = Fraction(te_duration / self.ppq).limit_denominator(64)
+                        if f in lp_durations:
+                            measure_contents.append(
+                                "%s%s%s" % (lp_pitch_to_note_name(te.note_num, self.current_pitch_set),
+                                            lp_durations[f], '~' if te.tied_from else ''))
+                        else:
+                            measure_contents.append(make_lp_notes(
+                                lp_pitch_to_note_name(te.note_num, self.current_pitch_set),
+                                te_duration, self.ppq))
+
                     elif isinstance(te, Rest):
                         measure_contents.append(make_lp_notes('r', te.duration * Fraction(3 / 2), self.ppq))
 

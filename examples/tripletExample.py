@@ -26,6 +26,11 @@ original_ppq = chirp_song.metadata.ppq
 
 # First thing, we rename the song
 chirp_song.metadata.name = "SkyFox - Main Theme"
+chirp_song.metadata.composer = "Ray Tobey"
+
+# Now name the tracks
+for t, name in zip(chirp_song.tracks, ['Square1', 'Square2', 'Square3']):
+    t.name = name
 
 chirp_song.scale_ticks(6.25)
 chirp_song.metadata.ppq = 960
@@ -49,7 +54,7 @@ ly_file = os.path.basename(output_ly_file)
 subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=True)
 
 chirp_song.modulate(3, 2)
-chirp_song.quantize(*chirp_song.estimate_quantization())
+chirp_song.quantize(120, 120)
 ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
 
 mchirp_song = chirp_song.to_mchirp()
