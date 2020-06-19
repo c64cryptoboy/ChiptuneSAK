@@ -27,7 +27,6 @@ def main():
         out_file.write(rchirp_song.note_time_data_str())
     """
 
-    # chirp_song = ctsGoatTracker.convert_to_chirp(sng_data.num_channels, channels_time_events, sng_data.headers.song_name)
     chirp_song = rchirp_song.to_chirp()
 
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it

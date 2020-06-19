@@ -7,7 +7,9 @@
 # - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
 #
 # SidImport TODO:
-# - turn delta rows into rchirp
+# - Figure out why motl subtune6 test music midi stops at 50 sec when capture is anything > 50
+# - generate note names using chiptunesak libraires
+# - generate freq tables using chiptunesak libraries
 # - docstring everything
 # - siddump.c has an option -c for frequency recalibration, where the user can
 #   manually supply a base frequency for better note matching.  We need to
@@ -23,11 +25,12 @@ import csv
 import copy
 from dataclasses import dataclass
 from typing import List
-from ctsConstants import project_to_absolute_path, DEFAULT_ARCH, ARCH
+from ctsConstants import DEFAULT_ARCH, ARCH, CONCERT_A
 from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsBase import ChiptuneSAKIO
 import ctsThinC64Emulator
 from ctsErrors import ChiptuneSAKValueError
+import ctsRChirp
 
 
 class SID(ChiptuneSAKIO):
@@ -72,19 +75,47 @@ class SID(ChiptuneSAKIO):
 
     def capture(self):
         importer = SidImport(self.get_option('arch'))
-        capture = importer.import_sid(
+        sid_dump = importer.import_sid(
             filename=self.get_option('sid_in_filename'),
             subtune=self.get_option('subtune'),
             first_frame=self.get_option('first_frame'),
             old_note_factor=self.get_option('old_note_factor'),
             seconds=self.get_option('seconds')
         )
-        return capture
+        return sid_dump
 
-    def to_rchirp(self, filename):
-        rows = self.capture()
-        print(rows)
-        # TODO: Convert capture into rchirp
+    def to_rchirp(self):
+        sid_dump = self.capture()
+
+        rchirp_song = ctsRChirp.RChirpSong()
+
+        rchirp_song.metadata.name = sid_dump.sid_file.name.decode("latin-1")
+        rchirp_song.metadata.composer = sid_dump.sid_file.author.decode("latin-1")
+        rchirp_song.metadata.copyright = sid_dump.sid_file.released.decode("latin-1")
+
+        sid_count = sid_dump.sid_file.sid_count
+        rchirp_song.voices = [
+            ctsRChirp.RChirpVoice(rchirp_song) for _ in range(sid_count * 3)]
+        rchirp_song.voice_groups = [(1, 2, 3), (4, 5, 6), (7, 8, 9)][:sid_count]
+
+        for row_num, sd_row in enumerate(sid_dump.rows):
+            for chip_num, chip in enumerate(sd_row.chips):
+                for chn_num, chn in enumerate(chip.channels):
+                    rc_row = ctsRChirp.RChirpRow()
+                    rc_row.jiffy_num = row_num
+                    rc_row.jiffy_len = 1
+
+                    if chn.note is not None:
+                        rc_row.note_num = chn.note  # TODO: convert to MIDI note number first
+                        rc_row.instr_num = 1  # FUTURE: Don't hardcode instrument?
+
+                    if chn.gate_on is not None:
+                        rc_row.gate = chn.gate_on
+
+                    rc_voice_num = chn_num + (chip_num * 3)
+                    rchirp_song.voices[rc_voice_num].append_row(rc_row)
+
+        return rchirp_song
 
     def to_csv_file(self, filename):
         sid_dump = self.capture()
@@ -97,7 +128,9 @@ class SID(ChiptuneSAKIO):
             for i in range(1, 4):
                 # not going to include: release_frame or oscil_on
                 csv_row.extend([
-                    'v%dFreq' % i, 'v%dDeltaFreq' % i, 'v%dNote' % i, 'v%dGate' % i,
+                    'v%dFreq' % i, 'v%dDeltaFreq' % i,
+                    'v%dNoteName' % i, 'v%dNote' % i,
+                    'v%dTrueHz' % i, 'v%dGate' % i,
                     'v%dADSR' % i, 'v%dWFs' % i, 'v%dPWidth' % i,
                     'v%dUseFil' % i, 'v%dSync' % i, 'v%dRing' % i
                 ])
@@ -121,6 +154,9 @@ class SID(ChiptuneSAKIO):
                     else:
                         csv_row.append(chn.df, '+ {:d}')
                     csv_row.append(self.get_val(Channel.get_note_name(chn.note)))
+                    csv_row.append(self.get_val(chn.note))  # TODO: Not yet a midi note?
+                    if chn.note is not None:
+                        csv_row.append('TODO Hz')  # tuning = CONCERT_A
                     csv_row.append(self.get_bool(chn.gate_on))
                     csv_row.append(self.get_val(chn.adsr, '{:04X}'))
                     csv_row.append(self.get_val(Channel.waveforms_str(chn.waveforms)))
@@ -154,18 +190,6 @@ class SID(ChiptuneSAKIO):
             return true_str
         else:
             return false_str
-
-
-# TODO: move this to utilities or something
-def getClassMembers(klass):
-    '''
-    members = inspect.getmembers(klass, lambda m: not(inspect.isroutine(m)))
-    members = [m for m in members if not(m[0].startswith('__')
-               and m[0].endswith('__'))]
-    '''
-    return [k for k in klass.__dict__.keys()
-            if not k.startswith('__')
-            and not k.endswith('__')]
 
 
 class SidFile:
@@ -615,6 +639,7 @@ class Channel:
 
     # TODO: throw away this note naming code stub,
     #       use ctsBase.pitch_to_note_name(midi_num) instead
+    # NOTE: note 0 is "C-0", it should be 12, if C-4 is to be 60 (ChiptuneSAK plumb line)
     @classmethod
     def get_note_name(cls, note_num):
         if note_num is None:
@@ -703,7 +728,7 @@ class SidImport:
         self.first_frame = 0
         self.frame_cnt = 0
 
-        # 8-octave range
+        # 8-octave range (Note: disdump.c used 440.11 tuning)
         # TODO: Generate these at runtime, as was done in tools/sidFreqs.py
         self.freq_lo = [
             0x17, 0x27, 0x39, 0x4b, 0x5f, 0x74, 0x8a, 0xa1, 0xba, 0xd4, 0xf0, 0x0e,
@@ -729,7 +754,14 @@ class SidImport:
     def get_note(cls, freq, prev_note, old_note_factor, freq_lo, freq_hi):
         # TODO:  This functionality might move out of this class when replaced
         # by Knapp logic
-
+        #
+        # Note: in combination with the frequency tables here, this code determines that
+        # C64 freq 602 = C#1.  According to https://sta.c64.org/cbm64sndfreq.html
+        # for 440 tuning, C#1 should be freq 587 which is 34.6Hz.
+        # However, I think the webpage assume C0 is 0, not 12, and it's not clear if
+        # freq -> Hz is for PAL or for NTSC (probably PAL)
+        # In ChiptunesSAK C4 = note 60 = 261.63Hz
+        #
         # siddump.c described the old_note_factor thusly:
         #     -o<value> "Oldnote-sticky" factor. Default 1, increase for better vibrato display
         #               (when increased, requires well calibrated frequencies)
@@ -1118,17 +1150,4 @@ class SidImport:
 
 
 if __name__ == "__main__":
-    # TODO: Stuff for development/debugging, delete all this later
-    s = SID()
-    s.set_options(
-        sid_in_filename=project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'),
-        subtune=6,
-        old_note_factor=1,
-        seconds=50
-    )
-
-    # Sound comparison:
-    # https://deepsid.chordian.net/?file=/MUSICIANS/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid&subtune=7
-    # Dump comparison:
-    # ./siddump.exe Master_of_the_Lamps_PAL.sid -a6
-    s.to_csv_file(project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.csv'))
+    print("Nothing to do")
