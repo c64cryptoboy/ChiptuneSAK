@@ -130,7 +130,7 @@ ARCH = {
 }
 
 
-def midi_num_to_freq(midi_num, tuning=CONCERT_A):
+def midi_num_to_freq(midi_num, cents=0, tuning=CONCERT_A):
     """
     Convert a midi number into its frequency
 
@@ -141,10 +141,10 @@ def midi_num_to_freq(midi_num, tuning=CONCERT_A):
     :return: frequency for midi number
     :rtype: float
     """
-    return tuning * pow(2, (midi_num - A4_MIDI_NUM) / 12)
+    return tuning * pow(2, (midi_num + cents/100 - A4_MIDI_NUM) / 12)
 
 
-def midi_num_to_freq_arch(midi_num, arch, tuning=CONCERT_A):
+def midi_num_to_freq_arch(midi_num, cents=0, arch='NTSC_C64', tuning=CONCERT_A):
     """
     Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
 
@@ -160,7 +160,7 @@ def midi_num_to_freq_arch(midi_num, arch, tuning=CONCERT_A):
 
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
     # SID oscillator is 24-bit (phase-accumulating design)
-    return round((0x1000000 / ARCH[arch].system_clock) * midi_num_to_freq(midi_num, tuning))
+    return round((0x1000000 / ARCH[arch].system_clock) * midi_num_to_freq(midi_num, cents, tuning))
 
 
 def freq_to_midi_num(freq, tuning=CONCERT_A):

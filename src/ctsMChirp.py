@@ -175,6 +175,9 @@ class Measure:
         # Measure number is obtained from the song.
         measure_number = track.chirp_song.get_measure_beat(self.start_time).measure
         self.events.append(MeasureMarker(self.start_time, measure_number))
+        print(track.name, measure_number)
+        if measure_number == 117:
+            print('here')
 
         # Find all the notes that start in this measure; not the fastest but it works
         measure_notes = [copy.copy(n) for n in track.notes if self.start_time <= n.start_time < end]

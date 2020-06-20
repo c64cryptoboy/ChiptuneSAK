@@ -1,6 +1,6 @@
-========
-Examples
-========
+====================
+ChiptuneSAK Examples
+====================
 
 .. toctree::
    :caption: Table of Contents
@@ -58,4 +58,8 @@ Makes all the notes 2/1 = 2X as long, so the 32nd notes turn into 16th notes.  T
 
 Eliminate triplets
 ++++++++++++++++++
+
+Many chiptunes music players do not support triplets.  Here we show you how to use metric modulation to eliminate triplets.
+
+It may seem a little surprising, but *modulation by a factor of 3/2 eliminates all triplets.*
 

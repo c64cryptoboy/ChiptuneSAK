@@ -17,8 +17,8 @@ ChiptuneSAK can generate Lilypond markup for a very useful subset of cases with 
 
 To use Lilypond with ChiptuneSAK, you will need to obtain and install Lilypond for your platform. The ChiptuneSAK Lilypond generator requires the MChirp intermediate format, in which the music has been interpreted as notes in measures.
 
-Examples
-########
+Sheet Music Examples
+####################
 
 Example 1:  Midi to Lilypond Sheet Music clip
 *********************************************
