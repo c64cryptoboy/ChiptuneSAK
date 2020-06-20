@@ -70,6 +70,8 @@ class Measure:
                 # Deduce the triplet length from the position of the note; it is on sub-beat 2 or 3
                 min_duration = min(shortest_triplet.duration, shortest_triplet.start_time - triplet_start_time)
                 triplet_duration = 3 * min_duration
+                while triplet_start_time + triplet_duration <= shortest_triplet.start_time:
+                    triplet_duration *= 2
             else:  # Note is on the beat so triplet starts on the beat
                 triplet_start_time = shortest_triplet.start_time
                 # Assume the note is a triplet (remember it is the shortest) unless proven otherwise
@@ -175,9 +177,6 @@ class Measure:
         # Measure number is obtained from the song.
         measure_number = track.chirp_song.get_measure_beat(self.start_time).measure
         self.events.append(MeasureMarker(self.start_time, measure_number))
-        print(track.name, measure_number)
-        if measure_number == 117:
-            print('here')
 
         # Find all the notes that start in this measure; not the fastest but it works
         measure_notes = [copy.copy(n) for n in track.notes if self.start_time <= n.start_time < end]
