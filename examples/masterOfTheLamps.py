@@ -3,16 +3,19 @@ from ctsConstants import project_to_absolute_path, DEFAULT_ARCH, ARCH, CONCERT_A
 import ctsSID
 import ctsMidi
 
+# TODO:
+# The rchirp song goes way too fast when converted to midi, figure out why
+#
 # Notes:
 # gongs: f# +.5-> g +.5-> a# +1.5-> b +.5-> c# +1.0v-> d +1.5-> f +.5-> f#
-
-
+#
 # Sound comparison:
 # https://deepsid.chordian.net/?file=/MUSICIANS/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid
 #
 # Dump comparison:
 # ./siddump.exe Master_of_the_Lamps_PAL.sid -a6
 
+# TODO: Note, can't rely on subtune length in deepsid, going to need to lengthen each
 
 # subtunes to extract
 to_extract = [
@@ -27,7 +30,7 @@ to_extract = [
     # [2, "level 3", 49],
     # [4, "level 4", 75],
     # [5, "level 5", 68],
-    [6, "level 6", 43],
+    [6, "level 6", 55],    # TODO: Change this back to 55 seconds
     # [12, "level 7", 62],
 ]
 
@@ -41,7 +44,8 @@ def main():
             sid_in_filename=project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'),
             subtune=subtune,
             old_note_factor=1,
-            seconds=seconds
+            seconds=seconds,
+            gcf_row_reduce=True,
         )
 
         filename_no_ext = 'test/sid/motl_%s' % desc.replace(" ", "_")
