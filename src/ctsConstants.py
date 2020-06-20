@@ -157,7 +157,6 @@ def midi_num_to_freq_arch(midi_num, cents=0, arch='NTSC_C64', tuning=CONCERT_A):
     """
     if arch not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
-
     # ref: https://codebase64.org/doku.php?id=base:how_to_calculate_your_own_sid_frequency_table
     # SID oscillator is 24-bit (phase-accumulating design)
     return round((0x1000000 / ARCH[arch].system_clock) * midi_num_to_freq(midi_num, cents, tuning))
@@ -181,6 +180,23 @@ def freq_to_midi_num(freq, tuning=CONCERT_A):
     midi_num = int(round(midi_num_float))
     cents = int(round((midi_num_float - midi_num) * 100))
     return (midi_num, cents)
+
+
+def freq_arch_to_midi_num(arch_freq, arch='NTSC_C64', tuning=CONCERT_A):
+    """
+    Converts a particular freequency in an architecture to (midi_num, cents)
+
+    :param arch_freq: frequency as specified in the architecture
+    :type arch_freq: int
+    :param arch: Architecture description string
+    :type arch: str
+    :return: midi_num, cents
+    :rtype: (int, int0
+    """
+    if arch not in ('NTSC-C64', 'PAL-C64'):
+        raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
+    freq = arch_freq * ARCH[arch].system_clock / 0x1000000
+    return freq_to_midi_num(freq, tuning)
 
 
 def project_to_absolute_path(file_path):

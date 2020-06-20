@@ -328,5 +328,5 @@ def start_beat_type(time, ppq):
                   will be a multiple of 3.
     :rtype:       int
     """
-    f = Fraction(time, ppq).limit_denominator(16)
+    f = Fraction(time, ppq).limit_denominator(32)
     return f.denominator
