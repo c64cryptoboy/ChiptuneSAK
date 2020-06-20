@@ -678,7 +678,7 @@ class ChirpSong(ChiptuneSAKBase):
         using the name of the original track with '_sx' appended, where x is a number for the split notes.
         The polyphony is split using a first-available-track algorithm, which works well for splitting chords.
 
-        :param i_track:  index of the track for the song
+        :param i_track:  zero-based index of the track for the song (ignore the meta track - first track is 0)
         :type i_track: int
         """
         def _get_available_tracks(note, current_notes):

@@ -13,9 +13,9 @@ print("midi num, note name, freq, NTSC freq, PAL freq")
 # - https://gist.github.com/matozoid/18cddcbc9cfade3c455bc6230e1f6da6
 for midi_num in range(ctsConstants.C0_MIDI_NUM, ctsConstants.C0_MIDI_NUM + (8 * 12)):
     tuning = ctsConstants.CONCERT_A     # e.g., tuning = 440.11 used by siddump.c
-    freq = ctsConstants.midi_num_to_freq(midi_num, tuning)
-    ntsc_freq = ctsConstants.midi_num_to_freq_arch(midi_num, 'NTSC-C64', tuning)
-    pal_freq = ctsConstants.midi_num_to_freq_arch(midi_num, 'PAL-C64', tuning)
+    freq = ctsConstants.midi_num_to_freq(midi_num, 0, tuning)
+    ntsc_freq = ctsConstants.midi_num_to_freq_arch(midi_num, 0, 'NTSC-C64', tuning)
+    pal_freq = ctsConstants.midi_num_to_freq_arch(midi_num, 0, 'PAL-C64', tuning)
 
     print(
         "%d, %s, % 0.3f, %d, %s, %d, %s" %
