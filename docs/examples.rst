@@ -63,3 +63,20 @@ Many chiptunes music players do not support triplets.  Here we show you how to u
 
 It may seem a little surprising, but *modulation by a factor of 3/2 eliminates all triplets.*
 
+As an example, consider the following excerpt from a Chopin waltz:
+
+.. image:: _images/chopin_waltz.png
+   :width: 800px
+   :alt: Original Chopin waltz excerpt
+   :align: center
+
+This except could not be rendered using many chiptunes tools that cannot do triplets.   But if we modulate by a factor of 3/2, the excerpt becomes:
+
+.. image:: _images/chopin_waltz_mod.png
+   :width: 800px
+   :alt: Modulated Chopin waltz excerpt
+   :align: center
+
+The shortest note is now a sixteenth note, which means this music can now be rendered by a system that only accepts factor-of-two note values!
+
+

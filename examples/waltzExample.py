@@ -36,7 +36,7 @@ mchirp_song = chirp_song.to_mchirp()
 # Create the lilpond I/O class
 lp = ctsLilypond.Lilypond()
 # Set the format to do a clip and set the measures to those you want
-lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[116:124])
+lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
 # Write it straight to a file
 lp.to_file(mchirp_song, output_ly_file)
 
@@ -49,7 +49,24 @@ ly_file = os.path.basename(output_ly_file)
 args = ['lilypond', '-ddelete-intermediate-files', '-dbackend=eps', '-dresolution=600', '--png', ly_file]
 subprocess.call(args, shell=True)
 
+chirp_song.modulate(3, 2)
+chirp_song.quantize(120, 120)
 
+ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
+
+mchirp_song = chirp_song.to_mchirp()
+
+# Create the lilpond I/O class
+lp = ctsLilypond.Lilypond()
+# Set the format to do a clip and set the measures to those you want
+lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
+# Adjust the path the the file
+ly_file = os.path.basename(output_ly_file_mod)
+# Write it straight to a file
+lp.to_file(mchirp_song, output_ly_file_mod)
+# Run lilypond
+args = ['lilypond', '-ddelete-intermediate-files', '-dbackend=eps', '-dresolution=600', '--png', ly_file]
+subprocess.call(args, shell=True)
 
 ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
 
