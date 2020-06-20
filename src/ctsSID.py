@@ -26,7 +26,7 @@ from functools import reduce
 import copy
 from dataclasses import dataclass
 from typing import List
-from ctsConstants import DEFAULT_ARCH, ARCH, CONCERT_A
+from ctsConstants import DEFAULT_ARCH, ARCH, freq_arch_to_freq
 from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsBase import ChiptuneSAKIO
 import ctsThinC64Emulator
@@ -194,8 +194,9 @@ class SID(ChiptuneSAKIO):
                         csv_row.append(chn.df, '+ {:d}')
                     csv_row.append(self.get_val(Channel.get_note_name(chn.note)))
                     csv_row.append(self.get_val(chn.note))  # TODO: Not yet a midi note?
-                    if chn.note is not None:
-                        csv_row.append('TODO Hz')  # tuning = CONCERT_A
+                    if chn.freq is not None:
+                        csv_row.append('{:.3f}'.format(
+                            freq_arch_to_freq(chn.freq, self.get_option('arch'))))
                     else:
                         csv_row.append('')
                     csv_row.append(self.get_bool(chn.gate_on))

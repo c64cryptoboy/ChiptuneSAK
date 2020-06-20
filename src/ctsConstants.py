@@ -199,6 +199,22 @@ def freq_arch_to_midi_num(arch_freq, arch='NTSC-C64', tuning=CONCERT_A):
     return freq_to_midi_num(freq, tuning)
 
 
+def freq_arch_to_freq(arch_freq, arch='NTSC-C64'):
+    """
+    Converts a architecture-based frequency into its true audio frequency
+
+    :param arch_freq: frequency as specified in the architecture
+    :type arch_freq: int
+    :param arch: Architecture description string, defaults to 'NTSC-C64'
+    :type arch: str, optional
+    :return: frequency
+    :rtype: int
+    """
+    if arch not in ('NTSC-C64', 'PAL-C64'):
+        raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
+    return arch_freq * ARCH[arch].system_clock / 0x1000000
+
+
 def project_to_absolute_path(file_path):
     """Returns project root folder"""
     return os.path.normpath(os.path.join(Path(__file__).parent.parent.absolute(), file_path))

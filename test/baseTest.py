@@ -48,13 +48,14 @@ class BaseTestCase(unittest.TestCase):
         f = 261.63 * 2**(1 / 100)
         self.assertEqual(ctsConstants.freq_to_midi_num(f), (ctsConstants.C4_MIDI_NUM, 12))
 
-        note_name = 'C0'
-        midi_note = note_name_to_pitch(note_name)
-        self.assertEqual(int(ctsConstants.midi_num_to_freq(midi_note) * 1000), 16351)
+        midi_note = note_name_to_pitch('C0')
+        self.assertAlmostEqual(ctsConstants.midi_num_to_freq(midi_note), 16.352, 3)
         self.assertEqual(ctsConstants.midi_num_to_freq_arch(midi_note, arch='NTSC-C64'), 268)
         self.assertEqual(ctsConstants.midi_num_to_freq_arch(midi_note, arch='PAL-C64'), 278)
         self.assertEqual(ctsConstants.freq_arch_to_midi_num(268, arch='NTSC-C64')[0], midi_note)
         self.assertEqual(ctsConstants.freq_arch_to_midi_num(278, arch='PAL-C64')[0], midi_note)
+        self.assertAlmostEqual(ctsConstants.freq_arch_to_freq(268, arch='NTSC-C64'), 16.337, 3)
+        self.assertAlmostEqual(ctsConstants.freq_arch_to_freq(268, arch='PAL-C64'), 15.738, 3)
 
 
 if __name__ == '__main__':
