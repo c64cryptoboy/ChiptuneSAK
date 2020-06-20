@@ -7,7 +7,6 @@
 # - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
 #
 # SidImport TODO:
-# - Figure out why motl subtune6 test music midi stops at 50 sec when capture is anything > 50
 # - generate note names using chiptunesak libraires
 # - generate freq tables using chiptunesak libraries
 # - docstring everything
@@ -22,6 +21,8 @@
 
 
 import csv
+import math
+from functools import reduce
 import copy
 from dataclasses import dataclass
 from typing import List
@@ -48,7 +49,9 @@ class SID(ChiptuneSAKIO):
             first_frame=0,
             old_note_factor=1,
             seconds=60,          # seconds to capture
-            arch=DEFAULT_ARCH)   # architecture (for import to RChirp)
+            arch=DEFAULT_ARCH,   # architecture (for import to RChirp)
+            gcf_row_reduce=True  # reduce rows based on greatest common factor of row-activity gaps
+        )
 
         self.set_options(**self.options_with_defaults)
 
@@ -87,6 +90,19 @@ class SID(ChiptuneSAKIO):
     def to_rchirp(self):
         sid_dump = self.capture()
 
+        # create a more summarized representation by removing empty rows while maintaining structure
+        if self.get_option('gcf_row_reduce'):
+            # determine which rows have activity that rchirp cares about
+            rows_with_activity = [[] for _ in range(sid_dump.sid_file.sid_count)]
+            for row_num, row in enumerate(sid_dump.rows):
+                for chip_num, chip in enumerate(row.chips):
+                    for chn in chip.channels:
+                        if chn.note is not None or chn.gate_on is not None:
+                            rows_with_activity[chip_num].append(row_num)
+                            break
+
+        self.reduce_rows(sid_dump, rows_with_activity)
+
         rchirp_song = ctsRChirp.RChirpSong()
 
         rchirp_song.metadata.name = sid_dump.sid_file.name.decode("latin-1")
@@ -107,7 +123,7 @@ class SID(ChiptuneSAKIO):
 
                     if chn.note is not None:
                         rc_row.note_num = chn.note  # TODO: convert to MIDI note number first
-                        rc_row.instr_num = 1  # FUTURE: Don't hardcode instrument?
+                        rc_row.instr_num = 1  # FUTURE: Do something with instruments?
 
                     if chn.gate_on is not None:
                         rc_row.gate = chn.gate_on
@@ -115,11 +131,34 @@ class SID(ChiptuneSAKIO):
                     rc_voice_num = chn_num + (chip_num * 3)
                     rchirp_song.voices[rc_voice_num].append_row(rc_row)
 
+        rchirp_song.set_row_delta_values()
         return rchirp_song
 
     def to_csv_file(self, filename):
         sid_dump = self.capture()
 
+        # create a more summarized representation by removing empty rows while maintaining structure
+        if self.get_option('gcf_row_reduce'):
+            # determine which rows have activity that's important in the CSV
+            rows_with_activity = [[] for _ in range(sid_dump.sid_file.sid_count)]
+            for row_num, row in enumerate(sid_dump.rows):
+                for chip_num, chip in enumerate(row.chips):
+                    if chip.vol is not None or chip.filters is not None \
+                            or chip.cutoff is not None or chip.resonance is not None:
+                        rows_with_activity[chip_num].append(row_num)
+                    else:
+                        for chn in chip.channels:
+                            if chn.freq is not None or chn.note is not None \
+                                    or chn.gate_on is not None or chn.adsr is not None \
+                                    or chn.waveforms is not None or chn.pulse_width is not None \
+                                    or chn.filtered is not None or chn.sync_on is not None \
+                                    or chn.ring_on is not None:
+                                rows_with_activity[chip_num].append(row_num)
+                                break
+
+        self.reduce_rows(sid_dump, rows_with_activity)
+
+        # create CSV
         csv_rows = []
         csv_row = ['Frame']
         for _ in range(sid_dump.sid_file.sid_count):
@@ -157,6 +196,8 @@ class SID(ChiptuneSAKIO):
                     csv_row.append(self.get_val(chn.note))  # TODO: Not yet a midi note?
                     if chn.note is not None:
                         csv_row.append('TODO Hz')  # tuning = CONCERT_A
+                    else:
+                        csv_row.append('')
                     csv_row.append(self.get_bool(chn.gate_on))
                     csv_row.append(self.get_val(chn.adsr, '{:04X}'))
                     csv_row.append(self.get_val(Channel.waveforms_str(chn.waveforms)))
@@ -190,6 +231,48 @@ class SID(ChiptuneSAKIO):
             return true_str
         else:
             return false_str
+
+    # compute the greatest common divisor of the inactive row counts between active rows
+    # and then eliminate unnecessary rows (while preserving rhythm structure)
+    def reduce_rows(self, sid_dump, rows_with_activity):
+        # For each SID chip, find the min row num with activity, the max row num with
+        # activity, and the minimum row granularity
+        sid_row_gran = []
+        sid_min_a_row = []
+        sid_max_a_row = []
+        for chip_num in range(sid_dump.sid_file.sid_count):
+            a_rows = rows_with_activity[chip_num]
+            sid_min_a_row.append(min(a_rows))
+            sid_max_a_row.append(max(a_rows))
+            sid_row_gran.append(reduce(math.gcd,
+                (a_rows[i + 1] - a_rows[i] for i in range(len(a_rows) - 1))))  # noqa: E128
+
+        # FUTURE coding: The Orchestrion had different metric modulations (different
+        # minimum row granularities) on each SID, but this code is not yet
+        # generalized enough to support this.  (As a temporary work around, if you have
+        # a 2SID or 3SID and want different minimum row granularities for each
+        # SID-voice grouping, then extract each SID chip output separately.)
+        # Collapsing the stats across SIDs (if more than 1)...
+        if len(sid_row_gran) > 1:
+            row_gran = reduce(math.gcd,
+                (sid_row_gran[i + 1] - sid_row_gran[i] for i in range(len(sid_row_gran) - 1)))  # noqa: E128
+        else:
+            row_gran = sid_row_gran[0]
+        first_row = min(sid_min_a_row)
+        last_row = max(sid_max_a_row)
+
+        # reduce the rows
+        i = 0
+        reduced_rows = []
+        for row_num in range(first_row, last_row + 1):
+            if i % row_gran == 0:
+                reduced_rows.append(sid_dump.rows[row_num])
+            i += 1
+
+        # TODO: If last_row contains a gate_on = True, may need to pad out with (row_gran-1) empty rows
+
+        sid_dump.rows = reduced_rows
+        return row_gran
 
 
 class SidFile:
@@ -1129,6 +1212,8 @@ class SidImport:
 
             if self.frame_cnt >= first_frame:
                 sid_dump.rows.append(delta_row)
+
+                # frames_with_activity
 
             # setup chips and channels for next iteration:
 
