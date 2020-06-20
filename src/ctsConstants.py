@@ -141,10 +141,10 @@ def midi_num_to_freq(midi_num, cents=0, tuning=CONCERT_A):
     :return: frequency for midi number
     :rtype: float
     """
-    return tuning * pow(2, (midi_num + cents/100 - A4_MIDI_NUM) / 12)
+    return tuning * pow(2, (midi_num + cents / 100 - A4_MIDI_NUM) / 12)
 
 
-def midi_num_to_freq_arch(midi_num, cents=0, arch='NTSC_C64', tuning=CONCERT_A):
+def midi_num_to_freq_arch(midi_num, cents=0, arch='NTSC-C64', tuning=CONCERT_A):
     """
     Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
 
@@ -182,16 +182,16 @@ def freq_to_midi_num(freq, tuning=CONCERT_A):
     return (midi_num, cents)
 
 
-def freq_arch_to_midi_num(arch_freq, arch='NTSC_C64', tuning=CONCERT_A):
+def freq_arch_to_midi_num(arch_freq, arch='NTSC-C64', tuning=CONCERT_A):
     """
-    Converts a particular freequency in an architecture to (midi_num, cents)
+    Converts a particular frequency in an architecture to (midi_num, cents)
 
     :param arch_freq: frequency as specified in the architecture
     :type arch_freq: int
     :param arch: Architecture description string
     :type arch: str
     :return: midi_num, cents
-    :rtype: (int, int0
+    :rtype: (int, int)
     """
     if arch not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
