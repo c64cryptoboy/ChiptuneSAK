@@ -138,6 +138,7 @@ class Measure:
             triplet_rests.append(Rest(current_position, triplet_end - current_position))
         triplet.content.extend(triplet_rests)
         triplet.content.sort(key=lambda n: n.start_time)
+        assert sum(c.duration for c in triplet.content) == triplet.duration, "Triplet content does not sum to length!"
         # Add the triplet to the measure events
         new_measure_notes.append(triplet)
         return sorted(new_measure_notes, key=lambda n: n.start_time)

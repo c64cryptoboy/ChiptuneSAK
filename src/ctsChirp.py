@@ -398,6 +398,9 @@ class ChirpTrack:
             n.start_time = (n.start_time * num) // denom
             n.duration = (n.duration * num) // denom
             self.notes[i] = n
+        # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
+        self.qticks_notes = (self.qticks_notes * num) // denom
+        self.qticks_durations = (self.qticks_durations * num) // denom
 
     def scale_ticks(self, scale_factor):
         """

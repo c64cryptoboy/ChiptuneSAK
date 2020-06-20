@@ -4,11 +4,12 @@ import os
 import subprocess
 import ctsMidi
 import ctsLilypond
+import ctsGoatTracker
+import ctsOnePassCompress
 from ctsConstants import project_to_absolute_path
 
 """
 This example shows how to do metric modulation to remove triplets
-
 
 """
 
@@ -18,6 +19,7 @@ input_mid_file = input_folder + 'chopin_waltz.mid'
 output_mid_file = output_folder + 'chopin_waltz_mod.mid'
 output_ly_file = output_folder + 'chopin_waltz.ly'
 output_ly_file_mod = output_folder + 'chopin_waltz_mod.ly'
+output_gt_file = output_folder + 'chopin_waltz_mod.sng'
 
 chirp_song = ctsMidi.MIDI().to_chirp(input_mid_file)
 
@@ -31,6 +33,7 @@ chirp_song.tracks = [chirp_song.tracks[0], chirp_song.tracks[5], chirp_song.trac
 chirp_song.quantize(80, 80)
 chirp_song.remove_polyphony()
 
+print("converting to mchirp")
 mchirp_song = chirp_song.to_mchirp()
 
 # Create the lilpond I/O class
@@ -49,11 +52,12 @@ ly_file = os.path.basename(output_ly_file)
 args = ['lilypond', '-ddelete-intermediate-files', '-dbackend=eps', '-dresolution=600', '--png', ly_file]
 subprocess.call(args, shell=True)
 
+print("Modulating...")
 chirp_song.modulate(3, 2)
-chirp_song.quantize(120, 120)
 
 ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
 
+print("Converting to mchirp")
 mchirp_song = chirp_song.to_mchirp()
 
 # Create the lilpond I/O class
@@ -70,4 +74,9 @@ subprocess.call(args, shell=True)
 
 ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
 
+print("Converting to rchirp")
+rchirp_song = chirp_song.to_rchirp()
 
+GT = ctsGoatTracker.GoatTracker()
+GT.set_options(instruments=['Harpsichord', 'Harpsichord', 'Harpsichord'])
+GT.to_file(rchirp_song, output_gt_file)
