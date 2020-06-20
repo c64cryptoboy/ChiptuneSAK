@@ -5,6 +5,13 @@
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms.
 # Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
+# The "jiffy" time unit:
+# In early 8-bit computers, the term jiffy is synonymous with screen refresh duration
+# (e.g., ~16.8ms on NTSC C64).  In computing, Jiffy originally referred to the time between
+# two ticks of a system timer interrupt.  In electronics, it's the time between alternating
+# current power cycles.  And in most early 8-bit machines, an interrupt would occur with
+# each screen refresh which was synced to the AC power cycles.
+
 import copy
 from functools import reduce
 import math
@@ -23,10 +30,10 @@ class RChirpRow:
     jiffy_num: int = None         #: jiffy num since time 0
     note_num: int = None          #: MIDI note number; None means no note asserted
     instr_num: int = None         #: Instrument number
-    new_instrument: int = None    #: Instrument number; None means no change
+    new_instrument: int = None    #: Indicates new instrument number; None means no change
     gate: bool = None             #: Gate on/off tri-value True/False/None; None means no gate change
     jiffy_len: int = None         #: Jiffies to process this row (until next row)
-    new_jiffy_tempo: int = None   #: New tempo for channel (not global); None means no change
+    new_jiffy_tempo: int = None   #: Indicates new tempo for channel (not global); None means no change
 
     def match(self, other):
         if self.row_num != other.row_num \
