@@ -1,18 +1,24 @@
 # Classes for SID processing (SID header parsing, SID note extraction, etc.)
 #
-# siddump.c was very helpful as a conceptual reference for SidImport:
-# - https://csdb.dk/release/?id=152422
+# SidDump class:
+#    Playback details for PSID/RSID ("The SID file environment")
+#    - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
+
+#    has some support for RSIDs.  From sid documentation concerning RSIDs:
+#     "Tunes that are multi-speed and/or contain samples and/or use additional interrupt
+#     sources or do busy looping will cause older SID emulators to lock up or play very
+#     wrongly (if at all)."
 #
-# Playback details for PSID/RSID ("The SID file environment")
-# - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
+#    siddump.c was very helpful as a conceptual reference for SidImport:
+#    - https://csdb.dk/release/?id=152422
 #
 # SidImport TODO:
 # - generate note names using chiptunesak libraires
 # - generate freq tables using chiptunesak libraries
 # - docstring everything
 # - siddump.c has an option -c for frequency recalibration, where the user can
-#   manually supply a base frequency for better note matching.  We need to
-#   automate tuning detection.  Two pass approach?
+#   manually supply a base frequency for better note matching.  Reimplement this,
+#   but also create a classmethod that will return the tuning (from a full pass).
 # - iterate over a collection a SIDs for code coverage testing
 # - implement the SID header speed settings?
 #
@@ -88,6 +94,12 @@ class SID(ChiptuneSAKIO):
         return sid_dump
 
     def to_rchirp(self):
+        """
+        Convert a SID subtune into an RChirpSong
+
+        :return: RChirpSong
+        :rtype: RChirpSong
+        """
         sid_dump = self.capture()
 
         # create a more summarized representation by removing empty rows while maintaining structure
@@ -135,6 +147,12 @@ class SID(ChiptuneSAKIO):
         return rchirp_song
 
     def to_csv_file(self, filename):
+        """
+        Convert a SID subtune into a CSV file
+
+        :param filename: output CSV filename
+        :type filename: string
+        """
         sid_dump = self.capture()
 
         # create a more summarized representation by removing empty rows while maintaining structure
@@ -218,6 +236,16 @@ class SID(ChiptuneSAKIO):
             writer.writerows(csv_rows)
 
     def get_val(self, val, format=None):
+        """
+        Used to create CSV string values when not None
+
+        :param val: string or int
+        :type val: string or int
+        :param format: format descriptor, defaults to None
+        :type format: string, optional
+        :return: empty string, passed in value (with possible formatting)
+        :rtype: string or int
+        """
         if val is None:
             return ''
         if format is None:
@@ -226,6 +254,18 @@ class SID(ChiptuneSAKIO):
             return format.format(val)
 
     def get_bool(self, bool, true_str='on', false_str='off'):
+        """
+        Used to create CSV string values when not None
+
+        :param bool: a boolean
+        :type bool: bool
+        :param true_str: string if true, defaults to 'on'
+        :type true_str: str, optional
+        :param false_str: string if false, defaults to 'off'
+        :type false_str: str, optional
+        :return: string description of boolean
+        :rtype: string
+        """
         if bool is None:
             return ''
         if bool:
@@ -233,9 +273,24 @@ class SID(ChiptuneSAKIO):
         else:
             return false_str
 
-    # compute the greatest common divisor of the inactive row counts between active rows
-    # and then eliminate unnecessary rows (while preserving rhythm structure)
     def reduce_rows(self, sid_dump, rows_with_activity):
+        """
+        The SidImport class samples SID chip state after each call to the play routine.
+        This creates 1 row per jiffy (multi-speed not yet supported).
+        In most trackers, this would require speed 1 playback (1 jiffy per row), which
+        cannot be achived.  So this method attempts to reduce the number of rows in the
+        representaton.  It does so by computing the greatest common divisor for the
+        count of inactive rows between active rows, and then eliminates the unnecessary
+        rows (while preserving rhythm structure).
+
+        :param sid_dump: Capture of SID chip state from the subtune
+        :type sid_dump: ctsSID.Dump
+        :param rows_with_activity: a list for each SID chip with a list of "active" row numbers
+        :type rows_with_activity: list of lists
+        :return: the row granularity (the largest common factor across all periods of inactivity)
+        :rtype: int
+        """
+
         # For each SID chip, find the min row num with activity, the max row num with
         # activity, and the minimum row granularity
         sid_row_gran = []
@@ -338,21 +393,31 @@ class SidFile:
         return 'Unknown'
 
     def parse_file(self, sid_filename):
+        """
+        Parse the SID file header structure and extract the binary
+
+        :param sid_filename: SID filename to parse
+        :type sid_filename: string
+        """
         with open(sid_filename, mode='rb') as in_file:
             sid_binary = in_file.read()
 
         self.parse_binary(sid_binary)
 
     def parse_binary(self, sid_binary):
-        # Parser code based on documentation from:
-        # - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
-        # - http://unusedino.de/ec64/technical/formats/sidplay.html
+        """
+        Parse a SID file binary
+
+        Parser code based on specs from:
+        - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
+        - http://unusedino.de/ec64/technical/formats/sidplay.html
 
         # 'PSID' or 'RSID'.  'PSID's are simple to emulate, while 'RSID's requires a higher level
         # of fidelity to play, up to a truer C64 environment.
-        # From docs: "Tunes that are multi-speed and/or contain samples and/or use additional interrupt
-        # sources or do busy looping will cause older SID emulators to lock up or play very wrongly (if
-        # at all)."
+
+        :param sid_binary: a SID file binary
+        :type sid_binary: bytes
+        """
         self.magic_id = sid_binary[0:4]
         if self.magic_id not in (b'PSID', b'RSID'):
             raise ChiptuneSAKValueError("Error: unexpected sid magic id")
@@ -644,9 +709,23 @@ class SidFile:
                 self.c64_payload = self.c64_payload[2:]
 
     def get_payload_length(self):
+        """
+        Return the length of the C64 native code embedded in the SID file
+
+        :return: length of SID executable binary
+        :rtype: int
+        """
         return len(self.c64_payload)
 
     def get_load_addr_from_payload(self):
+        """
+        Return the load address from the payload
+        Note: Not all payloads begin with a 16-bit load address, see other
+        documentation in this class
+
+        :return: C64 binary starting memory location
+        :rtype: int
+        """
         return little_endian_int(self.c64_payload[0:2])
 
 
@@ -664,8 +743,8 @@ decay_release_time = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204,
 
 @dataclass
 class Channel:
-    freq: int = 0  # 16-bit
-    note: int = 0
+    freq: int = 0  # C64 16-bit frequency (not the true auditory frequency)
+    note: int = 0  # midi note value
     adsr: int = 0  # 4 nibbles
     attack: int = 0
     decay: int = 0
@@ -687,12 +766,18 @@ class Channel:
     df: int = 0  # if no new note, record small delta in frequency (if any)
 
     def set_adsr_fields(self):
+        """
+        Set individual ADSR variables
+        """
         self.attack = self.adsr >> 12
         self.decay = (self.adsr & 0x0f00) >> 8
         self.sustain = (self.adsr & 0x00f0) >> 4
         self.release = self.adsr & 0x000f
 
     def set_waveform_fields(self):
+        """
+        Set individual waveform flags (16 possible combinations)
+        """
         self.triangle_on = self.waveforms & 0b0001 != 0  # noqa
         self.saw_on      = self.waveforms & 0b0010 != 0  # noqa    
         self.pulse_on    = self.waveforms & 0b0100 != 0  # noqa                 
@@ -700,6 +785,14 @@ class Channel:
 
     @classmethod
     def waveforms_str(cls, waveforms):
+        """
+        Create a text display of waveform flags
+
+        :param waveforms: a 4-bit value
+        :type waveforms: int
+        :return: text display of waveform flags
+        :rtype: string
+        """
         result = ''
         if waveforms is None:
             return result
@@ -723,7 +816,6 @@ class Channel:
 
     # TODO: throw away this note naming code stub,
     #       use ctsBase.pitch_to_note_name(midi_num) instead
-    # NOTE: note 0 is "C-0", it should be 12, if C-4 is to be 60 (ChiptuneSAK plumb line)
     @classmethod
     def get_note_name(cls, note_num):
         if note_num is None:
@@ -742,7 +834,7 @@ class Channel:
 
 @dataclass
 class Chip:
-    vol: int = 0
+    vol: int = 0    # 4-bit resolution
     filters: int = 0  # 3 bits showing if hi, band, and/or lo filters enabled
     cutoff: int = 0  # 11-bit filter cutoff
     resonance: int = 0  # 4-bit filter resonance
@@ -754,6 +846,14 @@ class Chip:
 
     @classmethod
     def filters_str(cls, filters):
+        """
+        Create string representation of filter settings
+
+        :param filters: 3-bit filter flags
+        :type filters: int
+        :return: string representation of filter settings
+        :rtype: string
+        """
         result = ''
         if filters is None:
             return result
@@ -774,33 +874,32 @@ class Chip:
 
 class Row:
     def __init__(self, num_chips=1):
-        self.frame_num = None
-        self.chips = None
-        self.num_chips = num_chips
+        self.frame_num = None   # the frame number that was sampled to create this row
+        self.chips = None   # 1 to 3 Chip instances (2 for 2SID, 3 for 3SID)
+        self.num_chips = num_chips  # Number of SID chips assumed by SID song
 
         if not 1 <= self.num_chips <= 3:
             raise Exception("Error: Row must specify 1 to 3 SID chips")
         self.chips = [Chip() for _ in range(self.num_chips)]
 
-    # this would have been easier to maintain had I got inspect.getmembers()
-    # to work correctly
     def null_all(self):
         for chip in self.chips:
             chip.vol = chip.filters = chip.cutoff = chip.resonance = \
                 chip.no_sound_v3 = None
             for chn in chip.channels:
+                # Don't include chn.new_note
                 chn.freq = chn.note = chn.adsr = chn.attack = chn.decay = \
                     chn.sustain = chn.release = chn.release_frame = chn.gate_on = \
                     chn.sync_on = chn.ring_on = chn.oscil_on = chn.waveforms = \
                     chn.triangle_on = chn.saw_on = chn.pulse_on = chn.noise_on = \
-                    chn.pulse_width = chn.filtered = chn.df = None  # Not chn.new_note
+                    chn.pulse_width = chn.filtered = chn.df = None
 
 
 @dataclass
 class Dump:
-    sid_file: SidFile = None
+    sid_file: SidFile = None  # Contains the parsed SID file
     sid_base_addrs: List[int] = None  # ordered list of where SIDs are memory mapped
-    rows: List[Row] = None
+    rows: List[Row] = None  # One row for each sample (after each call to the play routine)
 
 
 class SidImport:
@@ -842,8 +941,6 @@ class SidImport:
         # Note: in combination with the frequency tables here, this code determines that
         # C64 freq 602 = C#1.  According to https://sta.c64.org/cbm64sndfreq.html
         # for 440 tuning, C#1 should be freq 587 which is 34.6Hz.
-        # However, I think the webpage assume C0 is 0, not 12, and it's not clear if
-        # freq -> Hz is for PAL or for NTSC (probably PAL)
         # In ChiptunesSAK C4 = note 60 = 261.63Hz
         #
         # siddump.c described the old_note_factor thusly:
@@ -862,18 +959,42 @@ class SidImport:
         return return_note
 
     def call_sid_init(self, init_addr, subtune):
+        """
+        Emulate the call to the SID's initialization routine
+
+        Init routines do various things like relocate code/data in memory,
+        setting up interrupts, etc.
+
+        :param init_addr: The entry point for the initialization routine
+        :type init_addr: int
+        :param subtune: The subtune for which to initialize the playback
+        :type subtune: int
+        """
         self.cpu_state.init_cpu(init_addr, subtune)
         while self.cpu_state.runcpu():
             if self.cpu_state.pc > MAX_INSTR:
                 raise Exception("CPU executed a high number of instructions in init routine")
 
     def call_sid_play(self, play_addr):
+        """
+        Emulate the call to the SID's play routine
+
+        Will return once emulation:
+        - hits a BRK
+        - hits an RTI or RTS, if the stack is empty(ish)
+        - any other criteria put into the while loop body (PC in certain
+          memory ranges, etc.)
+
+        Usually called once per jiffy
+        TODO: mutli-speed not yet supported
+
+        :param play_addr: The entry point for the play routine
+        :type play_addr: int
+        """
         # This resets the stack each time
         self.cpu_state.init_cpu(play_addr)
 
         # While loop to process play routine
-        # Exits on BRK, on RTI or RTS if stack empty(ish), and any exit criteria in the
-        #     while loop body (PC in certain memory ranges, etc.)
         while self.cpu_state.runcpu():
             if self.cpu_state.pc > MAX_INSTR:
                 raise Exception("CPU executed a high number of instructions in play routine")
@@ -907,6 +1028,25 @@ class SidImport:
                 return  # done with play call
 
     def import_sid(self, filename, subtune=0, first_frame=0, old_note_factor=1, seconds=60):
+        """
+        Emulates the SID song execution, watches how the machine language program
+        interacts with the virtual SID chip(s), and records these interactions
+        on a call-by-call basis (on the play routine).
+
+        :param filename: The filename of the SID song to import
+        :type filename: string
+        :param subtune: the subtune to import, defaults to 0
+        :type subtune: int, optional
+        :param first_frame: the first frame to begin capture upon, defaults to 0
+        :type first_frame: int, optional
+        :param old_note_factor: degree to which previous note influences creation of new notes
+        :type old_note_factor: int, optional
+        :param seconds: seconds to capture, defaults to 60
+        :type seconds: int, optional
+        :return: A SID dump instance
+        :rtype: Dump
+        """
+
         sid_dump = Dump()
         sid_dump.sid_file = SidFile()
         sid_dump.sid_file.parse_file(filename)

@@ -1,13 +1,10 @@
 import examplesPath  # noqa
-from ctsConstants import project_to_absolute_path, DEFAULT_ARCH, ARCH, CONCERT_A
+from ctsConstants import project_to_absolute_path
 import ctsSID
 import ctsMidi
 
 # TODO:
 # The rchirp song goes way too fast when converted to midi, figure out why
-#
-# Notes:
-# gongs: f# +.5-> g +.5-> a# +1.5-> b +.5-> c# +1.0v-> d +1.5-> f +.5-> f#
 #
 # Sound comparison:
 # https://deepsid.chordian.net/?file=/MUSICIANS/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid
@@ -15,23 +12,24 @@ import ctsMidi
 # Dump comparison:
 # ./siddump.exe Master_of_the_Lamps_PAL.sid -a6
 
-# TODO: Note, can't rely on subtune length in deepsid, going to need to lengthen each
-
+# 3 genies * 7 pieces * (1 tunnel level + 1 music level) + final tunnel = 43 levels
+#     odd numbers are tunnels, even numbers are genies
+#     1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42, final tunnel: level 43
 # subtunes to extract
-to_extract = [
+to_extract = [  # TODO: these times are incorrect
     # [10, "getting on carpet", 17],
     # [7, "carpet liftoff", 5],
     # [9, "fell off carpet", 5],
     # [8, "finished level", 8],
     # [11, "game won", 25],
-    # [3, "TODO", 72],
-    # [0, "level 1", 50],
-    # [1, "level 2", 67],
-    # [2, "level 3", 49],
-    # [4, "level 4", 75],
-    # [5, "level 5", 68],
-    [6, "level 6", 55],    # TODO: Change this back to 55 seconds
-    # [12, "level 7", 62],
+    # [0, "tunnel 1", 50],  # level 1, 15, 29
+    # [1, "tunnel 2", 67],  # level 3, 17, 31
+    # [2, "tunnel 3", 49],  # level 5, 19, 33
+    # [3, "tunnel 4", 75],  # level 7, 21, 35
+    # [4, "tunnel 5", 68],  # level 9, 23, 37
+    [5, "tunnel 6", 55],   # level 11, 25, 39
+    # [6, "tunnel 7", 68],  # level 13, 27, 41
+    # [12, "tunnel 8", 62],  # level 43
 ]
 
 
