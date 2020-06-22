@@ -176,6 +176,11 @@ def freq_to_midi_num(freq, tuning=CONCERT_A):
     :return: (midi_num, cents)
     :rtype: tuple of int, int
     """
+
+    # SID oscillator val 0 is legit on a C64, but invites log(0) badness
+    if freq <= 0:
+        raise ChiptuneSAKValueError("Error: Illegal frequency %d" % freq)
+
     midi_num_float = (log2(freq) - log2(tuning)) * 12. + A4_MIDI_NUM
     midi_num = int(round(midi_num_float))
     cents = int(round((midi_num_float - midi_num) * 100))
@@ -195,7 +200,9 @@ def freq_arch_to_midi_num(arch_freq, arch='NTSC-C64', tuning=CONCERT_A):
     """
     if arch not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
-    freq = arch_freq * ARCH[arch].system_clock / 0x1000000
+
+    freq = freq_arch_to_freq(arch_freq, arch)
+
     return freq_to_midi_num(freq, tuning)
 
 
@@ -212,7 +219,26 @@ def freq_arch_to_freq(arch_freq, arch='NTSC-C64'):
     """
     if arch not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
+
     return arch_freq * ARCH[arch].system_clock / 0x1000000
+
+
+def freq_to_freq_arch(freq, arch='NTSC-C64'):
+    """
+    Converts an audio frequency into an architecture-based frequency
+    (e.g., a SID oscillator freq)
+
+    :param freq: an audio frequency
+    :type freq: int
+    :param arch: Architecture description string, defaults to 'NTSC-C64'
+    :type arch: str, optional
+    :return: frequency as specified in the architecture
+    :rtype: int
+    """
+    if arch not in ('NTSC-C64', 'PAL-C64'):
+        raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
+
+    return freq * 0x1000000 / ARCH[arch].system_clock
 
 
 def project_to_absolute_path(file_path):

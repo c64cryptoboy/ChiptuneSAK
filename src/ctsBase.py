@@ -26,7 +26,7 @@ class SongMetadata:
     copyright: str = ''  #: Copyright statement
     time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)  #: Starting time signature
     key_signature: KeySignatureEvent = KeySignatureEvent(0, ctsKey.ChirpKey('C'))  #: Starting key signature
-    qpm: int = 112  #: Tmpo in Quarter Notes per Minute (QPM)
+    qpm: int = 112  #: Tempo in Quarter Notes per Minute (QPM)
     extensions: dict = field(default_factory=dict)  #: Allows arbitrary state to be passed
 
 
@@ -231,8 +231,8 @@ def pitch_to_note_name(note_num, octave_offset=0):
     :type note_num:
     :param octave_offset:
     :type octave_offset:
-    :return:
-    :rtype:
+    :return: string representation of note and octave
+    :rtype: str
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)

@@ -3,11 +3,11 @@
 # SidDump class:
 #    Playback details for PSID/RSID ("The SID file environment")
 #    - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
-
+#
 #    has some support for RSIDs.  From sid documentation concerning RSIDs:
-#     "Tunes that are multi-speed and/or contain samples and/or use additional interrupt
-#     sources or do busy looping will cause older SID emulators to lock up or play very
-#     wrongly (if at all)."
+#    "Tunes that are multi-speed and/or contain samples and/or use additional interrupt
+#    sources or do busy looping will cause older SID emulators to lock up or play very
+#    wrongly (if at all)."
 #
 #    siddump.c was very helpful as a conceptual reference for SidImport:
 #    - https://csdb.dk/release/?id=152422
@@ -15,7 +15,6 @@
 # SidImport TODO:
 # - generate note names using chiptunesak libraires
 # - generate freq tables using chiptunesak libraries
-# - docstring everything
 # - siddump.c has an option -c for frequency recalibration, where the user can
 #   manually supply a base frequency for better note matching.  Reimplement this,
 #   but also create a classmethod that will return the tuning (from a full pass).
@@ -32,7 +31,7 @@ from functools import reduce
 import copy
 from dataclasses import dataclass
 from typing import List
-from ctsConstants import DEFAULT_ARCH, ARCH, freq_arch_to_freq
+from ctsConstants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
 from ctsBytesUtil import big_endian_int, little_endian_int
 from ctsBase import ChiptuneSAKIO
 import ctsThinC64Emulator
@@ -85,7 +84,7 @@ class SID(ChiptuneSAKIO):
     def capture(self):
         importer = SidImport(self.get_option('arch'))
         sid_dump = importer.import_sid(
-            filename=self.get_option('sid_in_filename'),
+            filename=self.get_option('sid_in_filename'),  # SID file to read in
             subtune=self.get_option('subtune'),
             first_frame=self.get_option('first_frame'),
             old_note_factor=self.get_option('old_note_factor'),
@@ -278,7 +277,7 @@ class SID(ChiptuneSAKIO):
         The SidImport class samples SID chip state after each call to the play routine.
         This creates 1 row per jiffy (multi-speed not yet supported).
         In most trackers, this would require speed 1 playback (1 jiffy per row), which
-        cannot be achived.  So this method attempts to reduce the number of rows in the
+        cannot be archived.  So this method attempts to reduce the number of rows in the
         representaton.  It does so by computing the greatest common divisor for the
         count of inactive rows between active rows, and then eliminates the unnecessary
         rows (while preserving rhythm structure).
@@ -450,7 +449,7 @@ class SidFile:
 
         # init address is the entry point for the song initialization.
         # If PSID and 0, will be set to the loading address
-        # When calling init, accumulo is set to the subtune number
+        # When calling init, accumulator is set to the subtune number
         self.init_address = big_endian_int(sid_binary[10:12])
 
         # From documentation:
@@ -816,6 +815,7 @@ class Channel:
 
     # TODO: throw away this note naming code stub,
     #       use ctsBase.pitch_to_note_name(midi_num) instead
+    #       Don't call pitch_to_note_name if the midi note is < 0 (< "C-1", our lowest note)
     @classmethod
     def get_note_name(cls, note_num):
         if note_num is None:
@@ -895,11 +895,32 @@ class Row:
                     chn.pulse_width = chn.filtered = chn.df = None
 
 
-@dataclass
 class Dump:
-    sid_file: SidFile = None  # Contains the parsed SID file
-    sid_base_addrs: List[int] = None  # ordered list of where SIDs are memory mapped
-    rows: List[Row] = None  # One row for each sample (after each call to the play routine)
+    def __init__(self, arch=DEFAULT_ARCH):
+        self.sid_file = None  # Contains the parsed SID file
+        self.sid_base_addrs = []  # ordered list of where SIDs are memory mapped
+        self.rows = []  # One row for each sample (after each call to the play routine)
+        self.raw_freqs = []  # List of raw frequencies that can be used to derrive tuning
+        self.arch = arch
+
+    # TODO: Make docstring saying must throw away 1st pass
+    def get_tuning(self):
+        all_cents = []
+        for arch_freq in self.raw_freqs:
+            if arch_freq == 0:
+                continue
+            (midi_num, cents) = freq_arch_to_midi_num(arch_freq, self.arch, tuning=CONCERT_A)
+            all_cents.append(cents)
+
+        avg_cents = sum(all_cents) / len(all_cents)
+        max_cents = max(all_cents)
+        min_cents = min(all_cents)
+        assert (abs(min_cents) <= 50 and abs(max_cents) <= 50), \
+            "Error: not expecting cents to deviate by more than 50 when already derrived from nearest note"
+
+        tuning = CONCERT_A * 2**(avg_cents / 1200)
+
+        return tuning
 
 
 class SidImport:
@@ -935,13 +956,18 @@ class SidImport:
 
     @classmethod
     def get_note(cls, freq, prev_note, old_note_factor, freq_lo, freq_hi):
-        # TODO:  This functionality might move out of this class when replaced
-        # by Knapp logic
-        #
-        # Note: in combination with the frequency tables here, this code determines that
-        # C64 freq 602 = C#1.  According to https://sta.c64.org/cbm64sndfreq.html
-        # for 440 tuning, C#1 should be freq 587 which is 34.6Hz.
-        # In ChiptunesSAK C4 = note 60 = 261.63Hz
+        # TODO: REPLACE ALL THIS LOGIC IN get_note
+        # TODO: if oscillator is 0, replace with lowest note in the lo/hi frequence tables
+        # freq_arch_to_freq(arch_freq, arch)
+        # C-1 is the lowest note ChiptuneSAK handles, and the low-end of C-1 (midi
+        #     note 0) when A4=440 is ~8.0Hz
+        # Freq need to be >= ~8.0, so, for the following inputs:
+        # - NTSC C64, lowest allowed oscil freq is ceil(8.0*0x1000000/1022727) = 132
+        # - PAL C64, lowest allowed is ceil(8.0*0x1000000/985248) = 137
+        # if freq < 8.0:  # if freq < than (the low side of) C-1
+        #    then replace with lowest note in the lo/hi frequency tables
+        # Q: Need to guard against too-high frequencies?
+        # Then come up with some way of using the old_note_factor (cents reasoning)
         #
         # siddump.c described the old_note_factor thusly:
         #     -o<value> "Oldnote-sticky" factor. Default 1, increase for better vibrato display
@@ -1047,7 +1073,7 @@ class SidImport:
         :rtype: Dump
         """
 
-        sid_dump = Dump()
+        sid_dump = Dump(self.arch)
         sid_dump.sid_file = SidFile()
         sid_dump.sid_file.parse_file(filename)
         sid_dump.rows = []
@@ -1201,6 +1227,7 @@ class SidImport:
                 # Next, capture channel-specific values
                 for chn_num, chn in enumerate(row.chips[chip_num].channels):
                     chn.freq = self.cpu_state.get_le_word(sid_addr + 7 * chn_num)
+                    sid_dump.raw_freqs.append(chn.freq)
 
                     # 12-bit pulse
                     # According to Leemon's Mapping the Commodore 64

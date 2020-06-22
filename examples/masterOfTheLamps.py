@@ -3,6 +3,9 @@ from ctsConstants import project_to_absolute_path
 import ctsSID
 import ctsMidi
 
+sid_filename = project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid')
+old_note_factor = 1
+
 # TODO:
 # The rchirp song goes way too fast when converted to midi, figure out why
 #
@@ -17,31 +20,49 @@ import ctsMidi
 #     1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42, final tunnel: level 43
 # subtunes to extract
 to_extract = [  # TODO: these times are incorrect
-    # [10, "getting on carpet", 17],
-    # [7, "carpet liftoff", 5],
-    # [9, "fell off carpet", 5],
-    # [8, "finished level", 8],
-    # [11, "game won", 25],
-    # [0, "tunnel 1", 50],  # level 1, 15, 29
-    # [1, "tunnel 2", 67],  # level 3, 17, 31
-    # [2, "tunnel 3", 49],  # level 5, 19, 33
-    # [3, "tunnel 4", 75],  # level 7, 21, 35
-    # [4, "tunnel 5", 68],  # level 9, 23, 37
+    [10, "getting on carpet", 17],
+    [7, "carpet liftoff", 5],
+    [9, "fell off carpet", 5],
+    [8, "finished level", 8],
+    [11, "game won", 25],
+    [0, "tunnel 1", 50],  # level 1, 15, 29
+    [1, "tunnel 2", 67],  # level 3, 17, 31
+    [2, "tunnel 3", 49],  # level 5, 19, 33
+    [3, "tunnel 4", 75],  # level 7, 21, 35
+    [4, "tunnel 5", 68],  # level 9, 23, 37
     [5, "tunnel 6", 55],   # level 11, 25, 39
-    # [6, "tunnel 7", 68],  # level 13, 27, 41
-    # [12, "tunnel 8", 62],  # level 43
+    [6, "tunnel 7", 68],  # level 13, 27, 41
+    [12, "tunnel 8", 62],  # level 43
 ]
 
 
-def main():
+def find_tunings():
+    for entry in to_extract:
+        (subtune, desc, seconds) = entry
+
+        # get a 10 second sample to determine tuning
+        sid = ctsSID.SID()
+        sid.set_options(
+            sid_in_filename=sid_filename,
+            subtune=subtune,
+            old_note_factor=old_note_factor,
+            seconds=10,
+            gcf_row_reduce=False,
+        )
+        sid_dump = sid.capture()
+        tuning = sid_dump.get_tuning()
+        print('subtune {:d}, desc {}, tuning {:6.3f}'.format(subtune, desc, tuning))
+
+
+def create_output_files():
     for entry in to_extract:
         (subtune, desc, seconds) = entry
 
         sid = ctsSID.SID()
         sid.set_options(
-            sid_in_filename=project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid'),
+            sid_in_filename=sid_filename,
             subtune=subtune,
-            old_note_factor=1,
+            old_note_factor=old_note_factor,
             seconds=seconds,
             gcf_row_reduce=True,
         )
@@ -61,4 +82,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    find_tunings()
+    # create_output_files()
