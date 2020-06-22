@@ -13,11 +13,9 @@
 #    - https://csdb.dk/release/?id=152422
 #
 # SidImport TODO:
-# - generate note names using chiptunesak libraires
 # - generate freq tables using chiptunesak libraries
 # - siddump.c has an option -c for frequency recalibration, where the user can
-#   manually supply a base frequency for better note matching.  Reimplement this,
-#   but also create a classmethod that will return the tuning (from a full pass).
+#   manually supply a base frequency for better note matching.  Use the new automatic tuning.
 # - iterate over a collection a SIDs for code coverage testing
 # - implement the SID header speed settings?
 #
@@ -33,7 +31,7 @@ from dataclasses import dataclass
 from typing import List
 from ctsConstants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
 from ctsBytesUtil import big_endian_int, little_endian_int
-from ctsBase import ChiptuneSAKIO
+from ctsBase import ChiptuneSAKIO, pitch_to_note_name
 import ctsThinC64Emulator
 from ctsErrors import ChiptuneSAKValueError
 import ctsRChirp
@@ -209,8 +207,8 @@ class SID(ChiptuneSAKIO):
                         csv_row.append(chn.df, '- {:d}')
                     else:
                         csv_row.append(chn.df, '+ {:d}')
-                    csv_row.append(self.get_val(Channel.get_note_name(chn.note)))
-                    csv_row.append(self.get_val(chn.note))  # TODO: Not yet a midi note?
+                    csv_row.append(chn.get_note_name())
+                    csv_row.append(self.get_val(chn.note))
                     if chn.freq is not None:
                         csv_row.append('{:.3f}'.format(
                             freq_arch_to_freq(chn.freq, self.get_option('arch'))))
@@ -813,23 +811,14 @@ class Channel:
             result += '.'
         return result
 
-    # TODO: throw away this note naming code stub,
-    #       use ctsBase.pitch_to_note_name(midi_num) instead
-    #       Don't call pitch_to_note_name if the midi note is < 0 (< "C-1", our lowest note)
-    @classmethod
-    def get_note_name(cls, note_num):
-        if note_num is None:
+    def get_note_name(self):
+        if self.note is None:
             return ''
-        note_name = [
-            "C-0", "C#0", "D-0", "D#0", "E-0", "F-0", "F#0", "G-0", "G#0", "A-0", "A#0", "B-0",
-            "C-1", "C#1", "D-1", "D#1", "E-1", "F-1", "F#1", "G-1", "G#1", "A-1", "A#1", "B-1",
-            "C-2", "C#2", "D-2", "D#2", "E-2", "F-2", "F#2", "G-2", "G#2", "A-2", "A#2", "B-2",
-            "C-3", "C#3", "D-3", "D#3", "E-3", "F-3", "F#3", "G-3", "G#3", "A-3", "A#3", "B-3",
-            "C-4", "C#4", "D-4", "D#4", "E-4", "F-4", "F#4", "G-4", "G#4", "A-4", "A#4", "B-4",
-            "C-5", "C#5", "D-5", "D#5", "E-5", "F-5", "F#5", "G-5", "G#5", "A-5", "A#5", "B-5",
-            "C-6", "C#6", "D-6", "D#6", "E-6", "F-6", "F#6", "G-6", "G#6", "A-6", "A#6", "B-6",
-            "C-7", "C#7", "D-7", "D#7", "E-7", "F-7", "F#7", "G-7", "G#7", "A-7", "A#7", "B-7"]
-        return note_name[note_num]
+
+        if self.note < 0:
+            return str(self.note)  # out of range
+
+        return pitch_to_note_name(self.note)
 
 
 @dataclass
@@ -920,7 +909,7 @@ class Dump:
 
         tuning = CONCERT_A * 2**(avg_cents / 1200)
 
-        return tuning
+        return (tuning, min_cents, max_cents)
 
 
 class SidImport:
