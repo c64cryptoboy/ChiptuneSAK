@@ -71,7 +71,7 @@ class Measure:
                 min_duration = min(shortest_triplet.duration, shortest_triplet.start_time - triplet_start_time)
                 triplet_duration = 3 * min_duration
                 while triplet_start_time + triplet_duration <= shortest_triplet.start_time:
-                    triplet_duration *= 2
+                    triplet_start_time += triplet_duration
             else:  # Note is on the beat so triplet starts on the beat
                 triplet_start_time = shortest_triplet.start_time
                 # Assume the note is a triplet (remember it is the shortest) unless proven otherwise
