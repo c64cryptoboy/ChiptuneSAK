@@ -1,10 +1,10 @@
-import testingPath  # noqa
 import unittest
-import ctsTestingTools
-import ctsMChirp
-import ctsMidi
-import ctsML64
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak import ctsTestingTools
+from chiptunesak import ctsMChirp
+from chiptunesak import ctsMidi
+from chiptunesak import ctsML64
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 
 class TestExportML64(unittest.TestCase):
@@ -15,8 +15,8 @@ class TestExportML64(unittest.TestCase):
 
         ml64 = ctsML64.ML64()
 
-        midi_file = project_to_absolute_path('test/data/jingleBellsSDG.mid')
-        known_good_ml64_file = project_to_absolute_path('test/data/jingleBellsSDG_good.ml64')
+        midi_file = project_to_absolute_path('tests/data/jingleBellsSDG.mid')
+        known_good_ml64_file = project_to_absolute_path('tests/data/jingleBellsSDG_good.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.MIDI().to_chirp(midi_file)
@@ -28,8 +28,8 @@ class TestExportML64(unittest.TestCase):
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
-        midi_file = project_to_absolute_path('test/data/bach_invention_4.mid')
-        known_good_ml64_file = project_to_absolute_path('test/data/bach_invention_4_good.ml64')
+        midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
+        known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.MIDI().to_chirp(midi_file)
@@ -47,8 +47,8 @@ class TestExportML64(unittest.TestCase):
         """
         ml64 = ctsML64.ML64()
 
-        midi_file = project_to_absolute_path('test/data/bach_invention_4.mid')
-        known_good_ml64_file = project_to_absolute_path('test/data/bach_invention_4_good_std.ml64')
+        midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
+        known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good_std.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.MIDI().to_chirp(midi_file)
@@ -65,8 +65,8 @@ class TestExportML64(unittest.TestCase):
         """
         ml64 = ctsML64.ML64()
 
-        midi_file = project_to_absolute_path('test/data/tripletTest.mid')
-        known_good_ml64_file = project_to_absolute_path('test/data/tripletTest_good.ml64')
+        midi_file = project_to_absolute_path('tests/data/tripletTest.mid')
+        known_good_ml64_file = project_to_absolute_path('tests/data/tripletTest_good.ml64')
         known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = ctsMidi.MIDI().to_chirp(midi_file)

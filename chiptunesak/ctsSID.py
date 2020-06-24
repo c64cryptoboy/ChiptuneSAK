@@ -29,12 +29,12 @@ from functools import reduce
 import copy
 from dataclasses import dataclass
 from typing import List
-from ctsConstants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
-from ctsBytesUtil import big_endian_int, little_endian_int
-from ctsBase import ChiptuneSAKIO, pitch_to_note_name
-import ctsThinC64Emulator
-from ctsErrors import ChiptuneSAKValueError
-import ctsRChirp
+from chiptunesak.ctsConstants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
+from chiptunesak.ctsBytesUtil import big_endian_int, little_endian_int
+from chiptunesak.ctsBase import ChiptuneSAKIO, pitch_to_note_name
+from chiptunesak import ctsThinC64Emulator
+from chiptunesak.ctsErrors import ChiptuneSAKValueError
+from chiptunesak import ctsRChirp
 
 
 class SID(ChiptuneSAKIO):
@@ -776,9 +776,9 @@ class Channel:
         Set individual waveform flags (16 possible combinations)
         """
         self.triangle_on = self.waveforms & 0b0001 != 0  # noqa
-        self.saw_on      = self.waveforms & 0b0010 != 0  # noqa    
-        self.pulse_on    = self.waveforms & 0b0100 != 0  # noqa                 
-        self.noise_on    = self.waveforms & 0b1000 != 0  # noqa 
+        self.saw_on      = self.waveforms & 0b0010 != 0  # noqa
+        self.pulse_on    = self.waveforms & 0b0100 != 0  # noqa
+        self.noise_on    = self.waveforms & 0b1000 != 0  # noqa
 
     @classmethod
     def waveforms_str(cls, waveforms):

@@ -1,13 +1,13 @@
-import testingPath  # noqa
 import unittest
-import ctsTestingTools
-import ctsMChirp
-import ctsMidi
-import ctsC128Basic
-import ctsConstants
 
-TEST_FILE = ctsConstants.project_to_absolute_path('test/data/BWV_799.mid')
-KNOWN_GOOD = ctsConstants.project_to_absolute_path('test/data/BWV_799_known_good.bas')
+from chiptunesak import ctsTestingTools
+from chiptunesak import ctsMChirp
+from chiptunesak import ctsMidi
+from chiptunesak import ctsC128Basic
+from chiptunesak import ctsConstants
+
+TEST_FILE = ctsConstants.project_to_absolute_path('tests/data/BWV_799.mid')
+KNOWN_GOOD = ctsConstants.project_to_absolute_path('tests/data/BWV_799_known_good.bas')
 
 
 class TestC128BASIC(unittest.TestCase):

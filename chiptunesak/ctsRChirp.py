@@ -15,9 +15,9 @@
 import copy
 from functools import reduce
 import math
-import ctsChirp
-from ctsBase import *
-import ctsConstants
+from chiptunesak import ctsChirp
+from chiptunesak.ctsBase import *
+from chiptunesak import ctsConstants
 from dataclasses import dataclass
 
 
@@ -103,8 +103,7 @@ class RChirpVoice:
         self.orderlist = RChirpOrderList()
         self.name = ''
         if chirp_track is not None:
-            tmp = str(type(chirp_track))
-            if tmp != "<class 'ctsChirp.ChirpTrack'>":
+            if not isinstance(chirp_track, ctsChirp.ChirpTrack):
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
                 self.import_chirp_track(chirp_track)
@@ -411,8 +410,7 @@ class RChirpSong(ChiptuneSAKBase):
             self.metadata = SongMetadata()
         else:
             self.metadata = copy.deepcopy(chirp_song.metadata)
-            tmp = str(type(chirp_song))
-            if tmp != "<class 'ctsChirp.ChirpSong'>":
+            if not isinstance(chirp_song, ctsChirp.ChirpSong):
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
             else:
                 self.import_chirp_song(chirp_song)

@@ -2,9 +2,8 @@ import re
 import collections
 from dataclasses import dataclass, field
 from fractions import Fraction
-from ctsErrors import *
-import ctsConstants
-import ctsKey
+from chiptunesak.ctsErrors import *
+from chiptunesak import ctsConstants, ctsKey
 
 
 # Named tuple types for several lists throughout

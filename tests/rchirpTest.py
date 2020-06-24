@@ -1,12 +1,11 @@
-import testingPath  # noqa
 import unittest
-import ctsMidi
-import ctsRChirp
-from ctsConstants import project_to_absolute_path
+from chiptunesak import ctsMidi
+from chiptunesak import ctsRChirp
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 
-SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
-GT_TEST_SONG = project_to_absolute_path('test/data/twinkle.sng')
+SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
+GT_TEST_SONG = project_to_absolute_path('tests/data/twinkle.sng')
 
 
 class RChirpSongTestCase(unittest.TestCase):

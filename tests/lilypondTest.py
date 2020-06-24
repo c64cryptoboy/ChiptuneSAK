@@ -1,14 +1,14 @@
-import testingPath  # noqa
 import unittest
-import ctsMChirp
-import ctsMidi
-import ctsTestingTools
-import ctsLilypond
-from ctsConstants import project_to_absolute_path
 
-MIDI_TEST_FILE = project_to_absolute_path('test/data/bach_invention_4.mid')
-KNOWN_GOOD_LY_FILE_CLIP = project_to_absolute_path('test/data/bach_invention_4_clip_good.ly')
-TEST_LY_FILE_CLIP = project_to_absolute_path('test/data/test_bach_invention_4_clip_good.ly')
+from chiptunesak import ctsMChirp
+from chiptunesak import ctsMidi
+from chiptunesak import ctsTestingTools
+from chiptunesak import ctsLilypond
+from chiptunesak.ctsConstants import project_to_absolute_path
+
+MIDI_TEST_FILE = project_to_absolute_path('tests/data/bach_invention_4.mid')
+KNOWN_GOOD_LY_FILE_CLIP = project_to_absolute_path('tests/data/bach_invention_4_clip_good.ly')
+TEST_LY_FILE_CLIP = project_to_absolute_path('tests/data/test_bach_invention_4_clip_good.ly')
 
 
 class TestExportLilypond(unittest.TestCase):

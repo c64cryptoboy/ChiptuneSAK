@@ -1,9 +1,8 @@
 import sys
-import testingPath  # noqa
 import collections
 
 import matplotlib.pyplot as plt
-import ctsMidi
+from chiptunesak import ctsMidi
 
 
 def plot_hist(track):

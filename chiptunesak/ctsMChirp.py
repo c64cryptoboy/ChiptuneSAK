@@ -1,6 +1,6 @@
 import copy
-from ctsBase import *
-import ctsChirp
+from chiptunesak.ctsBase import *
+from chiptunesak import ctsChirp
 import more_itertools as moreit
 
 """ Definition and methods for ctsMChirp.MChirpSong representation """
@@ -249,8 +249,7 @@ class MChirpTrack:
         self.qticks_notes = mchirp_song.qticks_notes  #: Inherit quantization from song
         self.qticks_durations = mchirp_song.qticks_durations  #: Inherit quantization from song
         if chirp_track is not None:
-            tmp = str(type(chirp_track))
-            if tmp != "<class 'ctsChirp.ChirpTrack'>":
+            if not isinstance(chirp_track, ctsChirp.ChirpTrack):
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
                 self.import_chirp_track(chirp_track)

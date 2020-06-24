@@ -1,8 +1,6 @@
-import examplesPath  # noqa
-# from ctsBase import *  # Flake8 thinks this is unused
-import ctsMidi
-import ctsGoatTracker
-from ctsConstants import project_to_absolute_path
+from chiptunesak import ctsMidi
+from chiptunesak import ctsGoatTracker
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 """
 This minimal example imports a GoatTracker song and exports as MIDI.

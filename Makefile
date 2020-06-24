@@ -7,7 +7,7 @@ lint:
 	flake8 .
 
 test:
-	cd test/ && python3 -m unittest discover -p "*Test.py" -v
+	cd tests/ && python3 -m unittest discover -p "*Test.py" -v
 	# @$(MAKE) -C examples python3 lechuck.py
 
 clean:

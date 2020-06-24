@@ -1,6 +1,5 @@
-import testingPath  # noqa
 import unittest
-import ctsGenPrg  # src/
+from chiptunesak import ctsGenPrg  # src/
 
 
 class TestExportPRG(unittest.TestCase):

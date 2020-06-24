@@ -1,6 +1,6 @@
-from ctsBase import *
-import ctsChirp
-import ctsConstants
+from chiptunesak.ctsBase import *
+from chiptunesak import ctsChirp, ctsMChirp
+from chiptunesak import ctsConstants
 
 '''
 This file contains functions required to export MidiSimple songs to ML64 format.
@@ -123,13 +123,12 @@ class ML64(ChiptuneSAKIO):
 
         """
         self.set_options(**kwargs)
-        tmp_type = str(type(song))
-        if tmp_type == "<class 'ctsChirp.ChirpSong'>":
+        if isinstance(song, ctsChirp.ChirpSong):
             if self.format == 'm':
                 raise ChiptuneSAKTypeError("Cannot export Chirp song to Measures format")
             else:
                 return self.export_chirp_to_ml64(song)
-        elif tmp_type == "<class 'ctsMChirp.MChirpSong'>":
+        elif isinstance(song, ctsMChirp.MChirpSong):
             if self.format != 'm':
                 tmp_song = ctsChirp.ChirpSong(song)
                 tmp_song.quantize(*tmp_song.estimate_quantization())
@@ -137,7 +136,7 @@ class ML64(ChiptuneSAKIO):
             else:
                 return self.export_mchirp_to_ml64(song)
         else:
-            raise ChiptuneSAKTypeError("Cannot export object of type {tmp_type} to ML64")
+            raise ChiptuneSAKTypeError(f"Cannot export object of type {str(type(song))} to ML64")
 
     def to_file(self, song, filename, **kwargs):
         """

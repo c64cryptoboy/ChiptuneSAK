@@ -1,11 +1,10 @@
 # Tests of 6502 Emulation
 #
 
-import testingPath  # noqa
 import unittest
-import cts6502Emulator
-import ctsThinC64Emulator
-from ctsConstants import ARCH
+from chiptunesak import cts6502Emulator
+from chiptunesak import ctsThinC64Emulator
+from chiptunesak.ctsConstants import ARCH
 
 VERBOSE = False
 

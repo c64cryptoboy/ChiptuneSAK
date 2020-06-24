@@ -1,11 +1,11 @@
 # Lower MChirp to C128 BASIC PLAY commands
 
 import collections
-import ctsConstants
-import ctsBase
-import ctsGenPrg
-import ctsChirp
-from ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
+from chiptunesak import ctsConstants
+from chiptunesak import ctsBase
+from chiptunesak import ctsGenPrg
+from chiptunesak import ctsChirp
+from chiptunesak.ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
 WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
 

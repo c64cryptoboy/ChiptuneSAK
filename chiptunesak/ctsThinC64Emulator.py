@@ -7,10 +7,10 @@
 #   the ROM wasn't loaded, then throw a stern warning.  This needs to be optional (default off),
 #   since in many places we stub our own ROM stuff, but this could be useful for SIDs.
 
-import ctsConstants
-from ctsBytesUtil import read_binary_file
-from ctsErrors import ChiptuneSAKContentError
-import cts6502Emulator
+from chiptunesak import ctsConstants
+from chiptunesak.ctsBytesUtil import read_binary_file
+from chiptunesak.ctsErrors import ChiptuneSAKContentError
+from chiptunesak import cts6502Emulator
 
 
 class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):

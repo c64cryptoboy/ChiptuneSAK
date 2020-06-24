@@ -6,7 +6,7 @@ from fractions import Fraction
 from dataclasses import dataclass
 from pathlib import Path
 from math import log2
-from ctsErrors import *
+from chiptunesak.ctsErrors import *
 
 
 # Version information.  Update BUILD_VERSION with every significant bugfix;

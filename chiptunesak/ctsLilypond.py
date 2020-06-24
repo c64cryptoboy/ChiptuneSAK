@@ -1,7 +1,7 @@
 import copy
 
-from ctsBase import *
-from ctsChirp import Note
+from chiptunesak.ctsBase import *
+from chiptunesak.ctsChirp import Note
 
 
 # TODO:

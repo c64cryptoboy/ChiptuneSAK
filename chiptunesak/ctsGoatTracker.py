@@ -14,11 +14,11 @@ from os import path, listdir
 from os.path import isfile, join
 import copy
 from dataclasses import dataclass
-import ctsConstants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
-import ctsBase
-from ctsBytesUtil import read_binary_file
-import ctsRChirp
-from ctsErrors import *
+from chiptunesak import ctsConstants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
+from chiptunesak import ctsBase
+from chiptunesak.ctsBytesUtil import read_binary_file
+from chiptunesak import ctsRChirp
+from chiptunesak.ctsErrors import *
 
 
 DEFAULT_INSTR_PATH = 'res/gtInstruments/'

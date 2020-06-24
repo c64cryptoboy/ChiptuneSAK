@@ -1,12 +1,12 @@
 import copy
-import testingPath  # noqa
 import unittest
-import ctsMidi
-import ctsChirp
-from ctsConstants import project_to_absolute_path
 
-SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
-TRACK_TEST_SONG = project_to_absolute_path('test/data/BWV_799.mid')
+from chiptunesak import ctsMidi
+from chiptunesak import ctsChirp
+from chiptunesak.ctsConstants import project_to_absolute_path
+
+SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
+TRACK_TEST_SONG = project_to_absolute_path('tests/data/BWV_799.mid')
 
 
 class SongTestCase(unittest.TestCase):

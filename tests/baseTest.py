@@ -1,7 +1,7 @@
-import testingPath  # noqa
 import unittest
-import ctsConstants
-from ctsBase import *
+
+from chiptunesak import ctsConstants
+from chiptunesak.ctsBase import note_name_to_pitch, pitch_to_note_name
 
 
 class BaseTestCase(unittest.TestCase):

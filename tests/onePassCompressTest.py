@@ -1,12 +1,12 @@
-import testingPath  # noqa
 import unittest
-import ctsGoatTracker
-import ctsOnePassCompress
-import ctsConstants
-import ctsRChirp
-import ctsMidi
 
-COMPRESS_TEST_SONG = ctsConstants.project_to_absolute_path('test/data/BWV_799.mid')
+from chiptunesak import ctsGoatTracker
+from chiptunesak import ctsOnePassCompress
+from chiptunesak import ctsConstants
+from chiptunesak import ctsRChirp
+from chiptunesak import ctsMidi
+
+COMPRESS_TEST_SONG = ctsConstants.project_to_absolute_path('tests/data/BWV_799.mid')
 
 
 class TestCompression(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestCompression(unittest.TestCase):
         rchirp_song = compressor.compress(rchirp_song, min_length=8)
 
         exporter = ctsGoatTracker.GoatTracker()
-        exporter.to_file(rchirp_song, '../test/data/gt_test_out.sng')
+        exporter.to_file(rchirp_song, '../tests/data/gt_test_out.sng')
 
         self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
@@ -50,7 +50,7 @@ class TestCompression(unittest.TestCase):
         gt_io = ctsGoatTracker.GoatTracker()
 
         # Convert goattracker sng to an rchirp
-        rchirp_song = gt_io.to_rchirp(str(ctsConstants.project_to_absolute_path('test/data/gtTestData.sng')))
+        rchirp_song = gt_io.to_rchirp(str(ctsConstants.project_to_absolute_path('tests/data/gtTestData.sng')))
 
         # create patterns and orderlists
         compressor = ctsOnePassCompress.OnePassLeftToRight()

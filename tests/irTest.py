@@ -1,10 +1,9 @@
 import copy
-import testingPath  # noqa
 import unittest
-import ctsMidi
-from ctsConstants import project_to_absolute_path
+from chiptunesak import ctsMidi
+from chiptunesak.ctsConstants import project_to_absolute_path
 
-SONG_TEST_SONG = project_to_absolute_path('test/data/twinkle.mid')
+SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
 
 
 class ChirpConversionTestCase(unittest.TestCase):

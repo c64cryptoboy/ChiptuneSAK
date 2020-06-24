@@ -1,9 +1,9 @@
 import os
 import csv
-import ctsConstants
-from ctsBase import *
-from ctsChirp import ChirpSong, ChirpTrack, Note
-from ctsMidi import MIDI
+from chiptunesak import ctsConstants
+from chiptunesak.ctsBase import *
+from chiptunesak.ctsChirp import ChirpSong, ChirpTrack, Note
+from chiptunesak.ctsMidi import MIDI
 
 
 class Ultima4Song:

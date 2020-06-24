@@ -1,7 +1,7 @@
 import sys
 import mido
-from ctsBase import *
-from ctsChirp import Note, ChirpTrack, ChirpSong
+from chiptunesak.ctsBase import *
+from chiptunesak.ctsChirp import Note, ChirpTrack, ChirpSong
 
 
 def sort_midi_events(msg):

@@ -1,12 +1,11 @@
-import testingPath  # noqa
 import unittest
-import ctsMidi
-from ctsBase import *
-from ctsMChirp import MChirpSong
-from ctsChirp import ChirpSong
-from ctsConstants import project_to_absolute_path
+from chiptunesak import ctsMidi
+from chiptunesak.ctsBase import *
+from chiptunesak.ctsMChirp import MChirpSong
+from chiptunesak.ctsChirp import ChirpSong
+from chiptunesak.ctsConstants import project_to_absolute_path
 
-TEST_SONG = project_to_absolute_path('test/data/bach_invention_4.mid')
+TEST_SONG = project_to_absolute_path('tests/data/bach_invention_4.mid')
 
 
 class SongTestCase(unittest.TestCase):
@@ -52,7 +51,7 @@ class SongTestCase(unittest.TestCase):
         self.assertEqual(test_total_notes, chirp_total_notes)
 
     def test_triplets(self):
-        test_song = ctsMidi.MIDI().to_chirp(project_to_absolute_path('test/data/tripletTest.mid'))
+        test_song = ctsMidi.MIDI().to_chirp(project_to_absolute_path('tests/data/tripletTest.mid'))
         estimated_q = test_song.estimate_quantization()
         test_song.quantize(*estimated_q)
         test_song.remove_polyphony()
