@@ -10,6 +10,20 @@ No releases yet
 Development History
 -------------------
 
+0.3.2 (2020-06-22)
+++++++++++++++++++
+* New triplet parsing
+
+* Expanded examples
+
+* Frequency conversion functions added
+
+0.3.1 (2020-06-07)
+++++++++++++++++++
+* Improved documentation
+
+* SID header parsing
+
 0.3.0 (2020-05-12)
 ++++++++++++++++++
 
