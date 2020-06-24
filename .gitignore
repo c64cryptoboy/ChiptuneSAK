@@ -36,6 +36,7 @@ test/data/Yofa_test.mid
 /test/Betrayal_q.mid
 /test/Betrayal_test_q.mid
 /test/data/bach_invention_4.pdf
+tests/data/gt_test_out.sng
 
 # Other Stuff
 *.doctree
