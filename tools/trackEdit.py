@@ -1,7 +1,7 @@
-import toolsPath  # noqa
 import argparse
 from os import path
-import ctsMidi
+
+from chiptunesak import ctsMidi
 
 
 def main():

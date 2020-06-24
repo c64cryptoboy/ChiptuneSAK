@@ -2,7 +2,8 @@ import sys
 import fractions
 from dataclasses import dataclass
 import collections
-import ctsChirp
+
+from chiptunesak import ctsChirp
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 

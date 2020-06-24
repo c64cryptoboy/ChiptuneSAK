@@ -1,12 +1,12 @@
 # Script to make sid header histograms for all the sids in an HVSC zip file
 # TODO: Currently assumes that the file is not double zipped
 
-import toolsPath  # noqa
 import operator
 import zipfile
 import itertools
-from ctsConstants import project_to_absolute_path
-import ctsSID
+
+from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import ctsSID
 
 HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')
 
@@ -85,7 +85,7 @@ for category, hist in histograms.items():
 '''
 Histograms:
 
-magic_id:       
+magic_id:
   b'PSID': 49119
   b'RSID': 3208
 

@@ -7,14 +7,14 @@
 #
 # to run: python -m unittest -v tests
 
-import emulatorTestsPath  # noqa
 import unittest
-import cts6502Emulator
-import ctsThinC64Emulator
 import string
 from parameterized import parameterized
-from ctsBytesUtil import read_binary_file
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak import cts6502Emulator
+from chiptunesak import ctsThinC64Emulator
+from chiptunesak.ctsBytesUtil import read_binary_file
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 
 # translate alphabet from mixed-case (mode) petscii to ascii

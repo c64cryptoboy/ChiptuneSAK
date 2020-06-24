@@ -1,8 +1,8 @@
 import argparse
 import subprocess
-import toolsPath  # noqa
-import ctsMidi
-import ctsLilypond
+
+from chiptunesak import ctsMidi
+from chiptunesak import ctsLilypond
 
 """
 Prints a MIDI file to Lilypond sheet music.

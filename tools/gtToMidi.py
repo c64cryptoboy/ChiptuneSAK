@@ -4,9 +4,9 @@
 # - Need to consider inferring time signature and/or having the user be able to set it
 
 import argparse
-import toolsPath  # noqa
-import ctsGoatTracker
-import ctsMidi
+
+from chiptunesak import ctsGoatTracker
+from chiptunesak import ctsMidi
 
 
 def main():

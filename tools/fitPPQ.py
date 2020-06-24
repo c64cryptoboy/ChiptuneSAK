@@ -1,10 +1,9 @@
 import argparse
 import functools
-import toolsPath  # noqa
-# from ctsBase import *  # flake8 thinks this is unused
-import ctsChirp
-from ctsConstants import DURATION_STR, DEFAULT_MIDI_PPQN
-import ctsMidi
+
+from chiptunesak import ctsChirp
+from chiptunesak.ctsConstants import DURATION_STR, DEFAULT_MIDI_PPQN
+from chiptunesak import ctsMidi
 
 """ This module contains an algorithm to estimate offset and scale factors for MIDI songs that do not have
     an accurate ppq.  It attempts to infer the ppq from the note starts alone, assuming a minimum note-to-note
