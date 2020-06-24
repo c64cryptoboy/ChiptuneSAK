@@ -106,11 +106,20 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 # Install system dependencies
 sudo apt install lilypond python3-venv build-essential
 
+# Convenience Make target for setting things up
+make venv
+source venv/bin/activate
+
+## Or if you prefer setting things up manually, you might do something like:
+
 # Make and activate a Python virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# Install Python dependencies
+# Install ChiptuneSAK
+pip3 install --editable .
+
+# Install Python development dependencies
 pip3 install -r requirements.txt
 ```
 
