@@ -21,10 +21,10 @@ Very little music is available in C128 BASIC because it is challenging to write 
 
 What makes using the PLAY command so crazy difficult to program is that you have to order the voices' notes and rests in a particular way to get the expected rhythmic playback.  When note durations overlap between voices, the shorter duration notes must be declared *after* the longer notes into which they "nest".  This becomes quite complex and difficult to do manually for 3-part music.
 
-Here's an example from a measure from test/data/BWV_799.mid (a Bach 3-part invention):
+Here's an example from a measure from tests/data/BWV_799.mid (a Bach 3-part invention):
 
 .. image:: _images/bwv799measure42.png
-    :alt: bwv799measure42   
+    :alt: bwv799measure42
 
 Using the PLAY command, the notes and rests must be ordered as shown, or else the rhythm will play incorrectly (although 8 and 9 can be swapped without consequence).
 

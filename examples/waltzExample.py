@@ -1,12 +1,12 @@
 import sys
-import examplesPath
 import os
 import subprocess
-import ctsMidi
-import ctsLilypond
-import ctsGoatTracker
-import ctsOnePassCompress
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak import ctsMidi
+from chiptunesak import ctsLilypond
+from chiptunesak import ctsGoatTracker
+from chiptunesak import ctsOnePassCompress
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 """
 This example shows how to do metric modulation to remove triplets

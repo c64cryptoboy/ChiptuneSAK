@@ -1,10 +1,9 @@
 import sys
-import examplesPath
 import os
 import subprocess
-import ctsMidi
-import ctsLilypond
-from ctsConstants import project_to_absolute_path
+from chiptunesak import ctsMidi
+from chiptunesak import ctsLilypond
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 """
 This example shows how to do metric modulation to remove triplets
@@ -67,4 +66,3 @@ os.chdir(output_folder)
 ly_file = os.path.basename(output_ly_file_mod)
 # Run lilypond
 subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file_mod), shell=True)
-

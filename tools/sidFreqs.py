@@ -1,6 +1,5 @@
-import toolsPath  # noqa
-import ctsConstants
-import ctsBase
+from chiptunesak import ctsConstants
+from chiptunesak import ctsBase
 
 print("midiNum, noteName, Hz, NTSCFreq, NTSCFreqHex, PALFreq, PALFreqHex")
 # From C0 to B7.  References:

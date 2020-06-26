@@ -1,11 +1,11 @@
-import examplesPath  # noqa
 import subprocess
-from ctsBase import *
-import ctsMidi
-import ctsLilypond
-import ctsOnePassCompress
-import ctsGoatTracker
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak.ctsBase import *
+from chiptunesak import ctsMidi
+from chiptunesak import ctsLilypond
+from chiptunesak import ctsOnePassCompress
+from chiptunesak import ctsGoatTracker
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 """
 This example processes a MIDI file captured from Betrayal at Krondor to both sheet music and

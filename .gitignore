@@ -1,11 +1,21 @@
+# Development environments
 venv/
 .vscode/
 !.vscode/settings.json
-__pycache__/
-docs/_build/
 .env
 *.code-workspace
 .idea/
+
+# Python stuff
+__pycache__/
+*.egg-info/
+
+# Build artifacts
+build/
+dist/
+docs/_build/
+
+# Test files
 sandbox/consultant.sng
 test/data/Yofa_test.mid
 /test/bach_invention_4-1.eps
@@ -26,6 +36,9 @@ test/data/Yofa_test.mid
 /test/Betrayal_q.mid
 /test/Betrayal_test_q.mid
 /test/data/bach_invention_4.pdf
+tests/data/gt_test_out.sng
+
+# Other Stuff
 *.doctree
 # mine below this line
 /htmlcov/*

@@ -1,10 +1,10 @@
-import examplesPath  # noqa
 import copy
-import ctsMidi
-import ctsRChirp
-import ctsOnePassCompress
-import ctsGoatTracker
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak import ctsMidi
+from chiptunesak import ctsRChirp
+from chiptunesak import ctsOnePassCompress
+from chiptunesak import ctsGoatTracker
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 """
 This example processes a MIDI file captured from Secret of Monkey Island to a GoatTracker song.

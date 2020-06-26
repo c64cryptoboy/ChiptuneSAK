@@ -1,12 +1,12 @@
 # Download additional resources that could be used in testing / demonstrations
 # that don't belong in the github code base
 
-import resourcePath  # noqa
 import os
 import time
 import requests
 from random import uniform
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 SKIP_IF_EXISTS = True
 last_site = None

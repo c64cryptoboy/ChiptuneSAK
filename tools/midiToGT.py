@@ -3,12 +3,12 @@
 # TODOs:
 # -
 
-from os import path
-import toolsPath  # noqa
 import argparse
-import ctsGoatTracker
-import ctsMidi
-from ctsErrors import ChiptuneSAKValueError
+from os import path
+
+from chiptunesak import ctsGoatTracker
+from chiptunesak import ctsMidi
+from chiptunesak.ctsErrors import ChiptuneSAKValueError
 
 
 def main():

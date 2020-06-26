@@ -1,9 +1,9 @@
 import copy
 import argparse
 import os
-import toolsPath  # noqa
-from ctsErrors import ChiptuneSAKValueError
-import ctsMidi
+
+from chiptunesak.ctsErrors import ChiptuneSAKValueError
+from chiptunesak.import ctsMidi
 
 
 def main():

@@ -1,9 +1,9 @@
-import examplesPath  # noqa
 import os
 import subprocess
-import ctsMidi
-import ctsLilypond
-from ctsConstants import project_to_absolute_path
+
+from chiptunesak import ctsMidi
+from chiptunesak import ctsLilypond
+from chiptunesak.ctsConstants import project_to_absolute_path
 
 """
 This example shows how to process a song into PDF file using Lilypond using the following steps:

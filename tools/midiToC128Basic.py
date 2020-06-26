@@ -1,11 +1,11 @@
 # Convert midi .mid file into Commodore 128 BASIC .bas (ascii text) or .prg (native) files
 
-import os
-import toolsPath  # noqa
-import ctsConstants
 import argparse
-import ctsMidi
-import ctsC128Basic
+import os
+
+from chiptunesak import ctsConstants
+from chiptunesak import ctsMidi
+from chiptunesak import ctsC128Basic
 
 
 def main():

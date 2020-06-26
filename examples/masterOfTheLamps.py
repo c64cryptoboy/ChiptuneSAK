@@ -1,7 +1,6 @@
-import examplesPath  # noqa
-from ctsConstants import project_to_absolute_path
-import ctsSID
-import ctsMidi
+from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import ctsSID
+from chiptunesak import ctsMidi
 
 sid_filename = project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid')
 
