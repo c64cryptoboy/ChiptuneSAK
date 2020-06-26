@@ -3,7 +3,6 @@ from chiptunesak import ctsSID
 from chiptunesak import ctsMidi
 
 sid_filename = project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid')
-old_note_factor = 1
 
 # TODO:
 # The rchirp song goes way too fast when converted to midi, figure out why
@@ -21,7 +20,7 @@ old_note_factor = 1
 to_extract = [  # TODO: these times are incorrect
     # [10, "getting on carpet", 17],
     # [7, "carpet liftoff", 5],
-    [9, "fell off carpet", 5],
+    # [9, "fell off carpet", 5],
     # [8, "finished level", 8],
     # [11, "game won", 25],
     # [0, "tunnel 1", 50],  # level 1, 15, 29
@@ -30,7 +29,7 @@ to_extract = [  # TODO: these times are incorrect
     # [3, "tunnel 4", 75],  # level 7, 21, 35
     # [4, "tunnel 5", 68],  # level 9, 23, 37
     # [5, "tunnel 6", 55],   # level 11, 25, 39
-    [6, "tunnel 7", 68],  # level 13, 27, 41
+    [6, "tunnel 7", 68],  # level 13, 27, 41  # TODO: Primary test file
     # [12, "tunnel 8", 62],  # level 43
 ]
 
@@ -46,7 +45,7 @@ def find_tunings():
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,
-            old_note_factor=old_note_factor,
+            vibrato_cents_margin=0,
             seconds=10,
             gcf_row_reduce=False,
         )
@@ -58,10 +57,9 @@ def find_tunings():
 
     tunings.sort()
     median = tunings[len(tunings) // 2]
-    print('\nmediam {:6.3f}'.format(median))
+    print('\nmedian {:6.3f}'.format(median))
 
 
-# TODO:  Make Master of the Lamps tuning to be 439.84
 def create_output_files():
     for entry in to_extract:
         (subtune, desc, seconds) = entry
@@ -70,7 +68,8 @@ def create_output_files():
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,
-            old_note_factor=old_note_factor,
+            tuning=439.84,  # above code figured this out
+            vibrato_cents_margin=10,  # TODO: Try out
             seconds=seconds,
             gcf_row_reduce=True,
         )
