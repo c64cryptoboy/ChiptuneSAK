@@ -242,7 +242,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
 
 
 # Regular expression for matching note names
-note_name_format = re.compile('^([A-G])(#|##|b|bb)?([0-7])$')
+note_name_format = re.compile('^([A-G])(#|##|b|bb)?(-{0,1}[0-7])$')
 
 
 def note_name_to_pitch(note_name, octave_offset=0):

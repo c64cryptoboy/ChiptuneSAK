@@ -18,14 +18,16 @@ for midi_num in range(ctsConstants.C0_MIDI_NUM, ctsConstants.C0_MIDI_NUM + (8 * 
             ntsc_freq, pal_freq, pal_freq)
     )
 
-""" Delete later
+""" for debugging:
 print("\n")
 for ntsc_f in range(269, -1, -1):  # C0 to D0 in NTSC freq for 440 tuning
+#for ntsc_f in range(65000, 65536):
     midi_num, cents = ctsConstants.freq_arch_to_midi_num(
         ntsc_f,
-        arch='NTSC-C64',
+        arch='PAL-C64',
         tuning=ctsConstants.CONCERT_A)
     print('{:d}, {:d}, {}, {:d}'.format(ntsc_f, midi_num, ctsBase.pitch_to_note_name(midi_num), cents))
+    #print('{:d}, {:d}, {:d}'.format(ntsc_f, midi_num, cents))
 """
 
 """

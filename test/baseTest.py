@@ -14,6 +14,7 @@ class BaseTestCase(unittest.TestCase):
                 self.assertEqual(note_num, last_note + 1)
                 last_note = note_num
         self.assertEqual(note_name_to_pitch('C4'), 60)
+        self.assertEqual(note_name_to_pitch('C-1'), 0)
 
         self.assertEqual(note_name_to_pitch('C#4'), note_name_to_pitch('C4') + 1)
         self.assertEqual(note_name_to_pitch('C##4'), note_name_to_pitch('D4'))
@@ -56,6 +57,22 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(ctsConstants.freq_arch_to_midi_num(278, arch='PAL-C64')[0], midi_note)
         self.assertAlmostEqual(ctsConstants.freq_arch_to_freq(268, arch='NTSC-C64'), 16.337, 3)
         self.assertAlmostEqual(ctsConstants.freq_arch_to_freq(268, arch='PAL-C64'), 15.738, 3)
+
+        # Every NTSC freq that resolves to C-1 under 440 tuning
+        for ntsc_arch_freq in range(131, 139):
+            midi_num, _ = ctsConstants.freq_arch_to_midi_num(
+                ntsc_arch_freq,
+                arch='NTSC-C64',
+                tuning=ctsConstants.CONCERT_A)
+            self.assertEqual(pitch_to_note_name(midi_num), 'C-1')  # the lowest note
+
+        # Every PAL freq that resolves to C-1 under 440 tuning
+        for pal_arch_freq in range(136, 144):
+            midi_num, _ = ctsConstants.freq_arch_to_midi_num(
+                pal_arch_freq,
+                arch='PAL-C64',
+                tuning=ctsConstants.CONCERT_A)
+            self.assertEqual(pitch_to_note_name(midi_num), 'C-1')  # the lowest note
 
 
 if __name__ == '__main__':

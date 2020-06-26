@@ -4,18 +4,22 @@
 #    Playback details for PSID/RSID ("The SID file environment")
 #    - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
 #
-#    has some support for RSIDs.  From sid documentation concerning RSIDs:
+#    Has some support for RSIDs.  From sid documentation concerning RSIDs:
 #    "Tunes that are multi-speed and/or contain samples and/or use additional interrupt
 #    sources or do busy looping will cause older SID emulators to lock up or play very
 #    wrongly (if at all)."
 #
 #    siddump.c was very helpful as a conceptual reference for SidImport:
 #    - https://csdb.dk/release/?id=152422
+#    siddump has a -c option for "frequency recalibration", where a user specifies
+#    a base frequency for better note matching (the frequency tables defaulted to
+#    440.11 tuning on a PAL).
+#    We've implemented NTSC/PAL-specific automatic tuning detection (by sampling
+#    some or all notes in a subtune).  And instead of fixed frequency tables, we derive
+#    tuning and architecture-based frequencies at runtime.
 #
 # SidImport TODO:
-# - generate freq tables using chiptunesak libraries
-# - siddump.c has an option -c for frequency recalibration, where the user can
-#   manually supply a base frequency for better note matching.  Use the new automatic tuning.
+# - remove fixed freq tables
 # - iterate over a collection a SIDs for code coverage testing
 # - implement the SID header speed settings?
 #
@@ -36,6 +40,8 @@ import ctsThinC64Emulator
 from ctsErrors import ChiptuneSAKValueError
 import ctsRChirp
 
+MAX_CENTS = 50  # TODO: Move to constants?
+
 
 class SID(ChiptuneSAKIO):
 
@@ -50,7 +56,8 @@ class SID(ChiptuneSAKIO):
             sid_in_filename=None,
             subtune=0,           # subtune to extract
             first_frame=0,
-            old_note_factor=1,
+            vibrato_cents_margin=0,  # cents margin to control snapping to previous note
+            tuning=CONCERT_A,
             seconds=60,          # seconds to capture
             arch=DEFAULT_ARCH,   # architecture (for import to RChirp)
             gcf_row_reduce=True  # reduce rows based on greatest common factor of row-activity gaps
@@ -73,19 +80,17 @@ class SID(ChiptuneSAKIO):
             if op not in self.options_with_defaults:
                 raise ChiptuneSAKValueError('Error: Unexpected option "%s"' % (op))
 
-            if op == 'old_note_factor':
-                if val < 1:
-                    val = 1
+            # TODO: Put parameter validations here
 
             self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
 
     def capture(self):
-        importer = SidImport(self.get_option('arch'))
+        importer = SidImport(self.get_option('arch'), self.get_option('tuning'))
         sid_dump = importer.import_sid(
             filename=self.get_option('sid_in_filename'),  # SID file to read in
             subtune=self.get_option('subtune'),
             first_frame=self.get_option('first_frame'),
-            old_note_factor=self.get_option('old_note_factor'),
+            vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
             seconds=self.get_option('seconds')
         )
         return sid_dump
@@ -898,31 +903,33 @@ class Dump:
         for arch_freq in self.raw_freqs:
             if arch_freq == 0:
                 continue
-            (midi_num, cents) = freq_arch_to_midi_num(arch_freq, self.arch, tuning=CONCERT_A)
+            if freq_arch_to_midi_num(arch_freq, self.arch, CONCERT_A)[0] < 0:
+                continue  # ChiptuneSAK does not support midi note numbers < 0 (< C-1)
+            (_, cents) = freq_arch_to_midi_num(arch_freq, self.arch, tuning=CONCERT_A)
             all_cents.append(cents)
 
-        avg_cents = sum(all_cents) / len(all_cents)
-        max_cents = max(all_cents)
-        min_cents = min(all_cents)
-        assert (abs(min_cents) <= 50 and abs(max_cents) <= 50), \
+        average_cents = sum(all_cents) / len(all_cents)
+        maximum_cents = max(all_cents)
+        minimum_cents = min(all_cents)
+        assert (abs(minimum_cents) <= 50 and abs(maximum_cents) <= 50), \
             "Error: not expecting cents to deviate by more than 50 when already derrived from nearest note"
 
-        tuning = CONCERT_A * 2**(avg_cents / 1200)
+        tuning = CONCERT_A * 2**(average_cents / 1200)
 
-        return (tuning, min_cents, max_cents)
+        return (tuning, minimum_cents, maximum_cents)
 
 
 class SidImport:
-    def __init__(self, arch=DEFAULT_ARCH):
+    def __init__(self, arch=DEFAULT_ARCH, tuning=CONCERT_A):
         self.arch = arch
+        self.tuning = tuning  # proper tuning can mean better note capture
 
         self.cpu_state = ctsThinC64Emulator.ThinC64Emulator()
         self.cpu_state.exit_on_empty_stack = True
         self.first_frame = 0
         self.frame_cnt = 0
 
-        # 8-octave range (Note: disdump.c used 440.11 tuning)
-        # TODO: Generate these at runtime, as was done in tools/sidFreqs.py
+        '''  TODO:  DELETE
         self.freq_lo = [
             0x17, 0x27, 0x39, 0x4b, 0x5f, 0x74, 0x8a, 0xa1, 0xba, 0xd4, 0xf0, 0x0e,
             0x2d, 0x4e, 0x71, 0x96, 0xbe, 0xe8, 0x14, 0x43, 0x74, 0xa9, 0xe1, 0x1c,
@@ -942,36 +949,49 @@ class SidImport:
             0x22, 0x24, 0x27, 0x29, 0x2b, 0x2e, 0x31, 0x34, 0x37, 0x3a, 0x3e, 0x41,
             0x45, 0x49, 0x4e, 0x52, 0x57, 0x5c, 0x62, 0x68, 0x6e, 0x75, 0x7c, 0x83,
             0x8b, 0x93, 0x9c, 0xa5, 0xaf, 0xb9, 0xc4, 0xd0, 0xdd, 0xea, 0xf8, 0xff]
+        '''
 
-    @classmethod
-    def get_note(cls, freq, prev_note, old_note_factor, freq_lo, freq_hi):
-        # TODO: REPLACE ALL THIS LOGIC IN get_note
-        # TODO: if oscillator is 0, replace with lowest note in the lo/hi frequence tables
-        # freq_arch_to_freq(arch_freq, arch)
+    def get_note(self, arch_freq, vibrato_cents_margin=0, prev_note=None):
+        # siddump.c has an "old note factor" that helps return more consistant
+        # results when a large vibrato is in effect.  This works by allowing the user
+        # to set how influential the previous note is in interpreting the next note.
+        # Here's the algorithm (translated to python), but none of this logic reasoned
+        # consistently (linearly) about frequencies:
+        #     dist = 0x7fffffff; return_note = None
+        #     for d in range(96):
+        #         cmp_freq = freq_lo[d] | freq_hi[d] << 8
+        #         if abs(freq - cmp_freq) < dist:
+        #             dist = abs(freq - cmp_freq)
+        #             if prev_note == d:
+        #                 dist /= old_note_factor
+        #             return_note = d
+        #     return return_note
+
+        if not 0 <= vibrato_cents_margin < MAX_CENTS:
+            raise ChiptuneSAKValueError(
+                "ERROR: vibrato_cents_margin must be >= 0 and < %d" % MAX_CENTS)
+
         # C-1 is the lowest note ChiptuneSAK handles, and the low-end of C-1 (midi
         #     note 0) when A4=440 is ~8.0Hz
-        # Freq need to be >= ~8.0, so, for the following inputs:
-        # - NTSC C64, lowest allowed oscil freq is ceil(8.0*0x1000000/1022727) = 132
-        # - PAL C64, lowest allowed is ceil(8.0*0x1000000/985248) = 137
-        # if freq < 8.0:  # if freq < than (the low side of) C-1
-        #    then replace with lowest note in the lo/hi frequency tables
-        # Q: Need to guard against too-high frequencies?
-        # Then come up with some way of using the old_note_factor (cents reasoning)
-        #
-        # siddump.c described the old_note_factor thusly:
-        #     -o<value> "Oldnote-sticky" factor. Default 1, increase for better vibrato display
-        #               (when increased, requires well calibrated frequencies)
-        dist = 0x7fffffff
-        return_note = None
-        for d in range(96):
-            cmp_freq = freq_lo[d] | freq_hi[d] << 8
-            if abs(freq - cmp_freq) < dist:
-                dist = abs(freq - cmp_freq)
-                # Favor the old note to help ignore vibrato
-                if prev_note == d:
-                    dist /= old_note_factor
-                return_note = d
-        return return_note
+        # For frequencies to stay above 8.0Hz:
+        # - NTSC C64, lowest allowed oscil freq is int(8.0*0x1000000/1022727) = 131
+        # - PAL C64, lowest allowed is int(8.0*0x1000000/985248) = 136
+        if arch_freq != 0 and freq_arch_to_midi_num(arch_freq, self.arch, self.tuning)[0] >= 0:
+            (midi_num, cents_offset) = freq_arch_to_midi_num(arch_freq, self.arch, self.tuning)
+        else:
+            (midi_num, cents_offset) = (0, -MAX_CENTS + 1)  # for anything < 8Hz
+
+        # cents scale: note-1, -45, -40, ... -10, -5, note, +5, +10, ... +40, +45, note+1
+        if prev_note is not None and abs(midi_num - prev_note) == 1 \
+                and cents_offset != 0 and vibrato_cents_margin != 0:
+            if cents_offset < 0:
+                cents_offset = MAX_CENTS + cents_offset
+            else:
+                cents_offset = MAX_CENTS - cents_offset
+            if cents_offset < vibrato_cents_margin:
+                midi_num = prev_note
+
+        return midi_num
 
     def call_sid_init(self, init_addr, subtune):
         """
@@ -1042,7 +1062,7 @@ class SidImport:
             if self.cpu_state.see_kernal and (0xea31 <= self.cpu_state.pc <= 0xea83):
                 return  # done with play call
 
-    def import_sid(self, filename, subtune=0, first_frame=0, old_note_factor=1, seconds=60):
+    def import_sid(self, filename, subtune=0, first_frame=0, vibrato_cents_margin=0, seconds=60):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1054,8 +1074,9 @@ class SidImport:
         :type subtune: int, optional
         :param first_frame: the first frame to begin capture upon, defaults to 0
         :type first_frame: int, optional
-        :param old_note_factor: degree to which previous note influences creation of new notes
-        :type old_note_factor: int, optional
+        :param vibrato_cents_margin: if new note adjacent to old but within cents margin
+                                     then, snap to old
+        :type vibrato_cents_margin: int, optional
         :param seconds: seconds to capture, defaults to 60
         :type seconds: int, optional
         :return: A SID dump instance
@@ -1274,12 +1295,10 @@ class SidImport:
                         chn.waveforms > 0 and not channel_off
                         and (chn.gate_on or within_release_window))
 
-                    # was no note playing on the previous play routine invocation?
+                    # see if no note playing after the previous play routine call
                     prev_note_off = not (prev_chn.gate_on and prev_chn.waveforms > 0)
 
-                    chn.note = SidImport.get_note(
-                        chn.freq, prev_chn.note, old_note_factor,
-                        self.freq_lo, self.freq_hi)
+                    chn.note = self.get_note(chn.freq, 5, prev_chn.note)
 
                     # The following logic should allow for new notes to be asserted when
                     # - gate is on and one or more waveforms defined, but on the previous
