@@ -121,6 +121,35 @@ pip3 install --editable .
 
 # Install Python development dependencies
 pip3 install -r requirements.txt
+
+# Run the unittests to make sure things are working as expected
+python3 -m unittest discover -p "*Test.py"
+```
+
+### Bootstrap: Windows 10
+
+The following instructions make the following assumptions:
+
+* You installed [Python 3.8 from the Windows Store](https://www.microsoft.com/en-us/p/python-38/9mssztt1n39l)
+* You are doing your development in Windows PowerShell
+
+```ps1
+# Compare your Python version to what was used writing this README
+python --version  # Python 3.8.3
+
+# Set Powershell Execution Policy to all running local scripts:
+Set-ExecutionPolicy RemoteSigned
+# Answer "[A] Yes to All" when prommpted
+
+# Create a Python virtual environment (EXPLICITLY use `python` instead of `python3`)
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
+# Install requirements in to virtualenv
+pip install -r .\requirements.txt
+
+# Run the unittests to make sure things are working as expected
+python -m unittest discover -p "*Test.py"
 ```
 
 ## Generating Documentation
