@@ -1,0 +1,35 @@
+# -*- coding: utf-8 -*-
+
+from setuptools import setup, find_packages
+
+
+setup(
+    name="chiptunesak",
+    version="0.3.0",
+    description="Generalized pipeline for processing music and targeting various constrained playback environments",
+    long_description=open("README.md").read(),
+    author="David Youd",
+    author_email="CryptoBoy@gmail.com",
+    url="https://github.com/c64cryptoboy/ChiptuneSAK",
+    packages=find_packages(),
+    python_requires=">=3.7",
+    install_requires=[
+        "matplotlib",
+        "mido",
+        "more-itertools",
+        "numpy",
+        "parameterized",
+    ],
+    entry_points={"console_scripts": []},
+    scripts=["examples/lechuck.py"],
+    classifiers=[
+        # 'Development Status :: 5 - Production/Stable',
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        'License :: OSI Approved :: MIT License',
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
+    ],
+)
