@@ -7,7 +7,8 @@ from chiptunesak import ctsRChirp
 from chiptunesak import ctsMidi
 
 COMPRESS_TEST_SONG = ctsConstants.project_to_absolute_path('tests/data/BWV_799.mid')
-
+GT_TEST_DATA_SNG = ctsConstants.project_to_absolute_path('tests/data/gtTestData.sng')
+GT_TEST_OUT_SNG = ctsConstants.project_to_absolute_path('tests/data/gt_test_out.sng')
 
 class TestCompression(unittest.TestCase):
     def setUp(self):
@@ -35,7 +36,7 @@ class TestCompression(unittest.TestCase):
         rchirp_song = compressor.compress(rchirp_song, min_length=8)
 
         exporter = ctsGoatTracker.GoatTracker()
-        exporter.to_file(rchirp_song, '../tests/data/gt_test_out.sng')
+        exporter.to_file(rchirp_song, GT_TEST_OUT_SNG)
 
         self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
@@ -50,7 +51,7 @@ class TestCompression(unittest.TestCase):
         gt_io = ctsGoatTracker.GoatTracker()
 
         # Convert goattracker sng to an rchirp
-        rchirp_song = gt_io.to_rchirp(str(ctsConstants.project_to_absolute_path('tests/data/gtTestData.sng')))
+        rchirp_song = gt_io.to_rchirp(str(GT_TEST_DATA_SNG))
 
         # create patterns and orderlists
         compressor = ctsOnePassCompress.OnePassLeftToRight()
