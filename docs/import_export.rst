@@ -60,7 +60,7 @@ Lilypond
 C128 BASIC
 ----------
 
-.. currentmodule:: chiptunesak.ctsC128Basic
+.. currentmodule:: chiptunesak.c128_basic
 
 .. autoclass:: C128Basic
     :members: to_bin, to_file

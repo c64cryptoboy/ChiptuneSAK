@@ -101,7 +101,7 @@ Lilypond Class
 C128 Basic Class
 ----------------
 
-.. autoclass:: chiptunesak.ctsC128Basic.C128Basic
+.. autoclass:: chiptunesak.c128_basic.C128Basic
     :members:
     :show-inheritance:
 
@@ -136,6 +136,3 @@ One-Pass Left-to-Right Class
 .. autoclass:: chiptunesak.ctsOnePassCompress.OnePassLeftToRight
     :members:
     :show-inheritance:
-
-
-

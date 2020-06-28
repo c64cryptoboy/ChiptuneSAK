@@ -3,7 +3,7 @@ import unittest
 from chiptunesak import ctsTestingTools
 from chiptunesak import ctsMChirp
 from chiptunesak import ctsMidi
-from chiptunesak import ctsC128Basic
+from chiptunesak import c128_basic
 from chiptunesak import constants
 
 TEST_FILE = constants.project_to_absolute_path('tests/data/BWV_799.mid')
@@ -12,7 +12,7 @@ KNOWN_GOOD = constants.project_to_absolute_path('tests/data/BWV_799_known_good.b
 
 class TestC128BASIC(unittest.TestCase):
     def setUp(self):
-        self.BASIC = ctsC128Basic.C128Basic()
+        self.BASIC = c128_basic.C128Basic()
         chirp_song = ctsMidi.MIDI().to_chirp(TEST_FILE)
         chirp_song.quantize_from_note_name('16')
         chirp_song.remove_keyswitches()

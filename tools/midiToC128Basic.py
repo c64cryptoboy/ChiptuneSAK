@@ -5,7 +5,7 @@ import os
 
 from chiptunesak import constants
 from chiptunesak import ctsMidi
-from chiptunesak import ctsC128Basic
+from chiptunesak import c128_basic
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
     # song.quantize_from_note_name('32')
     song.remove_polyphony()
 
-    ctsC128Basic.trim_note_lengths(song)
+    c128_basic.trim_note_lengths(song)
 
     if len(song.metadata.name) == 0:
         song.metadata.name = args.midi_in_file.split(os.sep)[-1].lower()
@@ -59,7 +59,7 @@ def main():
         else:
             args.type = 'prg'
 
-    basic_converter = ctsC128Basic.C128Basic()
+    basic_converter = c128_basic.C128Basic()
     basic_converter.set_options(arch=args.arch, format=args.type, instruments=instruments)
     basic_converter.to_file(mchirp_song, args.basic_out_file)
 
