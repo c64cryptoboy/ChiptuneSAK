@@ -12,7 +12,7 @@
 #
 import os
 import sys
-from chiptunesak import ctsConstants  # noqa
+from chiptunesak import constants  # noqa
 
 # -- Project information -----------------------------------------------------
 
@@ -21,8 +21,8 @@ copyright = '2020, David Youd and David Knapp'
 author = 'David Youd and David Knapp'
 
 # The full version, including alpha/beta/rc tags
-version = ctsConstants.CHIPTUNESAK_VERSION
-release = ctsConstants.CHIPTUNESAK_RELEASE
+version = constants.CHIPTUNESAK_VERSION
+release = constants.CHIPTUNESAK_RELEASE
 
 # -- General configuration ---------------------------------------------------
 

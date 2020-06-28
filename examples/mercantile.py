@@ -5,7 +5,7 @@ from chiptunesak import ctsMidi
 from chiptunesak import ctsLilypond
 from chiptunesak import ctsOnePassCompress
 from chiptunesak import ctsGoatTracker
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example processes a MIDI file captured from Betrayal at Krondor to both sheet music and

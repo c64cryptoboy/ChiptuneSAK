@@ -1,7 +1,7 @@
 from chiptunesak import examplesPath  # noqa
 from chiptunesak import ctsMidi
 from chiptunesak import ctsC128Basic
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example shows how to convert a song to C128 Basic:

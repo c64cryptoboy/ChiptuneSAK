@@ -13,7 +13,7 @@ import more_itertools as moreit
 from chiptunesak.ctsBase import *
 from chiptunesak import ctsMChirp
 from chiptunesak import ctsRChirp
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 
 
 class Note:
@@ -461,7 +461,7 @@ class ChirpSong(ChiptuneSAKBase):
     def __init__(self, mchirp_song=None):
         ChiptuneSAKBase.__init__(self)
         self.metadata = SongMetadata()
-        self.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
+        self.metadata.ppq = constants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
@@ -483,7 +483,7 @@ class ChirpSong(ChiptuneSAKBase):
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
+        self.metadata.ppq = constants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
@@ -640,7 +640,7 @@ class ChirpSong(ChiptuneSAKBase):
     def quantize_from_note_name(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
         """
         Quantize song with more user-friendly input than ticks.  Allowed quantizations are the keys for the
-        ctsConstants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
+        constants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
         values for dotted_allowed and triplets_allowed will be overridden.
 
         :param min_note_duration_string:  Quantization note value
@@ -657,7 +657,7 @@ class ChirpSong(ChiptuneSAKBase):
         if '-3' in min_note_duration_string:
             triplets_allowed = True
             min_note_duration_string = min_note_duration_string.replace('-3', '')
-        qticks = int(self.metadata.ppq * ctsConstants.DURATION_STR[min_note_duration_string])
+        qticks = int(self.metadata.ppq * constants.DURATION_STR[min_note_duration_string])
         if dotted_allowed:
             qticks //= 2
         if triplets_allowed:

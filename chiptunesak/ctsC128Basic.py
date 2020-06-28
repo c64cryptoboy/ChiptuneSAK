@@ -1,7 +1,7 @@
 # Lower MChirp to C128 BASIC PLAY commands
 
 import collections
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 from chiptunesak import ctsBase
 from chiptunesak import ctsGenPrg
 from chiptunesak import ctsChirp
@@ -31,11 +31,11 @@ BasicRest = collections.namedtuple('BasicRest', ['start_time', 'duration', 'voic
 
 # These appear to be the only allowed note durations for C128 BASIC
 basic_durations = {
-    ctsConstants.Fraction(6, 1): "w.", ctsConstants.Fraction(4, 1): 'w',
-    ctsConstants.Fraction(3, 1): 'h.', ctsConstants.Fraction(2, 1): 'h',
-    ctsConstants.Fraction(3, 2): 'q.', ctsConstants.Fraction(1, 1): 'q',
-    ctsConstants.Fraction(3, 4): 'i.', ctsConstants.Fraction(1, 2): 'i',
-    ctsConstants.Fraction(1, 4): 's'
+    constants.Fraction(6, 1): "w.", constants.Fraction(4, 1): 'w',
+    constants.Fraction(3, 1): 'h.', constants.Fraction(2, 1): 'h',
+    constants.Fraction(3, 2): 'q.', constants.Fraction(1, 1): 'q',
+    constants.Fraction(3, 4): 'i.', constants.Fraction(1, 2): 'i',
+    constants.Fraction(1, 4): 's'
 }
 
 
@@ -52,7 +52,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
     def __init__(self):
         ctsBase.ChiptuneSAKIO.__init__(self)
         self.set_options(format='prg',
-                         arch=ctsConstants.DEFAULT_ARCH,
+                         arch=constants.DEFAULT_ARCH,
                          instruments=['piano', 'piano', 'piano'])
 
     def set_options(self, **kwargs):
@@ -62,7 +62,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         for op, value in kwargs.items():
             op = op.lower()  # All option names must be lowercase
             if op == 'arch':
-                if value not in ctsConstants.ARCH.keys():
+                if value not in constants.ARCH.keys():
                     raise ChiptuneSAKValueError(f"Invalid architecture setting {value}")
             elif op == 'format':
                 if value == 'ascii':
@@ -147,7 +147,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         current_line += 10
 
         # Tempo 1 is slowest, and 255 is fastest
-        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / ctsConstants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
+        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / constants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
         tempo = int(round(tempo))
 
         result.append('%d tempo %d' % (current_line, tempo))
@@ -155,11 +155,11 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         current_line = 100
         for measure_num, s in enumerate(basic_strings):
             tmp_line = '%d %s$="%s"' % (current_line, num_to_str_name(measure_num), s)
-            if len(tmp_line) >= ctsConstants.BASIC_LINE_MAX_C128:
+            if len(tmp_line) >= constants.BASIC_LINE_MAX_C128:
                 # it's ok if space removed between line number and first character
                 tmp_line = tmp_line.replace(" ", "")
                 # If the line is still too long...
-                if len(tmp_line) >= ctsConstants.BASIC_LINE_MAX_C128:
+                if len(tmp_line) >= constants.BASIC_LINE_MAX_C128:
                     raise ChiptuneSAKContentError(
                         "C128 BASIC line too long: Line %d length %d" % (current_line, len(tmp_line)))
             result.append(tmp_line)
@@ -236,7 +236,7 @@ def duration_to_basic_name(duration, ppq):
     :return: C128 BASIC name for the duration
     :rtype: string
     """
-    f = ctsConstants.Fraction(duration / ppq).limit_denominator(16)
+    f = constants.Fraction(duration / ppq).limit_denominator(16)
     if f not in basic_durations:
         raise ChiptuneSAKValueError("Illegal note duration %s" % str(f))
     return basic_durations[f]
@@ -248,7 +248,7 @@ def trim_note_lengths(song):
     """
     for i_t, t in enumerate(song.tracks):
         for i_n, n in enumerate(t.notes):
-            f = ctsConstants.Fraction(n.duration / song.metadata.ppq).limit_denominator(8)
+            f = constants.Fraction(n.duration / song.metadata.ppq).limit_denominator(8)
             if f not in basic_durations:
                 for d in sorted(basic_durations, reverse=True):
                     if f >= d:

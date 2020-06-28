@@ -3,7 +3,7 @@ import unittest
 
 from chiptunesak import ctsMidi
 from chiptunesak import ctsChirp
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
 TRACK_TEST_SONG = project_to_absolute_path('tests/data/BWV_799.mid')

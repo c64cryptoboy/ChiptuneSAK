@@ -17,7 +17,7 @@ from functools import reduce
 import math
 from chiptunesak import ctsChirp
 from chiptunesak.ctsBase import *
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 from dataclasses import dataclass
 
 
@@ -349,7 +349,7 @@ class RChirpVoice:
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
+        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) / constants.ARCH[self.rchirp_song.arch].frame_rate
         jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
@@ -396,7 +396,7 @@ class RChirpSong(ChiptuneSAKBase):
 
     def __init__(self, chirp_song=None):
         ChiptuneSAKBase.__init__(self)
-        self.arch = ctsConstants.DEFAULT_ARCH           #: Architecture
+        self.arch = constants.DEFAULT_ARCH           #: Architecture
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
         self.patterns = []                              #: Patterns to be shared among the voices
@@ -441,7 +441,7 @@ class RChirpSong(ChiptuneSAKBase):
         if chirp_song.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
         arch = chirp_song.get_option('arch', self.arch)
-        if arch not in ctsConstants.ARCH:
+        if arch not in constants.ARCH:
             raise ChiptuneSAKValueError("Illegal architecture name {self.arch}")
         self.arch = arch
 
@@ -617,7 +617,7 @@ class RChirpSong(ChiptuneSAKBase):
         """
         song = ctsChirp.ChirpSong()
         song.metadata = copy.deepcopy(self.metadata)
-        song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
+        song.metadata.ppq = constants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
         song.set_options(arch=self.arch)  # So that round-trip will return the same arch
 
@@ -629,9 +629,9 @@ class RChirpSong(ChiptuneSAKBase):
         jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums))
 
         # We arbitrarily set he minimum divisor to be a sixteenth note.
-        midi_ticks_per_quarter = ctsConstants.DEFAULT_MIDI_PPQN
+        midi_ticks_per_quarter = constants.DEFAULT_MIDI_PPQN
         jiffies_per_quarter = 4 * jiffies_per_note
-        qpm = ctsConstants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
+        qpm = constants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
         song.set_qpm(qpm)
         midi_ticks_per_jiffy = midi_ticks_per_quarter / jiffies_per_quarter
 

@@ -5,7 +5,7 @@ import operator
 import zipfile
 import itertools
 
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 from chiptunesak import ctsSID
 
 HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')

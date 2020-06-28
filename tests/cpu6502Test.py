@@ -4,7 +4,7 @@
 import unittest
 from chiptunesak import cts6502Emulator
 from chiptunesak import ctsThinC64Emulator
-from chiptunesak.ctsConstants import ARCH
+from chiptunesak.constants import ARCH
 
 VERBOSE = False
 

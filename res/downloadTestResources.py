@@ -6,7 +6,7 @@ import time
 import requests
 from random import uniform
 
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 SKIP_IF_EXISTS = True
 last_site = None

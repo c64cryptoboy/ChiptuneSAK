@@ -14,7 +14,7 @@ from os import path, listdir
 from os.path import isfile, join
 import copy
 from dataclasses import dataclass
-from chiptunesak import ctsConstants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
+from chiptunesak import constants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
 from chiptunesak import ctsBase
 from chiptunesak.ctsBytesUtil import read_binary_file
 from chiptunesak import ctsRChirp
@@ -66,7 +66,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
                          instruments=[],          # gt instrument assignments, in order
                          end_with_repeat=False,   # default is to stop GoatTracker from repeating music
-                         arch=ctsConstants.DEFAULT_ARCH)  # architecture (for import to RChirp)
+                         arch=constants.DEFAULT_ARCH)  # architecture (for import to RChirp)
 
     def set_options(self, **kwargs):
         """
@@ -87,7 +87,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
                     if ins_name[-4:] == '.ins':
                         val[i] = ins_name[:-4]
             elif op == 'arch':
-                if val not in ctsConstants.ARCH:
+                if val not in constants.ARCH:
                     raise ChiptuneSAKValueError(f'Unknown architecture {val}')
             # Now set the option
             self._options[op] = val
@@ -146,11 +146,11 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
 
         :keyword options:
             * **subtune** (int) - The subtune numer to import.  Defaults to 0
-            * **arch** (str) - architecture string. Must be one defined in ctsConstants.py
+            * **arch** (str) - architecture string. Must be one defined in constants.py
         """
         self.set_options(**kwargs)
         subtune = int(self.get_option('subtune', 0))
-        arch = self.get_option('arch', ctsConstants.DEFAULT_ARCH)
+        arch = self.get_option('arch', constants.DEFAULT_ARCH)
         rchirp_song = import_sng_file_to_rchirp(filename, subtune_number=subtune)
         rchirp_song.arch = arch
         return rchirp_song
@@ -383,7 +383,7 @@ def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     :return: Midi note number
     :rtype: int
     """
-    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (octave_offset * 12)
+    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - constants.C0_MIDI_NUM) + (octave_offset * 12)
     if not (0 <= midi_note < 128):
         raise ChiptuneSAKValueError(f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}")
     return midi_note
@@ -451,7 +451,7 @@ def get_ins_filenames():
     :return: list of filenames
     :rtype: list
     """
-    dir = ctsConstants.project_to_absolute_path(DEFAULT_INSTR_PATH)
+    dir = constants.project_to_absolute_path(DEFAULT_INSTR_PATH)
     ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == '.ins']
     return ins_files
 
@@ -487,7 +487,7 @@ def instrument_appender(
     Load the named instrument's ins file and generate updated wavetables
     """
 
-    ins_bytes = read_binary_file(ctsConstants.project_to_absolute_path(path + gt_inst_name + '.ins'))
+    ins_bytes = read_binary_file(constants.project_to_absolute_path(path + gt_inst_name + '.ins'))
 
     if ins_bytes[0:4] != b'GTI5':
         raise ChiptuneSAKValueError("Invalid instrument file structure")
@@ -873,7 +873,7 @@ class GTSong:
         :return: GT note value
         :rtype: int
         """
-        gt_note_value = midi_note + (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (-1 * octave_offset * 12)
+        gt_note_value = midi_note + (GT_NOTE_OFFSET - constants.C0_MIDI_NUM) + (-1 * octave_offset * 12)
         if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
             raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
         return gt_note_value

@@ -14,7 +14,7 @@ from parameterized import parameterized
 from chiptunesak import cts6502Emulator
 from chiptunesak import ctsThinC64Emulator
 from chiptunesak.ctsBytesUtil import read_binary_file
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 
 # translate alphabet from mixed-case (mode) petscii to ascii

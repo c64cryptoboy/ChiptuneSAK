@@ -4,10 +4,10 @@ from chiptunesak import ctsTestingTools
 from chiptunesak import ctsMChirp
 from chiptunesak import ctsMidi
 from chiptunesak import ctsC128Basic
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 
-TEST_FILE = ctsConstants.project_to_absolute_path('tests/data/BWV_799.mid')
-KNOWN_GOOD = ctsConstants.project_to_absolute_path('tests/data/BWV_799_known_good.bas')
+TEST_FILE = constants.project_to_absolute_path('tests/data/BWV_799.mid')
+KNOWN_GOOD = constants.project_to_absolute_path('tests/data/BWV_799_known_good.bas')
 
 
 class TestC128BASIC(unittest.TestCase):

@@ -1,15 +1,15 @@
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 from chiptunesak import ctsBase
 
 print("midiNum, noteName, Hz, NTSCFreq, NTSCFreqHex, PALFreq, PALFreqHex")
 # From C0 to B7.  References:
 # - https://www.colincrawley.com/midi-note-to-audio-frequency-calculator/
 # - https://gist.github.com/matozoid/18cddcbc9cfade3c455bc6230e1f6da6
-for midi_num in range(ctsConstants.C0_MIDI_NUM, ctsConstants.C0_MIDI_NUM + (8 * 12)):
-    tuning = ctsConstants.CONCERT_A     # e.g., tuning = 440.11 used by siddump.c
-    freq = ctsConstants.midi_num_to_freq(midi_num, 0, tuning)
-    ntsc_freq = ctsConstants.midi_num_to_freq_arch(midi_num, 0, 'NTSC-C64', tuning)
-    pal_freq = ctsConstants.midi_num_to_freq_arch(midi_num, 0, 'PAL-C64', tuning)
+for midi_num in range(constants.C0_MIDI_NUM, constants.C0_MIDI_NUM + (8 * 12)):
+    tuning = constants.CONCERT_A     # e.g., tuning = 440.11 used by siddump.c
+    freq = constants.midi_num_to_freq(midi_num, 0, tuning)
+    ntsc_freq = constants.midi_num_to_freq_arch(midi_num, 0, 'NTSC-C64', tuning)
+    pal_freq = constants.midi_num_to_freq_arch(midi_num, 0, 'PAL-C64', tuning)
 
     print(
         '{:3d}, {: <3}, {:8.3f}, {:5d}, {:04X}, {:5d}, {:05X}'.format(
@@ -21,10 +21,10 @@ for midi_num in range(ctsConstants.C0_MIDI_NUM, ctsConstants.C0_MIDI_NUM + (8 * 
 print("\n")
 for ntsc_f in range(269, -1, -1):  # C0 to D0 in NTSC freq for 440 tuning
 #for ntsc_f in range(65000, 65536):
-    midi_num, cents = ctsConstants.freq_arch_to_midi_num(
+    midi_num, cents = constants.freq_arch_to_midi_num(
         ntsc_f,
         arch='PAL-C64',
-        tuning=ctsConstants.CONCERT_A)
+        tuning=constants.CONCERT_A)
     print('{:d}, {:d}, {}, {:d}'.format(ntsc_f, midi_num, ctsBase.pitch_to_note_name(midi_num), cents))
     #print('{:d}, {:d}, {:d}'.format(ntsc_f, midi_num, cents))
 """

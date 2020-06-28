@@ -4,7 +4,7 @@ from chiptunesak import ctsTestingTools
 from chiptunesak import ctsMChirp
 from chiptunesak import ctsMidi
 from chiptunesak import ctsML64
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 
 class TestExportML64(unittest.TestCase):

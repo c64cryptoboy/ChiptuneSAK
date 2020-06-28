@@ -29,7 +29,7 @@ def lp_pitch_to_note_name(note_num, pitches, octave_offset=-3):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = ((note_num - ctsConstants.C0_MIDI_NUM) // 12) + octave_offset
+    octave_num = ((note_num - constants.C0_MIDI_NUM) // 12) + octave_offset
     if octave_num >= 0:
         octave = "'" * octave_num
     else:

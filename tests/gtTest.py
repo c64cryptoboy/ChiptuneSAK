@@ -6,7 +6,7 @@
 import unittest
 from chiptunesak import ctsGoatTracker
 from chiptunesak import ctsBase
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 from chiptunesak.ctsBytesUtil import read_binary_file
 
 

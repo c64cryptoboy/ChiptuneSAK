@@ -1,6 +1,6 @@
 import os
 import csv
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 from chiptunesak.ctsBase import *
 from chiptunesak.ctsChirp import ChirpSong, ChirpTrack, Note
 from chiptunesak.ctsMidi import MIDI
@@ -296,7 +296,7 @@ class Ultima4Music:
 
 
 # Open the Ultima IV music file
-musicPath = ctsConstants.project_to_absolute_path('examples/data/appleii_u4/')
+musicPath = constants.project_to_absolute_path('examples/data/appleii_u4/')
 f_songinfo = os.path.join(musicPath, 'u4songs.csv')
 with open(f_songinfo, 'r') as csvfile:
     csvreader = csv.reader(csvfile, delimiter=",")

@@ -3,7 +3,7 @@ import collections
 from dataclasses import dataclass, field
 from fractions import Fraction
 from chiptunesak.ctsErrors import *
-from chiptunesak import ctsConstants, ctsKey
+from chiptunesak import constants, ctsKey
 
 
 # Named tuple types for several lists throughout
@@ -19,7 +19,7 @@ MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_
 
 @dataclass
 class SongMetadata:
-    ppq: int = ctsConstants.DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
+    ppq: int = constants.DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
     name: str = ''  #: Song name
     composer: str = ''  #: Composer
     copyright: str = ''  #: Copyright statement
@@ -220,7 +220,7 @@ def duration_to_note_name(duration, ppq, locale='US'):
     :rtype:
     """
     f = Fraction(duration / ppq).limit_denominator(64)
-    return ctsConstants.DURATIONS[locale.upper()].get(f, '<unknown>')
+    return constants.DURATIONS[locale.upper()].get(f, '<unknown>')
 
 
 def pitch_to_note_name(note_num, octave_offset=0):
@@ -237,7 +237,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave = (note_num // 12) + octave_offset - 1
     pitch = note_num % 12
-    return "%s%d" % (ctsConstants.PITCHES[pitch], octave)
+    return "%s%d" % (constants.PITCHES[pitch], octave)
 
 
 # Regular expression for matching note names
@@ -262,7 +262,7 @@ def note_name_to_pitch(note_name, octave_offset=0):
     note_name = m.group(1)
     accidentals = m.group(2)
     octave = int(m.group(3)) - octave_offset + 1
-    note_num = ctsConstants.PITCHES.index(note_name) + 12 * octave
+    note_num = constants.PITCHES.index(note_name) + 12 * octave
     if accidentals is not None:
         note_num += accidentals.count('#')
         note_num -= accidentals.count('b')

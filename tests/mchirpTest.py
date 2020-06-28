@@ -3,7 +3,7 @@ from chiptunesak import ctsMidi
 from chiptunesak.ctsBase import *
 from chiptunesak.ctsMChirp import MChirpSong
 from chiptunesak.ctsChirp import ChirpSong
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 TEST_SONG = project_to_absolute_path('tests/data/bach_invention_4.mid')
 

@@ -3,7 +3,7 @@ import os
 import subprocess
 from chiptunesak import ctsMidi
 from chiptunesak import ctsLilypond
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example shows how to do metric modulation to remove triplets

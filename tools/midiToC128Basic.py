@@ -3,7 +3,7 @@
 import argparse
 import os
 
-from chiptunesak import ctsConstants
+from chiptunesak import constants
 from chiptunesak import ctsMidi
 from chiptunesak import ctsC128Basic
 
@@ -16,7 +16,7 @@ def main():
         '-t', '--type', choices=['bas', 'prg'], help='basic output file type (default: prg)'
     )
     parser.add_argument('-i', '--instruments', nargs=3, help="instrument names (3 required)")
-    parser.add_argument('-a', '--arch', default=ctsConstants.DEFAULT_ARCH, help="architecture (NTSC or PAL)")
+    parser.add_argument('-a', '--arch', default=constants.DEFAULT_ARCH, help="architecture (NTSC or PAL)")
 
     args = parser.parse_args()
 

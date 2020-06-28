@@ -1,4 +1,4 @@
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 from chiptunesak import ctsSID
 from chiptunesak import ctsMidi
 

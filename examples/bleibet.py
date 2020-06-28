@@ -1,6 +1,6 @@
 from chiptunesak import ctsMidi
 from chiptunesak import ctsGoatTracker
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This minimal example imports a GoatTracker song and exports as MIDI.
