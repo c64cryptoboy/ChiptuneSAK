@@ -5,8 +5,8 @@ import operator
 import zipfile
 import itertools
 
-from chiptunesak.ctsConstants import project_to_absolute_path
-from chiptunesak import ctsSID
+from chiptunesak.constants import project_to_absolute_path
+from chiptunesak import sid
 
 HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')
 
@@ -32,7 +32,7 @@ with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
         bytes = hvsc_zip.read(sid_file)
         # print("Processing %s (%d bytes)" % (sid_file, len(bytes)))
 
-        parsed = ctsSID.SidFile()
+        parsed = sid.SidFile()
         parsed.parse_binary(bytes)
 
         update_hist('magic_id', parsed.magic_id)

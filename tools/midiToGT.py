@@ -6,9 +6,9 @@
 import argparse
 from os import path
 
-from chiptunesak import ctsGoatTracker
-from chiptunesak import ctsMidi
-from chiptunesak.ctsErrors import ChiptuneSAKValueError
+from chiptunesak import goat_tracker
+from chiptunesak import midi
+from chiptunesak.errors import ChiptuneSAKValueError
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     # generic approach (when quantizable):
     # song.estimate_quantization()
@@ -45,7 +45,7 @@ def main():
         raise ChiptuneSAKValueError("Error: GoatTracker doesn't support more than 6 channels")
 
     rchirp_song = song.to_rchirp()
-    ctsGoatTracker.GoatTracker().to_file(rchirp_song, args.sng_out_file)
+    goat_tracker.GoatTracker().to_file(rchirp_song, args.sng_out_file)
 
     print("\ndone")
 

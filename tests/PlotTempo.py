@@ -2,7 +2,7 @@ import sys
 import collections
 
 import matplotlib.pyplot as plt
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 
 
 def plot_hist(track):
@@ -44,7 +44,7 @@ def plot_hist(track):
     plt.show()
 
 
-song = ctsMidi.import_midi_to_chirp(sys.argv[1])
+song = midi.import_midi_to_chirp(sys.argv[1])
 
 print('\n'.join("%s: %s" % (s, song.stats[s]) for s in song.stats))
 

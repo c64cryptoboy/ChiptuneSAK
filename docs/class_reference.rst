@@ -13,19 +13,19 @@ Chirp
 Note
 ++++
 
-.. autoclass:: chiptunesak.ctsChirp.Note
+.. autoclass:: chiptunesak.chirp.Note
     :members:
 
 ChirpTrack
 ++++++++++
 
-.. autoclass:: chiptunesak.ctsChirp.ChirpTrack
+.. autoclass:: chiptunesak.chirp.ChirpTrack
     :members:
 
 ChirpSong
 +++++++++
 
-.. autoclass:: chiptunesak.ctsChirp.ChirpSong
+.. autoclass:: chiptunesak.chirp.ChirpSong
     :members:
     :show-inheritance:
 
@@ -35,19 +35,19 @@ MChirp
 Measure
 +++++++
 
-.. autoclass:: chiptunesak.ctsMChirp.Measure
+.. autoclass:: chiptunesak.mchirp.Measure
     :members:
 
 MChirpTrack
 +++++++++++
 
-.. autoclass:: chiptunesak.ctsMChirp.MChirpTrack
+.. autoclass:: chiptunesak.mchirp.MChirpTrack
     :members:
 
 MChirpSong
 ++++++++++
 
-.. autoclass:: chiptunesak.ctsMChirp.MChirpSong
+.. autoclass:: chiptunesak.mchirp.MChirpSong
     :members:
     :show-inheritance:
 
@@ -57,19 +57,19 @@ RChirp
 RChirpRow
 +++++++++
 
-.. autoclass:: chiptunesak.ctsRChirp.RChirpRow
+.. autoclass:: chiptunesak.rchirp.RChirpRow
     :members:
 
 RChirpVoice
 +++++++++++
 
-.. autoclass:: chiptunesak.ctsRChirp.RChirpVoice
+.. autoclass:: chiptunesak.rchirp.RChirpVoice
     :members:
 
 RChirpSong
 ++++++++++
 
-.. autoclass:: chiptunesak.ctsRChirp.RChirpSong
+.. autoclass:: chiptunesak.rchirp.RChirpSong
     :members:
     :show-inheritance:
 
@@ -80,35 +80,35 @@ Input/Output Classes
 MIDI Class
 ----------
 
-.. autoclass:: chiptunesak.ctsMidi.MIDI
+.. autoclass:: chiptunesak.midi.MIDI
     :members:
     :show-inheritance:
 
 GoatTracker Class
 -----------------
 
-.. autoclass:: chiptunesak.ctsGoatTracker.GoatTracker
+.. autoclass:: chiptunesak.goat_tracker.GoatTracker
     :members:
     :show-inheritance:
 
 Lilypond Class
 --------------
 
-.. autoclass:: chiptunesak.ctsLilypond.Lilypond
+.. autoclass:: chiptunesak.lilypond.Lilypond
     :members:
     :show-inheritance:
 
 C128 Basic Class
 ----------------
 
-.. autoclass:: chiptunesak.ctsC128Basic.C128Basic
+.. autoclass:: chiptunesak.c128_basic.C128Basic
     :members:
     :show-inheritance:
 
 ML64 Class
 ----------
 
-.. autoclass:: chiptunesak.ctsML64.ML64
+.. autoclass:: chiptunesak.ml64.ML64
     :members:
     :show-inheritance:
 
@@ -118,14 +118,14 @@ Compression Classes
 One-Pass Class
 --------------
 
-.. autoclass:: chiptunesak.ctsOnePassCompress.OnePass
+.. autoclass:: chiptunesak.one_pass_compress.OnePass
     :members:
     :show-inheritance:
 
 One-Pass Global Class
 +++++++++++++++++++++
 
-.. autoclass:: chiptunesak.ctsOnePassCompress.OnePassGlobal
+.. autoclass:: chiptunesak.one_pass_compress.OnePassGlobal
     :members:
     :show-inheritance:
 
@@ -133,9 +133,6 @@ One-Pass Global Class
 One-Pass Left-to-Right Class
 ++++++++++++++++++++++++++++
 
-.. autoclass:: chiptunesak.ctsOnePassCompress.OnePassLeftToRight
+.. autoclass:: chiptunesak.one_pass_compress.OnePassLeftToRight
     :members:
     :show-inheritance:
-
-
-

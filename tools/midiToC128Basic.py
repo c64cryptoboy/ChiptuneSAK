@@ -3,9 +3,9 @@
 import argparse
 import os
 
-from chiptunesak import ctsConstants
-from chiptunesak import ctsMidi
-from chiptunesak import ctsC128Basic
+from chiptunesak import constants
+from chiptunesak import midi
+from chiptunesak import c128_basic
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
         '-t', '--type', choices=['bas', 'prg'], help='basic output file type (default: prg)'
     )
     parser.add_argument('-i', '--instruments', nargs=3, help="instrument names (3 required)")
-    parser.add_argument('-a', '--arch', default=ctsConstants.DEFAULT_ARCH, help="architecture (NTSC or PAL)")
+    parser.add_argument('-a', '--arch', default=constants.DEFAULT_ARCH, help="architecture (NTSC or PAL)")
 
     args = parser.parse_args()
 
@@ -27,8 +27,8 @@ def main():
 
     # midi -> mchirp
 
-    # song = ctsMidi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    # song = midi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     song.remove_keyswitches(8)
     song.quantize_from_note_name('16')
@@ -36,7 +36,7 @@ def main():
     # song.quantize_from_note_name('32')
     song.remove_polyphony()
 
-    ctsC128Basic.trim_note_lengths(song)
+    c128_basic.trim_note_lengths(song)
 
     if len(song.metadata.name) == 0:
         song.metadata.name = args.midi_in_file.split(os.sep)[-1].lower()
@@ -59,7 +59,7 @@ def main():
         else:
             args.type = 'prg'
 
-    basic_converter = ctsC128Basic.C128Basic()
+    basic_converter = c128_basic.C128Basic()
     basic_converter.set_options(arch=args.arch, format=args.type, instruments=instruments)
     basic_converter.to_file(mchirp_song, args.basic_out_file)
 

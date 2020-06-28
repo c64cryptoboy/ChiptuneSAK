@@ -1,9 +1,9 @@
 import os
 import subprocess
 
-from chiptunesak import ctsMidi
-from chiptunesak import ctsLilypond
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import midi
+from chiptunesak.lilypond import Lilypond
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example shows how to process a clip of a song into a PNG file using Lilypond using the following steps:
@@ -22,12 +22,12 @@ input_file = input_folder + 'bach_invention_4.mid'
 output_ly_file = output_folder + 'bach_invention_4.ly'
 
 # Read in the midi song and quantize
-chirp_song = ctsMidi.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
+chirp_song = midi.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
 # Convert to mchirp
 mchirp_song = chirp_song.to_mchirp()
 
 # Create the lilpond I/O class
-lp = ctsLilypond.Lilypond()
+lp = Lilypond()
 # Set the format to do a clip and set the measures to those you want
 lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[3:8])
 # Write it straight to a file

@@ -10,10 +10,10 @@
 import copy
 import bisect
 import more_itertools as moreit
-from chiptunesak.ctsBase import *
-from chiptunesak import ctsMChirp
-from chiptunesak import ctsRChirp
-from chiptunesak import ctsConstants
+from chiptunesak.base import *
+from chiptunesak import mchirp
+from chiptunesak import rchirp
+from chiptunesak import constants
 
 
 class Note:
@@ -80,7 +80,7 @@ class ChirpTrack:
         self.qticks_notes = chirp_song.qticks_notes  #: Not start quantization from song
         self.qticks_durations = chirp_song.qticks_durations  #: Note duration quantization
         if mchirp_track is not None:
-            if not isinstance(mchirp_track, ctsMChirp.MChirpTrack):
+            if not isinstance(mchirp_track, mchirp.MChirpTrack):
                 raise ChiptuneSAKTypeError("ChirpTrack init can only import MChirpTrack objects")
             else:
                 self.import_mchirp_track(mchirp_track)
@@ -461,7 +461,7 @@ class ChirpSong(ChiptuneSAKBase):
     def __init__(self, mchirp_song=None):
         ChiptuneSAKBase.__init__(self)
         self.metadata = SongMetadata()
-        self.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
+        self.metadata.ppq = constants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note. Default is 960.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
@@ -483,7 +483,7 @@ class ChirpSong(ChiptuneSAKBase):
         Clear all tracks and reinitialize to default values
         """
         self.metadata = SongMetadata()
-        self.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
+        self.metadata.ppq = constants.DEFAULT_MIDI_PPQN  #: Pulses (ticks) per quarter note.
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.tracks = []  #: List of ChirpTrack tracks
@@ -500,22 +500,22 @@ class ChirpSong(ChiptuneSAKBase):
         Convert to RChirp.  This calls the creation of an RChirp object
 
         :return: new RChirp object
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         self.set_options(**kwargs)
         self.set_metadata()
-        return ctsRChirp.RChirpSong(self)
+        return rchirp.RChirpSong(self)
 
     def to_mchirp(self, **kwargs):
         """
         Convert to MChirp.  This calls the creation of an MChirp object
 
         :return: new MChirp object
-        :rtype: ctsMChirp.MChirpSong
+        :rtype: mchirp.MChirpSong
         """
         self.set_options(**kwargs)
         self.set_metadata()
-        return ctsMChirp.MChirpSong(self)
+        return mchirp.MChirpSong(self)
 
     def import_mchirp_song(self, mchirp_song):
         """
@@ -640,7 +640,7 @@ class ChirpSong(ChiptuneSAKBase):
     def quantize_from_note_name(self, min_note_duration_string, dotted_allowed=False, triplets_allowed=False):
         """
         Quantize song with more user-friendly input than ticks.  Allowed quantizations are the keys for the
-        ctsConstants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
+        constants.DURATION_STR dictionary.  If an input contains a '.' or a '-3' the corresponding
         values for dotted_allowed and triplets_allowed will be overridden.
 
         :param min_note_duration_string:  Quantization note value
@@ -657,7 +657,7 @@ class ChirpSong(ChiptuneSAKBase):
         if '-3' in min_note_duration_string:
             triplets_allowed = True
             min_note_duration_string = min_note_duration_string.replace('-3', '')
-        qticks = int(self.metadata.ppq * ctsConstants.DURATION_STR[min_note_duration_string])
+        qticks = int(self.metadata.ppq * constants.DURATION_STR[min_note_duration_string])
         if dotted_allowed:
             qticks //= 2
         if triplets_allowed:
@@ -918,7 +918,7 @@ class ChirpSong(ChiptuneSAKBase):
         :param new_key: Key signature.  String such as 'A#' or 'Abm'
         :type new_key: str
         """
-        self.key_signature_changes = [KeySignatureEvent(0, ctsKey.ChirpKey(new_key))]
+        self.key_signature_changes = [KeySignatureEvent(0, key.ChirpKey(new_key))]
 
     def end_time(self):
         """

@@ -1,11 +1,11 @@
 import subprocess
 
-from chiptunesak.ctsBase import *
-from chiptunesak import ctsMidi
-from chiptunesak import ctsLilypond
-from chiptunesak import ctsOnePassCompress
-from chiptunesak import ctsGoatTracker
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.base import *
+from chiptunesak import midi
+from chiptunesak.lilypond import Lilypond
+from chiptunesak import one_pass_compress
+from chiptunesak import goat_tracker
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example processes a MIDI file captured from Betrayal at Krondor to both sheet music and
@@ -38,7 +38,7 @@ output_ly_file = str(project_to_absolute_path(output_folder + 'mercantile.ly'))
 output_gt_file = str(project_to_absolute_path(output_folder + 'mercantile.sng'))
 
 # Read in the original MIDI to Chirp
-chirp_song = ctsMidi.MIDI().to_chirp(input_file)
+chirp_song = midi.MIDI().to_chirp(input_file)
 
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
@@ -105,13 +105,13 @@ print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
 print()
 
 # Save the result to a MIDi file.
-ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
+midi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Convert to MChirp
 mchirp_song = chirp_song.to_mchirp()
 
 # Make sheet music output with Lilypond
-ly = ctsLilypond.Lilypond()
+ly = Lilypond()
 ly.to_file(mchirp_song, output_ly_file)
 
 # If you have Lilypond installed, generate the pdf
@@ -135,10 +135,10 @@ instruments = ['Flute', 'MuteGuitar', 'SimpleTriangle', 'SoftBass']
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
-compressor = ctsOnePassCompress.OnePassLeftToRight()
+compressor = one_pass_compress.OnePassLeftToRight()
 rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing {output_gt_file}')
-GT = ctsGoatTracker.GoatTracker()
+GT = goat_tracker.GoatTracker()
 GT.to_file(rchirp_song, output_gt_file, instruments=instruments)

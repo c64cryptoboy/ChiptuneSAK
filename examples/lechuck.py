@@ -1,10 +1,10 @@
 import copy
 
-from chiptunesak import ctsMidi
-from chiptunesak import ctsRChirp
-from chiptunesak import ctsOnePassCompress
-from chiptunesak import ctsGoatTracker
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import midi
+from chiptunesak import rchirp
+from chiptunesak import one_pass_compress
+from chiptunesak import goat_tracker
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example processes a MIDI file captured from Secret of Monkey Island to a GoatTracker song.
@@ -21,7 +21,7 @@ input_file = str(project_to_absolute_path('examples/data/lechuck/MonkeyIsland_Le
 output_midi_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.mid'))
 output_gt_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.sng'))
 
-chirp_song = ctsMidi.MIDI().to_chirp(input_file)
+chirp_song = midi.MIDI().to_chirp(input_file)
 
 print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
@@ -96,7 +96,7 @@ chirp_song.remove_polyphony()  # There is one place in the bass line that made a
 
 # Now export the modified chirp to a new midi file, which can be viewed and should look nice and neat
 print(f'Writing to MIDI file {output_midi_file}')
-ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
+midi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.
 # Since we want control over the instruments we specify the GT ones in order.
@@ -106,16 +106,16 @@ for i, program in enumerate([1, 2, 2, 2, 3]):
 
 # Now that everything is C64 compatible, we convert the song to goattracker format.
 print(f'Converting ChirpSong to RChirpSong...')
-rchirp_song = ctsRChirp.RChirpSong(chirp_song)
+rchirp_song = rchirp.RChirpSong(chirp_song)
 
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
-compressor = ctsOnePassCompress.OnePassLeftToRight()
+compressor = one_pass_compress.OnePassLeftToRight()
 rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing GoatTracker file {output_gt_file}')
-GT = ctsGoatTracker.GoatTracker()
+GT = goat_tracker.GoatTracker()
 GT.set_options(instruments=['Lead2', 'Harpsichord', 'Bass3'])
 GT.to_file(rchirp_song, output_gt_file)

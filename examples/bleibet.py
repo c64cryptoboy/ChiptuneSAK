@@ -1,6 +1,6 @@
-from chiptunesak import ctsMidi
-from chiptunesak import ctsGoatTracker
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import midi
+from chiptunesak import goat_tracker
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This minimal example imports a GoatTracker song and exports as MIDI.
@@ -15,7 +15,7 @@ output_midi_file = str(project_to_absolute_path(output_folder + 'bleibet.mid'))
 
 # Read in the song using the GoatTracker I/O class
 print(f'Reading and converting {input_file}')
-rchirp_song = ctsGoatTracker.GoatTracker().to_rchirp(input_file, arch='PAL-C64')
+rchirp_song = goat_tracker.GoatTracker().to_rchirp(input_file, arch='PAL-C64')
 
 # The song has a ritard at the end that will mess up the algorithm finding the beat, so eliminate it.
 print(f'Removing the ritard at the end of the song')
@@ -32,4 +32,4 @@ chirp_song.set_time_signature(3, 8)
 
 # And write it to a MIDI file.
 print(f'Writing to MIDI file {output_midi_file}')
-ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
+midi.MIDI().to_file(chirp_song, output_midi_file)

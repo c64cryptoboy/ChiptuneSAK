@@ -1,9 +1,9 @@
 import os
 import subprocess
 
-from chiptunesak import ctsMidi
-from chiptunesak import ctsLilypond
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import midi
+from chiptunesak.lilypond import Lilypond
+from chiptunesak.constants import project_to_absolute_path
 
 """
 This example shows how to process a song into PDF file using Lilypond using the following steps:
@@ -21,7 +21,7 @@ input_mid_file = input_folder + 'BWV_799.mid'
 output_ly_file = output_folder + 'BWV_799.ly'
 
 # Read in the midi song and quantize
-chirp_song = ctsMidi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
+chirp_song = midi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
 
 # It's in A minor, 3/8 time
 chirp_song.set_key_signature('Am')
@@ -30,8 +30,8 @@ chirp_song.set_time_signature(3, 8)
 # Convert to mchirp, parsing the song for measures
 mchirp_song = chirp_song.to_mchirp()
 
-# Write it straight to a file using the ctsLilypond.Lilypond class with format 'song' for the entire song.
-ctsLilypond.Lilypond().to_file(mchirp_song, output_ly_file, format='song')
+# Write it straight to a file using the Lilypond class with format 'song' for the entire song.
+Lilypond().to_file(mchirp_song, output_ly_file, format='song')
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.
 os.chdir(output_folder)

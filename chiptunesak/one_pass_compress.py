@@ -2,9 +2,9 @@ import sys
 import collections
 from dataclasses import dataclass
 import copy
-from chiptunesak.ctsBase import *
-from chiptunesak import ctsGoatTracker
-from chiptunesak.ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
+from chiptunesak.base import *
+from chiptunesak import goat_tracker
+from chiptunesak.rchirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 
 
 """
@@ -215,9 +215,9 @@ class OnePass(ChiptuneSAKCompress):
         """
         Adds a pattern to an RChirpSong.  It checks to be sue that the pattern has not been used.
         :param rchirp_song: An RChirpSong
-        :type rchirp_song: ctsRChirpSong
+        :type rchirp_song: rchirpSong
         :param pattern: the pattern to add to the song
-        :type pattern:  ctsRChirp.RChirpPattern
+        :type pattern:  rchirp.RChirpPattern
         :return: Index of pattern
         :rtype: int
         """
@@ -233,8 +233,8 @@ class OnePass(ChiptuneSAKCompress):
         Converts the temporary dictionary-based orderlist into an RChirp-compatible orderlist
         :param order: dictionary orderlist (created internally)
         :type order: dictionary of (start_row, transposition)
-        :return: orderlist to put into a ctsRChirp.RChirpVoice
-        :rtype: ctsRChirp.RChirpOrderList
+        :return: orderlist to put into a rchirp.RChirpVoice
+        :rtype: rchirp.RChirpOrderList
         """
         orderlist = RChirpOrderList()
         last = RChirpOrderEntry(0, 0, 0)
@@ -337,9 +337,9 @@ class OnePassGlobal(OnePass):
         At each iteration the available repeats are trimmed to avoid the used rows.
 
         :param rchirp_song: RChirp song to compress
-        :type rchirp_song: ctsRChirp.RChirpSong
+        :type rchirp_song: rchirp.RChirpSong
         :return: rchirp_song with compression information added
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
 
         rchirp_song.patterns = []  # Get rid of any patterns from previous compression
@@ -435,9 +435,9 @@ class OnePassLeftToRight(OnePass):
         have been found.
 
         :param rchirp_song: RChirp song to compress
-        :type rchirp_song: ctsRChirp.RChirpSong
+        :type rchirp_song: rchirp.RChirpSong
         :return: rchirp_song with compression information added
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         min_length = self.get_option('min_pattern_length', 126)
         rchirp_song.patterns = []  # Get rid of any patterns from previous compression
@@ -480,16 +480,16 @@ class OnePassLeftToRight(OnePass):
 
 def validate_gt_limits(rchirp_song):
     n_patterns = len(rchirp_song.patterns)
-    if n_patterns > ctsGoatTracker.GT_MAX_PATTERNS_PER_SONG:
+    if n_patterns > goat_tracker.GT_MAX_PATTERNS_PER_SONG:
         print(f'Too many patterns: {n_patterns}', file=sys.stderr)
         return False
     for iv, v in enumerate(rchirp_song.voices):
         orderlist_length = get_gt_orderlist_length(v.orderlist)
-        if orderlist_length > ctsGoatTracker.GT_MAX_ELM_PER_ORDERLIST:
+        if orderlist_length > goat_tracker.GT_MAX_ELM_PER_ORDERLIST:
             print(f'Orderlist too long in voice {iv+1}: {orderlist_length} bytes', file=sys.stderr)
             return False
     for ip, p in enumerate(rchirp_song.patterns):
-        if len(p.rows) + 1 > ctsGoatTracker.GT_MAX_ROWS_PER_PATTERN:
+        if len(p.rows) + 1 > goat_tracker.GT_MAX_ROWS_PER_PATTERN:
             print(f'Pattern {ip} too long: {len(p.rows)} rows', file=sys.stderr)
             return False
     return True
@@ -504,7 +504,7 @@ def get_gt_orderlist_length(orderlist):
     2 bytes are added per 16 repeats; one for the repeat number and another for the
     pattern number (none is needed for transposition and it cannot change for repeats).
     :param orderlist: An orderlist from a voice
-    :type orderlist: ctsRChirp.RChirpOrderlist
+    :type orderlist: rchirp.RChirpOrderlist
     :return: Number of entries required for the GoatTracker orderlist
     :rtype: int
     """

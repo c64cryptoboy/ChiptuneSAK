@@ -1,14 +1,14 @@
 import copy
 import unittest
-from chiptunesak import ctsMidi
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.midi import MIDI
+from chiptunesak.constants import project_to_absolute_path
 
 SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
 
 
 class ChirpConversionTestCase(unittest.TestCase):
     def setUp(self):
-        midi = ctsMidi.MIDI()
+        midi = MIDI()
         self.test_song = midi.to_chirp(SONG_TEST_SONG)
         self.test_song.quantize_from_note_name('16')
         self.test_song.remove_polyphony()

@@ -23,28 +23,28 @@ Sheet Music Examples
 Example 1:  Midi to Lilypond Sheet Music clip
 *********************************************
 
-You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *ctsLilypond.export_clip_to_lilypond()* to create the Lilypond source for the clip.
+You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *chiptunesak.lilypond.export_clip_to_lilypond()* to create the Lilypond source for the clip.
 
-::    
+::
 
-    song = ctsMidi.MIDI().to_chirp('bach_invention_4.mid')
+    song = midi.MIDI().to_chirp('bach_invention_4.mid')
     song.quantize_from_note_name('16')  # Quantize to sixteenth notes
     song.remove_polyphony()
     m_song = song.to_mchirp()
-    lp = ctsLilypond.Lilypond()
+    lp = chiptunesak.lilypond.Lilypond()
     lp.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
-    ly = ctsLilypond.to_bin(m_song)
+    ly = chiptunesak.lilypond.to_bin(m_song)
     with open('bach.ly', 'w') as f:
         f.write(ly)
-          
+
 Then execute the Lilypond command:
 
-:: 
+::
 
     lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 --png bach.ly
-     
+
 The result will be `bach.png` that looks like this:
- 
+
 .. image:: _images/bach.png
     :alt: alternate bachMusic
 
@@ -52,7 +52,7 @@ Example 2:  Midi game music to sheet music
 ******************************************
 
  Often, `midi ripped from old DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.  This example workflow shows how to turn such music into Lilypond-generated sheet music, and will use `a piece of music <http://www.midi-karaoke.info/21868cd1.html>`_ from an MS-DOS RPG Betrayal At Krondor (Sierra On-Line, 1993).
- 
+
 Assume we're going to make sheet music to go along with a C64 lowering, so we'll select three voices from the midi:
 
 **TODO**
@@ -80,7 +80,7 @@ Now quantize the output midi file to 16th notes.  This writes over the existing 
 ::
 
     TransformMidi.py -q 16 -r ..\test\betrayal_q.mid ..\test\betrayal_q.mid
- 
+
 Then output will look something like this:
 
 ::
@@ -109,12 +109,12 @@ Now that the file is quantized, it can be made into a pdf:
 ::
 
     midiToLilypond.py -a ..\test\betrayal_q.mid ..\test`
-  
-Note that you **must** have lilypond in your path for that script to work.    
- 
+
+Note that you **must** have lilypond in your path for that script to work.
+
 The output should look something like this:
 
-::   
+::
 
     Reading ..\test\betrayal_q.mid
     Removing control notes...
@@ -138,5 +138,3 @@ The output should look something like this:
     Success: compilation successfully completed
 
 And the resulting sheet music should appear as `betrayal-q.pdf` in the test directory.
-   
- 

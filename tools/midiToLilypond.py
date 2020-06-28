@@ -1,8 +1,8 @@
 import argparse
 import subprocess
 
-from chiptunesak import ctsMidi
-from chiptunesak import ctsLilypond
+from chiptunesak import midi
+from chiptunesak.lilypond import Lilypond
 
 """
 Prints a MIDI file to Lilypond sheet music.
@@ -19,13 +19,13 @@ def main():
 
     args = parser.parse_args()
 
-    lp = ctsLilypond.Lilypond()
+    lp = Lilypond()
 
     if args.autosort:
         lp.set_options(autosort="True")
 
     print("Reading %s" % args.midi_in_file)
-    chirp_song = ctsMidi.MIDI().to_chirp(args.midi_in_file, quantization='auto', polyphony=False)
+    chirp_song = midi.MIDI().to_chirp(args.midi_in_file, quantization='auto', polyphony=False)
 
     print('Converting to measures...')
     mchirp_song = chirp_song.to_mchirp()

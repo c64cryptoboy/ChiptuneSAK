@@ -11,10 +11,10 @@ import unittest
 import string
 from parameterized import parameterized
 
-from chiptunesak import cts6502Emulator
-from chiptunesak import ctsThinC64Emulator
-from chiptunesak.ctsBytesUtil import read_binary_file
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import emulator_6502
+from chiptunesak import thin_c64_emulator
+from chiptunesak.bytes_util import read_binary_file
+from chiptunesak.constants import project_to_absolute_path
 
 
 # translate alphabet from mixed-case (mode) petscii to ascii
@@ -790,7 +790,7 @@ class TestSuitesForC64(unittest.TestCase):
 
     @parameterized.expand(tests_to_run)
     def test_wl(self, file_name, test_name):
-        cpuState = ctsThinC64Emulator.ThinC64Emulator()
+        cpuState = thin_c64_emulator.ThinC64Emulator()
 
         # patch $EA31 to jump to the $EA81 exit
         cpuState.patch_kernal(59953, [0x4c, 0x81, 0xea])
@@ -891,7 +891,7 @@ class TestSuitesForC64(unittest.TestCase):
 
         # test code wants to use location 1 as storage, so don't want c64 emulation
         # with bank management, just the 6502 emulator
-        cpuState = cts6502Emulator.Cpu6502Emulator()
+        cpuState = emulator_6502.Cpu6502Emulator()
 
         test_prg = read_binary_file(project_to_absolute_path(
             'tests/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
@@ -931,5 +931,5 @@ class TestSuitesForC64(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # ctsTestingTools.env_to_stdout()
+    # testing_tools.env_to_stdout()
     unittest.main(failfast=False)

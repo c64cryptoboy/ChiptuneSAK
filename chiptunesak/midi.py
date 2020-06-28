@@ -1,7 +1,7 @@
 import sys
 import mido
-from chiptunesak.ctsBase import *
-from chiptunesak.ctsChirp import Note, ChirpTrack, ChirpSong
+from chiptunesak.base import *
+from chiptunesak.chirp import Note, ChirpTrack, ChirpSong
 
 
 def sort_midi_events(msg):
@@ -47,7 +47,7 @@ class MIDI(ChiptuneSAKIO):
         :param filename: filename to import
         :type filename: str
         :return: chirp song
-        :rtype: ctsChirp.ChirpSong
+        :rtype: chirp.ChirpSong
         :keyword options:
             * **keyswitch** (bool) Remove keyswitch notes with midi number <=8 (default True)
             * **polyphony** (bool) Allow polyphony (removal occurs after any quantization) (default True)
@@ -63,7 +63,7 @@ class MIDI(ChiptuneSAKIO):
         Exports a ChirpSong to a midi file.
 
         :param song: chirp song
-        :type song: ctsChirpSong
+        :type song: chirpSong
         :param filename: filename for export
         :type filename: str
         :return: True on success
@@ -238,7 +238,7 @@ class MIDI(ChiptuneSAKIO):
             elif msg.type == 'set_tempo':
                 chirp_song.tempo_changes.append(TempoEvent(current_time, int(round(mido.tempo2bpm(msg.tempo)))))
             elif msg.type == 'key_signature':
-                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, ctsKey.ChirpKey(msg.key)))
+                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, key.ChirpKey(msg.key)))
             elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
                 chirp_song.metadata.name = msg.name.strip()
                 is_name_set = True
@@ -255,7 +255,7 @@ class MIDI(ChiptuneSAKIO):
 
         # Require initial time signature, key signature, and tempo values.
         if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
-            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, ctsKey.ChirpKey("C")))  # Default top key of C
+            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, key.ChirpKey("C")))  # Default top key of C
         chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
         if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
             chirp_song.time_signature_changes.insert(0, TimeSignatureEvent(0, 4, 4))  # Default to 4/4

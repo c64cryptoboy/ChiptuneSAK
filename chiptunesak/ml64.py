@@ -1,6 +1,6 @@
-from chiptunesak.ctsBase import *
-from chiptunesak import ctsChirp, ctsMChirp
-from chiptunesak import ctsConstants
+from chiptunesak.base import *
+from chiptunesak import chirp, mchirp
+from chiptunesak import constants
 
 '''
 This file contains functions required to export MidiSimple songs to ML64 format.
@@ -19,9 +19,9 @@ def pitch_to_ml64_note_name(note_num, octave_offset=0):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = ((note_num - ctsConstants.C0_MIDI_NUM) // 12) + octave_offset
+    octave_num = ((note_num - constants.C0_MIDI_NUM) // 12) + octave_offset
     pitch = note_num % 12
-    return "%s%d" % (ctsConstants.PITCHES[pitch], octave_num)
+    return "%s%d" % (constants.PITCHES[pitch], octave_num)
 
 
 def make_ml64_notes(note_name, duration, ppq):
@@ -43,7 +43,7 @@ def ml64_sort_order(c):
      *   Tempo
      *   Notes and rests
     """
-    if isinstance(c, ctsChirp.Note):
+    if isinstance(c, chirp.Note):
         return (c.start_time, 10)
     elif isinstance(c, Rest):
         return (c.start_time, 10)
@@ -73,7 +73,7 @@ def events_to_ml64(events, song, last_continue=False):
     content = []
     stats = collections.Counter()
     for e in events:
-        if isinstance(e, ctsChirp.Note):
+        if isinstance(e, chirp.Note):
             if last_continue:
                 tmp_note = make_ml64_notes('c', e.duration, song.metadata.ppq)
             else:
@@ -113,7 +113,7 @@ class ML64(ChiptuneSAKIO):
         Generates an ML64 string for a song
 
         :param song: song
-        :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
+        :type song: chirp.ChirpSong or mchirp.MChirpSong
         :return: ML64 encoding of song
         :rtype: string
 
@@ -123,14 +123,14 @@ class ML64(ChiptuneSAKIO):
 
         """
         self.set_options(**kwargs)
-        if isinstance(song, ctsChirp.ChirpSong):
+        if isinstance(song, chirp.ChirpSong):
             if self.format == 'm':
                 raise ChiptuneSAKTypeError("Cannot export Chirp song to Measures format")
             else:
                 return self.export_chirp_to_ml64(song)
-        elif isinstance(song, ctsMChirp.MChirpSong):
+        elif isinstance(song, mchirp.MChirpSong):
             if self.format != 'm':
-                tmp_song = ctsChirp.ChirpSong(song)
+                tmp_song = chirp.ChirpSong(song)
                 tmp_song.quantize(*tmp_song.estimate_quantization())
                 return self.export_chirp_to_ml64(tmp_song)
             else:
@@ -143,7 +143,7 @@ class ML64(ChiptuneSAKIO):
         Writes ML64 to a file
 
         :param song: song
-        :type song: ctsChirp.ChirpSong or ctsMChirp.MChirpSong
+        :type song: chirp.ChirpSong or mchirp.MChirpSong
         :return: ML64 encoding of song
         :rtype: string
 

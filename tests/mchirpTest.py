@@ -1,16 +1,16 @@
 import unittest
-from chiptunesak import ctsMidi
-from chiptunesak.ctsBase import *
-from chiptunesak.ctsMChirp import MChirpSong
-from chiptunesak.ctsChirp import ChirpSong
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak import midi
+from chiptunesak.base import *
+from chiptunesak.mchirp import MChirpSong
+from chiptunesak.chirp import ChirpSong
+from chiptunesak.constants import project_to_absolute_path
 
 TEST_SONG = project_to_absolute_path('tests/data/bach_invention_4.mid')
 
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.MIDI().to_chirp(TEST_SONG, quantization='16', polyphony=False)
+        self.test_song = midi.MIDI().to_chirp(TEST_SONG, quantization='16', polyphony=False)
         self.test_mchirp_song = MChirpSong(self.test_song)
 
     def test_tracks(self):
@@ -40,7 +40,7 @@ class SongTestCase(unittest.TestCase):
         chirp_song = ChirpSong(self.test_mchirp_song)
 
         # Used to generate output midi file to check that they sound the same.
-        # ctsMidi.export_chirp_to_midi(chirp_song, 'MChirp_test.mid')
+        # midi.export_chirp_to_midi(chirp_song, 'MChirp_test.mid')
 
         self.assertEqual(len(chirp_song.tracks), len(self.test_song.tracks))
         self.assertEqual([t.name for t in chirp_song.tracks], [t.name for t in self.test_song.tracks])
@@ -51,7 +51,7 @@ class SongTestCase(unittest.TestCase):
         self.assertEqual(test_total_notes, chirp_total_notes)
 
     def test_triplets(self):
-        test_song = ctsMidi.MIDI().to_chirp(project_to_absolute_path('tests/data/tripletTest.mid'))
+        test_song = midi.MIDI().to_chirp(project_to_absolute_path('tests/data/tripletTest.mid'))
         estimated_q = test_song.estimate_quantization()
         test_song.quantize(*estimated_q)
         test_song.remove_polyphony()
@@ -62,4 +62,4 @@ class SongTestCase(unittest.TestCase):
         self.assertEqual(total_triplets, 21)
 
         # tmp_song = ChirpSong(test_mchirp)
-        # ctsMidi.export_chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')
+        # midi.export_chirp_to_midi(tmp_song, 'data/tripletTestConversion.mid')

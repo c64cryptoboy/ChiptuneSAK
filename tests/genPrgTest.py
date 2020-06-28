@@ -1,5 +1,5 @@
 import unittest
-from chiptunesak import ctsGenPrg  # src/
+from chiptunesak import gen_prg  # src/
 
 
 class TestExportPRG(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestExportPRG(unittest.TestCase):
         ascii_prg = '10 print "rem":rem "print": end\n'
         ascii_prg += '1337 print"print"+chr$(67)+"chr$(67)"'
 
-        # print(' '.join('%02X' % b for b in ctsGenPrg.ascii_to_c128prg(ascii_prg)))
+        # print(' '.join('%02X' % b for b in gen_prg.ascii_to_c128prg(ascii_prg)))
 
         # ground truth from VICE:
         tmp = '''01 1C 1C 1C 0A 00 99 20 22 52 45 4D 22 3A 8F 20 22 50 52
@@ -17,7 +17,7 @@ class TestExportPRG(unittest.TestCase):
                  22 00 00 00'''
         bin_from_vice = bytearray(int(x, 16) for x in tmp.split())
 
-        self.assertEqual(ctsGenPrg.ascii_to_prg_c128(ascii_prg), bin_from_vice)
+        self.assertEqual(gen_prg.ascii_to_prg_c128(ascii_prg), bin_from_vice)
 
 
 if __name__ == '__main__':

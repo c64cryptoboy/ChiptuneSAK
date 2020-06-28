@@ -5,8 +5,8 @@
 
 import argparse
 
-from chiptunesak import ctsGoatTracker
-from chiptunesak import ctsMidi
+from chiptunesak import goat_tracker
+from chiptunesak import midi
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
 
     args = parser.parse_args()
 
-    rchirp_song = ctsGoatTracker.GoatTracker().to_rchirp(args.sng_in_file, subtune=args.subtune_number)
+    rchirp_song = goat_tracker.GoatTracker().to_rchirp(args.sng_in_file, subtune=args.subtune_number)
 
     """
     cvs_filename = '%s.csv' % (args.sng_in_file.split('.')[0])
@@ -32,7 +32,7 @@ def main():
     # TODO:  Need to consider inferring time signature and/or having the user be able to set it
     # chirp_song.time_signature_changes.insert(0, ctsSong.TimeSignature(0, 3, 4))
 
-    ctsMidi.MIDI().to_file(chirp_song, args.midi_out_file)
+    midi.MIDI().to_file(chirp_song, args.midi_out_file)
 
     print("\ndone")
 

@@ -2,8 +2,8 @@ import re
 import collections
 from dataclasses import dataclass, field
 from fractions import Fraction
-from chiptunesak.ctsErrors import *
-from chiptunesak import ctsConstants, ctsKey
+from chiptunesak.errors import *
+from chiptunesak import constants, key
 
 
 # Named tuple types for several lists throughout
@@ -19,12 +19,12 @@ MeasureMarker = collections.namedtuple('MeasureMarker', ['start_time', 'measure_
 
 @dataclass
 class SongMetadata:
-    ppq: int = ctsConstants.DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
+    ppq: int = constants.DEFAULT_MIDI_PPQN  #: PPQ = Pulses Per Quarter = ticks/quarter note
     name: str = ''  #: Song name
     composer: str = ''  #: Composer
     copyright: str = ''  #: Copyright statement
     time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)  #: Starting time signature
-    key_signature: KeySignatureEvent = KeySignatureEvent(0, ctsKey.ChirpKey('C'))  #: Starting key signature
+    key_signature: KeySignatureEvent = KeySignatureEvent(0, key.ChirpKey('C'))  #: Starting key signature
     qpm: int = 112  #: Tempo in Quarter Notes per Minute (QPM)
     extensions: dict = field(default_factory=dict)  #: Allows arbitrary state to be passed
 
@@ -92,7 +92,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         Converts a song to Chirp IR
 
         :return: chirp song
-        :rtype: ctsChirp.ChirpSong
+        :rtype: chirp.ChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
@@ -101,7 +101,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         Converts a song to MChirp IR
 
         :return: chirp song
-        :rtype: ctsMChirp.MChirpSong
+        :rtype: mchirp.MChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
 
@@ -110,7 +110,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         Converts a song to RChirp IR
 
         :return: chirp song
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to RChirp not implemented")
 
@@ -130,7 +130,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :param filename: filename to import
         :type filename: str
         :return: Chirp song
-        :rtype: ctsChirp.ChirpSong object
+        :rtype: chirp.ChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -141,7 +141,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :param filename: filename to import
         :type filename: str
         :return: RChirp song
-        :rtype: ctsRChirp.RChirpSong object
+        :rtype: rchirp.RChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -152,7 +152,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :param filename: filename to import
         :type filename: str
         :return: MChirp song
-        :rtype: ctsMChirp.MChirpSong object
+        :rtype: mchirp.MChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -192,9 +192,9 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         Compresses an rchirp song
 
         :param rchirp_song: song to compress
-        :type rchirp_song: ctsRChirp.RChirpSong
+        :type rchirp_song: rchirp.RChirpSong
         :return: rchirp_song with compression
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -220,7 +220,7 @@ def duration_to_note_name(duration, ppq, locale='US'):
     :rtype:
     """
     f = Fraction(duration / ppq).limit_denominator(64)
-    return ctsConstants.DURATIONS[locale.upper()].get(f, '<unknown>')
+    return constants.DURATIONS[locale.upper()].get(f, '<unknown>')
 
 
 def pitch_to_note_name(note_num, octave_offset=0):
@@ -237,7 +237,7 @@ def pitch_to_note_name(note_num, octave_offset=0):
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
     octave = (note_num // 12) + octave_offset - 1
     pitch = note_num % 12
-    return "%s%d" % (ctsConstants.PITCHES[pitch], octave)
+    return "%s%d" % (constants.PITCHES[pitch], octave)
 
 
 # Regular expression for matching note names
@@ -262,7 +262,7 @@ def note_name_to_pitch(note_name, octave_offset=0):
     note_name = m.group(1)
     accidentals = m.group(2)
     octave = int(m.group(3)) - octave_offset + 1
-    note_num = ctsConstants.PITCHES.index(note_name) + 12 * octave
+    note_num = constants.PITCHES.index(note_name) + 12 * octave
     if accidentals is not None:
         note_num += accidentals.count('#')
         note_num -= accidentals.count('b')
@@ -302,7 +302,7 @@ def is_triplet(note, ppq):
     """
     Determine if note is a triplet
     :param note:  note
-    :type note:   ctsChirp.Note
+    :type note:   chirp.Note
     :param ppq:   ppq
     :type ppq:    int
     :return:      True of the note is a triplet type

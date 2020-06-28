@@ -24,7 +24,7 @@
 # - Test a mirror set in VICE (on some vic register, not SID)
 # - throw an exception if the break flag ever appears on flags
 
-from chiptunesak.ctsErrors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError
+from chiptunesak.errors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError
 
 # 6502 vector locations
 NMI = 0xfffa  # on C64, vector points to NMI routine at $FE43/65091

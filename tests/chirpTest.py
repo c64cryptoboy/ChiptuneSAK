@@ -1,9 +1,9 @@
 import copy
 import unittest
 
-from chiptunesak import ctsMidi
-from chiptunesak import ctsChirp
-from chiptunesak.ctsConstants import project_to_absolute_path
+from chiptunesak.midi import MIDI
+from chiptunesak import chirp
+from chiptunesak.constants import project_to_absolute_path
 
 SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
 TRACK_TEST_SONG = project_to_absolute_path('tests/data/BWV_799.mid')
@@ -11,7 +11,7 @@ TRACK_TEST_SONG = project_to_absolute_path('tests/data/BWV_799.mid')
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        midi = ctsMidi.MIDI()
+        midi = MIDI()
         self.test_song = midi.to_chirp(SONG_TEST_SONG)
 
     def test_notes(self):
@@ -54,7 +54,7 @@ class SongTestCase(unittest.TestCase):
         ppq = self.test_song.metadata.ppq
         known_good = 'quarter, eighth, eighth triplet, sixteenth, thirty-second, thirty-second triplet, sixty-fourth'
         test_durations = [1, 2, 3, 4, 8, 12, 16]
-        test_output = ', '.join(ctsChirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)
+        test_output = ', '.join(chirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)
         self.assertEqual(test_output, known_good)
 
     def test_measures(self):
@@ -90,7 +90,7 @@ class SongTestCase(unittest.TestCase):
 
 class TrackTestCase(unittest.TestCase):
     def setUp(self):
-        midi = ctsMidi.MIDI()
+        midi = MIDI()
         self.test_song = midi.to_chirp(TRACK_TEST_SONG)
 
     def test_quantization(self):

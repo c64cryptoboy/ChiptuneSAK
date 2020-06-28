@@ -1,17 +1,17 @@
 # TODO:
-# - this hardly covers all the ctsSID functionality, need to add many more tests
+# - this hardly covers all the sid functionality, need to add many more tests
 
 #import testingPath  # noqa
 import unittest
-from chiptunesak import ctsConstants
-from chiptunesak import ctsSID
+from chiptunesak import constants
+from chiptunesak import sid
 
 
 class sidTests(unittest.TestCase):
 
     def test_SID_freqs_to_midi_notes(self):
-        si_ntsc = ctsSID.SidImport(arch='NTSC-C64', tuning=ctsConstants.CONCERT_A)
-        si_pal = ctsSID.SidImport(arch='PAL-C64', tuning=ctsConstants.CONCERT_A)
+        si_ntsc = sid.SidImport(arch='NTSC-C64', tuning=constants.CONCERT_A)
+        si_pal = sid.SidImport(arch='PAL-C64', tuning=constants.CONCERT_A)
 
         cminus1_midi_num = 0  # our lowest note
         # Very low SID frequencies tests
@@ -39,28 +39,28 @@ class sidTests(unittest.TestCase):
         g2_midi_num = 43
 
         very_flat_g2_freq = 1571
-        (midi_note, very_flat_g2_cents) = ctsConstants.freq_arch_to_midi_num(
-            very_flat_g2_freq, arch='NTSC-C64', tuning=ctsConstants.CONCERT_A)
+        (midi_note, very_flat_g2_cents) = constants.freq_arch_to_midi_num(
+            very_flat_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
         self.assertEquals((midi_note, very_flat_g2_cents), (g2_midi_num, -40))
 
         flat_g2_freq = 1604
-        (midi_note, flat_g2_cents) = ctsConstants.freq_arch_to_midi_num(
-            flat_g2_freq, arch='NTSC-C64', tuning=ctsConstants.CONCERT_A)
+        (midi_note, flat_g2_cents) = constants.freq_arch_to_midi_num(
+            flat_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
         self.assertEquals((midi_note, flat_g2_cents), (g2_midi_num, -4))
 
         # g2_freq = 1608
-        # (midi_note, g2_cents) = ctsConstants.freq_arch_to_midi_num(
-        #     g2_freq, arch='NTSC-C64', tuning=ctsConstants.CONCERT_A)
+        # (midi_note, g2_cents) = constants.freq_arch_to_midi_num(
+        #     g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
         # self.assertEquals((midi_note, g2_cents), (g2_midi_num, 0))
 
         sharp_g2_freq = 1611
-        (midi_note, sharp_g2_cents) = ctsConstants.freq_arch_to_midi_num(
-            sharp_g2_freq, arch='NTSC-C64', tuning=ctsConstants.CONCERT_A)
+        (midi_note, sharp_g2_cents) = constants.freq_arch_to_midi_num(
+            sharp_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
         self.assertEquals((midi_note, sharp_g2_cents), (g2_midi_num, 4))
 
         very_sharp_g2_freq = 1645
-        (midi_note, very_sharp_g2_cents) = ctsConstants.freq_arch_to_midi_num(
-            very_sharp_g2_freq, arch='NTSC-C64', tuning=ctsConstants.CONCERT_A)
+        (midi_note, very_sharp_g2_cents) = constants.freq_arch_to_midi_num(
+            very_sharp_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
         self.assertEquals((midi_note, very_sharp_g2_cents), (g2_midi_num, 40))
 
         # Scenario A: We imagine a wide vibrato on an f#2 strayed a little into

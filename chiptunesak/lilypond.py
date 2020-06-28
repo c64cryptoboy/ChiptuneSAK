@@ -1,7 +1,7 @@
 import copy
 
-from chiptunesak.ctsBase import *
-from chiptunesak.ctsChirp import Note
+from chiptunesak.base import *
+from chiptunesak.chirp import Note
 
 
 # TODO:
@@ -29,7 +29,7 @@ def lp_pitch_to_note_name(note_num, pitches, octave_offset=-3):
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
-    octave_num = ((note_num - ctsConstants.C0_MIDI_NUM) // 12) + octave_offset
+    octave_num = ((note_num - constants.C0_MIDI_NUM) // 12) + octave_offset
     if octave_num >= 0:
         octave = "'" * octave_num
     else:
@@ -253,7 +253,7 @@ class Lilypond(ChiptuneSAKIO):
             raise ChiptuneSAKContentError("No measures to export!")
         # Set these to the default so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-        self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+        self.current_key_signature = key.ChirpKey('C').key_signature
         self.current_clef = 'treble'
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
@@ -300,7 +300,7 @@ class Lilypond(ChiptuneSAKIO):
 
         # Set these to the default, so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-        self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+        self.current_key_signature = key.ChirpKey('C').key_signature
         self.current_clef = 'treble'
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
@@ -318,7 +318,7 @@ class Lilypond(ChiptuneSAKIO):
         output.append('\\new StaffGroup <<')
         for it, t in enumerate(tracks):
             self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-            self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+            self.current_key_signature = key.ChirpKey('C').key_signature
             measures = copy.copy(t.measures)
             track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)),
                            max(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)))

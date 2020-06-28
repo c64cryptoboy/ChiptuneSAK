@@ -1,4 +1,4 @@
-# ctsGenPrg.py
+# gen_prg.py
 # Convert an ascii basic program into a Commodore PRG file
 #
 # Does not implement a grammar for BASIC, so no grammar checking, but will generate a valid PRG
@@ -19,9 +19,9 @@ Some notes on Commodore BASIC:
 - Lines numbers can range from 0 to 65520
 """
 
-from chiptunesak.ctsConstants import BASIC_START_C64, BASIC_START_C128, BASIC_LINE_MAX_C64, BASIC_LINE_MAX_C128
-from chiptunesak.ctsBytesUtil import little_endian_bytes
-from chiptunesak.ctsErrors import ChiptuneSAKContentError
+from chiptunesak.constants import BASIC_START_C64, BASIC_START_C128, BASIC_LINE_MAX_C64, BASIC_LINE_MAX_C128
+from chiptunesak.bytes_util import little_endian_bytes
+from chiptunesak.errors import ChiptuneSAKContentError
 
 rem_len = len('rem')
 

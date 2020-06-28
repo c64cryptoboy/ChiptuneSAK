@@ -15,9 +15,9 @@
 import copy
 from functools import reduce
 import math
-from chiptunesak import ctsChirp
-from chiptunesak.ctsBase import *
-from chiptunesak import ctsConstants
+from chiptunesak import chirp
+from chiptunesak.base import *
+from chiptunesak import constants
 from dataclasses import dataclass
 
 
@@ -103,7 +103,7 @@ class RChirpVoice:
         self.orderlist = RChirpOrderList()
         self.name = ''
         if chirp_track is not None:
-            if not isinstance(chirp_track, ctsChirp.ChirpTrack):
+            if not isinstance(chirp_track, chirp.ChirpTrack):
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
                 self.import_chirp_track(chirp_track)
@@ -337,7 +337,7 @@ class RChirpVoice:
            and orderlists performed.  Track must be non-polyphonic and quantized.
 
         :param chirp_track: A chirp track
-        :type chirp_track: ctsChirp.ChirpTrack
+        :type chirp_track: chirp.ChirpTrack
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
@@ -349,7 +349,7 @@ class RChirpVoice:
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) / ctsConstants.ARCH[self.rchirp_song.arch].frame_rate
+        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) / constants.ARCH[self.rchirp_song.arch].frame_rate
         jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
         ticks_per_row = ticks_per_jiffy * jiffies_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
@@ -396,7 +396,7 @@ class RChirpSong(ChiptuneSAKBase):
 
     def __init__(self, chirp_song=None):
         ChiptuneSAKBase.__init__(self)
-        self.arch = ctsConstants.DEFAULT_ARCH           #: Architecture
+        self.arch = constants.DEFAULT_ARCH           #: Architecture
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
         self.patterns = []                              #: Patterns to be shared among the voices
@@ -410,7 +410,7 @@ class RChirpSong(ChiptuneSAKBase):
             self.metadata = SongMetadata()
         else:
             self.metadata = copy.deepcopy(chirp_song.metadata)
-            if not isinstance(chirp_song, ctsChirp.ChirpSong):
+            if not isinstance(chirp_song, chirp.ChirpSong):
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")
             else:
                 self.import_chirp_song(chirp_song)
@@ -420,7 +420,7 @@ class RChirpSong(ChiptuneSAKBase):
         Converts the RChirpSong into a ChirpSong
 
         :return: Chirp song
-        :rtype: ctsChirp.ChirpSong
+        :rtype: chirp.ChirpSong
         """
         self.set_options(**kwargs)
         return self.convert_to_chirp()
@@ -430,7 +430,7 @@ class RChirpSong(ChiptuneSAKBase):
         Imports a ChirpSong
 
         :param chirp_song: A chirp song
-        :type chirp_song: ctsChirp.ChirpSong
+        :type chirp_song: chirp.ChirpSong
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
@@ -441,7 +441,7 @@ class RChirpSong(ChiptuneSAKBase):
         if chirp_song.is_polyphonic():
             raise ChiptuneSAKPolyphonyError("ChirpSong must not be polyphonic to create RChirp.")
         arch = chirp_song.get_option('arch', self.arch)
-        if arch not in ctsConstants.ARCH:
+        if arch not in constants.ARCH:
             raise ChiptuneSAKValueError("Illegal architecture name {self.arch}")
         self.arch = arch
 
@@ -492,7 +492,7 @@ class RChirpSong(ChiptuneSAKBase):
         Creates a program map of Chirp program numbers (patches) to instruments
 
         :param chirp_song: chirp song
-        :type chirp_song: ctsChirp.ChirpSong
+        :type chirp_song: chirp.ChirpSong
         :return: program_map
         :rtype: dict of {chirp_program:rchirp_instrument}
         """
@@ -615,9 +615,9 @@ class RChirpSong(ChiptuneSAKBase):
         :return: chirp conversion
         :rtype: ChirpSong
         """
-        song = ctsChirp.ChirpSong()
+        song = chirp.ChirpSong()
         song.metadata = copy.deepcopy(self.metadata)
-        song.metadata.ppq = ctsConstants.DEFAULT_MIDI_PPQN
+        song.metadata.ppq = constants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
         song.set_options(arch=self.arch)  # So that round-trip will return the same arch
 
@@ -629,15 +629,15 @@ class RChirpSong(ChiptuneSAKBase):
         jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums))
 
         # We arbitrarily set he minimum divisor to be a sixteenth note.
-        midi_ticks_per_quarter = ctsConstants.DEFAULT_MIDI_PPQN
+        midi_ticks_per_quarter = constants.DEFAULT_MIDI_PPQN
         jiffies_per_quarter = 4 * jiffies_per_note
-        qpm = ctsConstants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
+        qpm = constants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
         song.set_qpm(qpm)
         midi_ticks_per_jiffy = midi_ticks_per_quarter / jiffies_per_quarter
 
         midi_tick = 0
         for iv, v in enumerate(self.voices):
-            track = ctsChirp.ChirpTrack(song)
+            track = chirp.ChirpTrack(song)
             track.name = 'Track %d' % (iv + 1)
             track.channel = iv
             current_note = None
@@ -646,22 +646,22 @@ class RChirpSong(ChiptuneSAKBase):
                 midi_tick = int(round((row.jiffy_num - notes_offset_jiffies) * midi_ticks_per_jiffy))
                 if row.gate:
                     if current_note:
-                        new_note = ctsChirp.Note(
+                        new_note = chirp.Note(
                             current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
-                    current_note = ctsChirp.Note(midi_tick, row.note_num, 1)
+                    current_note = chirp.Note(midi_tick, row.note_num, 1)
                 elif row.gate is False:
                     if current_note:
-                        new_note = ctsChirp.Note(
+                        new_note = chirp.Note(
                             current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
                     current_note = None
             if current_note:
-                new_note = ctsChirp.Note(
+                new_note = chirp.Note(
                     current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
                 )
                 if new_note.duration > 0:

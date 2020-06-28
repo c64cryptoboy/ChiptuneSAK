@@ -14,11 +14,11 @@ from os import path, listdir
 from os.path import isfile, join
 import copy
 from dataclasses import dataclass
-from chiptunesak import ctsConstants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
-from chiptunesak import ctsBase
-from chiptunesak.ctsBytesUtil import read_binary_file
-from chiptunesak import ctsRChirp
-from chiptunesak.ctsErrors import *
+from chiptunesak import constants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
+from chiptunesak import base
+from chiptunesak.bytes_util import read_binary_file
+from chiptunesak import rchirp
+from chiptunesak.errors import *
 
 
 DEFAULT_INSTR_PATH = 'res/gtInstruments/'
@@ -52,7 +52,7 @@ GT_PAT_END = 0xFF  # pattern end
 GT_TEMPO_CHNG_CMD = 0x0F
 
 
-class GoatTracker(ctsBase.ChiptuneSAKIO):
+class GoatTracker(base.ChiptuneSAKIO):
     """
     The IO interface for GoatTracker and GoatTracker Stereo
     Supports conversions between RChirp and GoatTracker .sng format
@@ -62,11 +62,11 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         return 'GoatTracker'
 
     def __init__(self):
-        ctsBase.ChiptuneSAKIO.__init__(self)
+        base.ChiptuneSAKIO.__init__(self)
         self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
                          instruments=[],          # gt instrument assignments, in order
                          end_with_repeat=False,   # default is to stop GoatTracker from repeating music
-                         arch=ctsConstants.DEFAULT_ARCH)  # architecture (for import to RChirp)
+                         arch=constants.DEFAULT_ARCH)  # architecture (for import to RChirp)
 
     def set_options(self, **kwargs):
         """
@@ -87,7 +87,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
                     if ins_name[-4:] == '.ins':
                         val[i] = ins_name[:-4]
             elif op == 'arch':
-                if val not in ctsConstants.ARCH:
+                if val not in constants.ARCH:
                     raise ChiptuneSAKValueError(f'Unknown architecture {val}')
             # Now set the option
             self._options[op] = val
@@ -146,11 +146,11 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
 
         :keyword options:
             * **subtune** (int) - The subtune numer to import.  Defaults to 0
-            * **arch** (str) - architecture string. Must be one defined in ctsConstants.py
+            * **arch** (str) - architecture string. Must be one defined in constants.py
         """
         self.set_options(**kwargs)
         subtune = int(self.get_option('subtune', 0))
-        arch = self.get_option('arch', ctsConstants.DEFAULT_ARCH)
+        arch = self.get_option('arch', constants.DEFAULT_ARCH)
         rchirp_song = import_sng_file_to_rchirp(filename, subtune_number=subtune)
         rchirp_song.arch = arch
         return rchirp_song
@@ -383,7 +383,7 @@ def pattern_note_to_midi_note(pattern_note_byte, octave_offset=0):
     :return: Midi note number
     :rtype: int
     """
-    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (octave_offset * 12)
+    midi_note = pattern_note_byte - (GT_NOTE_OFFSET - constants.C0_MIDI_NUM) + (octave_offset * 12)
     if not (0 <= midi_note < 128):
         raise ChiptuneSAKValueError(f"Error: illegal midi note value {midi_note} from gt {pattern_note_byte}")
     return midi_note
@@ -451,7 +451,7 @@ def get_ins_filenames():
     :return: list of filenames
     :rtype: list
     """
-    dir = ctsConstants.project_to_absolute_path(DEFAULT_INSTR_PATH)
+    dir = constants.project_to_absolute_path(DEFAULT_INSTR_PATH)
     ins_files = [f for f in listdir(dir) if isfile(join(dir, f)) and f[-4:] == '.ins']
     return ins_files
 
@@ -487,7 +487,7 @@ def instrument_appender(
     Load the named instrument's ins file and generate updated wavetables
     """
 
-    ins_bytes = read_binary_file(ctsConstants.project_to_absolute_path(path + gt_inst_name + '.ins'))
+    ins_bytes = read_binary_file(constants.project_to_absolute_path(path + gt_inst_name + '.ins'))
 
     if ins_bytes[0:4] != b'GTI5':
         raise ChiptuneSAKValueError("Invalid instrument file structure")
@@ -873,7 +873,7 @@ class GTSong:
         :return: GT note value
         :rtype: int
         """
-        gt_note_value = midi_note + (GT_NOTE_OFFSET - ctsConstants.C0_MIDI_NUM) + (-1 * octave_offset * 12)
+        gt_note_value = midi_note + (GT_NOTE_OFFSET - constants.C0_MIDI_NUM) + (-1 * octave_offset * 12)
         if not (GT_NOTE_OFFSET <= gt_note_value <= GT_MAX_NOTE_VALUE):
             raise ChiptuneSAKValueError(f"Error: illegal gt note data value {gt_note_value} from midi {midi_note}")
         return gt_note_value
@@ -986,7 +986,7 @@ class GTSong:
         :rtype: RChirpSong
         """
 
-        rchirp_song = ctsRChirp.RChirpSong()
+        rchirp_song = rchirp.RChirpSong()
 
         rchirp_song.metadata.name = self.headers.song_name
         rchirp_song.metadata.composer = self.headers.author_name
@@ -995,7 +995,7 @@ class GTSong:
         # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
         channels_state = [GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i]) for i in range(self.num_channels)]
 
-        rchirp_song.voices = [ctsRChirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
+        rchirp_song.voices = [rchirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
 
         # TODO: Make track assignment to SID groupings not hardcoded
         if self.is_stereo:
@@ -1034,7 +1034,7 @@ class GTSong:
                 if gt_row is None:  # if we didn't advance to a new row...
                     continue
 
-                rc_row = ctsRChirp.RChirpRow()
+                rc_row = rchirp.RChirpRow()
                 rc_row.jiffy_num = global_tick
                 rc_row.jiffy_len = cs.curr_tempo
 
@@ -1358,7 +1358,7 @@ class GTSong:
         # simple triangle instrument up to the max unmatched instrument
         # This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
         # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
-        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive
+        # the job of goat_tracker to map an arbitrary set of instrument numbers to a consecutive
         # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
         # exist here.
         if len(unmapped_inst_nums) > 0:

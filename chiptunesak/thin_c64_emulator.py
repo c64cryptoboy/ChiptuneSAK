@@ -7,14 +7,14 @@
 #   the ROM wasn't loaded, then throw a stern warning.  This needs to be optional (default off),
 #   since in many places we stub our own ROM stuff, but this could be useful for SIDs.
 
-from chiptunesak import ctsConstants
-from chiptunesak.ctsBytesUtil import read_binary_file
-from chiptunesak.ctsErrors import ChiptuneSAKContentError
-from chiptunesak import cts6502Emulator
+from chiptunesak import constants
+from chiptunesak.bytes_util import read_binary_file
+from chiptunesak.errors import ChiptuneSAKContentError
+from chiptunesak import emulator_6502
 
 
-class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
-    def __init__(self, arch=ctsConstants.DEFAULT_ARCH):
+class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
+    def __init__(self, arch=constants.DEFAULT_ARCH):
         super().__init__()
 
         # True if C64 ROM loaded, if False, all zeros
@@ -214,17 +214,17 @@ class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
         return binary
 
     def load_roms(self):
-        binary = self.load_rom(ctsConstants.project_to_absolute_path('res/c64kernal.bin'), 8192)
+        binary = self.load_rom(constants.project_to_absolute_path('res/c64kernal.bin'), 8192)
         if binary is not None:
             self.rom_kernal = binary
             self.has_kernal = True
 
-        binary = self.load_rom(ctsConstants.project_to_absolute_path('res/c64basic.bin'), 8192)
+        binary = self.load_rom(constants.project_to_absolute_path('res/c64basic.bin'), 8192)
         if binary is not None:
             self.rom_basic = binary
             self.has_basic = True
 
-        binary = self.load_rom(ctsConstants.project_to_absolute_path('res/c64char.bin'), 4096)
+        binary = self.load_rom(constants.project_to_absolute_path('res/c64char.bin'), 4096)
         if binary is not None:
             self.rom_char = binary
             self.has_char = True
