@@ -116,11 +116,11 @@ source venv/bin/activate
 python3 -m venv venv
 source venv/bin/activate
 
-# Install ChiptuneSAK
-pip3 install --editable .
-
 # Install Python development dependencies
 pip3 install -r requirements.txt
+
+# Install ChiptuneSAK in editable mode
+pip3 install --editable .
 
 # Run the unittests to make sure things are working as expected
 python3 -m unittest discover -p "*Test.py"
@@ -134,12 +134,16 @@ The following instructions make the following assumptions:
 * You are doing your development in Windows PowerShell
 
 ```ps1
-# Compare your Python version to what was used writing this README
-python --version  # Python 3.8.3
+# In a PowerShell Admin window:
 
 # Set Powershell Execution Policy to all running local scripts:
 Set-ExecutionPolicy RemoteSigned
 # Answer "[A] Yes to All" when prommpted
+```
+
+```ps1
+# Compare your Python version to what was used writing this README
+python --version  # Python 3.8.3
 
 # Create a Python virtual environment (EXPLICITLY use `python` instead of `python3`)
 python -m venv venv
@@ -147,6 +151,9 @@ python -m venv venv
 
 # Install requirements in to virtualenv
 pip install -r .\requirements.txt
+
+# Install ChiptuneSAK in editable mode
+pip install --editable .
 
 # Run the unittests to make sure things are working as expected
 python -m unittest discover -p "*Test.py"
