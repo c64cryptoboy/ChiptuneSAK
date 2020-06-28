@@ -110,7 +110,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         Converts a song to RChirp IR
 
         :return: chirp song
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to RChirp not implemented")
 
@@ -141,7 +141,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :param filename: filename to import
         :type filename: str
         :return: RChirp song
-        :rtype: ctsRChirp.RChirpSong object
+        :rtype: rchirp.RChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -192,9 +192,9 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
         Compresses an rchirp song
 
         :param rchirp_song: song to compress
-        :type rchirp_song: ctsRChirp.RChirpSong
+        :type rchirp_song: rchirp.RChirpSong
         :return: rchirp_song with compression
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 

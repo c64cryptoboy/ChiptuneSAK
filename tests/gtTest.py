@@ -62,7 +62,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         """
         Compare actual note content to expected note content
         :param rchirp_song: rchirp song
-        :type rchirp_song: ctsRChirp.RChirpSong
+        :type rchirp_song: rchirp.RChirpSong
         :return: True on success
         :rtype: bool
         """

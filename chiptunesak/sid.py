@@ -38,7 +38,7 @@ from chiptunesak.bytes_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
 from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError
-from chiptunesak import ctsRChirp
+from chiptunesak import rchirp
 
 MAX_CENTS = 50  # TODO: Move to constants?
 
@@ -117,7 +117,7 @@ class SID(ChiptuneSAKIO):
 
         self.reduce_rows(sid_dump, rows_with_activity)
 
-        rchirp_song = ctsRChirp.RChirpSong()
+        rchirp_song = rchirp.RChirpSong()
 
         rchirp_song.metadata.name = sid_dump.sid_file.name.decode("latin-1")
         rchirp_song.metadata.composer = sid_dump.sid_file.author.decode("latin-1")
@@ -125,13 +125,13 @@ class SID(ChiptuneSAKIO):
 
         sid_count = sid_dump.sid_file.sid_count
         rchirp_song.voices = [
-            ctsRChirp.RChirpVoice(rchirp_song) for _ in range(sid_count * 3)]
+            rchirp.RChirpVoice(rchirp_song) for _ in range(sid_count * 3)]
         rchirp_song.voice_groups = [(1, 2, 3), (4, 5, 6), (7, 8, 9)][:sid_count]
 
         for row_num, sd_row in enumerate(sid_dump.rows):
             for chip_num, chip in enumerate(sd_row.chips):
                 for chn_num, chn in enumerate(chip.channels):
-                    rc_row = ctsRChirp.RChirpRow()
+                    rc_row = rchirp.RChirpRow()
                     rc_row.jiffy_num = row_num
                     rc_row.jiffy_len = 1
 

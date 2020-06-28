@@ -3,7 +3,7 @@ import unittest
 from chiptunesak import goat_tracker
 from chiptunesak import one_pass_compress
 from chiptunesak import constants
-from chiptunesak import ctsRChirp
+from chiptunesak import rchirp
 from chiptunesak import midi
 
 COMPRESS_TEST_SONG = constants.project_to_absolute_path('tests/data/BWV_799.mid')
@@ -22,7 +22,7 @@ class TestCompression(unittest.TestCase):
 
         self.compress_test_song.remove_polyphony()
         self.compress_test_song.remove_keyswitches(12)
-        rchirp_song = ctsRChirp.RChirpSong(self.compress_test_song)
+        rchirp_song = rchirp.RChirpSong(self.compress_test_song)
 
         compressor = one_pass_compress.OnePassLeftToRight()
         rchirp_song = compressor.compress(rchirp_song, min_length=32)

@@ -1,7 +1,7 @@
 import copy
 
 from chiptunesak import midi
-from chiptunesak import ctsRChirp
+from chiptunesak import rchirp
 from chiptunesak import one_pass_compress
 from chiptunesak import goat_tracker
 from chiptunesak.constants import project_to_absolute_path
@@ -106,7 +106,7 @@ for i, program in enumerate([1, 2, 2, 2, 3]):
 
 # Now that everything is C64 compatible, we convert the song to goattracker format.
 print(f'Converting ChirpSong to RChirpSong...')
-rchirp_song = ctsRChirp.RChirpSong(chirp_song)
+rchirp_song = rchirp.RChirpSong(chirp_song)
 
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.

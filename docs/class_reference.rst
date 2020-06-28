@@ -57,19 +57,19 @@ RChirp
 RChirpRow
 +++++++++
 
-.. autoclass:: chiptunesak.ctsRChirp.RChirpRow
+.. autoclass:: chiptunesak.rchirp.RChirpRow
     :members:
 
 RChirpVoice
 +++++++++++
 
-.. autoclass:: chiptunesak.ctsRChirp.RChirpVoice
+.. autoclass:: chiptunesak.rchirp.RChirpVoice
     :members:
 
 RChirpSong
 ++++++++++
 
-.. autoclass:: chiptunesak.ctsRChirp.RChirpSong
+.. autoclass:: chiptunesak.rchirp.RChirpSong
     :members:
     :show-inheritance:
 

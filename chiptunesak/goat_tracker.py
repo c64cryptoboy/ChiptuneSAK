@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from chiptunesak import constants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
 from chiptunesak import base
 from chiptunesak.bytes_util import read_binary_file
-from chiptunesak import ctsRChirp
+from chiptunesak import rchirp
 from chiptunesak.errors import *
 
 
@@ -986,7 +986,7 @@ class GTSong:
         :rtype: RChirpSong
         """
 
-        rchirp_song = ctsRChirp.RChirpSong()
+        rchirp_song = rchirp.RChirpSong()
 
         rchirp_song.metadata.name = self.headers.song_name
         rchirp_song.metadata.composer = self.headers.author_name
@@ -995,7 +995,7 @@ class GTSong:
         # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
         channels_state = [GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i]) for i in range(self.num_channels)]
 
-        rchirp_song.voices = [ctsRChirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
+        rchirp_song.voices = [rchirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
 
         # TODO: Make track assignment to SID groupings not hardcoded
         if self.is_stereo:
@@ -1034,7 +1034,7 @@ class GTSong:
                 if gt_row is None:  # if we didn't advance to a new row...
                     continue
 
-                rc_row = ctsRChirp.RChirpRow()
+                rc_row = rchirp.RChirpRow()
                 rc_row.jiffy_num = global_tick
                 rc_row.jiffy_len = cs.curr_tempo
 

@@ -1,6 +1,6 @@
 import unittest
 from chiptunesak import midi
-from chiptunesak import ctsRChirp
+from chiptunesak import rchirp
 from chiptunesak.constants import project_to_absolute_path
 
 
@@ -12,7 +12,7 @@ class RChirpSongTestCase(unittest.TestCase):
     def setUp(self):
         self.test_song = midi.MIDI().to_chirp(SONG_TEST_SONG)
         self.test_song.quantize(*self.test_song.estimate_quantization())
-        self.rchirp_song = ctsRChirp.RChirpSong(self.test_song)
+        self.rchirp_song = rchirp.RChirpSong(self.test_song)
 
     def test_notes(self):
         for i, (t, v) in enumerate(zip(self.test_song.tracks, self.rchirp_song.voices)):

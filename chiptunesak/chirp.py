@@ -12,7 +12,7 @@ import bisect
 import more_itertools as moreit
 from chiptunesak.base import *
 from chiptunesak import mchirp
-from chiptunesak import ctsRChirp
+from chiptunesak import rchirp
 from chiptunesak import constants
 
 
@@ -500,11 +500,11 @@ class ChirpSong(ChiptuneSAKBase):
         Convert to RChirp.  This calls the creation of an RChirp object
 
         :return: new RChirp object
-        :rtype: ctsRChirp.RChirpSong
+        :rtype: rchirp.RChirpSong
         """
         self.set_options(**kwargs)
         self.set_metadata()
-        return ctsRChirp.RChirpSong(self)
+        return rchirp.RChirpSong(self)
 
     def to_mchirp(self, **kwargs):
         """
