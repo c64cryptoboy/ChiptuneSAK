@@ -5,7 +5,8 @@ from chiptunesak import midi
 sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 
 # TODO:
-# The rchirp song goes way too fast when converted to midi, figure out why
+# The rchirp song goes way too fast when converted to midi, probably need to specify
+# how many rows per quarter note or something.
 #
 # Sound comparison:
 # https://deepsid.chordian.net/?file=/MUSICIANS/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid
@@ -18,19 +19,19 @@ sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 #     1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42, final tunnel: level 43
 # subtunes to extract
 to_extract = [  # TODO: these times are incorrect
-    # [10, "getting on carpet", 17],
-    # [7, "carpet liftoff", 5],
-    # [9, "fell off carpet", 5],
-    # [8, "finished level", 8],
-    # [11, "game won", 25],
-    # [0, "tunnel 1", 50],  # level 1, 15, 29
-    # [1, "tunnel 2", 67],  # level 3, 17, 31
-    # [2, "tunnel 3", 49],  # level 5, 19, 33
-    # [3, "tunnel 4", 75],  # level 7, 21, 35
-    # [4, "tunnel 5", 68],  # level 9, 23, 37
-    # [5, "tunnel 6", 55],   # level 11, 25, 39
+    [10, "getting on carpet", 17],
+    [7, "carpet liftoff", 5],
+    [9, "fell off carpet", 5],
+    [8, "finished level", 8],
+    [11, "game won", 25],
+    [0, "tunnel 1", 50],  # level 1, 15, 29
+    [1, "tunnel 2", 67],  # level 3, 17, 31
+    [2, "tunnel 3", 49],  # level 5, 19, 33
+    [3, "tunnel 4", 75],  # level 7, 21, 35
+    [4, "tunnel 5", 68],  # level 9, 23, 37
+    [5, "tunnel 6", 55],   # level 11, 25, 39
     [6, "tunnel 7", 68],  # level 13, 27, 41  # TODO: Primary test file
-    # [12, "tunnel 8", 62],  # level 43
+    [12, "tunnel 8", 62],  # level 43
 ]
 
 

@@ -1,7 +1,6 @@
 # TODO:
 # - this hardly covers all the sid functionality, need to add many more tests
 
-#import testingPath  # noqa
 import unittest
 from chiptunesak import constants
 from chiptunesak import sid
