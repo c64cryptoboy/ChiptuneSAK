@@ -10,10 +10,10 @@
 from chiptunesak import constants
 from chiptunesak.bytes_util import read_binary_file
 from chiptunesak.ctsErrors import ChiptuneSAKContentError
-from chiptunesak import cts6502Emulator
+from chiptunesak import emulator_6502
 
 
-class ThinC64Emulator(cts6502Emulator.Cpu6502Emulator):
+class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
     def __init__(self, arch=constants.DEFAULT_ARCH):
         super().__init__()
 

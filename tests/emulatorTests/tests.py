@@ -11,7 +11,7 @@ import unittest
 import string
 from parameterized import parameterized
 
-from chiptunesak import cts6502Emulator
+from chiptunesak import emulator_6502
 from chiptunesak import thin_c64_emulator
 from chiptunesak.bytes_util import read_binary_file
 from chiptunesak.constants import project_to_absolute_path
@@ -891,7 +891,7 @@ class TestSuitesForC64(unittest.TestCase):
 
         # test code wants to use location 1 as storage, so don't want c64 emulation
         # with bank management, just the 6502 emulator
-        cpuState = cts6502Emulator.Cpu6502Emulator()
+        cpuState = emulator_6502.Cpu6502Emulator()
 
         test_prg = read_binary_file(project_to_absolute_path(
             'tests/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))

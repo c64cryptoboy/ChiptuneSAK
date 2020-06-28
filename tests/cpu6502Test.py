@@ -2,7 +2,7 @@
 #
 
 import unittest
-from chiptunesak import cts6502Emulator
+from chiptunesak import emulator_6502
 from chiptunesak import thin_c64_emulator
 from chiptunesak.constants import ARCH
 
@@ -15,7 +15,7 @@ class Test6502Emulator(unittest.TestCase):
 
     # @unittest.skip("Debugging, so skipping this test for now")
     def test_stack_wrapping(self):
-        cpuState = cts6502Emulator.Cpu6502Emulator()
+        cpuState = emulator_6502.Cpu6502Emulator()
 
         cpuState.inject_bytes(32768, [0x60])  # RTS
         cpuState.exit_on_empty_stack = True
