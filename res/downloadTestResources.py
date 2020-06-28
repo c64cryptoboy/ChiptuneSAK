@@ -99,25 +99,25 @@ def main():
     # https://www.sannic.nl/hvsc/?dir=C64Music/MUSICIANS
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', 'test/sid'))
+        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', 'test/sid'))
+        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', 'test/sid'))
+        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', 'test/sid'))
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps.sid', 'test/sid'))
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', 'test/sid'))
+        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'test/sid'))
+        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'tests/sid'))
 
     resources.append(ResourceFile(
         'http://youdzone.com/testData/appleii/u4/must', 'apps/ultima/data/appleii_u4'))

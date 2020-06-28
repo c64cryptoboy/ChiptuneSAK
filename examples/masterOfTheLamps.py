@@ -2,7 +2,7 @@ from chiptunesak.ctsConstants import project_to_absolute_path
 from chiptunesak import ctsSID
 from chiptunesak import ctsMidi
 
-sid_filename = project_to_absolute_path('test/sid/Master_of_the_Lamps_PAL.sid')
+sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 
 # TODO:
 # The rchirp song goes way too fast when converted to midi, figure out why
@@ -74,7 +74,7 @@ def create_output_files():
             gcf_row_reduce=True,
         )
 
-        filename_no_ext = 'test/sid/motl_%s' % desc.replace(" ", "_")
+        filename_no_ext = 'tests/sid/motl_%s' % desc.replace(" ", "_")
 
         # write as CSV file
         print("writing %s.csv" % filename_no_ext)
