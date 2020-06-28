@@ -207,7 +207,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
     def load_rom(self, path_and_filename, expected_size):
         binary = read_binary_file(path_and_filename)
         if binary is None:
-            print("Warning: could not find %s" % (path_and_filename))
+            print(f"Warning: could not find {path_and_filename}... have you run `python3 res/downdownloadTestResources.py` yet?")
         elif len(binary) != expected_size:
             raise ChiptuneSAKContentError("Error: %s had unexpected length" % path_and_filename)
 
