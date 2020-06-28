@@ -2,7 +2,7 @@ import copy
 
 from chiptunesak import ctsMidi
 from chiptunesak import ctsRChirp
-from chiptunesak import ctsOnePassCompress
+from chiptunesak import one_pass_compress
 from chiptunesak import goat_tracker
 from chiptunesak.constants import project_to_absolute_path
 
@@ -111,7 +111,7 @@ rchirp_song = ctsRChirp.RChirpSong(chirp_song)
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
-compressor = ctsOnePassCompress.OnePassLeftToRight()
+compressor = one_pass_compress.OnePassLeftToRight()
 rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.

@@ -5,7 +5,7 @@ import subprocess
 from chiptunesak import ctsMidi
 from chiptunesak import ctsLilypond
 from chiptunesak import goat_tracker
-from chiptunesak import ctsOnePassCompress
+from chiptunesak import one_pass_compress
 from chiptunesak.constants import project_to_absolute_path
 
 """

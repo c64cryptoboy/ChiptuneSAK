@@ -118,14 +118,14 @@ Compression Classes
 One-Pass Class
 --------------
 
-.. autoclass:: chiptunesak.ctsOnePassCompress.OnePass
+.. autoclass:: chiptunesak.one_pass_compress.OnePass
     :members:
     :show-inheritance:
 
 One-Pass Global Class
 +++++++++++++++++++++
 
-.. autoclass:: chiptunesak.ctsOnePassCompress.OnePassGlobal
+.. autoclass:: chiptunesak.one_pass_compress.OnePassGlobal
     :members:
     :show-inheritance:
 
@@ -133,6 +133,6 @@ One-Pass Global Class
 One-Pass Left-to-Right Class
 ++++++++++++++++++++++++++++
 
-.. autoclass:: chiptunesak.ctsOnePassCompress.OnePassLeftToRight
+.. autoclass:: chiptunesak.one_pass_compress.OnePassLeftToRight
     :members:
     :show-inheritance:

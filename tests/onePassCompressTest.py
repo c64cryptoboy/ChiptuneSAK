@@ -1,7 +1,7 @@
 import unittest
 
 from chiptunesak import goat_tracker
-from chiptunesak import ctsOnePassCompress
+from chiptunesak import one_pass_compress
 from chiptunesak import constants
 from chiptunesak import ctsRChirp
 from chiptunesak import ctsMidi
@@ -24,21 +24,21 @@ class TestCompression(unittest.TestCase):
         self.compress_test_song.remove_keyswitches(12)
         rchirp_song = ctsRChirp.RChirpSong(self.compress_test_song)
 
-        compressor = ctsOnePassCompress.OnePassLeftToRight()
+        compressor = one_pass_compress.OnePassLeftToRight()
         rchirp_song = compressor.compress(rchirp_song, min_length=32)
 
         # TODO: add test for pattern lengths to see that it obeyed limit
-        self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
+        self.assertTrue(one_pass_compress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
 
-        compressor = ctsOnePassCompress.OnePassGlobal()
+        compressor = one_pass_compress.OnePassGlobal()
         compressor.disable_transposition()
         rchirp_song = compressor.compress(rchirp_song, min_length=8)
 
         exporter = goat_tracker.GoatTracker()
         exporter.to_file(rchirp_song, GT_TEST_OUT_SNG)
 
-        self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
+        self.assertTrue(one_pass_compress.validate_gt_limits(rchirp_song))
         self.assertTrue(rchirp_song.validate_compression())
 
         # Now delete a row from a pattern which should cause compressed song not to work.
@@ -54,7 +54,7 @@ class TestCompression(unittest.TestCase):
         rchirp_song = gt_io.to_rchirp(str(GT_TEST_DATA_SNG))
 
         # create patterns and orderlists
-        compressor = ctsOnePassCompress.OnePassLeftToRight()
+        compressor = one_pass_compress.OnePassLeftToRight()
         rchirp_song = compressor.compress(rchirp_song)
 
         # convert rchirp back to goattracker sng
