@@ -41,54 +41,54 @@ class sidTests(unittest.TestCase):
         very_flat_g2_freq = 1571
         (midi_note, very_flat_g2_cents) = constants.freq_arch_to_midi_num(
             very_flat_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
-        self.assertEquals((midi_note, very_flat_g2_cents), (g2_midi_num, -40))
+        self.assertEqual((midi_note, very_flat_g2_cents), (g2_midi_num, -40))
 
         flat_g2_freq = 1604
         (midi_note, flat_g2_cents) = constants.freq_arch_to_midi_num(
             flat_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
-        self.assertEquals((midi_note, flat_g2_cents), (g2_midi_num, -4))
+        self.assertEqual((midi_note, flat_g2_cents), (g2_midi_num, -4))
 
         # g2_freq = 1608
         # (midi_note, g2_cents) = constants.freq_arch_to_midi_num(
         #     g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
-        # self.assertEquals((midi_note, g2_cents), (g2_midi_num, 0))
+        # self.assertEqual((midi_note, g2_cents), (g2_midi_num, 0))
 
         sharp_g2_freq = 1611
         (midi_note, sharp_g2_cents) = constants.freq_arch_to_midi_num(
             sharp_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
-        self.assertEquals((midi_note, sharp_g2_cents), (g2_midi_num, 4))
+        self.assertEqual((midi_note, sharp_g2_cents), (g2_midi_num, 4))
 
         very_sharp_g2_freq = 1645
         (midi_note, very_sharp_g2_cents) = constants.freq_arch_to_midi_num(
             very_sharp_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
-        self.assertEquals((midi_note, very_sharp_g2_cents), (g2_midi_num, 40))
+        self.assertEqual((midi_note, very_sharp_g2_cents), (g2_midi_num, 40))
 
         # Scenario A: We imagine a wide vibrato on an f#2 strayed a little into
         # g2 teritory, so a f#2 is selected instead, because f#2 was the note on the previous
         # play call.
-        self.assertEquals(si_ntsc.get_note(very_flat_g2_freq,
+        self.assertEqual(si_ntsc.get_note(very_flat_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num - 1), g2_midi_num - 1)
 
         # Scenario B: The g2 is very flat (nearly an f#2), but the previous note (vibrato or not)
         # was too far away to be the culprit, so it stays a g2
-        self.assertEquals(si_ntsc.get_note(very_flat_g2_freq,
+        self.assertEqual(si_ntsc.get_note(very_flat_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num - 2), g2_midi_num)
 
         # Scenario C: Like scenario A, except the flattness is not great enough to fall into
         # the vibrato_cents_margin setting, so the note remains unchanged
-        self.assertEquals(si_ntsc.get_note(flat_g2_freq,
+        self.assertEqual(si_ntsc.get_note(flat_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num - 1), g2_midi_num)
 
         # Scenario D: Like Scenario A, but from the other direction (big vibrato on a g#2)
-        self.assertEquals(si_ntsc.get_note(very_sharp_g2_freq,
+        self.assertEqual(si_ntsc.get_note(very_sharp_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num + 1), g2_midi_num + 1)
 
         # Scenario E: Like Scenario B, but from the other direction again
-        self.assertEquals(si_ntsc.get_note(very_sharp_g2_freq,
+        self.assertEqual(si_ntsc.get_note(very_sharp_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num + 2), g2_midi_num)
 
         # Scenario F: Like Scenario C, but from the other direction again
-        self.assertEquals(si_ntsc.get_note(sharp_g2_freq,
+        self.assertEqual(si_ntsc.get_note(sharp_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num + 1), g2_midi_num)
 
 
