@@ -1,7 +1,7 @@
 import unittest
 
 from chiptunesak import ctsTestingTools
-from chiptunesak import ctsMChirp
+from chiptunesak import mchirp
 from chiptunesak import ctsMidi
 from chiptunesak import ctsML64
 from chiptunesak.constants import project_to_absolute_path
@@ -22,7 +22,7 @@ class TestExportML64(unittest.TestCase):
         song = ctsMidi.MIDI().to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
-        m_song = ctsMChirp.MChirpSong(song)
+        m_song = mchirp.MChirpSong(song)
         test_ml64 = ml64.to_bin(m_song, format='measures')
         test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
 
@@ -35,7 +35,7 @@ class TestExportML64(unittest.TestCase):
         song = ctsMidi.MIDI().to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
-        m_song = ctsMChirp.MChirpSong(song)
+        m_song = mchirp.MChirpSong(song)
         test_ml64 = ml64.to_bin(m_song, format='measures')
         test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
 

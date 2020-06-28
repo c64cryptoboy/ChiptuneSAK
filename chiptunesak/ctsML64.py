@@ -1,5 +1,5 @@
 from chiptunesak.base import *
-from chiptunesak import chirp, ctsMChirp
+from chiptunesak import chirp, mchirp
 from chiptunesak import constants
 
 '''
@@ -113,7 +113,7 @@ class ML64(ChiptuneSAKIO):
         Generates an ML64 string for a song
 
         :param song: song
-        :type song: chirp.ChirpSong or ctsMChirp.MChirpSong
+        :type song: chirp.ChirpSong or mchirp.MChirpSong
         :return: ML64 encoding of song
         :rtype: string
 
@@ -128,7 +128,7 @@ class ML64(ChiptuneSAKIO):
                 raise ChiptuneSAKTypeError("Cannot export Chirp song to Measures format")
             else:
                 return self.export_chirp_to_ml64(song)
-        elif isinstance(song, ctsMChirp.MChirpSong):
+        elif isinstance(song, mchirp.MChirpSong):
             if self.format != 'm':
                 tmp_song = chirp.ChirpSong(song)
                 tmp_song.quantize(*tmp_song.estimate_quantization())
@@ -143,7 +143,7 @@ class ML64(ChiptuneSAKIO):
         Writes ML64 to a file
 
         :param song: song
-        :type song: chirp.ChirpSong or ctsMChirp.MChirpSong
+        :type song: chirp.ChirpSong or mchirp.MChirpSong
         :return: ML64 encoding of song
         :rtype: string
 

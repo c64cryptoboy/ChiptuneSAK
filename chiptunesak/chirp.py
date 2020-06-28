@@ -11,7 +11,7 @@ import copy
 import bisect
 import more_itertools as moreit
 from chiptunesak.base import *
-from chiptunesak import ctsMChirp
+from chiptunesak import mchirp
 from chiptunesak import ctsRChirp
 from chiptunesak import constants
 
@@ -80,7 +80,7 @@ class ChirpTrack:
         self.qticks_notes = chirp_song.qticks_notes  #: Not start quantization from song
         self.qticks_durations = chirp_song.qticks_durations  #: Note duration quantization
         if mchirp_track is not None:
-            if not isinstance(mchirp_track, ctsMChirp.MChirpTrack):
+            if not isinstance(mchirp_track, mchirp.MChirpTrack):
                 raise ChiptuneSAKTypeError("ChirpTrack init can only import MChirpTrack objects")
             else:
                 self.import_mchirp_track(mchirp_track)
@@ -511,11 +511,11 @@ class ChirpSong(ChiptuneSAKBase):
         Convert to MChirp.  This calls the creation of an MChirp object
 
         :return: new MChirp object
-        :rtype: ctsMChirp.MChirpSong
+        :rtype: mchirp.MChirpSong
         """
         self.set_options(**kwargs)
         self.set_metadata()
-        return ctsMChirp.MChirpSong(self)
+        return mchirp.MChirpSong(self)
 
     def import_mchirp_song(self, mchirp_song):
         """

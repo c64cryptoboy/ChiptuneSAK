@@ -1,7 +1,7 @@
 import unittest
 
 from chiptunesak import ctsTestingTools
-from chiptunesak import ctsMChirp
+from chiptunesak import mchirp
 from chiptunesak import ctsMidi
 from chiptunesak import c128_basic
 from chiptunesak import constants
@@ -17,7 +17,7 @@ class TestC128BASIC(unittest.TestCase):
         chirp_song.quantize_from_note_name('16')
         chirp_song.remove_keyswitches()
         chirp_song.remove_polyphony()
-        self.mchirp_song = ctsMChirp.MChirpSong(chirp_song)
+        self.mchirp_song = mchirp.MChirpSong(chirp_song)
 
     def test_c128_basic_output_bas(self):
         known_good_basic_program_hash = ctsTestingTools.md5_hash_no_spaces_file(KNOWN_GOOD)

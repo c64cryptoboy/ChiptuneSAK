@@ -35,19 +35,19 @@ MChirp
 Measure
 +++++++
 
-.. autoclass:: chiptunesak.ctsMChirp.Measure
+.. autoclass:: chiptunesak.mchirp.Measure
     :members:
 
 MChirpTrack
 +++++++++++
 
-.. autoclass:: chiptunesak.ctsMChirp.MChirpTrack
+.. autoclass:: chiptunesak.mchirp.MChirpTrack
     :members:
 
 MChirpSong
 ++++++++++
 
-.. autoclass:: chiptunesak.ctsMChirp.MChirpSong
+.. autoclass:: chiptunesak.mchirp.MChirpSong
     :members:
     :show-inheritance:
 

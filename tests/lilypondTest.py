@@ -1,6 +1,6 @@
 import unittest
 
-from chiptunesak import ctsMChirp
+from chiptunesak import mchirp
 from chiptunesak import ctsMidi
 from chiptunesak import ctsTestingTools
 from chiptunesak import ctsLilypond
@@ -19,7 +19,7 @@ class TestExportLilypond(unittest.TestCase):
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
 
-        m_song = ctsMChirp.MChirpSong(song)
+        m_song = mchirp.MChirpSong(song)
 
         lilypond = ctsLilypond.Lilypond()
 

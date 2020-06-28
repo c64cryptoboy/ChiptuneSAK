@@ -3,7 +3,7 @@ from chiptunesak.base import *
 from chiptunesak import chirp
 import more_itertools as moreit
 
-""" Definition and methods for ctsMChirp.MChirpSong representation """
+""" Definition and methods for mchirp.MChirpSong representation """
 
 
 class Measure:

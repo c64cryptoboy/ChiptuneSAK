@@ -101,7 +101,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         Converts a song to MChirp IR
 
         :return: chirp song
-        :rtype: ctsMChirp.MChirpSong
+        :rtype: mchirp.MChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
 
@@ -152,7 +152,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :param filename: filename to import
         :type filename: str
         :return: MChirp song
-        :rtype: ctsMChirp.MChirpSong object
+        :rtype: mchirp.MChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
