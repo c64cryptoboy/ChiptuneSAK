@@ -5,7 +5,7 @@ from chiptunesak import constants
 from chiptunesak import base
 from chiptunesak import ctsGenPrg
 from chiptunesak import chirp
-from chiptunesak.ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
+from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
 WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
 

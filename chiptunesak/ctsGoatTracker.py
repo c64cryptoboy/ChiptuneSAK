@@ -18,7 +18,7 @@ from chiptunesak import constants  # import ARCH, C0_MIDI_NUM, project_to_absolu
 from chiptunesak import base
 from chiptunesak.bytes_util import read_binary_file
 from chiptunesak import ctsRChirp
-from chiptunesak.ctsErrors import *
+from chiptunesak.errors import *
 
 
 DEFAULT_INSTR_PATH = 'res/gtInstruments/'

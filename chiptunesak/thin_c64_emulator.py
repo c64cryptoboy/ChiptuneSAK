@@ -9,7 +9,7 @@
 
 from chiptunesak import constants
 from chiptunesak.bytes_util import read_binary_file
-from chiptunesak.ctsErrors import ChiptuneSAKContentError
+from chiptunesak.errors import ChiptuneSAKContentError
 from chiptunesak import emulator_6502
 
 

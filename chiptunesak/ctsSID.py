@@ -37,7 +37,7 @@ from chiptunesak.constants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_fr
 from chiptunesak.bytes_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
 from chiptunesak import thin_c64_emulator
-from chiptunesak.ctsErrors import ChiptuneSAKValueError
+from chiptunesak.errors import ChiptuneSAKValueError
 from chiptunesak import ctsRChirp
 
 MAX_CENTS = 50  # TODO: Move to constants?

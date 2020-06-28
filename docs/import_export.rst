@@ -9,7 +9,7 @@ I/O Base Class
 
 All import and export of music formats is performed by classes that inherit from the ``chiptunesak.base.ChiptuneSAKIO`` class.
 
-The following methods are available in every I/O class.  If the song format is not supported by the individual I/O class, it will either attempt a conversion or raise a ``chiptunesak.ctsErrors.ChiptuneSAKNotImplemented`` exception. Either is acceptable behavior.
+The following methods are available in every I/O class.  If the song format is not supported by the individual I/O class, it will either attempt a conversion or raise a ``chiptunesak.errors.ChiptuneSAKNotImplemented`` exception. Either is acceptable behavior.
 
 
 Import functions

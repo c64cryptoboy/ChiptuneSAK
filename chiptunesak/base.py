@@ -2,7 +2,7 @@ import re
 import collections
 from dataclasses import dataclass, field
 from fractions import Fraction
-from chiptunesak.ctsErrors import *
+from chiptunesak.errors import *
 from chiptunesak import constants, ctsKey
 
 

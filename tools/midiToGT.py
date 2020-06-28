@@ -8,7 +8,7 @@ from os import path
 
 from chiptunesak import ctsGoatTracker
 from chiptunesak import ctsMidi
-from chiptunesak.ctsErrors import ChiptuneSAKValueError
+from chiptunesak.errors import ChiptuneSAKValueError
 
 
 def main():

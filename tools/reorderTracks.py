@@ -2,7 +2,7 @@ import copy
 import argparse
 import os
 
-from chiptunesak.ctsErrors import ChiptuneSAKValueError
+from chiptunesak.errors import ChiptuneSAKValueError
 from chiptunesak.import ctsMidi
 
 

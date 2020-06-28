@@ -21,7 +21,7 @@ Some notes on Commodore BASIC:
 
 from chiptunesak.constants import BASIC_START_C64, BASIC_START_C128, BASIC_LINE_MAX_C64, BASIC_LINE_MAX_C128
 from chiptunesak.bytes_util import little_endian_bytes
-from chiptunesak.ctsErrors import ChiptuneSAKContentError
+from chiptunesak.errors import ChiptuneSAKContentError
 
 rem_len = len('rem')
 
