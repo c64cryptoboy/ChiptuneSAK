@@ -1,7 +1,7 @@
 import sys
 import mido
 from chiptunesak.base import *
-from chiptunesak.ctsChirp import Note, ChirpTrack, ChirpSong
+from chiptunesak.chirp import Note, ChirpTrack, ChirpSong
 
 
 def sort_midi_events(msg):
@@ -47,7 +47,7 @@ class MIDI(ChiptuneSAKIO):
         :param filename: filename to import
         :type filename: str
         :return: chirp song
-        :rtype: ctsChirp.ChirpSong
+        :rtype: chirp.ChirpSong
         :keyword options:
             * **keyswitch** (bool) Remove keyswitch notes with midi number <=8 (default True)
             * **polyphony** (bool) Allow polyphony (removal occurs after any quantization) (default True)
@@ -63,7 +63,7 @@ class MIDI(ChiptuneSAKIO):
         Exports a ChirpSong to a midi file.
 
         :param song: chirp song
-        :type song: ctsChirpSong
+        :type song: chirpSong
         :param filename: filename for export
         :type filename: str
         :return: True on success

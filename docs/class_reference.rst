@@ -13,19 +13,19 @@ Chirp
 Note
 ++++
 
-.. autoclass:: chiptunesak.ctsChirp.Note
+.. autoclass:: chiptunesak.chirp.Note
     :members:
 
 ChirpTrack
 ++++++++++
 
-.. autoclass:: chiptunesak.ctsChirp.ChirpTrack
+.. autoclass:: chiptunesak.chirp.ChirpTrack
     :members:
 
 ChirpSong
 +++++++++
 
-.. autoclass:: chiptunesak.ctsChirp.ChirpSong
+.. autoclass:: chiptunesak.chirp.ChirpSong
     :members:
     :show-inheritance:
 

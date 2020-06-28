@@ -3,7 +3,7 @@ import fractions
 from dataclasses import dataclass
 import collections
 
-from chiptunesak import ctsChirp
+from chiptunesak import chirp
 
 Transform = collections.namedtuple('Transform', ['transpose', 'stretch'])
 
@@ -31,7 +31,7 @@ def apply_xform(note, xform):
     """
     Applies a transposition and stretching transform to a note, returning a new note
     """
-    return ctsChirp.Note(0, note.note_num + xform.transpose, int(note.duration * xform.stretch))
+    return chirp.Note(0, note.note_num + xform.transpose, int(note.duration * xform.stretch))
 
 # TODO:  Probably best to turn compression into a class so that it can preserve state about the song.
 
@@ -128,7 +128,7 @@ def find_best_compression(song, repeats, pattern_definition_overhead, pattern_de
 
 
 if __name__ == '__main__':
-    in_song = ctsChirp.ChirpSong(sys.argv[1])
+    in_song = chirp.ChirpSong(sys.argv[1])
 
     in_song.remove_keyswitches()
     q = in_song.estimate_quantization()

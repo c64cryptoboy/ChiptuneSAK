@@ -1,7 +1,7 @@
 import argparse
 import functools
 
-from chiptunesak import ctsChirp
+from chiptunesak import chirp
 from chiptunesak.constants import DURATION_STR, DEFAULT_MIDI_PPQN
 from chiptunesak import ctsMidi
 
@@ -19,7 +19,7 @@ def objective_function(notes, desired_q, offset, scale_factor):
     err = 0
     for n in notes:
         start = (n.start_time - offset) * scale_factor
-        delta = ctsChirp.quantization_error(start, desired_q)
+        delta = chirp.quantization_error(start, desired_q)
         err += abs(delta)
     return err / scale_factor
 

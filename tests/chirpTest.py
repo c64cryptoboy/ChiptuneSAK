@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from chiptunesak import ctsMidi
-from chiptunesak import ctsChirp
+from chiptunesak import chirp
 from chiptunesak.constants import project_to_absolute_path
 
 SONG_TEST_SONG = project_to_absolute_path('tests/data/twinkle.mid')
@@ -54,7 +54,7 @@ class SongTestCase(unittest.TestCase):
         ppq = self.test_song.metadata.ppq
         known_good = 'quarter, eighth, eighth triplet, sixteenth, thirty-second, thirty-second triplet, sixty-fourth'
         test_durations = [1, 2, 3, 4, 8, 12, 16]
-        test_output = ', '.join(ctsChirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)
+        test_output = ', '.join(chirp.duration_to_note_name(ppq // n, ppq) for n in test_durations)
         self.assertEqual(test_output, known_good)
 
     def test_measures(self):

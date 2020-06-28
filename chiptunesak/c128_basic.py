@@ -4,7 +4,7 @@ import collections
 from chiptunesak import constants
 from chiptunesak import base
 from chiptunesak import ctsGenPrg
-from chiptunesak import ctsChirp
+from chiptunesak import chirp
 from chiptunesak.ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
 WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
@@ -275,13 +275,13 @@ def measures_to_basic(mchirp_song):
         for v in range(min(3, len(mchirp_song.tracks))):
             m = mchirp_song.tracks[v].measures[im]
             # If the voice doesn't have any notes in the measure, just ignore it.
-            note_count = sum(1 for e in m.events if isinstance(e, ctsChirp.Note))
+            note_count = sum(1 for e in m.events if isinstance(e, chirp.Note))
             if note_count == 0:
                 continue
 
             # Extract the notes and rests and put them into a list.
             for e in m.events:
-                if isinstance(e, ctsChirp.Note):
+                if isinstance(e, chirp.Note):
                     if not e.tied_to:
                         start_time = e.start_time
                         for d in base.decompose_duration(e.duration, ppq, basic_durations):

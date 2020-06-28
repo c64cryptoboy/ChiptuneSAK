@@ -92,7 +92,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         Converts a song to Chirp IR
 
         :return: chirp song
-        :rtype: ctsChirp.ChirpSong
+        :rtype: chirp.ChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
@@ -130,7 +130,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :param filename: filename to import
         :type filename: str
         :return: Chirp song
-        :rtype: ctsChirp.ChirpSong object
+        :rtype: chirp.ChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -302,7 +302,7 @@ def is_triplet(note, ppq):
     """
     Determine if note is a triplet
     :param note:  note
-    :type note:   ctsChirp.Note
+    :type note:   chirp.Note
     :param ppq:   ppq
     :type ppq:    int
     :return:      True of the note is a triplet type

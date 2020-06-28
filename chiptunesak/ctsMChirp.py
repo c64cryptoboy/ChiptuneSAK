@@ -1,6 +1,6 @@
 import copy
 from chiptunesak.base import *
-from chiptunesak import ctsChirp
+from chiptunesak import chirp
 import more_itertools as moreit
 
 """ Definition and methods for ctsMChirp.MChirpSong representation """
@@ -18,7 +18,7 @@ class Measure:
             Other MIDI message(s)
             Notes and rests
         """
-        if isinstance(c, ctsChirp.Note):
+        if isinstance(c, chirp.Note):
             return (c.start_time, 10)
         elif isinstance(c, Triplet):
             return (c.start_time, 10)
@@ -231,10 +231,10 @@ class Measure:
         return carry
 
     def count_notes(self):
-        return sum(1 for e in self.events if isinstance(e, ctsChirp.Note))
+        return sum(1 for e in self.events if isinstance(e, chirp.Note))
 
     def get_notes(self):
-        return [e for e in self.events if isinstance(e, ctsChirp.Note)]
+        return [e for e in self.events if isinstance(e, chirp.Note)]
 
     def get_rests(self):
         return [e for e in self.events if isinstance(e, Rest)]
@@ -249,7 +249,7 @@ class MChirpTrack:
         self.qticks_notes = mchirp_song.qticks_notes  #: Inherit quantization from song
         self.qticks_durations = mchirp_song.qticks_durations  #: Inherit quantization from song
         if chirp_track is not None:
-            if not isinstance(chirp_track, ctsChirp.ChirpTrack):
+            if not isinstance(chirp_track, chirp.ChirpTrack):
                 raise ChiptuneSAKTypeError("MChirpTrack init can only import ChirpTrack objects.")
             else:
                 self.import_chirp_track(chirp_track)
@@ -304,13 +304,13 @@ class MChirpSong(ChiptuneSAKBase):
 
     def to_chirp(self, **kwargs):
         self.set_options(**kwargs)
-        return ctsChirp.ChirpSong(self)
+        return chirp.ChirpSong(self)
 
     def import_chirp_song(self, chirp_song):
         """
         Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
 
-        :param chirp_song: A ctsChirp.ChirpSong song
+        :param chirp_song: A chirp.ChirpSong song
         :type chirp_song: ChripSong
         """
         if not chirp_song.is_quantized():
