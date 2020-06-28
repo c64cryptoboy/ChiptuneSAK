@@ -1,6 +1,6 @@
 import unittest
 
-from chiptunesak import ctsTestingTools
+from chiptunesak import testing_tools
 from chiptunesak import mchirp
 from chiptunesak import midi
 from chiptunesak import c128_basic
@@ -20,10 +20,10 @@ class TestC128BASIC(unittest.TestCase):
         self.mchirp_song = mchirp.MChirpSong(chirp_song)
 
     def test_c128_basic_output_bas(self):
-        known_good_basic_program_hash = ctsTestingTools.md5_hash_no_spaces_file(KNOWN_GOOD)
+        known_good_basic_program_hash = testing_tools.md5_hash_no_spaces_file(KNOWN_GOOD)
 
         basic_program = self.BASIC.to_bin(self.mchirp_song, format='bas')
-        test_hash = ctsTestingTools.md5_hash_no_spaces(basic_program)
+        test_hash = testing_tools.md5_hash_no_spaces(basic_program)
 
         self.assertEqual(known_good_basic_program_hash, test_hash)
 

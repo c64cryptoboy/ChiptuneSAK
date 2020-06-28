@@ -1,6 +1,6 @@
 import unittest
 
-from chiptunesak import ctsTestingTools
+from chiptunesak import testing_tools
 from chiptunesak import mchirp
 from chiptunesak import midi
 from chiptunesak.ml64 import ML64
@@ -17,27 +17,27 @@ class TestExportML64(unittest.TestCase):
 
         midi_file = project_to_absolute_path('tests/data/jingleBellsSDG.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/jingleBellsSDG_good.ml64')
-        known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
+        known_good_ml64_hash = testing_tools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = midi.MIDI().to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         m_song = mchirp.MChirpSong(song)
         test_ml64 = ml64.to_bin(m_song, format='measures')
-        test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
+        test_ml64_hash = testing_tools.md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
         midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good.ml64')
-        known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
+        known_good_ml64_hash = testing_tools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = midi.MIDI().to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         m_song = mchirp.MChirpSong(song)
         test_ml64 = ml64.to_bin(m_song, format='measures')
-        test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
+        test_ml64_hash = testing_tools.md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
@@ -49,13 +49,13 @@ class TestExportML64(unittest.TestCase):
 
         midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good_std.ml64')
-        known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
+        known_good_ml64_hash = testing_tools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = midi.MIDI().to_chirp(midi_file)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         test_ml64 = ml64.to_bin(song, format='standard')
-        test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
+        test_ml64_hash = testing_tools.md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
@@ -67,14 +67,14 @@ class TestExportML64(unittest.TestCase):
 
         midi_file = project_to_absolute_path('tests/data/tripletTest.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/tripletTest_good.ml64')
-        known_good_ml64_hash = ctsTestingTools.md5_hash_no_spaces_file(known_good_ml64_file)
+        known_good_ml64_hash = testing_tools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = midi.MIDI().to_chirp(midi_file)
         song.modulate(3, 2)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
         test_ml64 = ml64.to_bin(song, format='compact')
-        test_ml64_hash = ctsTestingTools.md5_hash_no_spaces(test_ml64)
+        test_ml64_hash = testing_tools.md5_hash_no_spaces(test_ml64)
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 

@@ -2,7 +2,7 @@ import unittest
 
 from chiptunesak import mchirp
 from chiptunesak import midi
-from chiptunesak import ctsTestingTools
+from chiptunesak import testing_tools
 from chiptunesak import ctsLilypond
 from chiptunesak.constants import project_to_absolute_path
 
@@ -13,7 +13,7 @@ TEST_LY_FILE_CLIP = project_to_absolute_path('tests/data/test_bach_invention_4_c
 
 class TestExportLilypond(unittest.TestCase):
     def test_lilypond_(self):
-        known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(KNOWN_GOOD_LY_FILE_CLIP)
+        known_good_ly_hash = testing_tools.md5_hash_no_spaces_file(KNOWN_GOOD_LY_FILE_CLIP)
 
         song = midi.MIDI().to_chirp(MIDI_TEST_FILE)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
@@ -26,6 +26,6 @@ class TestExportLilypond(unittest.TestCase):
         lilypond.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
         # lilypond.to_file(m_song, TEST_LY_FILE_CLIP)
         test_ly = lilypond.to_bin(m_song)
-        test_ly_hash = ctsTestingTools.md5_hash_no_spaces(test_ly)
+        test_ly_hash = testing_tools.md5_hash_no_spaces(test_ly)
 
         self.assertEqual(known_good_ly_hash, test_ly_hash)
