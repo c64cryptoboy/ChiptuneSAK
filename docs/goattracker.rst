@@ -21,7 +21,7 @@ Example:  2SID playback in VICE
 
 GoatTracker can export songs to native C64 programs.  Unlike other trackers (e.g., SID-Wizard), it doesn't have an export option that includes a routine that will drive (meaning, call at regular intervals) the song's playback routine.  So let's create one.
 
-In `another example (TODO) <http://www.TODO.com/>`_ we showed how to import an MS-DOS game tune into a stereo GoatTracker sng file called LeChuck.sng.  2SID playback assumes that the C64 has two SID chips (easy to configure when using VICE).  
+In `another example (TODO) <http://www.TODO.com/>`_ we showed how to import an MS-DOS game tune into a stereo GoatTracker sng file called LeChuck.sng.  2SID playback assumes that the C64 has two SID chips (easy to configure when using VICE).
 
 Assuming LeChuck.sng was already created, then in stereo GoatTracker:
 
@@ -62,7 +62,7 @@ Copy-and-paste the following BASIC music driver program into a running C64 VICE 
 2. Hit the RETURN key one more time to make sure line 140 was entered
 3. confirm that the paste worked with the LIST command
 
-Note: If you plan to script the creation of these kinds of BASIC programs, you can use the provided ctsGenPrg.py module to created C64-native PRG files.
+Note: If you plan to script the creation of these kinds of BASIC programs, you can use the provided gen_prg.py module to created C64-native PRG files.
 
 When tokenized (made C64-native), the BASIC program is 317 bytes long and lives at $0801.  Line 50 of the driver program sets the end of basic to be $1000 (minus one), which stops the BASIC code, and any normal vars, indexed vars, and strings from encroaching into the music routine (which lives at $1000).
 

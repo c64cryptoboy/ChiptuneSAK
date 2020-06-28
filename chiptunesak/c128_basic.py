@@ -3,7 +3,7 @@
 import collections
 from chiptunesak import constants
 from chiptunesak import base
-from chiptunesak import ctsGenPrg
+from chiptunesak import gen_prg
 from chiptunesak import chirp
 from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
@@ -104,7 +104,7 @@ class C128Basic(base.ChiptuneSAKIO):
         if self.get_option('format') == 'bas':
             return ascii_prog
 
-        tokenized_program = ctsGenPrg.ascii_to_prg_c128(ascii_prog)
+        tokenized_program = gen_prg.ascii_to_prg_c128(ascii_prog)
         return tokenized_program
 
     def to_file(self, mchirp_song, filename, **kwargs):

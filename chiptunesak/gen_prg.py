@@ -1,4 +1,4 @@
-# ctsGenPrg.py
+# gen_prg.py
 # Convert an ascii basic program into a Commodore PRG file
 #
 # Does not implement a grammar for BASIC, so no grammar checking, but will generate a valid PRG
