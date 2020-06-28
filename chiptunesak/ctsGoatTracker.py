@@ -15,7 +15,7 @@ from os.path import isfile, join
 import copy
 from dataclasses import dataclass
 from chiptunesak import constants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
-from chiptunesak import ctsBase
+from chiptunesak import base
 from chiptunesak.ctsBytesUtil import read_binary_file
 from chiptunesak import ctsRChirp
 from chiptunesak.ctsErrors import *
@@ -52,7 +52,7 @@ GT_PAT_END = 0xFF  # pattern end
 GT_TEMPO_CHNG_CMD = 0x0F
 
 
-class GoatTracker(ctsBase.ChiptuneSAKIO):
+class GoatTracker(base.ChiptuneSAKIO):
     """
     The IO interface for GoatTracker and GoatTracker Stereo
     Supports conversions between RChirp and GoatTracker .sng format
@@ -62,7 +62,7 @@ class GoatTracker(ctsBase.ChiptuneSAKIO):
         return 'GoatTracker'
 
     def __init__(self):
-        ctsBase.ChiptuneSAKIO.__init__(self)
+        base.ChiptuneSAKIO.__init__(self)
         self.set_options(max_pattern_len=DEFAULT_MAX_PAT_LEN,   # max pattern length if no given patterns
                          instruments=[],          # gt instrument assignments, in order
                          end_with_repeat=False,   # default is to stop GoatTracker from repeating music

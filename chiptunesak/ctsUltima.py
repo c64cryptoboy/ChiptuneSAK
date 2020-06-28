@@ -1,7 +1,7 @@
 import os
 import csv
 from chiptunesak import constants
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak.ctsChirp import ChirpSong, ChirpTrack, Note
 from chiptunesak.ctsMidi import MIDI
 

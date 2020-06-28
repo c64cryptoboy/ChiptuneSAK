@@ -5,7 +5,7 @@
 
 import unittest
 from chiptunesak import ctsGoatTracker
-from chiptunesak import ctsBase
+from chiptunesak import base
 from chiptunesak.constants import project_to_absolute_path
 from chiptunesak.ctsBytesUtil import read_binary_file
 
@@ -33,7 +33,7 @@ SNG_TEST_FILE = project_to_absolute_path('tests/data/gtTestData.sng')
 #     channel_note_on_events = []
 #     for rchirp_row in voice.sorted_rows():
 #         if rchirp_row.gate:
-#             midi_note_name = ctsBase.pitch_to_note_name(rchirp_row.note_num)
+#             midi_note_name = base.pitch_to_note_name(rchirp_row.note_num)
 #             channel_note_on_events.append('(%d, "%s")' % (rchirp_row.jiffy_num, midi_note_name))
 #     line = '    (' + ', '.join(channel_note_on_events) + '),'
 #     print(line)
@@ -72,7 +72,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
                 for expected_jiffy, expected_note in expected_channel:
                     rchirp_row = actual_channel[expected_jiffy]
                     self.assertIsNotNone(rchirp_row, "Null Row in channel %d" % i)
-                    actual_note = ctsBase.pitch_to_note_name(rchirp_row.note_num)  # do enharmonic comparison
+                    actual_note = base.pitch_to_note_name(rchirp_row.note_num)  # do enharmonic comparison
                     self.assertEqual(actual_note, expected_note)
         return True
 

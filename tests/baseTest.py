@@ -1,7 +1,7 @@
 import unittest
 
 from chiptunesak import constants
-from chiptunesak.ctsBase import note_name_to_pitch, pitch_to_note_name
+from chiptunesak.base import note_name_to_pitch, pitch_to_note_name
 
 
 class BaseTestCase(unittest.TestCase):

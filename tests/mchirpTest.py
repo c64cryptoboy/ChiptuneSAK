@@ -1,6 +1,6 @@
 import unittest
 from chiptunesak import ctsMidi
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak.ctsMChirp import MChirpSong
 from chiptunesak.ctsChirp import ChirpSong
 from chiptunesak.constants import project_to_absolute_path

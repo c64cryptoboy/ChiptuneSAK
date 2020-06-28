@@ -10,7 +10,7 @@
 import copy
 import bisect
 import more_itertools as moreit
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak import ctsMChirp
 from chiptunesak import ctsRChirp
 from chiptunesak import constants

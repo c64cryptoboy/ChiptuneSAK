@@ -16,7 +16,7 @@ import copy
 from functools import reduce
 import math
 from chiptunesak import ctsChirp
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak import constants
 from dataclasses import dataclass
 

@@ -1,5 +1,5 @@
 import copy
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak import ctsChirp
 import more_itertools as moreit
 

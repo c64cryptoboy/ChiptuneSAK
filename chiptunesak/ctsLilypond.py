@@ -1,6 +1,6 @@
 import copy
 
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak.ctsChirp import Note
 
 

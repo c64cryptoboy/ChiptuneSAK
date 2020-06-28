@@ -1,6 +1,6 @@
 import subprocess
 
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak import ctsMidi
 from chiptunesak import ctsLilypond
 from chiptunesak import ctsOnePassCompress

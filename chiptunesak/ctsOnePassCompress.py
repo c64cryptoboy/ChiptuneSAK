@@ -2,7 +2,7 @@ import sys
 import collections
 from dataclasses import dataclass
 import copy
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak import ctsGoatTracker
 from chiptunesak.ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 

@@ -1,6 +1,6 @@
 import sys
 import mido
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak.ctsChirp import Note, ChirpTrack, ChirpSong
 
 

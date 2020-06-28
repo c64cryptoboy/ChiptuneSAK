@@ -1,5 +1,5 @@
 from chiptunesak import constants
-from chiptunesak import ctsBase
+from chiptunesak import base
 
 print("midiNum, noteName, Hz, NTSCFreq, NTSCFreqHex, PALFreq, PALFreqHex")
 # From C0 to B7.  References:
@@ -13,7 +13,7 @@ for midi_num in range(constants.C0_MIDI_NUM, constants.C0_MIDI_NUM + (8 * 12)):
 
     print(
         '{:3d}, {: <3}, {:8.3f}, {:5d}, {:04X}, {:5d}, {:05X}'.format(
-            midi_num, ctsBase.pitch_to_note_name(midi_num), freq, ntsc_freq,
+            midi_num, base.pitch_to_note_name(midi_num), freq, ntsc_freq,
             ntsc_freq, pal_freq, pal_freq)
     )
 
@@ -25,7 +25,7 @@ for ntsc_f in range(269, -1, -1):  # C0 to D0 in NTSC freq for 440 tuning
         ntsc_f,
         arch='PAL-C64',
         tuning=constants.CONCERT_A)
-    print('{:d}, {:d}, {}, {:d}'.format(ntsc_f, midi_num, ctsBase.pitch_to_note_name(midi_num), cents))
+    print('{:d}, {:d}, {}, {:d}'.format(ntsc_f, midi_num, base.pitch_to_note_name(midi_num), cents))
     #print('{:d}, {:d}, {:d}'.format(ntsc_f, midi_num, cents))
 """
 

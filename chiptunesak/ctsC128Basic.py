@@ -2,7 +2,7 @@
 
 import collections
 from chiptunesak import constants
-from chiptunesak import ctsBase
+from chiptunesak import base
 from chiptunesak import ctsGenPrg
 from chiptunesak import ctsChirp
 from chiptunesak.ctsErrors import ChiptuneSAKValueError, ChiptuneSAKContentError
@@ -39,7 +39,7 @@ basic_durations = {
 }
 
 
-class C128Basic(ctsBase.ChiptuneSAKIO):
+class C128Basic(base.ChiptuneSAKIO):
     """
     The IO interface for C128BASIC
     Supports to_bin() and to_file() conversions from mchirp to C128 BASIC
@@ -50,7 +50,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         return 'C128Basic'
 
     def __init__(self):
-        ctsBase.ChiptuneSAKIO.__init__(self)
+        base.ChiptuneSAKIO.__init__(self)
         self.set_options(format='prg',
                          arch=constants.DEFAULT_ARCH,
                          instruments=['piano', 'piano', 'piano'])
@@ -87,7 +87,7 @@ class C128Basic(ctsBase.ChiptuneSAKIO):
         :rtype: string or bytearray
 
         :keyword options:
-            * **arch** (string) - architecture name (see ctsBase for complete list)
+            * **arch** (string) - architecture name (see base for complete list)
             * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
             * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
                 - Default is ['piano', 'piano', 'piano']
@@ -221,7 +221,7 @@ def pitch_to_basic_note_name(note_num, octave_offset=0):
     :return: note name string and ocatave number
     :rtype: string, int
     """
-    note_name = ctsBase.pitch_to_note_name(note_num)[::-1]  # Reverse the note name
+    note_name = base.pitch_to_note_name(note_num)[::-1]  # Reverse the note name
     return note_name[1:], note_name[0]
 
 
@@ -284,17 +284,17 @@ def measures_to_basic(mchirp_song):
                 if isinstance(e, ctsChirp.Note):
                     if not e.tied_to:
                         start_time = e.start_time
-                        for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):
+                        for d in base.decompose_duration(e.duration, ppq, basic_durations):
                             contents.append(BasicNote(start_time, e.note_num, d * ppq, v + 1))
                             start_time += d * ppq
                     else:
                         start_time = e.start_time
-                        for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):
+                        for d in base.decompose_duration(e.duration, ppq, basic_durations):
                             contents.append(BasicRest(start_time, d * ppq, v + 1))
                             start_time += d * ppq
-                elif isinstance(e, ctsBase.Rest):
+                elif isinstance(e, base.Rest):
                     start_time = e.start_time
-                    for d in ctsBase.decompose_duration(e.duration, ppq, basic_durations):
+                    for d in base.decompose_duration(e.duration, ppq, basic_durations):
                         contents.append(BasicRest(start_time, d * ppq, v + 1))
                         start_time += d * ppq
 

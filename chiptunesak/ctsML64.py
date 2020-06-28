@@ -1,4 +1,4 @@
-from chiptunesak.ctsBase import *
+from chiptunesak.base import *
 from chiptunesak import ctsChirp, ctsMChirp
 from chiptunesak import constants
 
