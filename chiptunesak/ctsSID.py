@@ -36,7 +36,7 @@ from typing import List
 from chiptunesak.constants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
 from chiptunesak.bytes_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
-from chiptunesak import ctsThinC64Emulator
+from chiptunesak import thin_c64_emulator
 from chiptunesak.ctsErrors import ChiptuneSAKValueError
 from chiptunesak import ctsRChirp
 
@@ -924,7 +924,7 @@ class SidImport:
         self.arch = arch
         self.tuning = tuning  # proper tuning can mean better note capture
 
-        self.cpu_state = ctsThinC64Emulator.ThinC64Emulator()
+        self.cpu_state = thin_c64_emulator.ThinC64Emulator()
         self.cpu_state.exit_on_empty_stack = True
         self.first_frame = 0
         self.frame_cnt = 0

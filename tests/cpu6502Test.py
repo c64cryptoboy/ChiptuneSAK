@@ -3,7 +3,7 @@
 
 import unittest
 from chiptunesak import cts6502Emulator
-from chiptunesak import ctsThinC64Emulator
+from chiptunesak import thin_c64_emulator
 from chiptunesak.constants import ARCH
 
 VERBOSE = False
@@ -75,7 +75,7 @@ class Test6502Emulator(unittest.TestCase):
         # Emulate the ML portion of my lemon64 signature
         # Note: signature line is obfuscated by changing XOR mask
 
-        cpuState = ctsThinC64Emulator.ThinC64Emulator()
+        cpuState = thin_c64_emulator.ThinC64Emulator()
 
         """
         10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
@@ -145,7 +145,7 @@ class Test6502Emulator(unittest.TestCase):
 
     # @unittest.skip("Debugging, so skipping this test for now")
     def test_C64_kernal_boot(self):
-        cpuState = ctsThinC64Emulator.ThinC64Emulator()
+        cpuState = thin_c64_emulator.ThinC64Emulator()
 
         expected_screen_output = \
             "                                        \n" + \
