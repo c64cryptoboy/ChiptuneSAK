@@ -894,7 +894,7 @@ class TestSuitesForC64(unittest.TestCase):
         cpuState = cts6502Emulator.Cpu6502Emulator()
 
         test_prg = read_binary_file(project_to_absolute_path(
-            'test/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
+            'tests/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
 
         # The Klaus Dormann BCD test code assumes it can have ZP $00 through $10,
         # and that code can live at $0200
