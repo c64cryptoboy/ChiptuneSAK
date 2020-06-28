@@ -918,7 +918,7 @@ class ChirpSong(ChiptuneSAKBase):
         :param new_key: Key signature.  String such as 'A#' or 'Abm'
         :type new_key: str
         """
-        self.key_signature_changes = [KeySignatureEvent(0, ctsKey.ChirpKey(new_key))]
+        self.key_signature_changes = [KeySignatureEvent(0, key.ChirpKey(new_key))]
 
     def end_time(self):
         """

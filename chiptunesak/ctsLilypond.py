@@ -253,7 +253,7 @@ class Lilypond(ChiptuneSAKIO):
             raise ChiptuneSAKContentError("No measures to export!")
         # Set these to the default so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-        self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+        self.current_key_signature = key.ChirpKey('C').key_signature
         self.current_clef = 'treble'
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
@@ -300,7 +300,7 @@ class Lilypond(ChiptuneSAKIO):
 
         # Set these to the default, so that they will change on the first measure.
         self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-        self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+        self.current_key_signature = key.ChirpKey('C').key_signature
         self.current_clef = 'treble'
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
@@ -318,7 +318,7 @@ class Lilypond(ChiptuneSAKIO):
         output.append('\\new StaffGroup <<')
         for it, t in enumerate(tracks):
             self.current_time_signature = TimeSignatureEvent(0, 4, 4)
-            self.current_key_signature = ctsKey.ChirpKey('C').key_signature
+            self.current_key_signature = key.ChirpKey('C').key_signature
             measures = copy.copy(t.measures)
             track_range = (min(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)),
                            max(e.note_num for m in t.measures for e in m.events if isinstance(e, Note)))

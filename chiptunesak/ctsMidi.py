@@ -238,7 +238,7 @@ class MIDI(ChiptuneSAKIO):
             elif msg.type == 'set_tempo':
                 chirp_song.tempo_changes.append(TempoEvent(current_time, int(round(mido.tempo2bpm(msg.tempo)))))
             elif msg.type == 'key_signature':
-                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, ctsKey.ChirpKey(msg.key)))
+                chirp_song.key_signature_changes.append(KeySignatureEvent(current_time, key.ChirpKey(msg.key)))
             elif msg.type == 'track_name' and is_zerotrack and not is_name_set:
                 chirp_song.metadata.name = msg.name.strip()
                 is_name_set = True
@@ -255,7 +255,7 @@ class MIDI(ChiptuneSAKIO):
 
         # Require initial time signature, key signature, and tempo values.
         if len(chirp_song.key_signature_changes) == 0 or chirp_song.key_signature_changes[0].start_time != 0:
-            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, ctsKey.ChirpKey("C")))  # Default top key of C
+            chirp_song.key_signature_changes.insert(0, KeySignatureEvent(0, key.ChirpKey("C")))  # Default top key of C
         chirp_song.metadata.key_signature = chirp_song.key_signature_changes[0]
         if len(chirp_song.time_signature_changes) == 0 or chirp_song.time_signature_changes[0].start_time != 0:
             chirp_song.time_signature_changes.insert(0, TimeSignatureEvent(0, 4, 4))  # Default to 4/4

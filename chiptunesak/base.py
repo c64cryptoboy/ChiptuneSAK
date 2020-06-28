@@ -3,7 +3,7 @@ import collections
 from dataclasses import dataclass, field
 from fractions import Fraction
 from chiptunesak.errors import *
-from chiptunesak import constants, ctsKey
+from chiptunesak import constants, key
 
 
 # Named tuple types for several lists throughout
@@ -24,7 +24,7 @@ class SongMetadata:
     composer: str = ''  #: Composer
     copyright: str = ''  #: Copyright statement
     time_signature: TimeSignatureEvent = TimeSignatureEvent(0, 4, 4)  #: Starting time signature
-    key_signature: KeySignatureEvent = KeySignatureEvent(0, ctsKey.ChirpKey('C'))  #: Starting key signature
+    key_signature: KeySignatureEvent = KeySignatureEvent(0, key.ChirpKey('C'))  #: Starting key signature
     qpm: int = 112  #: Tempo in Quarter Notes per Minute (QPM)
     extensions: dict = field(default_factory=dict)  #: Allows arbitrary state to be passed
 
