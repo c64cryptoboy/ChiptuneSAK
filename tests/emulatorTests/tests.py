@@ -13,7 +13,7 @@ from parameterized import parameterized
 
 from chiptunesak import cts6502Emulator
 from chiptunesak import ctsThinC64Emulator
-from chiptunesak.ctsBytesUtil import read_binary_file
+from chiptunesak.bytes_util import read_binary_file
 from chiptunesak.constants import project_to_absolute_path
 
 

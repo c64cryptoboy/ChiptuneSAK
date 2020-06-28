@@ -16,7 +16,7 @@ import copy
 from dataclasses import dataclass
 from chiptunesak import constants  # import ARCH, C0_MIDI_NUM, project_to_absolute_path
 from chiptunesak import base
-from chiptunesak.ctsBytesUtil import read_binary_file
+from chiptunesak.bytes_util import read_binary_file
 from chiptunesak import ctsRChirp
 from chiptunesak.ctsErrors import *
 

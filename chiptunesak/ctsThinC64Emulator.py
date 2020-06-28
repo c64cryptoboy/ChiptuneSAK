@@ -8,7 +8,7 @@
 #   since in many places we stub our own ROM stuff, but this could be useful for SIDs.
 
 from chiptunesak import constants
-from chiptunesak.ctsBytesUtil import read_binary_file
+from chiptunesak.bytes_util import read_binary_file
 from chiptunesak.ctsErrors import ChiptuneSAKContentError
 from chiptunesak import cts6502Emulator
 
