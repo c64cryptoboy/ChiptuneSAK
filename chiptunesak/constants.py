@@ -144,7 +144,7 @@ def midi_num_to_freq(midi_num, cents=0, tuning=CONCERT_A):
     return tuning * pow(2, (midi_num + cents / 100 - A4_MIDI_NUM) / 12)
 
 
-def midi_num_to_freq_arch(midi_num, cents=0, arch='NTSC-C64', tuning=CONCERT_A):
+def midi_num_to_freq_arch(midi_num, cents=0, arch=DEFAULT_ARCH, tuning=CONCERT_A):
     """
     Convert a pitch frequency into a frequency for a particular architecture (e.g. PAL C64)
 
@@ -187,12 +187,12 @@ def freq_to_midi_num(freq, tuning=CONCERT_A):
     return (midi_num, cents)
 
 
-def freq_arch_to_midi_num(arch_freq, arch='NTSC-C64', tuning=CONCERT_A):
+def freq_arch_to_midi_num(freq_arch, arch=DEFAULT_ARCH, tuning=CONCERT_A):
     """
     Converts a particular frequency in an architecture to (midi_num, cents)
 
-    :param arch_freq: frequency as specified in the architecture
-    :type arch_freq: int
+    :param freq_arch: frequency as specified in the architecture
+    :type freq_arch: int
     :param arch: Architecture description string
     :type arch: str
     :return: midi_num, cents
@@ -201,17 +201,17 @@ def freq_arch_to_midi_num(arch_freq, arch='NTSC-C64', tuning=CONCERT_A):
     if arch not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
 
-    freq = freq_arch_to_freq(arch_freq, arch)
+    freq = freq_arch_to_freq(freq_arch, arch)
 
     return freq_to_midi_num(freq, tuning)
 
 
-def freq_arch_to_freq(arch_freq, arch='NTSC-C64'):
+def freq_arch_to_freq(freq_arch, arch=DEFAULT_ARCH):
     """
     Converts a architecture-based frequency into its true audio frequency
 
-    :param arch_freq: frequency as specified in the architecture
-    :type arch_freq: int
+    :param freq_arch: frequency as specified in the architecture
+    :type freq_arch: int
     :param arch: Architecture description string, defaults to 'NTSC-C64'
     :type arch: str, optional
     :return: frequency
@@ -220,10 +220,10 @@ def freq_arch_to_freq(arch_freq, arch='NTSC-C64'):
     if arch not in ('NTSC-C64', 'PAL-C64'):
         raise ChiptuneSAKValueError("Error: arch type not supported for freq conversion")
 
-    return arch_freq * ARCH[arch].system_clock / 0x1000000
+    return freq_arch * ARCH[arch].system_clock / 0x1000000
 
 
-def freq_to_freq_arch(freq, arch='NTSC-C64'):
+def freq_to_freq_arch(freq, arch=DEFAULT_ARCH):
     """
     Converts an audio frequency into an architecture-based frequency
     (e.g., a SID oscillator freq)

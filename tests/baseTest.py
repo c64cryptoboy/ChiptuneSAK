@@ -59,17 +59,17 @@ class BaseTestCase(unittest.TestCase):
         self.assertAlmostEqual(constants.freq_arch_to_freq(268, arch='PAL-C64'), 15.738, 3)
 
         # Every NTSC freq that resolves to C-1 under 440 tuning
-        for ntsc_arch_freq in range(131, 139):
+        for ntsc_freq_arch in range(131, 139):
             midi_num, _ = constants.freq_arch_to_midi_num(
-                ntsc_arch_freq,
+                ntsc_freq_arch,
                 arch='NTSC-C64',
                 tuning=constants.CONCERT_A)
             self.assertEqual(pitch_to_note_name(midi_num), 'C-1')  # the lowest note
 
         # Every PAL freq that resolves to C-1 under 440 tuning
-        for pal_arch_freq in range(136, 144):
+        for pal_freq_arch in range(136, 144):
             midi_num, _ = constants.freq_arch_to_midi_num(
-                pal_arch_freq,
+                pal_freq_arch,
                 arch='PAL-C64',
                 tuning=constants.CONCERT_A)
             self.assertEqual(pitch_to_note_name(midi_num), 'C-1')  # the lowest note

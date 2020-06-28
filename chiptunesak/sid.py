@@ -19,7 +19,6 @@
 #    tuning and architecture-based frequencies at runtime.
 #
 # SidImport TODO:
-# - remove fixed freq tables
 # - iterate over a collection a SIDs for code coverage testing
 # - implement the SID header speed settings?
 #
@@ -59,7 +58,7 @@ class SID(ChiptuneSAKIO):
             vibrato_cents_margin=0,  # cents margin to control snapping to previous note
             tuning=CONCERT_A,
             seconds=60,          # seconds to capture
-            arch=DEFAULT_ARCH,   # architecture (for import to RChirp)
+            arch=DEFAULT_ARCH,   # note: will be overwritten if/when SID headers get parsed
             gcf_row_reduce=True  # reduce rows based on greatest common factor of row-activity gaps
         )
 
@@ -136,7 +135,7 @@ class SID(ChiptuneSAKIO):
                     rc_row.jiffy_len = 1
 
                     if chn.note is not None:
-                        rc_row.note_num = chn.note  # TODO: convert to MIDI note number first
+                        rc_row.note_num = chn.note
                         rc_row.instr_num = 1  # FUTURE: Do something with instruments?
 
                     if chn.gate_on is not None:
@@ -361,6 +360,20 @@ class SidFile:
         self.sid2_address = 0               #: SID2 I/O starting address
         self.sid3_address = 0               #: SID3 I/O starting address
         self.sid_count = 1                  #: Number of SIDs used (1 to 3)
+
+    def get_arch_from_headers(self):
+        """
+        Get ChiptuneSAK architecture type from SID headers
+
+        :return: architecture type
+        :rtype: string
+        """        
+        if self.clock == 1:
+            return 'PAL-C64'
+        if self.clock == 2:
+            return 'NTSC-C64'
+        # for values 0 or 3:
+        return DEFAULT_ARCH
 
     def decode_clock(self):
         """
@@ -890,22 +903,43 @@ class Row:
 
 
 class Dump:
-    def __init__(self, arch=DEFAULT_ARCH):
+    def __init__(self):
         self.sid_file = None  # Contains the parsed SID file
         self.sid_base_addrs = []  # ordered list of where SIDs are memory mapped
         self.rows = []  # One row for each sample (after each call to the play routine)
         self.raw_freqs = []  # List of raw frequencies that can be used to derrive tuning
-        self.arch = arch
+        self.arch = None  # Set by load_sid()
 
-    # TODO: Make docstring saying must throw away 1st pass
+    def load_sid(self, filename):
+        """
+        Load a SID file to be dumped.  Architecture will be set by SID headers.
+
+        :param filename: [description]
+        :type filename: [type]
+        """
+        self.sid_file = SidFile()
+        self.sid_file.parse_file(filename)
+        self.arch = self.sid_file.get_arch_from_headers()
+
     def get_tuning(self):
+        """
+        As a throw-away first pass, the sid dump can be given a small sample
+        (e.g. seconds=10) from which to determine the tuning of the SID's
+        frequency tables.  Using this tuning on a second pass means that the
+        cents deltas from the assigned MIDI notes can be brought closer to 0.
+        This means that logic that understands when vibrato should not be
+        creating new notes can work more effectively.
+
+        :return: tuple containing tuning, minimum_cents, and maximum_cents
+        :rtype: (float, int, int)
+        """
         all_cents = []
-        for arch_freq in self.raw_freqs:
-            if arch_freq == 0:
+        for freq_arch in self.raw_freqs:
+            if freq_arch == 0:
                 continue
-            if freq_arch_to_midi_num(arch_freq, self.arch, CONCERT_A)[0] < 0:
+            if freq_arch_to_midi_num(freq_arch, self.arch, CONCERT_A)[0] < 0:
                 continue  # ChiptuneSAK does not support midi note numbers < 0 (< C-1)
-            (_, cents) = freq_arch_to_midi_num(arch_freq, self.arch, tuning=CONCERT_A)
+            (_, cents) = freq_arch_to_midi_num(freq_arch, self.arch, tuning=CONCERT_A)
             all_cents.append(cents)
 
         average_cents = sum(all_cents) / len(all_cents)
@@ -921,7 +955,7 @@ class Dump:
 
 class SidImport:
     def __init__(self, arch=DEFAULT_ARCH, tuning=CONCERT_A):
-        self.arch = arch
+        self.arch = arch  # Note, overwritten when SID file loaded
         self.tuning = tuning  # proper tuning can mean better note capture
 
         self.cpu_state = thin_c64_emulator.ThinC64Emulator()
@@ -929,29 +963,7 @@ class SidImport:
         self.first_frame = 0
         self.frame_cnt = 0
 
-        '''  TODO:  DELETE
-        self.freq_lo = [
-            0x17, 0x27, 0x39, 0x4b, 0x5f, 0x74, 0x8a, 0xa1, 0xba, 0xd4, 0xf0, 0x0e,
-            0x2d, 0x4e, 0x71, 0x96, 0xbe, 0xe8, 0x14, 0x43, 0x74, 0xa9, 0xe1, 0x1c,
-            0x5a, 0x9c, 0xe2, 0x2d, 0x7c, 0xcf, 0x28, 0x85, 0xe8, 0x52, 0xc1, 0x37,
-            0xb4, 0x39, 0xc5, 0x5a, 0xf7, 0x9e, 0x4f, 0x0a, 0xd1, 0xa3, 0x82, 0x6e,
-            0x68, 0x71, 0x8a, 0xb3, 0xee, 0x3c, 0x9e, 0x15, 0xa2, 0x46, 0x04, 0xdc,
-            0xd0, 0xe2, 0x14, 0x67, 0xdd, 0x79, 0x3c, 0x29, 0x44, 0x8d, 0x08, 0xb8,
-            0xa1, 0xc5, 0x28, 0xcd, 0xba, 0xf1, 0x78, 0x53, 0x87, 0x1a, 0x10, 0x71,
-            0x42, 0x89, 0x4f, 0x9b, 0x74, 0xe2, 0xf0, 0xa6, 0x0e, 0x33, 0x20, 0xff]
-
-        self.freq_hi = [
-            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02,
-            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03, 0x03, 0x04,
-            0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x07, 0x07, 0x08,
-            0x08, 0x09, 0x09, 0x0a, 0x0a, 0x0b, 0x0c, 0x0d, 0x0d, 0x0e, 0x0f, 0x10,
-            0x11, 0x12, 0x13, 0x14, 0x15, 0x17, 0x18, 0x1a, 0x1b, 0x1d, 0x1f, 0x20,
-            0x22, 0x24, 0x27, 0x29, 0x2b, 0x2e, 0x31, 0x34, 0x37, 0x3a, 0x3e, 0x41,
-            0x45, 0x49, 0x4e, 0x52, 0x57, 0x5c, 0x62, 0x68, 0x6e, 0x75, 0x7c, 0x83,
-            0x8b, 0x93, 0x9c, 0xa5, 0xaf, 0xb9, 0xc4, 0xd0, 0xdd, 0xea, 0xf8, 0xff]
-        '''
-
-    def get_note(self, arch_freq, vibrato_cents_margin=0, prev_note=None):
+    def get_note(self, freq_arch, vibrato_cents_margin=0, prev_note=None):
         # siddump.c has an "old note factor" that helps return more consistant
         # results when a large vibrato is in effect.  This works by allowing the user
         # to set how influential the previous note is in interpreting the next note.
@@ -976,8 +988,8 @@ class SidImport:
         # For frequencies to stay above 8.0Hz:
         # - NTSC C64, lowest allowed oscil freq is int(8.0*0x1000000/1022727) = 131
         # - PAL C64, lowest allowed is int(8.0*0x1000000/985248) = 136
-        if arch_freq != 0 and freq_arch_to_midi_num(arch_freq, self.arch, self.tuning)[0] >= 0:
-            (midi_num, cents_offset) = freq_arch_to_midi_num(arch_freq, self.arch, self.tuning)
+        if freq_arch != 0 and freq_arch_to_midi_num(freq_arch, self.arch, self.tuning)[0] >= 0:
+            (midi_num, cents_offset) = freq_arch_to_midi_num(freq_arch, self.arch, self.tuning)
         else:
             (midi_num, cents_offset) = (0, -MAX_CENTS + 1)  # for anything < 8Hz
 
@@ -1083,9 +1095,9 @@ class SidImport:
         :rtype: Dump
         """
 
-        sid_dump = Dump(self.arch)
-        sid_dump.sid_file = SidFile()
-        sid_dump.sid_file.parse_file(filename)
+        sid_dump = Dump()
+        sid_dump.load_sid(filename)
+        self.arch = sid_dump.arch  # change arch to what's in the SID headers
         sid_dump.rows = []
 
         # If 2SID or 3SID, note where the chips are memory mapped
