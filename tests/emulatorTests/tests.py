@@ -807,7 +807,7 @@ class TestSuitesForC64(unittest.TestCase):
         print('\nRunning test "%s"' % (test_name))
 
         test_prg = read_binary_file(
-            project_to_absolute_path('test/emulatorTests/wolfgangLorenzTestsBin/' + file_name))
+            project_to_absolute_path('tests/emulatorTests/wolfgangLorenzTestsBin/' + file_name))
         test_prg = test_prg[2:]  # strip off load addr (it's always 2049)
 
         cpuState.inject_bytes(2049, test_prg)
