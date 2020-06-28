@@ -7,7 +7,7 @@ import argparse
 from os import path
 
 from chiptunesak import goat_tracker
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak.errors import ChiptuneSAKValueError
 
 
@@ -23,7 +23,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     # generic approach (when quantizable):
     # song.estimate_quantization()

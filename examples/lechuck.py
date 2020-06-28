@@ -1,6 +1,6 @@
 import copy
 
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsRChirp
 from chiptunesak import one_pass_compress
 from chiptunesak import goat_tracker
@@ -21,7 +21,7 @@ input_file = str(project_to_absolute_path('examples/data/lechuck/MonkeyIsland_Le
 output_midi_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.mid'))
 output_gt_file = str(project_to_absolute_path('examples/data/lechuck/LeChuck.sng'))
 
-chirp_song = ctsMidi.MIDI().to_chirp(input_file)
+chirp_song = midi.MIDI().to_chirp(input_file)
 
 print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
@@ -96,7 +96,7 @@ chirp_song.remove_polyphony()  # There is one place in the bass line that made a
 
 # Now export the modified chirp to a new midi file, which can be viewed and should look nice and neat
 print(f'Writing to MIDI file {output_midi_file}')
-ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
+midi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Now set the instrument numbers for the goattracker song.
 # Since we want control over the instruments we specify the GT ones in order.

@@ -3,7 +3,7 @@ import functools
 
 from chiptunesak import chirp
 from chiptunesak.constants import DURATION_STR, DEFAULT_MIDI_PPQN
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 
 """ This module contains an algorithm to estimate offset and scale factors for MIDI songs that do not have
     an accurate ppq.  It attempts to infer the ppq from the note starts alone, assuming a minimum note-to-note
@@ -65,7 +65,7 @@ def main():
     desired_q = desired_ppq * DURATION_STR[args.minnote]
 
     print("Reading file %s" % args.midi_out_file)
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    song = midi.MIDI().to_chirp(args.midi_in_file)
     notes = [n for t in song.tracks for n in t.notes]
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
     f_max = f_min * 8.
@@ -113,7 +113,7 @@ def main():
     song.metadata.ppq = desired_ppq
     # song.quantize_from_note_name('16')
     print("Writing file %s" % args.midi_out_file)
-    ctsMidi.MIDI().to_file(song, args.midi_out_file)
+    midi.MIDI().to_file(song, args.midi_out_file)
 
     print("\ndone")
 

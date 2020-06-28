@@ -1,7 +1,7 @@
 import argparse
 import subprocess
 
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsLilypond
 
 """
@@ -25,7 +25,7 @@ def main():
         lp.set_options(autosort="True")
 
     print("Reading %s" % args.midi_in_file)
-    chirp_song = ctsMidi.MIDI().to_chirp(args.midi_in_file, quantization='auto', polyphony=False)
+    chirp_song = midi.MIDI().to_chirp(args.midi_in_file, quantization='auto', polyphony=False)
 
     print('Converting to measures...')
     mchirp_song = chirp_song.to_mchirp()

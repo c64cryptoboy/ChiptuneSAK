@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsLilypond
 from chiptunesak.constants import project_to_absolute_path
 
@@ -22,7 +22,7 @@ input_file = input_folder + 'bach_invention_4.mid'
 output_ly_file = output_folder + 'bach_invention_4.ly'
 
 # Read in the midi song and quantize
-chirp_song = ctsMidi.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
+chirp_song = midi.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
 # Convert to mchirp
 mchirp_song = chirp_song.to_mchirp()
 

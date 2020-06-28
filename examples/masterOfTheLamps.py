@@ -1,6 +1,6 @@
 from chiptunesak.constants import project_to_absolute_path
 from chiptunesak import ctsSID
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 
 sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 
@@ -84,7 +84,7 @@ def create_output_files():
         print("writing %s.mid" % filename_no_ext)
         rchirp_song = sid.to_rchirp()
         chirp_song = rchirp_song.to_chirp()
-        ctsMidi.MIDI().to_file(
+        midi.MIDI().to_file(
             chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
 
 

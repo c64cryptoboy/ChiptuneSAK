@@ -80,7 +80,7 @@ Input/Output Classes
 MIDI Class
 ----------
 
-.. autoclass:: chiptunesak.ctsMidi.MIDI
+.. autoclass:: chiptunesak.midi.MIDI
     :members:
     :show-inheritance:
 

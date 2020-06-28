@@ -1,7 +1,7 @@
 import argparse
 from os import path
 
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 
 
 def main():
@@ -35,7 +35,7 @@ def main():
     if not path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     # Print stats
     print('%d notes' % (sum(len(t.notes) for t in song.tracks)))
@@ -123,7 +123,7 @@ def main():
     # print('\n'.join("%24s %s" % (s, str(v)) for s, v in song.stats.items()))
 
     print("Exporting to MIDI...")
-    ctsMidi.MIDI().to_file(song, args.midi_out_file)
+    midi.MIDI().to_file(song, args.midi_out_file)
 
 
 if __name__ == '__main__':

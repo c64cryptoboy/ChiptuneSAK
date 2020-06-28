@@ -1,4 +1,4 @@
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import goat_tracker
 from chiptunesak.constants import project_to_absolute_path
 
@@ -32,4 +32,4 @@ chirp_song.set_time_signature(3, 8)
 
 # And write it to a MIDI file.
 print(f'Writing to MIDI file {output_midi_file}')
-ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
+midi.MIDI().to_file(chirp_song, output_midi_file)

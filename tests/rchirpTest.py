@@ -1,5 +1,5 @@
 import unittest
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsRChirp
 from chiptunesak.constants import project_to_absolute_path
 
@@ -10,7 +10,7 @@ GT_TEST_SONG = project_to_absolute_path('tests/data/twinkle.sng')
 
 class RChirpSongTestCase(unittest.TestCase):
     def setUp(self):
-        self.test_song = ctsMidi.MIDI().to_chirp(SONG_TEST_SONG)
+        self.test_song = midi.MIDI().to_chirp(SONG_TEST_SONG)
         self.test_song.quantize(*self.test_song.estimate_quantization())
         self.rchirp_song = ctsRChirp.RChirpSong(self.test_song)
 

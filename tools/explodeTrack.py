@@ -1,6 +1,6 @@
 import argparse
 import os
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
     if not os.path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     if args.tracknumber:
         print("Exploding track number %d" % args.tracknumber)
@@ -35,7 +35,7 @@ def main():
         print("No track specified")
         exit(1)
 
-    ctsMidi.MIDI().to_file(song, args.midi_out_file)
+    midi.MIDI().to_file(song, args.midi_out_file)
 
 
 if __name__ == '__main__':

@@ -30,7 +30,7 @@ Export functions
 MIDI
 ----
 
-.. currentmodule:: chiptunesak.ctsMidi
+.. currentmodule:: chiptunesak.midi
 
 .. autoclass:: MIDI
     :members: to_chirp, to_file

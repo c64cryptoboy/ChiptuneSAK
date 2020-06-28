@@ -1,7 +1,7 @@
 import unittest
 
 from chiptunesak import mchirp
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsTestingTools
 from chiptunesak import ctsLilypond
 from chiptunesak.constants import project_to_absolute_path
@@ -15,7 +15,7 @@ class TestExportLilypond(unittest.TestCase):
     def test_lilypond_(self):
         known_good_ly_hash = ctsTestingTools.md5_hash_no_spaces_file(KNOWN_GOOD_LY_FILE_CLIP)
 
-        song = ctsMidi.MIDI().to_chirp(MIDI_TEST_FILE)
+        song = midi.MIDI().to_chirp(MIDI_TEST_FILE)
         song.quantize_from_note_name('16')  # Quantize to sixteenth notes
         song.remove_polyphony()
 

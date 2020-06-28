@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsLilypond
 from chiptunesak.constants import project_to_absolute_path
 
@@ -21,7 +21,7 @@ input_mid_file = input_folder + 'BWV_799.mid'
 output_ly_file = output_folder + 'BWV_799.ly'
 
 # Read in the midi song and quantize
-chirp_song = ctsMidi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
+chirp_song = midi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
 
 # It's in A minor, 3/8 time
 chirp_song.set_key_signature('Am')

@@ -3,7 +3,7 @@ import argparse
 import os
 
 from chiptunesak.errors import ChiptuneSAKValueError
-from chiptunesak.import ctsMidi
+from chiptunesak.import midi
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     if not os.path.exists(args.midi_in_file):
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     if max(args.track_order) > len(song.tracks):
         raise ChiptuneSAKValueError("Illegal track specified: only %d tracks in song" % len(song.tracks))
@@ -33,7 +33,7 @@ def main():
     print("\n".join(t.name for t in song.tracks))
 
     print("Writing to midi file %s" % args.midi_out_file)
-    ctsMidi.MIDI().to_file(song, args.midi_out_file)
+    midi.MIDI().to_file(song, args.midi_out_file)
 
 
 if __name__ == '__main__':

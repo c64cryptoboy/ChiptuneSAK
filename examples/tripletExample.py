@@ -1,7 +1,7 @@
 import sys
 import os
 import subprocess
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsLilypond
 from chiptunesak.constants import project_to_absolute_path
 
@@ -18,7 +18,7 @@ output_mid_file = output_folder + 'skyfox_mod.mid'
 output_ly_file = output_folder + 'skyfox.ly'
 output_ly_file_mod = output_folder + 'skyfox_mod.ly'
 
-chirp_song = ctsMidi.MIDI().to_chirp(input_mid_file)
+chirp_song = midi.MIDI().to_chirp(input_mid_file)
 
 original_qpm = chirp_song.metadata.qpm
 original_ppq = chirp_song.metadata.ppq
@@ -54,7 +54,7 @@ subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=Tru
 
 chirp_song.modulate(3, 2)
 chirp_song.quantize(120, 120)
-ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
+midi.MIDI().to_file(chirp_song, output_mid_file)
 
 mchirp_song = chirp_song.to_mchirp()
 ctsLilypond.Lilypond().to_file(mchirp_song, output_ly_file_mod, format='song')

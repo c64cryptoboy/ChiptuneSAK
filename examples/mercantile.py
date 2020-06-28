@@ -1,7 +1,7 @@
 import subprocess
 
 from chiptunesak.base import *
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import ctsLilypond
 from chiptunesak import one_pass_compress
 from chiptunesak import goat_tracker
@@ -38,7 +38,7 @@ output_ly_file = str(project_to_absolute_path(output_folder + 'mercantile.ly'))
 output_gt_file = str(project_to_absolute_path(output_folder + 'mercantile.sng'))
 
 # Read in the original MIDI to Chirp
-chirp_song = ctsMidi.MIDI().to_chirp(input_file)
+chirp_song = midi.MIDI().to_chirp(input_file)
 
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
@@ -105,7 +105,7 @@ print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
 print()
 
 # Save the result to a MIDi file.
-ctsMidi.MIDI().to_file(chirp_song, output_midi_file)
+midi.MIDI().to_file(chirp_song, output_midi_file)
 
 # Convert to MChirp
 mchirp_song = chirp_song.to_mchirp()

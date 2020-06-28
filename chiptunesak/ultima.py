@@ -3,7 +3,7 @@ import csv
 from chiptunesak import constants
 from chiptunesak.base import *
 from chiptunesak.chirp import ChirpSong, ChirpTrack, Note
-from chiptunesak.ctsMidi import MIDI
+from chiptunesak.midi import MIDI
 
 
 class Ultima4Song:

@@ -4,7 +4,7 @@ import argparse
 import os
 
 from chiptunesak import constants
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import c128_basic
 
 
@@ -27,8 +27,8 @@ def main():
 
     # midi -> mchirp
 
-    # song = ctsMidi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
-    song = ctsMidi.MIDI().to_chirp(args.midi_in_file)
+    # song = midi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
+    song = midi.MIDI().to_chirp(args.midi_in_file)
 
     song.remove_keyswitches(8)
     song.quantize_from_note_name('16')

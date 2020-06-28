@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from chiptunesak import ctsMidi
+from chiptunesak.midi import MIDI
 from chiptunesak import chirp
 from chiptunesak.constants import project_to_absolute_path
 
@@ -11,7 +11,7 @@ TRACK_TEST_SONG = project_to_absolute_path('tests/data/BWV_799.mid')
 
 class SongTestCase(unittest.TestCase):
     def setUp(self):
-        midi = ctsMidi.MIDI()
+        midi = MIDI()
         self.test_song = midi.to_chirp(SONG_TEST_SONG)
 
     def test_notes(self):
@@ -90,7 +90,7 @@ class SongTestCase(unittest.TestCase):
 
 class TrackTestCase(unittest.TestCase):
     def setUp(self):
-        midi = ctsMidi.MIDI()
+        midi = MIDI()
         self.test_song = midi.to_chirp(TRACK_TEST_SONG)
 
     def test_quantization(self):

@@ -1,5 +1,5 @@
 from chiptunesak import examplesPath  # noqa
-from chiptunesak import ctsMidi
+from chiptunesak import midi
 from chiptunesak import c128_basic
 from chiptunesak.constants import project_to_absolute_path
 
@@ -21,7 +21,7 @@ output_bas_file = output_folder + 'BWV_799.bas'
 output_prg_file = output_folder + 'BWV_799.prg'
 
 # Read in the midi song and quantize
-chirp_song = ctsMidi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
+chirp_song = midi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
 
 # Perform a metric modulation by making every note length value twice as long, but
 # increasing the tempo by the same factor so it sounds the same.  Now the shortest
