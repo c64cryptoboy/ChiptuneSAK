@@ -108,7 +108,7 @@ C128 Basic Class
 ML64 Class
 ----------
 
-.. autoclass:: chiptunesak.ctsML64.ML64
+.. autoclass:: chiptunesak.ml64.ML64
     :members:
     :show-inheritance:
 

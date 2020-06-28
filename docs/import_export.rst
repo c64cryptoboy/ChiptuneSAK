@@ -70,7 +70,7 @@ C128 BASIC
 ML64
 ----
 
-.. currentmodule:: chiptunesak.ctsML64
+.. currentmodule:: chiptunesak.ml64
 
 .. autoclass:: ML64
     :members: to_bin, to_file

@@ -3,7 +3,7 @@ import unittest
 from chiptunesak import ctsTestingTools
 from chiptunesak import mchirp
 from chiptunesak import ctsMidi
-from chiptunesak import ctsML64
+from chiptunesak.ml64 import ML64
 from chiptunesak.constants import project_to_absolute_path
 
 
@@ -13,7 +13,7 @@ class TestExportML64(unittest.TestCase):
         Test ML64 export using "measures" mode against known good files made with our previous tools.
         """
 
-        ml64 = ctsML64.ML64()
+        ml64 = ML64()
 
         midi_file = project_to_absolute_path('tests/data/jingleBellsSDG.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/jingleBellsSDG_good.ml64')
@@ -45,7 +45,7 @@ class TestExportML64(unittest.TestCase):
         """
         Test ML64 export using "standard" mode against a known good file.
         """
-        ml64 = ctsML64.ML64()
+        ml64 = ML64()
 
         midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good_std.ml64')
@@ -63,7 +63,7 @@ class TestExportML64(unittest.TestCase):
         """
         Test ML64 export using "compact" mode against a known good file.
         """
-        ml64 = ctsML64.ML64()
+        ml64 = ML64()
 
         midi_file = project_to_absolute_path('tests/data/tripletTest.mid')
         known_good_ml64_file = project_to_absolute_path('tests/data/tripletTest_good.ml64')
