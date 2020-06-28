@@ -31,7 +31,7 @@ chirp_song.modulate(2, 1)
 # Convert to mchirp, parsing the song for measures
 mchirp_song = chirp_song.to_mchirp()
 
-# Write it straight to a file using the ctsLilypond.Lilypond class with format 'song' for the entire song.
+# Write it straight to a file using the Lilypond class with format 'song' for the entire song.
 exporter = c128_basic.C128Basic()
 exporter.set_options(instruments=['trumpet', 'guitar', 'guitar'])
 exporter.to_file(mchirp_song, output_bas_file, format='bas')

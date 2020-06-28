@@ -3,7 +3,7 @@ import os
 import subprocess
 
 from chiptunesak import midi
-from chiptunesak import ctsLilypond
+from chiptunesak.lilypond import Lilypond
 from chiptunesak import goat_tracker
 from chiptunesak import one_pass_compress
 from chiptunesak.constants import project_to_absolute_path
@@ -39,7 +39,7 @@ mchirp_song = chirp_song.to_mchirp()
 print("writing lilypond...")
 
 # Create the lilpond I/O class
-lp = ctsLilypond.Lilypond()
+lp = Lilypond()
 # Set the format to do a clip and set the measures to those you want
 lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
 # Write it straight to a file
@@ -64,7 +64,7 @@ print("Converting to mchirp")
 mchirp_song = chirp_song.to_mchirp()
 
 # Create the lilpond I/O class
-lp = ctsLilypond.Lilypond()
+lp = Lilypond()
 # Set the format to do a clip and set the measures to those you want
 lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
 # Adjust the path the the file

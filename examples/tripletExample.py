@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 from chiptunesak import midi
-from chiptunesak import ctsLilypond
+from chiptunesak.lilypond import LilyPond
 from chiptunesak.constants import project_to_absolute_path
 
 """
@@ -41,7 +41,7 @@ chirp_song.quantize(80, 80)
 chirp_song.remove_polyphony()
 
 mchirp_song = chirp_song.to_mchirp()
-ctsLilypond.Lilypond().to_file(mchirp_song, output_ly_file, format='song')
+Lilypond().to_file(mchirp_song, output_ly_file, format='song')
 
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.
@@ -57,7 +57,7 @@ chirp_song.quantize(120, 120)
 midi.MIDI().to_file(chirp_song, output_mid_file)
 
 mchirp_song = chirp_song.to_mchirp()
-ctsLilypond.Lilypond().to_file(mchirp_song, output_ly_file_mod, format='song')
+Lilypond().to_file(mchirp_song, output_ly_file_mod, format='song')
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.
 os.chdir(output_folder)

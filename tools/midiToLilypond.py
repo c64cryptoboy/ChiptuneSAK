@@ -2,7 +2,7 @@ import argparse
 import subprocess
 
 from chiptunesak import midi
-from chiptunesak import ctsLilypond
+from chiptunesak.lilypond import Lilypond
 
 """
 Prints a MIDI file to Lilypond sheet music.
@@ -19,7 +19,7 @@ def main():
 
     args = parser.parse_args()
 
-    lp = ctsLilypond.Lilypond()
+    lp = Lilypond()
 
     if args.autosort:
         lp.set_options(autosort="True")

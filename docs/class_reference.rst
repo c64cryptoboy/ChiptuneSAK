@@ -94,7 +94,7 @@ GoatTracker Class
 Lilypond Class
 --------------
 
-.. autoclass:: chiptunesak.ctsLilypond.Lilypond
+.. autoclass:: chiptunesak.lilypond.Lilypond
     :members:
     :show-inheritance:
 

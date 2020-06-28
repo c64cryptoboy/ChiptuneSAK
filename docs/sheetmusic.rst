@@ -23,7 +23,7 @@ Sheet Music Examples
 Example 1:  Midi to Lilypond Sheet Music clip
 *********************************************
 
-You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *ctsLilypond.export_clip_to_lilypond()* to create the Lilypond source for the clip.
+You'll need to write your own script to perform this workflow.  In your code, read in the midi file, convert it to measures, and then select the measures you want to turn into a clip. Then call *chiptunesak.lilypond.export_clip_to_lilypond()* to create the Lilypond source for the clip.
 
 ::
 
@@ -31,9 +31,9 @@ You'll need to write your own script to perform this workflow.  In your code, re
     song.quantize_from_note_name('16')  # Quantize to sixteenth notes
     song.remove_polyphony()
     m_song = song.to_mchirp()
-    lp = ctsLilypond.Lilypond()
+    lp = chiptunesak.lilypond.Lilypond()
     lp.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
-    ly = ctsLilypond.to_bin(m_song)
+    ly = chiptunesak.lilypond.to_bin(m_song)
     with open('bach.ly', 'w') as f:
         f.write(ly)
 

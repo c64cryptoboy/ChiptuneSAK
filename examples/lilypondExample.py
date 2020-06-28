@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from chiptunesak import midi
-from chiptunesak import ctsLilypond
+from chiptunesak.lilypond import Lilypond
 from chiptunesak.constants import project_to_absolute_path
 
 """
@@ -30,8 +30,8 @@ chirp_song.set_time_signature(3, 8)
 # Convert to mchirp, parsing the song for measures
 mchirp_song = chirp_song.to_mchirp()
 
-# Write it straight to a file using the ctsLilypond.Lilypond class with format 'song' for the entire song.
-ctsLilypond.Lilypond().to_file(mchirp_song, output_ly_file, format='song')
+# Write it straight to a file using the Lilypond class with format 'song' for the entire song.
+Lilypond().to_file(mchirp_song, output_ly_file, format='song')
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.
 os.chdir(output_folder)

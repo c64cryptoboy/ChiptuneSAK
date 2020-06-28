@@ -2,7 +2,7 @@ import subprocess
 
 from chiptunesak.base import *
 from chiptunesak import midi
-from chiptunesak import ctsLilypond
+from chiptunesak.lilypond import Lilypond
 from chiptunesak import one_pass_compress
 from chiptunesak import goat_tracker
 from chiptunesak.constants import project_to_absolute_path
@@ -111,7 +111,7 @@ midi.MIDI().to_file(chirp_song, output_midi_file)
 mchirp_song = chirp_song.to_mchirp()
 
 # Make sheet music output with Lilypond
-ly = ctsLilypond.Lilypond()
+ly = Lilypond()
 ly.to_file(mchirp_song, output_ly_file)
 
 # If you have Lilypond installed, generate the pdf

@@ -50,7 +50,7 @@ GoatTracker
 Lilypond
 --------
 
-.. currentmodule:: chiptunesak.ctsLilypond
+.. currentmodule:: chiptunesak.lilypond
 
 .. autoclass:: Lilypond
     :members: to_bin, to_file

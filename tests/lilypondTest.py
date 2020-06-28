@@ -3,7 +3,7 @@ import unittest
 from chiptunesak import mchirp
 from chiptunesak import midi
 from chiptunesak import testing_tools
-from chiptunesak import ctsLilypond
+from chiptunesak.lilypond import Lilypond
 from chiptunesak.constants import project_to_absolute_path
 
 MIDI_TEST_FILE = project_to_absolute_path('tests/data/bach_invention_4.mid')
@@ -21,7 +21,7 @@ class TestExportLilypond(unittest.TestCase):
 
         m_song = mchirp.MChirpSong(song)
 
-        lilypond = ctsLilypond.Lilypond()
+        lilypond = Lilypond()
 
         lilypond.set_options(format='clip', measures=m_song.tracks[0].measures[3:8])
         # lilypond.to_file(m_song, TEST_LY_FILE_CLIP)
