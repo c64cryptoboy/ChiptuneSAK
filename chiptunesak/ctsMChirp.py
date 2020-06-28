@@ -5,7 +5,6 @@ import more_itertools as moreit
 
 """ Definition and methods for ctsMChirp.MChirpSong representation """
 
-
 class Measure:
     @staticmethod
     def _sort_order(c):

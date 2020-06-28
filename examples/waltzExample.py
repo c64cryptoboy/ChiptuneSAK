@@ -36,6 +36,8 @@ chirp_song.remove_polyphony()
 print("converting to mchirp")
 mchirp_song = chirp_song.to_mchirp()
 
+print("writing lilypond...")
+
 # Create the lilpond I/O class
 lp = ctsLilypond.Lilypond()
 # Set the format to do a clip and set the measures to those you want
@@ -43,9 +45,10 @@ lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
 # Write it straight to a file
 lp.to_file(mchirp_song, output_ly_file)
 
+print("executing lilypond")
 # Change directory to the data directory so we don't fill the source directory wiith intermediate files.
 os.chdir(output_folder)
-
+print(os.getcwd())
 # Adjust the path the the file
 ly_file = os.path.basename(output_ly_file)
 # Run lilypond
