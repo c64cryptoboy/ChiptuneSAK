@@ -10,6 +10,10 @@ No releases yet
 Development History
 -------------------
 
+0.4.0 (2020-06-27)
+++++++++++++++++++
+* Package
+
 0.3.2 (2020-06-22)
 ++++++++++++++++++
 * New triplet parsing

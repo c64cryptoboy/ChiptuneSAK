@@ -12,11 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(1, os.path.abspath('../tools'))
-sys.path.insert(1, os.path.abspath('../src'))
-sys.path.insert(1, os.path.abspath('../examples'))
-import ctsConstants  # noqa
+from chiptunesak import ctsConstants  # noqa
 
 # -- Project information -----------------------------------------------------
 

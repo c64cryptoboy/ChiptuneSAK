@@ -26,22 +26,22 @@ All the quantization functions are applied in the :ref:`Chirp Representation` of
 
 The base quantization functions that encapsulate the algorithm and perform the quantization are:
 
-.. autofunction:: ctsChirp.find_quantization
+.. autofunction:: chiptunesak.ctsChirp.find_quantization
 
-.. autofunction:: ctsChirp.find_duration_quantization
+.. autofunction:: chiptunesak.ctsChirp.find_duration_quantization
 
-.. autofunction:: ctsChirp.quantize_fn
+.. autofunction:: chiptunesak.ctsChirp.quantize_fn
 
 Quantization Methods
 ++++++++++++++++++++
 
 Primary use of the quantization algorithms occurs through methods of the :ref:`ChirpSong` and :ref:`ChirpTrack` classes.
 
-.. autoclass:: ctsChirp.ChirpSong
+.. autoclass:: chiptunesak.ctsChirp.ChirpSong
     :members: estimate_quantization, quantize, quantize_from_note_name
     :noindex:
 
-.. autoclass:: ctsChirp.ChirpTrack
+.. autoclass:: chiptunesak.ctsChirp.ChirpTrack
     :members: estimate_quantization, quantize
     :noindex:
 

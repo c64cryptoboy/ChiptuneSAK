@@ -26,5 +26,5 @@ Metric modulation is primarily used for two purposes in ChiptuneSAK:
 
 Metric modulation is achieved by use of the ChirpSong modulate() method:
 
-.. automethod:: ctsChirp.ChirpSong.modulate
+.. automethod:: chiptunesak.ctsChirp.ChirpSong.modulate
     :noindex:
