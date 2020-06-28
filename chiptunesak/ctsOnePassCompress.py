@@ -3,7 +3,7 @@ import collections
 from dataclasses import dataclass
 import copy
 from chiptunesak.base import *
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak.ctsRChirp import RChirpOrderList, RChirpPattern, RChirpOrderEntry
 
 
@@ -480,16 +480,16 @@ class OnePassLeftToRight(OnePass):
 
 def validate_gt_limits(rchirp_song):
     n_patterns = len(rchirp_song.patterns)
-    if n_patterns > ctsGoatTracker.GT_MAX_PATTERNS_PER_SONG:
+    if n_patterns > goat_tracker.GT_MAX_PATTERNS_PER_SONG:
         print(f'Too many patterns: {n_patterns}', file=sys.stderr)
         return False
     for iv, v in enumerate(rchirp_song.voices):
         orderlist_length = get_gt_orderlist_length(v.orderlist)
-        if orderlist_length > ctsGoatTracker.GT_MAX_ELM_PER_ORDERLIST:
+        if orderlist_length > goat_tracker.GT_MAX_ELM_PER_ORDERLIST:
             print(f'Orderlist too long in voice {iv+1}: {orderlist_length} bytes', file=sys.stderr)
             return False
     for ip, p in enumerate(rchirp_song.patterns):
-        if len(p.rows) + 1 > ctsGoatTracker.GT_MAX_ROWS_PER_PATTERN:
+        if len(p.rows) + 1 > goat_tracker.GT_MAX_ROWS_PER_PATTERN:
             print(f'Pattern {ip} too long: {len(p.rows)} rows', file=sys.stderr)
             return False
     return True

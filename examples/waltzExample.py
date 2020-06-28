@@ -4,7 +4,7 @@ import subprocess
 
 from chiptunesak import ctsMidi
 from chiptunesak import ctsLilypond
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak import ctsOnePassCompress
 from chiptunesak.constants import project_to_absolute_path
 
@@ -80,6 +80,6 @@ ctsMidi.MIDI().to_file(chirp_song, output_mid_file)
 print("Converting to rchirp")
 rchirp_song = chirp_song.to_rchirp()
 
-GT = ctsGoatTracker.GoatTracker()
+GT = goat_tracker.GoatTracker()
 GT.set_options(instruments=['Harpsichord', 'Harpsichord', 'Harpsichord'])
 GT.to_file(rchirp_song, output_gt_file)

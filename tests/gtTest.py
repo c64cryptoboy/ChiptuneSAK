@@ -4,7 +4,7 @@
 # - Add an additional subtune to gtTestData.sng and create tests here for it
 
 import unittest
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak import base
 from chiptunesak.constants import project_to_absolute_path
 from chiptunesak.bytes_util import read_binary_file
@@ -53,10 +53,10 @@ class TestGoatTrackerFunctions(unittest.TestCase):
     def setUp(self):
         self.gt_binary = read_binary_file(SNG_TEST_FILE)
 
-        self.parsed_gt = ctsGoatTracker.GTSong()
+        self.parsed_gt = goat_tracker.GTSong()
         self.parsed_gt.import_sng_binary_to_parsed_gt(self.gt_binary)
 
-        self.GoatTrackerIO = ctsGoatTracker.GoatTracker()
+        self.GoatTrackerIO = goat_tracker.GoatTracker()
 
     def found_expected_note_content(self, rchirp_song):
         """
@@ -116,7 +116,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         rchirp_song = self.parsed_gt.import_parsed_gt_to_rchirp()
 
         # convert rchirp back to a second parsed sng file
-        parsed_gt2 = ctsGoatTracker.GTSong()
+        parsed_gt2 = goat_tracker.GTSong()
         parsed_gt2.export_rchirp_to_parsed_gt(rchirp_song, end_with_repeat=False, max_pattern_len=126)
 
         # Test that instrument data survived these conversions
@@ -129,7 +129,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
 
         gt_binary2 = parsed_gt2.export_parsed_gt_to_gt_binary()
 
-        parsed_gt3 = ctsGoatTracker.GTSong()
+        parsed_gt3 = goat_tracker.GTSong()
         parsed_gt3.import_sng_binary_to_parsed_gt(gt_binary2)
 
         # convert second parsed sng file into a second rchirp file
@@ -151,7 +151,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
             and extensions["gt.filter_table"][0] == 0
             and extensions["gt.speed_table"][0] == 0)
 
-        ctsGoatTracker.add_gt_instrument_to_rchirp(rchirp_song, "SlepBass", 'tests/data/')
+        goat_tracker.add_gt_instrument_to_rchirp(rchirp_song, "SlepBass", 'tests/data/')
 
         self.assertTrue(
             extensions["gt.wave_table"][0] == 2 + 4    # adds 4
@@ -160,7 +160,7 @@ class TestGoatTrackerFunctions(unittest.TestCase):
             and extensions["gt.speed_table"][0] == 1)  # adds 1
 
         # Code to check out result in GoatTracker:
-        # converter = ctsGoatTracker.GoatTracker()
+        # converter = goat_tracker.GoatTracker()
         # converter.set_instruments(['HarpsiSolo', 'FluteVibro', 'SawtoothLegato'])
         # converter.to_file(rchirp_song, project_to_absolute_path('tests/data/deleteMe.sng'))
 

@@ -40,7 +40,7 @@ MIDI
 GoatTracker
 ---------------------
 
-.. currentmodule:: chiptunesak.ctsGoatTracker
+.. currentmodule:: chiptunesak.goat_tracker
 
 .. autoclass:: GoatTracker
     :members: to_rchirp, to_bin, to_file

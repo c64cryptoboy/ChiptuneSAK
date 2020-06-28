@@ -1,6 +1,6 @@
 import unittest
 
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak import ctsOnePassCompress
 from chiptunesak import constants
 from chiptunesak import ctsRChirp
@@ -35,7 +35,7 @@ class TestCompression(unittest.TestCase):
         compressor.disable_transposition()
         rchirp_song = compressor.compress(rchirp_song, min_length=8)
 
-        exporter = ctsGoatTracker.GoatTracker()
+        exporter = goat_tracker.GoatTracker()
         exporter.to_file(rchirp_song, GT_TEST_OUT_SNG)
 
         self.assertTrue(ctsOnePassCompress.validate_gt_limits(rchirp_song))
@@ -48,7 +48,7 @@ class TestCompression(unittest.TestCase):
     # This in no way tests data validity, so it's just a placeholder for real testing
     def test_runtime_exceptions_only_superlame(self):
 
-        gt_io = ctsGoatTracker.GoatTracker()
+        gt_io = goat_tracker.GoatTracker()
 
         # Convert goattracker sng to an rchirp
         rchirp_song = gt_io.to_rchirp(str(GT_TEST_DATA_SNG))

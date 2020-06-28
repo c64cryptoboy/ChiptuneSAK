@@ -6,7 +6,7 @@
 import argparse
 from os import path
 
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak import ctsMidi
 from chiptunesak.errors import ChiptuneSAKValueError
 
@@ -45,7 +45,7 @@ def main():
         raise ChiptuneSAKValueError("Error: GoatTracker doesn't support more than 6 channels")
 
     rchirp_song = song.to_rchirp()
-    ctsGoatTracker.GoatTracker().to_file(rchirp_song, args.sng_out_file)
+    goat_tracker.GoatTracker().to_file(rchirp_song, args.sng_out_file)
 
     print("\ndone")
 

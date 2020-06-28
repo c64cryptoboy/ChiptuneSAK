@@ -5,7 +5,7 @@
 
 import argparse
 
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak import ctsMidi
 
 
@@ -19,7 +19,7 @@ def main():
 
     args = parser.parse_args()
 
-    rchirp_song = ctsGoatTracker.GoatTracker().to_rchirp(args.sng_in_file, subtune=args.subtune_number)
+    rchirp_song = goat_tracker.GoatTracker().to_rchirp(args.sng_in_file, subtune=args.subtune_number)
 
     """
     cvs_filename = '%s.csv' % (args.sng_in_file.split('.')[0])

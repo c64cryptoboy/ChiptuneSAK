@@ -3,7 +3,7 @@ import copy
 from chiptunesak import ctsMidi
 from chiptunesak import ctsRChirp
 from chiptunesak import ctsOnePassCompress
-from chiptunesak import ctsGoatTracker
+from chiptunesak import goat_tracker
 from chiptunesak.constants import project_to_absolute_path
 
 """
@@ -116,6 +116,6 @@ rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing GoatTracker file {output_gt_file}')
-GT = ctsGoatTracker.GoatTracker()
+GT = goat_tracker.GoatTracker()
 GT.set_options(instruments=['Lead2', 'Harpsichord', 'Bass3'])
 GT.to_file(rchirp_song, output_gt_file)

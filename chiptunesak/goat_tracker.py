@@ -1358,7 +1358,7 @@ class GTSong:
         # simple triangle instrument up to the max unmatched instrument
         # This can create a lot of redundant instruments, e.g., for a seen set like 6, 3, 9, it will
         # create the Simple Triangle up to 9 times (slots 1 through 9).  Currently, we don't think it's
-        # the job of ctsGoatTracker to map an arbitrary set of instrument numbers to a consecutive
+        # the job of goat_tracker to map an arbitrary set of instrument numbers to a consecutive
         # list starting from 1 (e.g., 3->1, 6->2, 9->3) but perhaps later, that functionality will
         # exist here.
         if len(unmapped_inst_nums) > 0:

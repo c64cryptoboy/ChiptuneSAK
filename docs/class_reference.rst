@@ -87,7 +87,7 @@ MIDI Class
 GoatTracker Class
 -----------------
 
-.. autoclass:: chiptunesak.ctsGoatTracker.GoatTracker
+.. autoclass:: chiptunesak.goat_tracker.GoatTracker
     :members:
     :show-inheritance:
 
