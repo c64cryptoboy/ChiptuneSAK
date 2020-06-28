@@ -1,5 +1,5 @@
 from chiptunesak.constants import project_to_absolute_path
-from chiptunesak import ctsSID
+from chiptunesak.sid import SID
 from chiptunesak import midi
 
 sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
@@ -41,7 +41,7 @@ def find_tunings():
         (subtune, desc, seconds) = entry
 
         # get a 10 second sample to determine tuning
-        sid = ctsSID.SID()
+        sid = SID()
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,
@@ -64,7 +64,7 @@ def create_output_files():
     for entry in to_extract:
         (subtune, desc, seconds) = entry
 
-        sid = ctsSID.SID()
+        sid = SID()
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,

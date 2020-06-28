@@ -286,7 +286,7 @@ class SID(ChiptuneSAKIO):
         rows (while preserving rhythm structure).
 
         :param sid_dump: Capture of SID chip state from the subtune
-        :type sid_dump: ctsSID.Dump
+        :type sid_dump: sid.Dump
         :param rows_with_activity: a list for each SID chip with a list of "active" row numbers
         :type rows_with_activity: list of lists
         :return: the row granularity (the largest common factor across all periods of inactivity)

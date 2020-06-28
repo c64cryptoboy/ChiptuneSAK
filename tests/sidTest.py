@@ -1,17 +1,17 @@
 # TODO:
-# - this hardly covers all the ctsSID functionality, need to add many more tests
+# - this hardly covers all the sid functionality, need to add many more tests
 
 #import testingPath  # noqa
 import unittest
 from chiptunesak import constants
-from chiptunesak import ctsSID
+from chiptunesak import sid
 
 
 class sidTests(unittest.TestCase):
 
     def test_SID_freqs_to_midi_notes(self):
-        si_ntsc = ctsSID.SidImport(arch='NTSC-C64', tuning=constants.CONCERT_A)
-        si_pal = ctsSID.SidImport(arch='PAL-C64', tuning=constants.CONCERT_A)
+        si_ntsc = sid.SidImport(arch='NTSC-C64', tuning=constants.CONCERT_A)
+        si_pal = sid.SidImport(arch='PAL-C64', tuning=constants.CONCERT_A)
 
         cminus1_midi_num = 0  # our lowest note
         # Very low SID frequencies tests
