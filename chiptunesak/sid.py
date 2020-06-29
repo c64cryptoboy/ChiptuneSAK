@@ -11,10 +11,10 @@
 #
 #    siddump.c was very helpful as a conceptual reference for SidImport:
 #    - https://csdb.dk/release/?id=152422
-#    siddump has a -c option for "frequency recalibration", where a user specifies
-#    a base frequency for better note matching (the frequency tables defaulted to
-#    440.11 tuning on a PAL).
-#    We've implemented NTSC/PAL-specific automatic tuning detection (by sampling
+#    siddump has an option for "frequency recalibration", where a user specifies
+#    a base frequency for better note matching (different from the siddump frequency
+#    tables that were set to 440.11 tuning if running on a PAL).
+#    Instead, we've implemented NTSC/PAL-specific automated tuning detection (by sampling
 #    some or all notes in a subtune).  And instead of fixed frequency tables, we derive
 #    tuning and architecture-based frequencies at runtime.
 #
@@ -187,7 +187,7 @@ class SID(ChiptuneSAKIO):
                 # not going to include: release_frame or oscil_on
                 csv_row.extend([
                     'v%dFreq' % i, 'v%dDeltaFreq' % i,
-                    'v%dNoteName' % i, 'v%dNote' % i,
+                    'v%dNoteName' % i, 'v%dNote' % i, 'v%dCents' % i,
                     'v%dTrueHz' % i, 'v%dGate' % i,
                     'v%dADSR' % i, 'v%dWFs' % i, 'v%dPWidth' % i,
                     'v%dUseFil' % i, 'v%dSync' % i, 'v%dRing' % i
@@ -214,10 +214,16 @@ class SID(ChiptuneSAKIO):
                     csv_row.append(chn.get_note_name())
                     csv_row.append(self.get_val(chn.note))
                     if chn.freq is not None:
+                        if chn.freq != 0:
+                            (_, cents) = freq_arch_to_midi_num(chn.freq, sid_dump.arch, sid_dump.tuning)
+                            csv_row.append('%d' % cents)
+                        else:
+                            csv_row.append('')
                         csv_row.append('{:.3f}'.format(
-                            freq_arch_to_freq(chn.freq, self.get_option('arch'))))
+                            freq_arch_to_freq(chn.freq, sid_dump.arch)))
                     else:
                         csv_row.append('')
+                        csv_row.append('')                        
                     csv_row.append(self.get_bool(chn.gate_on))
                     csv_row.append(self.get_val(chn.adsr, '{:04X}'))
                     csv_row.append(self.get_val(Channel.waveforms_str(chn.waveforms)))
@@ -830,6 +836,12 @@ class Channel:
         return result
 
     def get_note_name(self):
+        """
+        Converts the midi note number to its string note name representation
+
+        :return: note name
+        :rtype: string
+        """
         if self.note is None:
             return ''
 
@@ -956,7 +968,7 @@ class Dump:
 class SidImport:
     def __init__(self, arch=DEFAULT_ARCH, tuning=CONCERT_A):
         self.arch = arch  # Note, overwritten when SID file loaded
-        self.tuning = tuning  # proper tuning can mean better note capture
+        self.tuning = tuning  # proper tuning can mean better vibrato note capture
 
         self.cpu_state = thin_c64_emulator.ThinC64Emulator()
         self.cpu_state.exit_on_empty_stack = True
@@ -1097,7 +1109,10 @@ class SidImport:
 
         sid_dump = Dump()
         sid_dump.load_sid(filename)
-        self.arch = sid_dump.arch  # change arch to what's in the SID headers
+        
+        self.arch = sid_dump.arch  # override SidImport arch param to what's in the SID headers
+        sid_dump.tuning = self.tuning
+
         sid_dump.rows = []
 
         # If 2SID or 3SID, note where the chips are memory mapped
