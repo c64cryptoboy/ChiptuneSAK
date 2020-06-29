@@ -14,24 +14,27 @@ sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 # Dump comparison:
 # ./siddump.exe Master_of_the_Lamps_PAL.sid -a6
 
-# 3 genies * 7 pieces * (1 tunnel level + 1 music level) + final tunnel = 43 levels
-#     odd numbers are tunnels, even numbers are genies
-#     1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42, final tunnel: level 43
-# subtunes to extract
-to_extract = [  # TODO: these times are incorrect
-    # [10, "getting on carpet", 17],
-    # [7, "carpet liftoff", 5],
-    # [9, "fell off carpet", 5],
-    # [8, "finished level", 8],
-    # [11, "game won", 25],
-    # [0, "tunnel 1", 50],  # level 1, 15, 29
-    # [1, "tunnel 2", 67],  # level 3, 17, 31
-    # [2, "tunnel 3", 49],  # level 5, 19, 33
-    # [3, "tunnel 4", 75],  # level 7, 21, 35
-    # [4, "tunnel 5", 68],  # level 9, 23, 37
-    # [5, "tunnel 6", 55],   # level 11, 25, 39
-    [6, "tunnel 7", 68],  # level 13, 27, 41  # TODO: Primary test file
-    # [12, "tunnel 8", 62],  # level 43
+# list of subtunes to extract
+# Notes:
+#     3 genies * 7 pieces * (1 tunnel level + 1 music level) + final tunnel = 43 levels
+#         odd numbers are tunnels, even numbers are genies
+#         1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42, final tunnel: level 43
+#     Song duration (in seconds) = ceil(last frame in spreadsheet / 50.124542)
+#         ChiptuneSAK trims spreadsheets when song ends, but some subtunes endlessly repeat
+to_extract = [
+    [10, "getting on carpet", 21],  # GCD=2 (1st repeat frame 1024)
+    [7, "carpet liftoff", 9],  # GCD=2
+    [9, "fell off carpet", 9],  # GCD=2
+    [8, "finished level", 12],  # GCD=2
+    [11, "game won", 23],  # GCD=2
+    [0, "tunnel 1", 77],  # level 1, 15, 29  # GCD=2
+    [1, "tunnel 2", 86],  # level 3, 17, 31  # GCD=2
+    [2, "tunnel 3", 62],  # level 5, 19, 33  # GCD=1
+    [3, "tunnel 4", 103],  # level 7, 21, 35  # GCD=2
+    [4, "tunnel 5", 94],  # level 9, 23, 37  # GCD=2
+    [5, "tunnel 6", 84],   # level 11, 25, 39  # GCD=2  # TODO: Sounds dissonant without freq effects
+    [6, "tunnel 7", 62],  # level 13, 27, 41  # GCD=2
+    [12, "tunnel 8", 86],  # level 43  # GCD=2
 ]
 
 
@@ -71,7 +74,7 @@ def create_output_files():
             subtune=subtune,
             # Apparently, the PAL port of the game still uses the original NTSC frequency
             # tables, which we measure to be tuned to 439.84.
-            # But since the SID headers indicate PAL, the tuning should need to change to
+            # But since the SID headers indicate PAL, the tuning should change to
             # 448.934 to compensate
             tuning=448.93,  # above code figured this out
             vibrato_cents_margin=10,  # TODO: Try out
