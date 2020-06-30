@@ -1,11 +1,9 @@
-import sys
 import os
 import subprocess
 
 from chiptunesak import midi
 from chiptunesak.lilypond import Lilypond
 from chiptunesak import goat_tracker
-from chiptunesak import one_pass_compress
 from chiptunesak.constants import project_to_absolute_path
 
 """

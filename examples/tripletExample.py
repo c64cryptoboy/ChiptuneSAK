@@ -1,8 +1,7 @@
-import sys
 import os
 import subprocess
 from chiptunesak import midi
-from chiptunesak.lilypond import LilyPond
+from chiptunesak.lilypond import Lilypond
 from chiptunesak.constants import project_to_absolute_path
 
 """
