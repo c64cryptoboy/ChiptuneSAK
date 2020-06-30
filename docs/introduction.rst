@@ -42,6 +42,8 @@ What are some limitations of ChiptuneSAK?
 
 ChiptuneSAK is primarily concerned with musical *content* as opposed to *sound quality*.  What it does, it does well.  But there are a number of things it does *not* do:
 
+
+
 *  It is not particularly good at dealing with percussion.
 *  It does not provide many tools for editing and tweaking instruments or particular sounds.
 
