@@ -1341,7 +1341,7 @@ class SidImport:
                         chn.new_note = True
 
                     # if not a new note, but there's a small change in frequency...
-                    if prev_chn.freq is not None:
+                    if prev_chn.freq is not None:  # It's only None the first time
                         delta = chn.freq - prev_chn.freq
                     else:
                         delta = 0
@@ -1377,11 +1377,14 @@ class SidImport:
                     prev_chn = prev_chip.channels[chn_num]
                     delta_chn = delta_chip.channels[chn_num]
 
-                    if chn.new_note or chn.freq != prev_chn.freq:
-                        delta_chn.freq = chn.freq
-
                     if chn.new_note:
+                        delta_chn.freq = chn.freq
                         delta_chn.note = chn.note
+
+                    if chn.df > 0:
+                        delta_chn.freq = chn.freq
+                        delta_chn.df = chn.df
+                        print("DEBUG: Haven't seen the df pouplated yet (%d)" % chn.df)
 
                     if chn.waveforms != prev_chn.waveforms:
                         delta_chn.waveforms = chn.waveforms

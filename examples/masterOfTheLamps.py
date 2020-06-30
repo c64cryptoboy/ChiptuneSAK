@@ -12,29 +12,36 @@ sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 # https://deepsid.chordian.net/?file=/MUSICIANS/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid
 #
 # Dump comparison:
-# ./siddump.exe Master_of_the_Lamps_PAL.sid -a6
+# ./siddump.exe Master_of_the_Lamps_PAL.sid -a5 -t
 
 # list of subtunes to extract
 # Notes:
-#     3 genies * 7 pieces * (1 tunnel level + 1 music level) + final tunnel = 43 levels
-#         odd numbers are tunnels, even numbers are genies
-#         1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42, final tunnel: level 43
-#     Song duration (in seconds) = ceil(last frame in spreadsheet / 50.124542)
-#         ChiptuneSAK trims spreadsheets when song ends, but some subtunes endlessly repeat
+# - 3 genies * 7 pieces * (1 tunnel level + 1 music level) + final tunnel = 43 levels
+#       odd numbers are tunnels, even numbers are genies
+#       1st genie: level 1-14, 2nd genie: level 15-28, 3rd genie: level 29-42,
+#       final tunnel: level 43
+# - Song duration (in seconds) = ceil(last frame in spreadsheet / 50.124542)
+#       ChiptuneSAK trims spreadsheets when song ends, but some subtunes endlessly repeat
+# - The starting key signatures (below) don't match the PAL subtunes this parses, instead
+#       they should match the NTSC game footage I captured for the YouTube video that I'm
+#       going to match this music up with.
 to_extract = [
-    [10, "getting on carpet", 21],  # GCD=2 (1st repeat frame 1024)
-    [7, "carpet liftoff", 9],  # GCD=2
-    [9, "fell off carpet", 9],  # GCD=2
-    [8, "finished level", 12],  # GCD=2
-    [11, "game won", 23],  # GCD=2
-    [0, "tunnel 1", 77],  # level 1, 15, 29  # GCD=2
-    [1, "tunnel 2", 86],  # level 3, 17, 31  # GCD=2
-    [2, "tunnel 3", 62],  # level 5, 19, 33  # GCD=1
-    [3, "tunnel 4", 103],  # level 7, 21, 35  # GCD=2
-    [4, "tunnel 5", 94],  # level 9, 23, 37  # GCD=2
-    [5, "tunnel 6", 84],   # level 11, 25, 39  # GCD=2  # TODO: Sounds dissonant without freq effects
-    [6, "tunnel 7", 62],  # level 13, 27, 41  # GCD=2
-    [12, "tunnel 8", 86],  # level 43  # GCD=2
+    [10, "getting on carpet", 21, 'Ebm', 2, 4],  # GCD=2 (1st repeat frame 1024)
+    [7, "carpet liftoff", 9, 'C', 2, 4],  # GCD=2  # KEY?
+    [9, "fell off carpet", 9, 'C', 4, 4],  # GCD=2 # KEY?
+    [8, "finished level", 12, 'C', 2, 4],  # GCD=2
+    [11, "game won", 23, 'C', 4, 4],  # GCD=2
+    [0, "tunnel 1", 77, 'C', 4, 4],  # level 1, 15, 29  # GCD=2
+    [1, "tunnel 2", 86, 'C', 4, 4],  # level 3, 17, 31  # GCD=2
+    [2, "tunnel 3", 62, 'Gm', 4, 4],  # level 5, 19, 33  # GCD=1
+    [3, "tunnel 4", 103, 'Cm', 4, 4],  # level 7, 21, 35  # GCD=2
+    [4, "tunnel 5", 94, 'Cm', 4, 4],  # level 9, 23, 37  # GCD=2
+    # TODO: subtune 5 sounds dissonant without freq effects
+    # 3rd voice noise until last chord
+    # figure out why pitch bends don't show up in sampling
+    [5, "tunnel 6", 84, 'Em', 4, 4],   # level 11, 25, 39  # GCD=2
+    [6, "tunnel 7", 62, 'Dm', 4, 4],  # level 13, 27, 41  # GCD=2
+    [12, "tunnel 8", 86, 'Cm', 4, 4],  # level 43  # GCD=2
 ]
 
 
@@ -42,7 +49,7 @@ def find_tunings():
     tunings = []
 
     for entry in to_extract:
-        (subtune, desc, seconds) = entry
+        (subtune, desc, _, _, _, _) = entry
 
         # get a 10 second sample to determine tuning
         sid = SID()
@@ -66,18 +73,18 @@ def find_tunings():
 
 def create_output_files():
     for entry in to_extract:
-        (subtune, desc, seconds) = entry
+        (subtune, desc, seconds, starting_key, time_sig_top, time_sig_bottom) = entry
 
         sid = SID()
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,
-            # Apparently, the PAL port of the game still uses the original NTSC frequency
-            # tables, which we measure to be tuned to 439.84.
-            # But since the SID headers indicate PAL, the tuning should change to
-            # 448.934 to compensate
+            # Not sure if the PAL version of the game (from which this SID is ripped)
+            # still uses the original NTSC frequency tables or not, but since the SID
+            # headers indicate PAL, the tuning should change to ~448.93 to minimize
+            # cents
             tuning=448.93,  # above code figured this out
-            vibrato_cents_margin=10,  # TODO: Try out
+            vibrato_cents_margin=10,
             seconds=seconds,
             gcf_row_reduce=True,
         )
@@ -92,6 +99,10 @@ def create_output_files():
         print("writing %s.mid" % filename_no_ext)
         rchirp_song = sid.to_rchirp()
         chirp_song = rchirp_song.to_chirp()
+
+        chirp_song.set_key_signature(starting_key)
+        chirp_song.set_time_signature(time_sig_top, time_sig_bottom)
+
         midi.MIDI().to_file(
             chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
 
