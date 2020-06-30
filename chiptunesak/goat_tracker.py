@@ -2,13 +2,6 @@
 #
 # Notes:
 # - This code ignores multispeed (for now)
-#
-# Note:  Many of these are wholesale imports, instead of using more selective
-# from / import constructs.  This is intentional, as it can avoid many code-breaking
-# circular imports
-#
-# TODO:
-# - turn most/all asserts in parsing into ChiptuneSAKContentError exceptions
 
 from os import path, listdir
 from os.path import isfile, join
@@ -88,7 +81,7 @@ class GoatTracker(base.ChiptuneSAKIO):
                         val[i] = ins_name[:-4]
             elif op == 'arch':
                 if val not in constants.ARCH:
-                    raise ChiptuneSAKValueError(f'Unknown architecture {val}')
+                    raise ChiptuneSAKValueError(f'Error: Unknown architecture {val}')
             # Now set the option
             self._options[op] = val
 
@@ -202,11 +195,12 @@ class GtPatternRow:
         if self.note_data is not None \
                 and not (GT_NOTE_OFFSET <= self.note_data <= GT_MAX_NOTE_VALUE) \
                 and self.note_data != GT_PAT_END:
-            raise ChiptuneSAKValueError(f'Illegal GT note value number: {self.note_data:02X}')
+            raise ChiptuneSAKValueError(f'Error: Illegal GT note value number: {self.note_data:02X}')
         if self.note_data is None:
             self.note_data = GT_REST
         else:
-            assert self.instr_num is not None, "None instrument number"
+            if self.instr_num is None:
+                raise ChiptuneSAKContentError("Error: instrument number is None")
             return bytes([self.note_data, self.instr_num, self.command, self.command_data])
 
 
@@ -352,8 +346,8 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     :return: An RChirp song for the subtune
     :rtype: RChirpSong
     """
-    if not input_filename.lower().endswith(r'.sng'):
-        raise ChiptuneSAKIOError(r'Error: Expecting input filename that ends in ".sng"')
+    if not input_filename.lower().endswith('.sng'):
+        raise ChiptuneSAKIOError('Error: Expecting input filename that ends in ".sng"')
     if not path.exists(input_filename):
         raise ChiptuneSAKIOError('Cannot find "%s"' % input_filename)
 
@@ -363,9 +357,9 @@ def import_sng_file_to_rchirp(input_filename, subtune_number=0):
     max_subtune_number = len(parsed_gt.subtune_orderlists) - 1
 
     if subtune_number < 0:
-        raise ChiptuneSAKValueError('subtune_number must be >= 0')
+        raise ChiptuneSAKValueError('Error: subtune_number must be >= 0')
     if subtune_number > max_subtune_number:
-        raise ChiptuneSAKValueError('subtune_number must be <= %d' % max_subtune_number)
+        raise ChiptuneSAKValueError('Error: subtune_number must be <= %d' % max_subtune_number)
 
     rchirp = parsed_gt.import_parsed_gt_to_rchirp(subtune_number)
 
@@ -490,7 +484,7 @@ def instrument_appender(
     ins_bytes = read_binary_file(constants.project_to_absolute_path(path + gt_inst_name + '.ins'))
 
     if ins_bytes[0:4] != b'GTI5':
-        raise ChiptuneSAKValueError("Invalid instrument file structure")
+        raise ChiptuneSAKValueError("Error: Invalid instrument file structure")
     file_index = 4
 
     # Strange, the wave/pulse/filter/vib_speedtable pointers come in with unrelocated values,
@@ -654,8 +648,9 @@ class GTSong:
         orderlist = file_bytes[an_index:an_index + length]
         an_index += length
         # check that next-to-last byte is $FF
-        assert file_bytes[an_index - 2] == 255, \
-            "Error: Did not find expected $FF RST endmark in channel's orderlist"
+        if file_bytes[an_index - 2] != 255:
+            raise ChiptuneSAKContentError(
+                "Error: Did not find expected $FF RST endmark in channel's orderlist")
 
         return orderlist
 
@@ -841,7 +836,8 @@ class GTSong:
         for pattern_num in range(num_patterns):
             a_pattern = []
             num_rows = sng_bytes[file_index]
-            assert num_rows <= GT_MAX_ROWS_PER_PATTERN, "Too many rows in a pattern"
+            if num_rows > GT_MAX_ROWS_PER_PATTERN:
+                raise ChiptuneSAKContentError("Error: Too many rows in a pattern")
             file_index += 1
             for row_num in range(num_rows):
                 a_row = GtPatternRow(
@@ -850,17 +846,21 @@ class GTSong:
                     command=sng_bytes[file_index + 2],
                     command_data=sng_bytes[file_index + 3],
                 )
-                assert (GT_NOTE_OFFSET <= a_row.note_data <= GT_MAX_NOTE_VALUE) or a_row.note_data == GT_PAT_END, \
-                    "Error: unexpected note data value"
-                assert a_row.instr_num <= GT_MAX_INSTR_PER_SONG, "Error: instrument number out of range"
-                assert a_row.command <= 0x0F, "Error: command number out of range"
+                if not ((GT_NOTE_OFFSET <= a_row.note_data <= GT_MAX_NOTE_VALUE)
+                        or a_row.note_data == GT_PAT_END):
+                    raise ChiptuneSAKContentError("Error: unexpected note data value")
+                if a_row.instr_num > GT_MAX_INSTR_PER_SONG:
+                    raise ChiptuneSAKValueError("Error: instrument number out of range")
+                if a_row.command > 0x0F:
+                    raise ChiptuneSAKValueError("Error: command number out of range")
                 file_index += 4
                 a_pattern.append(a_row)
             patterns.append(a_pattern)
 
         self.patterns = patterns
 
-        assert file_index == len(sng_bytes), "Error: bytes parsed didn't match file bytes length"
+        if file_index != len(sng_bytes):
+            raise ChiptuneSAKContentError("Error: bytes parsed didn't match file bytes length")
 
     def midi_note_to_pattern_note(self, midi_note, octave_offset=0):
         """
@@ -904,7 +904,8 @@ class GTSong:
                 transposition -= 12
             while transposition < -15:
                 transposition += 12
-            assert(-15 <= transposition <= 14), "bad transposition = %d" % transposition
+            if not (-15 <= transposition <= 14):
+                raise ChiptuneSAKValueError("Error: bad transposition = %d" % transposition)
             transposition += 0xF0
 
         # Longest possible repeat is 16, so generate as many of those as needed
@@ -924,7 +925,8 @@ class GTSong:
                 retval.append(repeats - 1 + 0xD0)  # Repeat N times
             retval.append(pattern_number)
 
-        assert all(0 <= x <= 0xFF for x in retval), f"Byte value error in orderlist"
+        if not all(0 <= x <= 0xFF for x in retval):
+            raise ChiptuneSAKValueError("Error: Byte value error in orderlist")
         return retval
 
     def export_parsed_gt_to_gt_binary(self):
@@ -1252,7 +1254,8 @@ class GTSong:
 
                         if rchirp_row.gate:  # if starting a note
                             gt_row.note_data = self.midi_note_to_pattern_note(rchirp_row.note_num)
-                            assert GT_NOTE_OFFSET <= gt_row.note_data <= GT_MAX_NOTE_VALUE, 'Illegal note number'
+                            if not (GT_NOTE_OFFSET <= gt_row.note_data <= GT_MAX_NOTE_VALUE):
+                                raise ChiptuneSAKValueError('Error: Illegal note number')
 
                             if rchirp_row.new_instrument is not None:
                                 gt_row.instr_num = rchirp_row.new_instrument
@@ -1495,8 +1498,9 @@ class GtChannelState:
 
             # Note: The higher voice number seems to win ties on simultaneous speed changes
 
-            assert row.command_data not in [0x02, 0x82], \
-                "Unimplemented: Don't know how to support tempo change with value %d" % row.command_data
+            if row.command_data in [0x02, 0x82]:
+                raise ChiptuneSAKValueError(
+                    "Unimplemented: Don't know how to support tempo change with value %d" % row.command_data)
 
             new_row_duration = row.command_data & 127  # don't care if it's global or local
             if new_row_duration < 2:
@@ -1578,7 +1582,8 @@ class GtChannelState:
             #   Testing shows transpose ranges from '-F' (225) to '+E' (254) in orderlist
             #   Bug in goattracker documentation: says range is $E0 (224) to $FE (254)
             #   I'm assuming byte 224 is never used in orderlists
-            assert a_byte != 0xE0, "Unimplemented: Don't believe byte E0 should occur in the orderlist"
+            if a_byte == 0xE0:
+                raise ChiptuneSAKValueError("Unimplemented: Don't believe byte E0 should occur in the orderlist")
             if 0xE1 <= a_byte <= 0xFE:  # F0 = +0 = no transposition
                 self.curr_transposition = a_byte - 0xF0  # transpose range is -15 to +14
                 continue
