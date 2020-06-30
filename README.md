@@ -9,16 +9,19 @@ It imports from many music formats and converts them to a common representation 
 
 ## Background
 
-Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we know nothing about the status of the game, so please don't ask).  Recently, Youd/Knapp/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
+Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we know nothing about the status of the game, so please don't ask).  Recently, Youd/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
 
 It became apparent that there were low-hanging opportunities to introduce generality into our workflow.  Therefore, these separate efforts have been redirected into this standalone tool / library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
 
 ## Team
 
-* David Knapp
-* David Youd
-* Markus Brenner: Ultima music importing/exporting
-* Hasse Axəlsson-Svala: GoatTracker consultant
+* David Knapp: core developer
+* David Youd: core developer
+* Ian Lee: python practices consultant
+
+* We are particularly grateful to:
+    * Markus Brenner: For providing Apple II Mockingboard Ultima music importing/exporting
+    * Hasse Axəlsson-Svala: For offering up much-needed GoatTracker and GoatTracker stereo sample data
 
 ## Project Status
 
