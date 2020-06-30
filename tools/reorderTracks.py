@@ -3,7 +3,7 @@ import argparse
 import os
 
 from chiptunesak.errors import ChiptuneSAKValueError
-from chiptunesak.import midi
+from chiptunesak import midi
 
 
 def main():

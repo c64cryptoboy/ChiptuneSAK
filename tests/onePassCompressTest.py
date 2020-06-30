@@ -10,6 +10,7 @@ COMPRESS_TEST_SONG = constants.project_to_absolute_path('tests/data/BWV_799.mid'
 GT_TEST_DATA_SNG = constants.project_to_absolute_path('tests/data/gtTestData.sng')
 GT_TEST_OUT_SNG = constants.project_to_absolute_path('tests/data/gt_test_out.sng')
 
+
 class TestCompression(unittest.TestCase):
     def setUp(self):
         pass
