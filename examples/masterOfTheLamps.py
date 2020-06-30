@@ -22,9 +22,14 @@ sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 #       final tunnel: level 43
 # - Song duration (in seconds) = ceil(last frame in spreadsheet / 50.124542)
 #       ChiptuneSAK trims spreadsheets when song ends, but some subtunes endlessly repeat
+# - TODO: v2 in in subtune 5 (zero indexed) has a number of pitch bends, always up, and
+#       indiscriminantly applied.  I don't see the v2 pitch bends in either this tool or
+#       siddump.c.  It's an RSID, so there's a small chance that the code that pitch bends
+#       is setup by the init routine, but is not executed in the play routine?  Guess I should
+#       look at the interrupt handler at some point.
 # - The starting key signatures (below) don't match the PAL subtunes this parses, instead
-#       they should match the NTSC game footage I captured for the YouTube video that I'm
-#       going to match this music up with.
+#       they should match the NTSC game footage (https://csdb.dk/release/?id=164839) that I
+#       captured for the YouTube video that I'm going to match this music up with.
 to_extract = [
     [10, "getting on carpet", 21, 'Ebm', 2, 4],  # GCD=2 (1st repeat frame 1024)
     [7, "carpet liftoff", 9, 'C', 2, 4],  # GCD=2  # KEY?
@@ -36,13 +41,11 @@ to_extract = [
     [2, "tunnel 3", 62, 'Gm', 4, 4],  # level 5, 19, 33  # GCD=1
     [3, "tunnel 4", 103, 'Cm', 4, 4],  # level 7, 21, 35  # GCD=2
     [4, "tunnel 5", 94, 'Cm', 4, 4],  # level 9, 23, 37  # GCD=2
-    # TODO: subtune 5 sounds dissonant without freq effects
-    # 3rd voice noise until last chord
-    # figure out why pitch bends don't show up in sampling
-    [5, "tunnel 6", 84, 'Em', 4, 4],   # level 11, 25, 39  # GCD=2
+    [5, "tunnel 6", 84, 'Em', 4, 4],   # level 11, 25, 39  # GCD=2  # V2 pitch bends
     [6, "tunnel 7", 62, 'Dm', 4, 4],  # level 13, 27, 41  # GCD=2
     [12, "tunnel 8", 86, 'Cm', 4, 4],  # level 43  # GCD=2
 ]
+to_extract = [to_extract[10]]  # TODO: Remove this later
 
 
 def find_tunings():

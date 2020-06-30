@@ -223,7 +223,7 @@ class SID(ChiptuneSAKIO):
                             freq_arch_to_freq(chn.freq, sid_dump.arch)))
                     else:
                         csv_row.append('')
-                        csv_row.append('')                        
+                        csv_row.append('')
                     csv_row.append(self.get_bool(chn.gate_on))
                     csv_row.append(self.get_val(chn.adsr, '{:04X}'))
                     csv_row.append(self.get_val(Channel.waveforms_str(chn.waveforms)))
@@ -373,7 +373,7 @@ class SidFile:
 
         :return: architecture type
         :rtype: string
-        """        
+        """
         if self.clock == 1:
             return 'PAL-C64'
         if self.clock == 2:
@@ -1109,7 +1109,7 @@ class SidImport:
 
         sid_dump = Dump()
         sid_dump.load_sid(filename)
-        
+
         self.arch = sid_dump.arch  # override SidImport arch param to what's in the SID headers
         sid_dump.tuning = self.tuning
 
@@ -1281,7 +1281,8 @@ class SidImport:
                     # Bit 5: Select sawtooth waveform
                     # Bit 6: Select pulse waveform
                     # Bit 7: Select random noise waveform
-                    vcr = self.cpu_state.get_mem(sid_addr + 0x04 + 7 * chn_num)
+                    ctrl_reg = sid_addr + 0x04 + 7 * chn_num
+                    vcr = self.cpu_state.get_mem(ctrl_reg)
                     chn.gate_on     = vcr & 0b00000001 != 0  # noqa
                     chn.sync_on     = vcr & 0b00000010 != 0  # noqa
                     chn.ring_on     = vcr & 0b00000100 != 0  # noqa
@@ -1381,6 +1382,7 @@ class SidImport:
                         delta_chn.freq = chn.freq
                         delta_chn.note = chn.note
 
+                    # TODO: Untested code here
                     if chn.df > 0:
                         delta_chn.freq = chn.freq
                         delta_chn.df = chn.df
