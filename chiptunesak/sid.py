@@ -223,7 +223,7 @@ class SID(ChiptuneSAKIO):
                             freq_arch_to_freq(chn.freq, sid_dump.arch)))
                     else:
                         csv_row.append('')
-                        csv_row.append('')                        
+                        csv_row.append('')
                     csv_row.append(self.get_bool(chn.gate_on))
                     csv_row.append(self.get_val(chn.adsr, '{:04X}'))
                     csv_row.append(self.get_val(Channel.waveforms_str(chn.waveforms)))
@@ -373,7 +373,7 @@ class SidFile:
 
         :return: architecture type
         :rtype: string
-        """        
+        """
         if self.clock == 1:
             return 'PAL-C64'
         if self.clock == 2:
@@ -1109,7 +1109,7 @@ class SidImport:
 
         sid_dump = Dump()
         sid_dump.load_sid(filename)
-        
+
         self.arch = sid_dump.arch  # override SidImport arch param to what's in the SID headers
         sid_dump.tuning = self.tuning
 
