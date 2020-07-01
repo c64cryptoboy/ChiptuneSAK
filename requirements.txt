@@ -7,3 +7,4 @@ parameterized
 # Purely for developing
 flake8
 sphinx
+twine

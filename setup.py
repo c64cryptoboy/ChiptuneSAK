@@ -8,6 +8,7 @@ setup(
     version="0.3.0",
     description="Generalized pipeline for processing music and targeting various constrained playback environments",
     long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     author="David Youd",
     author_email="CryptoBoy@gmail.com",
     url="https://github.com/c64cryptoboy/ChiptuneSAK",
