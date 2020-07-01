@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="chiptunesak",
-    version="0.3.0",
+    version="0.3.1",
     description="Generalized pipeline for processing music and targeting various constrained playback environments",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
