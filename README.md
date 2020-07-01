@@ -9,9 +9,9 @@ It imports from many music formats and converts them to a common representation 
 
 ## Background
 
-Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we know nothing about the status of the game, so please don't ask).  Recently, Youd/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
+Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we have no details on the development status of the game, so please don't ask).  Recently, Youd/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
 
-It became apparent that there were low-hanging opportunities to introduce generality into our workflow.  Therefore, these separate efforts have been redirected into this standalone tool / library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
+It became apparent that there were low-hanging opportunities to introduce generality into our workflow.  Therefore, these separate efforts have been redirected into this standalone library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
 
 ## Team
 
@@ -30,12 +30,13 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ### Music importers
 
 * Standard [MIDI](https://www.midi.org/specifications) file (type 0 or 1):  Contains note on/off events in delta time
+* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  ChiptuneSAK supports PSID and some RSID.  Importer is proposed as alternative to the closed-source SID2MIDI.
 * [GoatTracker 2](https://sourceforge.net/p/goattracker2/code/HEAD/tree/): A Commodore 64 pattern-based music editor for Windows/linux/MacOS
 * [GoatTracker 2 Stereo](https://sourceforge.net/projects/goattracker2/files/GoatTracker%202%20Stereo/) (2SID)
 
 #### Importers: under development
 
-* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): Arbitrary C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  Will support PSID and some RSID.  Importer is proposed as alternative to the closed-source SID2MIDI.
+* tbd
 
 #### Importers: proposed
 
@@ -87,8 +88,8 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ## Recent milestones
 
 * Exported some Monkey Island (MS-DOS 1990) midi capture into 2SID GoatTracker.  Patterns automatically computed to reduce file size.
-* Created 6502 emulator for upcoming SID importer
 * Exported some Betrayal at Krondor (MS-DOS, 1993) midi capture to pdf sheet music, goat tracker, and Commodore 128 BASIC program
+* SID imported now implemented
 
 ## Requirements/Building
 
