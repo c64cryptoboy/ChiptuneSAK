@@ -608,29 +608,34 @@ class RChirpSong(ChiptuneSAKBase):
 
         return spreadsheet
 
-    def convert_to_chirp(self):
+    def convert_to_chirp(self, **kwargs):
         """
         Convert rchirp song to chirp
 
         :return: chirp conversion
         :rtype: ChirpSong
         """
+        self.set_options(**kwargs)
+
         song = chirp.ChirpSong()
         song.metadata = copy.deepcopy(self.metadata)
         song.metadata.ppq = constants.DEFAULT_MIDI_PPQN
         song.name = self.metadata.name
         song.set_options(arch=self.arch)  # So that round-trip will return the same arch
-
-        note_jiffy_nums = [v.rows[r].jiffy_num for v in self.voices for r in v.rows if v.rows[r].gate is not None]
+        note_jiffy_nums = [v.rows[r].jiffy_num for v in self.voices
+            for r in v.rows if v.rows[r].gate is not None]
         note_jiffy_nums.sort()
         notes_offset_jiffies = note_jiffy_nums[0]
+        jiffies_per_quarter = self.get_option('jiffies_per_quarter', None)
+        if jiffies_per_quarter is None:
 
-        # find the minimum divisor for note length
-        jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums))
+            # find the minimum divisor for note length
+            jiffies_per_note = reduce(math.gcd, (t - notes_offset_jiffies for t in note_jiffy_nums))
 
-        # We arbitrarily set he minimum divisor to be a sixteenth note.
+            # Guess: Set the minimum divisor to be a sixteenth note.     
+            jiffies_per_quarter = 4 * jiffies_per_note
+
         midi_ticks_per_quarter = constants.DEFAULT_MIDI_PPQN
-        jiffies_per_quarter = 4 * jiffies_per_note
         qpm = constants.ARCH[self.arch].frame_rate * 60 // jiffies_per_quarter
         song.set_qpm(qpm)
         midi_ticks_per_jiffy = midi_ticks_per_quarter / jiffies_per_quarter

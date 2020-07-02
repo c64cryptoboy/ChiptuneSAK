@@ -93,7 +93,7 @@ to_extract = [
     # V3 splits between percussion and notes (in sections)
     [12, "tunnel 8", 86, 'Cm', 4, 4],
 ]
-# to_extract = [to_extract[10]]  # Debugging
+to_extract = [to_extract[8]]  # Debugging
 
 
 def find_tunings():
@@ -122,7 +122,7 @@ def find_tunings():
     print('\nmedian {:6.3f}'.format(median))
 
 
-def create_output_files():
+def create_output_files(write_csv=True, write_midi=True):
     for entry in to_extract:
         (subtune, desc, seconds, starting_key, time_sig_top, time_sig_bottom) = entry
 
@@ -142,22 +142,23 @@ def create_output_files():
 
         filename_no_ext = 'tests/sid/motl_%s' % desc.replace(" ", "_")
 
-        # write as CSV file
-        print("writing %s.csv" % filename_no_ext)
-        sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
+        if write_csv:
+            print("writing %s.csv" % filename_no_ext)
+            sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
 
-        # write as midi file
-        print("writing %s.mid" % filename_no_ext)
-        rchirp_song = sid.to_rchirp()
-        chirp_song = rchirp_song.to_chirp()
+        if write_midi:
+            print("writing %s.mid" % filename_no_ext)
+            rchirp_song = sid.to_rchirp()
 
-        chirp_song.set_key_signature(starting_key)
-        chirp_song.set_time_signature(time_sig_top, time_sig_bottom)
+            chirp_song = rchirp_song.to_chirp(jiffies_per_quarter=32)
 
-        midi.MIDI().to_file(
-            chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
+            chirp_song.set_key_signature(starting_key)
+            chirp_song.set_time_signature(time_sig_top, time_sig_bottom)
+
+            midi.MIDI().to_file(
+                chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
 
 
 if __name__ == "__main__":
     # find_tunings()
-    create_output_files()
+    create_output_files(False, True)

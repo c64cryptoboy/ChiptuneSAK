@@ -131,8 +131,7 @@ class SID(ChiptuneSAKIO):
             for chip_num, chip in enumerate(sd_row.chips):
                 for chn_num, chn in enumerate(chip.channels):
                     rc_row = rchirp.RChirpRow()
-                    rc_row.jiffy_num = row_num
-                    rc_row.jiffy_len = 1
+                    rc_row.jiffy_num = sd_row.frame_num
 
                     if chn.note is not None:
                         rc_row.note_num = chn.note
@@ -329,7 +328,8 @@ class SID(ChiptuneSAKIO):
         reduced_rows = []
         for row_num in range(first_row, last_row + 1):
             if i % row_gran == 0:
-                reduced_rows.append(sid_dump.rows[row_num])
+                r = sid_dump.rows[row_num]
+                reduced_rows.append(r)
             i += 1
 
         # TODO: If last_row contains a gate_on = True, may need to pad out with (row_gran-1) empty rows
