@@ -85,10 +85,5 @@ Currently, goat_tracker.py does not implement multispeed handling.
 
 Octave and Frequency designations
 #################################
-Chirp frequency reasoning defaults to a twelve-tone equal-tempered system.
+Chirp frequency reasoning defaults to the most common MIDI convention, a twelve-tone equal-tempered system with MIDI note 69 = A4 = 440 Hz as described in the :ref:`Tuning` section.
 
-Following Scientific Pitch Notation (SPN), Chirp assigns middle C to be C4 with midi note number 60.  The relationship between the chirp note number *n* and its frequency is 440*2^((*n* - 69)/12), where 69 is the midi number for A4 ("Concert A"), which is defined as exactly 440 Hz.  As a result, C4 is 261.63 Hz.
-
-Some midi octave conventions differ, e.g., assigning middle C (261.63Hz) to C3.  However, since midi really does not have a note-octave representation, this difference is only one of convention. With respect to chirp, such a system would have an octave offset of -1.
-
-Historically, 432 Hz (France) and 435 Hz (Italy) were competing tuning standards.  By 1953, nearly everyone had agreed on 440 Hz, which is an `ISO standard <https://www.iso.org/standard/3601.html>`_ for all instruments based on chromatic scale. The Commodore SID chip covers 8 octaves, from C0 to B7.  However, with 440 tuning, the PAL version is unable to can't reach note B7 (SID freq 67280, which would require 16 bits), so some in the scene use frequency tables tuned to 435 Hz (where B7 in PAL is 66516)
