@@ -5,6 +5,8 @@ Tuning
 Base Tuning Frequency
 ---------------------
 
+By default, ChiptuneSAK uses the **A4 = 440 Hz** tuning convention.
+
 Historically, tuning standards have been based on the frequency of the note A4. Prior to the 20th century, 432 Hz (France) and 435 Hz (Italy) were competing tuning standards. By 1953, nearly everyone had agreed on 440.00 Hz, which is an `ISO standard <https://www.iso.org/standard/3601.html>`_ for all instruments based on chromatic scale. The Commodore SID chip covers 8 octaves, from C0 to B7.  However, with A4 = 440 Hz tuning, the PAL version is unable to reach note B7 (SID freq 67280, which would require 16 bits), so some in the scene use frequency tables tuned to 435 Hz (where B7 in PAL is 66516).
 
 MIDI note numbers are based on an even-tempered chromatic scale with middle C (C4) as note 60. The tuning standard, A4, is therefore note 60.
