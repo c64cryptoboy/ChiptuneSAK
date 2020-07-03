@@ -9,6 +9,7 @@ However, some key concepts are important to the understanding of music and how C
 .. toctree::
     :maxdepth: 2
 
+    tuning
     quantization
     polyphony
     metric_modulation
