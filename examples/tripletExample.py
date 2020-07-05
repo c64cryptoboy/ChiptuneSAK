@@ -65,3 +65,4 @@ os.chdir(output_folder)
 ly_file = os.path.basename(output_ly_file_mod)
 # Run lilypond
 subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file_mod), shell=True)
+
