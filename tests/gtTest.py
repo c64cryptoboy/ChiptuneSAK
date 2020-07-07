@@ -7,7 +7,7 @@ import unittest
 from chiptunesak import goat_tracker
 from chiptunesak import base
 from chiptunesak.constants import project_to_absolute_path
-from chiptunesak.bytes_util import read_binary_file
+from chiptunesak.byte_util import read_binary_file
 
 
 # Description of tests/data/gtTestData.sng test data

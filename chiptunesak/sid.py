@@ -33,7 +33,7 @@ import copy
 from dataclasses import dataclass
 from typing import List
 from chiptunesak.constants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
-from chiptunesak.bytes_util import big_endian_int, little_endian_int
+from chiptunesak.byte_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
 from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError

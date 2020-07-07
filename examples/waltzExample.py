@@ -1,9 +1,7 @@
 import os
 import subprocess
 
-from chiptunesak import midi
-from chiptunesak.lilypond import Lilypond
-from chiptunesak import goat_tracker
+import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
 
 """
@@ -19,7 +17,7 @@ output_ly_file = output_folder + 'chopin_waltz.ly'
 output_ly_file_mod = output_folder + 'chopin_waltz_mod.ly'
 output_gt_file = output_folder + 'chopin_waltz_mod.sng'
 
-chirp_song = midi.MIDI().to_chirp(input_mid_file)
+chirp_song = chiptunesak.MIDI().to_chirp(input_mid_file)
 
 #  First thing, both hands have 3-note polyphony.
 
@@ -37,7 +35,7 @@ mchirp_song = chirp_song.to_mchirp()
 print("writing lilypond...")
 
 # Create the lilpond I/O class
-lp = Lilypond()
+lp = chiptunesak.Lilypond()
 # Set the format to do a clip and set the measures to those you want
 lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
 # Write it straight to a file
@@ -56,13 +54,13 @@ subprocess.call(args, shell=True)
 print("Modulating...")
 chirp_song.modulate(3, 2)
 
-midi.MIDI().to_file(chirp_song, output_mid_file)
+chiptunesak.MIDI().to_file(chirp_song, output_mid_file)
 
 print("Converting to mchirp")
 mchirp_song = chirp_song.to_mchirp()
 
 # Create the lilpond I/O class
-lp = Lilypond()
+lp = chiptunesak.Lilypond()
 # Set the format to do a clip and set the measures to those you want
 lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[118:121])
 # Adjust the path the the file
@@ -73,11 +71,11 @@ lp.to_file(mchirp_song, output_ly_file_mod)
 args = ['lilypond', '-ddelete-intermediate-files', '-dbackend=eps', '-dresolution=600', '--png', ly_file]
 subprocess.call(args, shell=True)
 
-midi.MIDI().to_file(chirp_song, output_mid_file)
+chiptunesak.MIDI().to_file(chirp_song, output_mid_file)
 
 print("Converting to rchirp")
 rchirp_song = chirp_song.to_rchirp()
 
-GT = goat_tracker.GoatTracker()
+GT = chiptunesak.GoatTracker()
 GT.set_options(instruments=['Harpsichord', 'Harpsichord', 'Harpsichord'])
 GT.to_file(rchirp_song, output_gt_file)

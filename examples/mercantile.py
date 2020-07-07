@@ -1,10 +1,7 @@
 import subprocess
 
-from chiptunesak.base import *
-from chiptunesak import midi
-from chiptunesak.lilypond import Lilypond
-from chiptunesak import one_pass_compress
-from chiptunesak import goat_tracker
+import chiptunesak
+import chiptunesak.base
 from chiptunesak.constants import project_to_absolute_path
 
 """
@@ -38,7 +35,7 @@ output_ly_file = str(project_to_absolute_path(output_folder + 'mercantile.ly'))
 output_gt_file = str(project_to_absolute_path(output_folder + 'mercantile.sng'))
 
 # Read in the original MIDI to Chirp
-chirp_song = midi.MIDI().to_chirp(input_file)
+chirp_song = chiptunesak.MIDI().to_chirp(input_file)
 
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
@@ -63,7 +60,7 @@ for t in chirp_song.tracks:
 
 # Change the program to the bass at that point
 tmp_program = chirp_song.tracks[3].program_changes[0]
-new_program = ProgramEvent(9700, tmp_program.program)
+new_program = chiptunesak.base.ProgramEvent(9700, tmp_program.program)
 chirp_song.tracks[2].program_changes.append(new_program)
 
 # Now move the notes from track 4 into track 3
@@ -105,13 +102,13 @@ print('\n'.join(f'{i+1}:  {t.name}' for i, t in enumerate(chirp_song.tracks)))
 print()
 
 # Save the result to a MIDi file.
-midi.MIDI().to_file(chirp_song, output_midi_file)
+chiptunesak.MIDI().to_file(chirp_song, output_midi_file)
 
 # Convert to MChirp
 mchirp_song = chirp_song.to_mchirp()
 
 # Make sheet music output with Lilypond
-ly = Lilypond()
+ly = chiptunesak.Lilypond()
 ly.to_file(mchirp_song, output_ly_file)
 
 # If you have Lilypond installed, generate the pdf
@@ -135,10 +132,10 @@ instruments = ['Flute', 'MuteGuitar', 'SimpleTriangle', 'SoftBass']
 # Perform loop-finding to compress the song and to take advantage of repetition
 # The best minimum pattern length depends on the particular song.
 print('Compressing RChirp')
-compressor = one_pass_compress.OnePassLeftToRight()
+compressor = chiptunesak.OnePassLeftToRight()
 rchirp_song = compressor.compress(rchirp_song, min_length=16)
 
 # Now export the compressed song to goattracker format.
 print(f'Writing {output_gt_file}')
-GT = goat_tracker.GoatTracker()
+GT = chiptunesak.GoatTracker()
 GT.to_file(rchirp_song, output_gt_file, instruments=instruments)

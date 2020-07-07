@@ -21,9 +21,8 @@
 #   to get a handle on how to set parameters for each subtune so that they
 #   comes into Sibelius closer to target.
 
+import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
-from chiptunesak.sid import SID
-from chiptunesak import midi
 
 sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
 
@@ -103,7 +102,7 @@ def find_tunings():
         (subtune, desc, _, _, _, _) = entry
 
         # get a 10 second sample to determine tuning
-        sid = SID()
+        sid = chiptunesak.SID()
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,
@@ -126,7 +125,7 @@ def create_output_files(write_csv=True, write_midi=True):
     for entry in to_extract:
         (subtune, desc, seconds, starting_key, time_sig_top, time_sig_bottom) = entry
 
-        sid = SID()
+        sid = chiptunesak.SID()
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=subtune,
@@ -155,7 +154,7 @@ def create_output_files(write_csv=True, write_midi=True):
             chirp_song.set_key_signature(starting_key)
             chirp_song.set_time_signature(time_sig_top, time_sig_bottom)
 
-            midi.MIDI().to_file(
+            chiptunesak.MIDI().to_file(
                 chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
 
 

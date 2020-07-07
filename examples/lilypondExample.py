@@ -1,8 +1,7 @@
 import os
 import subprocess
 
-from chiptunesak import midi
-from chiptunesak.lilypond import Lilypond
+import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
 
 """
@@ -21,7 +20,7 @@ input_mid_file = input_folder + 'BWV_799.mid'
 output_ly_file = output_folder + 'BWV_799.ly'
 
 # Read in the midi song and quantize
-chirp_song = midi.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
+chirp_song = chiptunesak.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
 
 # It's in A minor, 3/8 time
 chirp_song.set_key_signature('Am')
@@ -31,7 +30,7 @@ chirp_song.set_time_signature(3, 8)
 mchirp_song = chirp_song.to_mchirp()
 
 # Write it straight to a file using the Lilypond class with format 'song' for the entire song.
-Lilypond().to_file(mchirp_song, output_ly_file, format='song')
+chiptunesak.Lilypond().to_file(mchirp_song, output_ly_file, format='song')
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.
 os.chdir(output_folder)
