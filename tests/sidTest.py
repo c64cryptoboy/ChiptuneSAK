@@ -2,15 +2,14 @@
 # - this hardly covers all the sid functionality, need to add many more tests
 
 import unittest
-from chiptunesak import constants
-from chiptunesak import sid
-
+from chiptunesak.sid import SID, SidImport
+from chiptunesak.constants import project_to_absolute_path, CONCERT_A, freq_arch_to_midi_num
 
 class sidTests(unittest.TestCase):
 
     def test_SID_freqs_to_midi_notes(self):
-        si_ntsc = sid.SidImport(arch='NTSC-C64', tuning=constants.CONCERT_A)
-        si_pal = sid.SidImport(arch='PAL-C64', tuning=constants.CONCERT_A)
+        si_ntsc = SidImport(arch='NTSC-C64', tuning=CONCERT_A)
+        si_pal = SidImport(arch='PAL-C64', tuning=CONCERT_A)
 
         cminus1_midi_num = 0  # our lowest note
         # Very low SID frequencies tests
@@ -38,13 +37,13 @@ class sidTests(unittest.TestCase):
         g2_midi_num = 43
 
         very_flat_g2_freq = 1571
-        (midi_note, very_flat_g2_cents) = constants.freq_arch_to_midi_num(
-            very_flat_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
+        (midi_note, very_flat_g2_cents) = freq_arch_to_midi_num(
+            very_flat_g2_freq, arch='NTSC-C64', tuning=CONCERT_A)
         self.assertEqual((midi_note, very_flat_g2_cents), (g2_midi_num, -40))
 
         flat_g2_freq = 1604
-        (midi_note, flat_g2_cents) = constants.freq_arch_to_midi_num(
-            flat_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
+        (midi_note, flat_g2_cents) = freq_arch_to_midi_num(
+            flat_g2_freq, arch='NTSC-C64', tuning=CONCERT_A)
         self.assertEqual((midi_note, flat_g2_cents), (g2_midi_num, -4))
 
         # g2_freq = 1608
@@ -53,13 +52,13 @@ class sidTests(unittest.TestCase):
         # self.assertEqual((midi_note, g2_cents), (g2_midi_num, 0))
 
         sharp_g2_freq = 1611
-        (midi_note, sharp_g2_cents) = constants.freq_arch_to_midi_num(
-            sharp_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
+        (midi_note, sharp_g2_cents) = freq_arch_to_midi_num(
+            sharp_g2_freq, arch='NTSC-C64', tuning=CONCERT_A)
         self.assertEqual((midi_note, sharp_g2_cents), (g2_midi_num, 4))
 
         very_sharp_g2_freq = 1645
-        (midi_note, very_sharp_g2_cents) = constants.freq_arch_to_midi_num(
-            very_sharp_g2_freq, arch='NTSC-C64', tuning=constants.CONCERT_A)
+        (midi_note, very_sharp_g2_cents) = freq_arch_to_midi_num(
+            very_sharp_g2_freq, arch='NTSC-C64', tuning=CONCERT_A)
         self.assertEqual((midi_note, very_sharp_g2_cents), (g2_midi_num, 40))
 
         # Scenario A: We imagine a wide vibrato on an f#2 strayed a little into
@@ -89,6 +88,43 @@ class sidTests(unittest.TestCase):
         # Scenario F: Like Scenario C, but from the other direction again
         self.assertEqual(si_ntsc.get_note(sharp_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num + 1), g2_midi_num)
+
+
+    def test_SID_play_routine_sampling(self):
+        # TODO
+        # Test SID import for expected values in RChirp
+        #
+        # Test data: Defender of the Crown, Cinemaware, 1986, later released as freeware
+        # CSDB: https://csdb.dk/sid/?id=15918
+
+        sid_filename = project_to_absolute_path('res/Defender_of_the_Crown.sid')
+
+        sid = SID()
+        sid.set_options(
+            sid_in_filename=sid_filename,
+            subtune=0, # Main theme
+            # tuning=
+            vibrato_cents_margin=10,
+            seconds=30,
+            gcf_row_reduce=False,
+        )
+
+        #sid_dump = sid.capture()
+
+        # debugging
+        # filename_no_ext = project_to_absolute_path('res/deleteme')
+        # print("writing %s.csv" % filename_no_ext)
+        # sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
+
+
+        self.assertTrue(True)
+        
+
+    def test_tuning(self):
+        # TODO:
+        # Measure tunings from a set of notes, then using that tuning, measure that the
+        # cents deviations get closer to zero
+        self.assertTrue(True)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,9 @@
 # Adds C64-specific behaviors to Cpu6502Emulator
 #
+# Notes:
+# - All bank switching logic assumes the EXROM and GAME are both 1 (since not emulating
+#   cartridges)
+# 
 # TODO:
 # - get_mem and set_mem mirroring needs to be overriden (or just removed) when we start to support
 #   2SID and 3SID
@@ -203,6 +207,40 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
                 self.see_io = True
             if 1 <= banks <= 3:
                 self.see_char = True
+
+
+    def bank_in_IO(self):
+        banks = self.memory[0x0001] & 0b00000111
+
+        #       m1:b2   m1:b1   m1:b0   $1000-  $8000-  $A000-  $C000-  $D000-  $E000-
+        #       CHAREN  HIRAM   LORAM   $7FFF   $9FFF   $BFFF   $CFFF   $DFFF   $FFFF
+        #
+        # From  1       0       0       RAM     RAM     RAM     RAM     RAM     RAM
+        # To    1       0       1       RAM     RAM     RAM     RAM     I/O     RAM
+        #
+        # From  0       1       1       RAM     RAM     BASIC   RAM     CHAR    KERNAL
+        # To    1       1       1       RAM     RAM     BASIC   RAM     I/O     KERNAL
+        #
+        # From  0       1       0       RAM     RAM     RAM     RAM     CHAR    KERNAL
+        # To    1       1       0       RAM     RAM     RAM     RAM     I/O     KERNAL
+        #
+        # From  0       0       1       RAM     RAM     RAM     RAM     CHAR    RAM
+        # To    1       0       1       RAM     RAM     RAM     RAM     I/O     RAM
+        #
+        # From  0       0       0       RAM     RAM     RAM     RAM     RAM     RAM
+        # To    1       0       1       RAM     RAM     RAM     RAM     I/O     RAM
+
+        if banks == 0b100 or banks == 0b001 or banks == 0b000:
+            self.set_mem(0x0001, 0b101)
+        elif banks == 0b011:
+            self.set_mem(0x0001, 0b111)
+        elif banks == 0b010:
+            self.set_mem(0x0001, 0b110)
+        else:
+            pass  # I/O already banked in, nothing to change
+
+
+
 
     def load_rom(self, path_and_filename, expected_size):
         binary = read_binary_file(path_and_filename)

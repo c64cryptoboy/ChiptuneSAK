@@ -54,7 +54,6 @@ class SID(ChiptuneSAKIO):
         self.options_with_defaults = dict(
             sid_in_filename=None,
             subtune=0,           # subtune to extract
-            first_frame=0,
             vibrato_cents_margin=0,  # cents margin to control snapping to previous note
             tuning=CONCERT_A,
             seconds=60,          # seconds to capture
@@ -88,7 +87,6 @@ class SID(ChiptuneSAKIO):
         sid_dump = importer.import_sid(
             filename=self.get_option('sid_in_filename'),  # SID file to read in
             subtune=self.get_option('subtune'),
-            first_frame=self.get_option('first_frame'),
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
             seconds=self.get_option('seconds')
         )
@@ -113,8 +111,7 @@ class SID(ChiptuneSAKIO):
                         if chn.note is not None or chn.gate_on is not None:
                             rows_with_activity[chip_num].append(row_num)
                             break
-
-        self.reduce_rows(sid_dump, rows_with_activity)
+            self.reduce_rows(sid_dump, rows_with_activity)
 
         rchirp_song = rchirp.RChirpSong()
 
@@ -173,8 +170,7 @@ class SID(ChiptuneSAKIO):
                                     or chn.ring_on is not None:
                                 rows_with_activity[chip_num].append(row_num)
                                 break
-
-        self.reduce_rows(sid_dump, rows_with_activity)
+            self.reduce_rows(sid_dump, rows_with_activity)
 
         # create CSV
         csv_rows = []
@@ -189,7 +185,7 @@ class SID(ChiptuneSAKIO):
                     'v%dNoteName' % i, 'v%dNote' % i, 'v%dCents' % i,
                     'v%dTrueHz' % i, 'v%dGate' % i,
                     'v%dADSR' % i, 'v%dWFs' % i, 'v%dPWidth' % i,
-                    'v%dUseFil' % i, 'v%dSync' % i, 'v%dRing' % i
+                    'v%dUseFilt' % i, 'v%dSync' % i, 'v%dRing' % i
                 ])
         csv_rows = [csv_row]
 
@@ -284,10 +280,15 @@ class SID(ChiptuneSAKIO):
         The SidImport class samples SID chip state after each call to the play routine.
         This creates 1 row per jiffy (multi-speed not yet supported).
         In most trackers, this would require speed 1 playback (1 jiffy per row), which
-        cannot be archived.  So this method attempts to reduce the number of rows in the
+        cannot be achieved.  So this method attempts to reduce the number of rows in the
         representaton.  It does so by computing the greatest common divisor for the
         count of inactive rows between active rows, and then eliminates the unnecessary
         rows (while preserving rhythm structure).
+
+        # TODO: A row in cvs output contains all channels at a point in time.  A row
+        # in rchirp contains only one channel.  When not making CVS output, better
+        # results could be achieved by computing the GCD for each voice
+        # independently.
 
         :param sid_dump: Capture of SID chip state from the subtune
         :type sid_dump: sid.Dump
@@ -901,6 +902,13 @@ class Row:
             raise Exception("Error: Row must specify 1 to 3 SID chips")
         self.chips = [Chip() for _ in range(self.num_chips)]
 
+    def contains_new_note(self):
+        for chip in self.chips:
+            for channel in chip.channels:
+                if channel.new_note and channel.note != 0:
+                    return True
+        return False
+
     def null_all(self):
         for chip in self.chips:
             chip.vol = chip.filters = chip.cutoff = chip.resonance = \
@@ -921,6 +929,7 @@ class Dump:
         self.rows = []  # One row for each sample (after each call to the play routine)
         self.raw_freqs = []  # List of raw frequencies that can be used to derrive tuning
         self.arch = None  # Set by load_sid()
+        self.first_row_with_note = None  # Row index for first row containing a note
 
     def load_sid(self, filename):
         """
@@ -964,6 +973,9 @@ class Dump:
 
         return (tuning, minimum_cents, maximum_cents)
 
+    def trim_leading_rows(self, rows_to_remove):
+        self.rows = self.rows[rows_to_remove:]
+
 
 class SidImport:
     def __init__(self, arch=DEFAULT_ARCH, tuning=CONCERT_A):
@@ -972,8 +984,7 @@ class SidImport:
 
         self.cpu_state = thin_c64_emulator.ThinC64Emulator()
         self.cpu_state.exit_on_empty_stack = True
-        self.first_frame = 0
-        self.frame_cnt = 0
+        self.play_call_num = 0
 
     def get_note(self, freq_arch, vibrato_cents_margin=0, prev_note=None):
         # siddump.c has an "old note factor" that helps return more consistant
@@ -1034,6 +1045,9 @@ class SidImport:
             if self.cpu_state.pc > MAX_INSTR:
                 raise Exception("CPU executed a high number of instructions in init routine")
 
+        if self.cpu_state.last_instruction == 0x00:
+            print("Warning: SID init routine exited with a BRK")
+
     def call_sid_play(self, play_addr):
         """
         Emulate the call to the SID's play routine
@@ -1086,7 +1100,11 @@ class SidImport:
             if self.cpu_state.see_kernal and (0xea31 <= self.cpu_state.pc <= 0xea83):
                 return  # done with play call
 
-    def import_sid(self, filename, subtune=0, first_frame=0, vibrato_cents_margin=0, seconds=60):
+        if self.cpu_state.last_instruction == 0x00:
+            print("Warning: SID play routine exited with a BRK")
+
+
+    def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1096,8 +1114,6 @@ class SidImport:
         :type filename: string
         :param subtune: the subtune to import, defaults to 0
         :type subtune: int, optional
-        :param first_frame: the first frame to begin capture upon, defaults to 0
-        :type first_frame: int, optional
         :param vibrato_cents_margin: if new note adjacent to old but within cents margin
                                      then, snap to old
         :type vibrato_cents_margin: int, optional
@@ -1174,7 +1190,8 @@ class SidImport:
 
         self.cpu_state.inject_bytes(sid_dump.sid_file.load_address, sid_dump.sid_file.c64_payload)
 
-        self.cpu_state.set_mem(0x01, 0b00110111)  # set default memory banking
+        # Bank out ROMs, the SID init can bring them back in if it wants to
+        self.cpu_state.set_mem(0x01, 0b00110101)
 
         self.cpu_state.debug = False
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)
@@ -1192,20 +1209,20 @@ class SidImport:
                 # get play address from 6502-defined IRQ vector ($FFFE defaults to $FF48)
                 sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0xfffe)
 
-        self.frame_cnt = 0  # TODO:  Not really frames if multi-speed, rename to play_call_cnt?
+        self.play_call_num = 0
 
         frames_to_capture = int(seconds * ARCH[self.arch].frame_rate)
 
         row = Row(sid_dump.sid_file.sid_count)
-        row.frame_num = self.frame_cnt
+        row.frame_num = self.play_call_num
 
         prev_row = Row(sid_dump.sid_file.sid_count)
         prev_row.null_all()  # makes the initial delta_row work
-        prev_row.frame_num = self.frame_cnt - 1
+        prev_row.frame_num = self.play_call_num - 1
 
         delta_row = Row(sid_dump.sid_file.sid_count)
         delta_row.null_all()
-        delta_row.frame_num = self.frame_cnt
+        delta_row.frame_num = self.play_call_num
 
         # Note: We could set a reasonable stack pointer here if we wanted, but our
         # exit_on_empty_stack setting hopefully means we don't have to.
@@ -1220,13 +1237,16 @@ class SidImport:
         # will take over that responsibility.  This means we could set the stack pointer
         # to $F9 when calling the play routine.
 
+        old_loc1_val = self.cpu_state.get_mem(0x0001)
         self.cpu_state.debug = False
-        while self.frame_cnt < first_frame + frames_to_capture:
+        while self.play_call_num < frames_to_capture:
             self.call_sid_play(sid_dump.sid_file.play_address)
 
-            # TODO: Temporarily make sure I/O is swapped in (in case end of play routine swaps
-            # it out), then restore to what it was, since we're using get_mem to look at SID
-            # registers
+            # need to have I/O banked in, in order to read it
+            if not self.cpu_state.see_io:
+                if self.play_call_num == 0:
+                    print("DEBUG: SID banks out IO after play calls")
+                self.cpu_state.bank_in_IO()
 
             # record the SID(s) state at the end of the frame
 
@@ -1293,7 +1313,7 @@ class SidImport:
                     if chn.gate_on:
                         chn.release_frame = None
                     elif prev_row.chips[chip_num].channels[chn_num].gate_on and not chn.gate_on:
-                        chn.release_frame = self.frame_cnt
+                        chn.release_frame = self.play_call_num
 
                     # ADSR as four nibbles
                     chn.adsr = ((self.cpu_state.get_mem(sid_addr + 0x05 + 7 * chn_num) << 8)
@@ -1309,7 +1329,7 @@ class SidImport:
                     # is a released note still in the process of releasing?
                     within_release_window = (
                         chn.release_frame is not None
-                        and (self.frame_cnt - chn.release_frame)
+                        and (self.play_call_num - chn.release_frame)
                         * ARCH[self.arch].ms_per_frame * 1000
                         < decay_release_time[chn.release])
 
@@ -1338,7 +1358,7 @@ class SidImport:
                     make_new_note = (
                         note_playing and (prev_note_off or chn.note != prev_chn.note))
 
-                    if (self.frame_cnt == first_frame or make_new_note):
+                    if (self.play_call_num == 0 or make_new_note):
                         chn.new_note = True
 
                     # if not a new note, but there's a small change in frequency...
@@ -1351,6 +1371,10 @@ class SidImport:
                     else:
                         chn.df = 0
 
+            if sid_dump.first_row_with_note is None:
+                if row.contains_new_note():
+                    sid_dump.first_row_with_note = self.play_call_num
+
             # Build delta_row (shows differences from previous row)
 
             # for each SID chip:
@@ -1358,19 +1382,21 @@ class SidImport:
                 prev_chip = prev_row.chips[chip_num]
                 delta_chip = delta_row.chips[chip_num]
 
-                if chip.cutoff != prev_chip.cutoff:
+                include = (self.play_call_num == sid_dump.first_row_with_note)
+
+                if include or chip.cutoff != prev_chip.cutoff:
                     delta_chip.cutoff = chip.cutoff
 
-                if chip.filters != prev_chip.filters:
+                if include or chip.filters != prev_chip.filters:
                     delta_chip.filters = chip.filters
 
-                if chip.vol != prev_chip.vol:
+                if include or chip.vol != prev_chip.vol:
                     delta_chip.vol = chip.vol
 
-                if chip.resonance != prev_chip.resonance:
+                if include or chip.resonance != prev_chip.resonance:
                     delta_chip.resonance = chip.resonance
 
-                if chip.no_sound_v3 != prev_chip.no_sound_v3:
+                if include or chip.no_sound_v3 != prev_chip.no_sound_v3:
                     delta_chip.no_sound_v3 = chip.no_sound_v3
 
                 # for each SID chip channel:
@@ -1395,13 +1421,13 @@ class SidImport:
                     if chn.gate_on != prev_chn.gate_on:
                         delta_chn.gate_on = chn.gate_on
 
-                    if chn.sync_on != prev_chn.sync_on:
+                    if include or chn.sync_on != prev_chn.sync_on:
                         delta_chn.sync_on = chn.sync_on
 
-                    if chn.ring_on != prev_chn.ring_on:
+                    if include or chn.ring_on != prev_chn.ring_on:
                         delta_chn.ring_on = chn.ring_on
 
-                    if chn.oscil_on != prev_chn.oscil_on:
+                    if include or chn.oscil_on != prev_chn.oscil_on:
                         delta_chn.oscil_on = chn.oscil_on
 
                     if chn.adsr != prev_chn.adsr:
@@ -1411,33 +1437,35 @@ class SidImport:
                     if chn.pulse_width != prev_chn.pulse_width:
                         delta_chn.pulse_width = chn.pulse_width
 
-                    if chn.filtered != prev_chn.filtered:
+                    if include or chn.filtered != prev_chn.filtered:
                         delta_chn.filtered = chn.filtered
 
                     # no need to include release_frame or new_note
 
                     # end of per-channel loop
 
-            if self.frame_cnt >= first_frame:
-                sid_dump.rows.append(delta_row)
-
-                # frames_with_activity
+            sid_dump.rows.append(delta_row)
 
             # setup chips and channels for next iteration:
 
-            self.frame_cnt += 1
+            self.play_call_num += 1
 
             prev_row = copy.deepcopy(row)
 
             row = Row(sid_dump.sid_file.sid_count)
-            row.frame_num = self.frame_cnt
+            row.frame_num = self.play_call_num
             for chip_num, chip in enumerate(row.chips):
                 for chn_num, chn in enumerate(chip.channels):
                     chn.release_frame = prev_row.chips[chip_num].channels[chn_num].release_frame
 
             delta_row = Row(sid_dump.sid_file.sid_count)
             delta_row.null_all()
-            delta_row.frame_num = self.frame_cnt
+            delta_row.frame_num = self.play_call_num
+
+            self.cpu_state.set_mem(0x0001, old_loc1_val)  # possibly swap I/O back out
+
+        if sid_dump.first_row_with_note > 0:
+            sid_dump.trim_leading_rows(sid_dump.first_row_with_note)
 
         return sid_dump
 
