@@ -19,12 +19,9 @@
 #    tuning and architecture-based frequencies at runtime.
 #
 # SidImport TODO:
-# - iterate over a collection a SIDs for code coverage testing
-# - implement the SID header speed settings?
-#
-# SidFile TODO:
-# - search all the SIDs to see if they contain the KERNAL or BASIC ROMs
-
+# - implement multispeed handling
+# - print warning if jmp or jsr to memory outside of modified memory
+#   (emulator_6502 would need to track memory writes that tracks what mem locations written to)
 
 import csv
 import math
@@ -356,8 +353,8 @@ class SidFile:
         self.c64_payload = None             #: The C64 payload
         self.load_addr_preamble = False     #: True if payload begins with 16-bit load addr
         self.flags = 0                      #: Collection of flags
-        self.flag_0 = 0                     #: bit 0 from flags
-        self.flag_1 = 0                     #: bit 1 from flags
+        self.flag_0 = False                 #: bit 0 from flags, True = Compute!'s Sidplayer MUS data
+        self.flag_1 = False                 #: bit 1 from flags
         self.clock = 0                      #: video clock
         self.sid_model = 0                  #: SID1 chip type
         self.sid2_model = 0                 #: SID2 chip type
@@ -368,6 +365,14 @@ class SidFile:
         self.sid3_address = 0               #: SID3 I/O starting address
         self.sid_count = 1                  #: Number of SIDs used (1 to 3)
         self.is_rsid = None                 #: True if rsid, False if psid
+
+
+    def contains_basic(self): 
+        # From documentation:
+        # "If the C64 BASIC flag is set, the value at $030C must be set with the
+        # song number to be played (0x00 for song 1)."
+        return self.flag_1 and self.is_rsid
+
     def get_arch_from_headers(self):
         """
         Get ChiptuneSAK architecture type from SID headers
@@ -437,16 +442,30 @@ class SidFile:
         :rtype: boolean
         """
 
+        # FUTURE?
+        # Assumed initial environment (if we want to up the fidelity of our emulation)
+        # 
+        # PSID:
+        # - if speed flag 0, raster IRQ on any value < 0x100
+        # - if speed flag 1, CIA 1 timer A with NTSC/PAL KERNAL defaults with counter
+        #   running and IRQs active
+        #
+        # RSID:
+        # - raster IRQ set to 0x137, but not enabled
+        # - CIA 1 timer A set to NTSC/PAL KERNAL defaults with counter running and
+        #   IRQs active
+ 
         if self.version == 1 or self.is_rsid:
             return False
 
         if subtune > 31:
-            if self.flag_1:
+            if self.flag_1:     # PSID is PlaySid specific
                 subtune %= 32
-            else:
+            else:               # C64 Compatable
                 subtune = 31
 
-        return self.speed & pow(2, subtune) != 0
+        return self.speed & pow(2, subtune) != 0  # True if CIA IRQ, False if raster IRQ
+
 
     def parse_binary(self, sid_binary):
         """
@@ -571,7 +590,7 @@ class SidFile:
             # If this bit is set, the appended binary data are in Compute!'s Sidplayer MUS
             # format, and does not contain a built-in music player. An external player
             # machine code must be merged to replay such a sidtune.""
-            self.flag_0 = self.flags & 0b00000001
+            self.flag_0 = self.flags & 0b00000001 != 0
 
             # From documentation:
             # "- Bit 1 specifies whether the tune is PlaySID specific, e.g. uses PlaySID
@@ -598,17 +617,19 @@ class SidFile:
             # Since RSID files do not have the need for PlaySID samples, this flag is used
             # for a different purpose: tunes that include a BASIC executable portion will
             # be played (with the BASIC portion executed) if the C64 BASIC flag is set. At
-            # the same time, initAddress must be 0.""
-            self.flag_1 = (self.flags & 0b00000010) >> 1
+            # the same time, initAddress must be 0."
+            self.flag_1 = (self.flags & 0b00000010) != 0
             if self.is_rsid:
                 if self.init_address == 0:
-                    if self.flag_1 == 0:
+                    if not self.flag_1:
                         raise ChiptuneSAKValueError("Error: RSID can't have init address zero unless BASIC included")
                 else:
-                    if self.flag_1 == 1:
+                    if self.flag_1:
                         raise ChiptuneSAKValueError("Error: RSID flag 1 can't be set (BASIC) if init address != 0")
-                    # Now we can finally confirm allowed RSID init address ranges ($07E8 - $9FFF, $C000 - $CFFF)
-                    if not ((2024 <= self.init_address <= 40959) or (49152 <= self.init_address <= 53247)):
+                    # Now we can finally confirm allowed RSID init address ranges
+                    # ($07E8 - $9FFF, $C000 - $CFFF)
+                    if not ((2024 <= self.init_address <= 40959) or
+                            (49152 <= self.init_address <= 53247)):
                         raise ChiptuneSAKValueError("Error: invalid RSID init address")
 
             # From documentation:
@@ -1161,53 +1182,6 @@ class SidImport:
             sid_dump.sid_base_addrs.append(sid_dump.sid_file.sid2_address)
         if sid_dump.sid_file.sid_count > 2:
             sid_dump.sid_base_addrs.append(sid_dump.sid_file.sid3_address)
-
-        # TODO: Implement this documentation (below)
-        """
-        From: https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
-
-        TODO: PSID/RSID: when speed flag set to CIA for the subtune, then 16,421 cycle
-        delay for PAL, and 17,045 cycle delay for NTSC
-
-        For PSID Files
-        --------------
-
-        The default C64 environment for PSID files is as follows:
-
-        VIC           : IRQ set to any raster value less than 0x100. Enabled when
-                    speed flag is 0, otherwise disabled.
-        CIA 1 timer A : set to 60Hz (0x4025 for PAL and 0x4295 for NTSC) with the
-                    counter running. IRQs active when speed flag is 1, otherwise
-                    IRQs are disabled.
-        Other timers  : disabled and loaded with 0xFFFF.
-
-        When the init and play addresses are called the bank register value must be
-        written for every call and the value is calculated as follows:
-
-        if   address <  $A000 -> 0x37 // I/O, Kernal-ROM, Basic-ROM
-        else address <  $D000 -> 0x36 // I/O, Kernal-ROM
-        else address >= $E000 -> 0x35 // I/O only
-        else                  -> 0x34 // RAM only
-
-        For RSID Files
-        --------------
-
-        The default C64 environment for RSID files is as follows:
-
-        VIC           : IRQ set to raster 0x137, but not enabled.
-        CIA 1 timer A : set to 60Hz (0x4025 for PAL and 0x4295 for NTSC) with the
-                    counter running and IRQs active.
-        Other timers  : disabled and loaded with 0xFFFF.
-        Bank register : 0x37
-
-        A side effect of the bank register is that init MUST NOT be located under a
-        ROM/IO memory area (addresses $A000-$BFFF and $D000-$FFFF) or outside the
-        load image. Since every effort needs to be made to run the tune on a real
-        C64 the load address of the image MUST NOT be set lower than $07E8.
-
-        If the C64 BASIC flag is set, the value at $030C must be set with the song
-        number to be played (0x00 for song 1).
-        """
 
         if len(sid_dump.sid_file.c64_payload) + sid_dump.sid_file.load_address >= 0x10000:
             raise ChiptuneSAKValueError("Error: SID data continues past end of C64 memory")

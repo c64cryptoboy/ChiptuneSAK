@@ -12,9 +12,9 @@ HVSC_LOG = project_to_absolute_path('res/HVSC72.zip')
 
 histograms_categories = [
     'magic_id', 'version', 'data_offset', 'load_address', 'init_address',
-    'play_address', 'num_subtunes', 'start_song', 'speed', 'flag_0', 'flag_1', 'clock',
-    'sid_model', 'sid2_model', 'sid3_model', 'start_page', 'page_length', 'sid2_address',
-    'sid3_address', 'sid_count', 'init_sets_irq', 'init_no_irq'
+    'play_address', 'num_subtunes', 'start_song', 'speed', 'compute sid player', 'flag_1',
+    'clock', 'sid_model', 'sid2_model', 'sid3_model', 'start_page', 'page_length',
+    'sid2_address', 'sid3_address', 'sid_count', 'init_sets_irq', 'init_no_irq', 'contains_basic'
 ]
 histograms = {category: {} for category in histograms_categories}
 
@@ -54,7 +54,7 @@ with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
         update_hist('num_subtunes', parsed.num_subtunes)
         update_hist('start_song', parsed.start_song)
         update_hist('speed', parsed.speed)
-        update_hist('flag_0', parsed.flag_0)
+        update_hist('compute sid player', parsed.flag_0)
         update_hist('flag_1', parsed.flag_1)
         update_hist('clock', parsed.decode_clock())
         update_hist('sid_model', parsed.decode_sid_model(parsed.sid_model))
@@ -65,6 +65,7 @@ with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
         update_hist('sid2_address', parsed.sid2_address)
         update_hist('sid3_address', parsed.sid3_address)
         update_hist('sid_count', parsed.sid_count)
+        update_hist('contains_basic', parsed.contains_basic())
 
 print("\nHistograms:")
 max_hist_entries_to_display = 20
@@ -85,9 +86,9 @@ for category, hist in histograms.items():
 '''
 Histograms:
 
-magic_id:
+magic_id:       
   b'PSID': 49119
-  b'RSID': 3208
+  b'RSID': 3208 
 
 version:
   2: 52121
@@ -229,12 +230,12 @@ speed (20 most common):
        32767: 4
            6: 4
 
-flag_0:
-  0: 52327
+compute sid player:
+  False: 52327
 
 flag_1:
-  0: 51832
-  1: 495
+  False: 51832
+   True: 495
 
 clock:
            PAL: 46309
@@ -330,4 +331,8 @@ init_sets_irq:
 
 init_no_irq:
   PSID: 49016
+
+contains_basic:
+  False: 51832
+   True: 495
 '''
