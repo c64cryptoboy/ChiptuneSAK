@@ -13,7 +13,7 @@ class Test6502Emulator(unittest.TestCase):
     def setUp(self):
         pass
 
-    # @unittest.skip("Debugging, so skipping this test for now")
+    # @unittest.skip("Skipping this test for now")
     def test_stack_wrapping(self):
         cpuState = emulator_6502.Cpu6502Emulator()
 
@@ -102,6 +102,7 @@ class Test6502Emulator(unittest.TestCase):
         cpuState.patch_kernal(0xffd2, [0x60])
 
         cpuState.init_cpu(32768)
+        cpuState.clear_memory_usage()
         cpuState.debug = False
 
         output_text = ""
@@ -111,6 +112,9 @@ class Test6502Emulator(unittest.TestCase):
                 output_text += chr(cpuState.a)
 
         self.assertTrue(output_text == '\rYOFA WAS HERE\r')
+
+        # cpuState.print_memory_usage()
+        # cpuState.print_stack()
 
     """
         Stuff the Commodore 64 Kernal/BASIC boot do not test:
@@ -145,7 +149,7 @@ class Test6502Emulator(unittest.TestCase):
         $96/150 STX zp,Y        $BA/186 TSX         $00/0 BRK
     """
 
-    #@unittest.skip("Skipping this test for now")
+    # @unittest.skip("Skipping this test for now")
     def test_C64_kernal_boot(self):
         cpuState = thin_c64_emulator.ThinC64Emulator()
 

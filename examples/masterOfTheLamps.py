@@ -52,7 +52,7 @@ to_extract = [
     # level 43
     [12, "tunnel 8", 86, 'Cm', 4, 4],
 ]
-#to_extract = [to_extract[8]]  # Debugging
+# to_extract = [to_extract[8]]  # Debugging
 
 
 def find_tunings():
@@ -105,7 +105,7 @@ def create_output_files(write_csv=True, write_midi=True):
             print("writing %s.mid" % filename_no_ext)
             rchirp_song = sid.to_rchirp()
 
-            chirp_song = rchirp_song.to_chirp(jiffies_per_quarter=32)
+            chirp_song = rchirp_song.to_chirp(jiffies_per_quarter=32)  # determines QPM/BPM
 
             chirp_song.set_key_signature(starting_key)
             chirp_song.set_time_signature(time_sig_top, time_sig_bottom)

@@ -64,10 +64,14 @@ cpucycles_table = [
 # stack has wrapped (i.e. 0 <= SP < STACK_WRAP_AREA).
 STACK_WRAP_AREA = 0x0f
 
+MEM_USAGE_READ  = 0b00000001  # noqa:E221
+MEM_USAGE_WRITE = 0b00000010
+
 
 class Cpu6502Emulator:
     def __init__(self):
         self.memory = 0x10000 * [0x00]  #: 64K memory as integers
+        self.mem_usage = 0x10000 * [0x00]  # help developers monitor a program's memory r/w usage
         self.a = 0  #: accumulator (byte)
         self.x = 0  #: x register (byte)
         self.y = 0  #: y register (byte)
@@ -2553,17 +2557,53 @@ class Cpu6502Emulator:
         """
         if not 0 <= word <= 65535:
             raise ChiptuneSAKValueError('Error: word value "%s" out of range' % word)
-        lo = word%256
-        hi = word//256
+        lo = word % 256
+        hi = word // 256
         self.set_mem(mem_loc, lo)
-        self.set_mem(mem_loc+1, hi)
+        self.set_mem(mem_loc + 1, hi)
 
     def inject_bytes(self, mem_loc, bytes):
+        """
+        Puts bytes directly into RAM (pays no attention to banking)
+
+        :param mem_loc: starting memory location
+        :type mem_loc: int
+        :param bytes: bytes to inject into RAM
+        :type bytes: bytes
+        """
         for i, a_byte in enumerate(bytes):
             self.memory[mem_loc + i] = a_byte
 
+    def clear_memory_usage(self):
+        """
+        Utility for debugging:  Clears the R/W memory usage tracking.
+        Useful for removing the records of memory setup actions before a program starts
+        running.
+        """
+        self.mem_usage = 0x10000 * [0x00]
+
     def print_stack(self):
+        """
+        Utility for debugging:  Print the stack ($100 to $1FF)
+        """
         print(hexdump(self.memory[256:512], 256))
+        print('current stack pointer ${:02x}'.format(self.sp))
+
+    def print_memory_usage(self):
+        """
+        Utility for debugging: Show what memory locations have had read or write actions
+        """
+        for loc, usage in enumerate(self.mem_usage):
+            if usage > 0:
+                output = '${:04x}/{:d} '.format(loc, loc)
+                if usage & MEM_USAGE_READ:
+                    output += 'R'
+                    if usage & MEM_USAGE_WRITE:
+                        output += '/'
+                if usage & MEM_USAGE_WRITE:
+                    output += 'W'
+                print(output)
+
 
 # The original C code used macros, which resulted in a crazy amount of polymorphism
 # Going to take the simple class approach to absorb some of that generality

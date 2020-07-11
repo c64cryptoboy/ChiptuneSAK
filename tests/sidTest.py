@@ -6,6 +6,7 @@ import chiptunesak
 from chiptunesak.sid import SID, SidImport
 from chiptunesak.constants import project_to_absolute_path, CONCERT_A, freq_arch_to_midi_num
 
+
 class sidTests(unittest.TestCase):
 
     # @unittest.skip("Skipping this test for now")
@@ -66,30 +67,36 @@ class sidTests(unittest.TestCase):
         # Scenario A: We imagine a wide vibrato on an f#2 strayed a little into
         # g2 teritory, so a f#2 is selected instead, because f#2 was the note on the previous
         # play call.
-        self.assertEqual(si_ntsc.get_note(very_flat_g2_freq,
-            vibrato_cents_margin=15, prev_note=g2_midi_num - 1), g2_midi_num - 1)
+        self.assertEqual(
+            si_ntsc.get_note(very_flat_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num - 1),
+            g2_midi_num - 1)
 
         # Scenario B: The g2 is very flat (nearly an f#2), but the previous note (vibrato or not)
         # was too far away to be the culprit, so it stays a g2
-        self.assertEqual(si_ntsc.get_note(very_flat_g2_freq,
-            vibrato_cents_margin=15, prev_note=g2_midi_num - 2), g2_midi_num)
+        self.assertEqual(
+            si_ntsc.get_note(very_flat_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num - 2),
+            g2_midi_num)
 
         # Scenario C: Like scenario A, except the flattness is not great enough to fall into
         # the vibrato_cents_margin setting, so the note remains unchanged
-        self.assertEqual(si_ntsc.get_note(flat_g2_freq,
-            vibrato_cents_margin=15, prev_note=g2_midi_num - 1), g2_midi_num)
+        self.assertEqual(
+            si_ntsc.get_note(flat_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num - 1),
+            g2_midi_num)
 
         # Scenario D: Like Scenario A, but from the other direction (big vibrato on a g#2)
-        self.assertEqual(si_ntsc.get_note(very_sharp_g2_freq,
-            vibrato_cents_margin=15, prev_note=g2_midi_num + 1), g2_midi_num + 1)
+        self.assertEqual(
+            si_ntsc.get_note(very_sharp_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num + 1),
+            g2_midi_num + 1)
 
         # Scenario E: Like Scenario B, but from the other direction again
-        self.assertEqual(si_ntsc.get_note(very_sharp_g2_freq,
-            vibrato_cents_margin=15, prev_note=g2_midi_num + 2), g2_midi_num)
+        self.assertEqual(
+            si_ntsc.get_note(very_sharp_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num + 2),
+            g2_midi_num)
 
         # Scenario F: Like Scenario C, but from the other direction again
-        self.assertEqual(si_ntsc.get_note(sharp_g2_freq,
-            vibrato_cents_margin=15, prev_note=g2_midi_num + 1), g2_midi_num)
+        self.assertEqual(
+            si_ntsc.get_note(sharp_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num + 1),
+            g2_midi_num)
 
     @unittest.skip("Skipping this test for now")
     def test_SID_extraction(self):
@@ -104,7 +111,7 @@ class sidTests(unittest.TestCase):
         sid = SID()
         sid.set_options(
             sid_in_filename=sid_filename,
-            subtune=0, # Main theme
+            subtune=0,  # Main theme
             # tuning=
             vibrato_cents_margin=10,
             seconds=180,
@@ -122,14 +129,14 @@ class sidTests(unittest.TestCase):
         sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
 
         rchirp_song = sid.to_rchirp()
-        # 192 play calls per quarter note means this play routine is probably
-        # called more than once per refresh
+
+        # TODO: 192 play calls per quarter note means we need to deal (in a generalized way)
+        # with the x8 multispeed going on here
         chirp_song = rchirp_song.to_chirp(jiffies_per_quarter=192)
-        chirp_song.set_key_signature('F') # optional
-        chirp_song.set_time_signature(4, 4) # optional
+        chirp_song.set_key_signature('F')  # optional
+        chirp_song.set_time_signature(4, 4)  # optional
         chiptunesak.MIDI().to_file(
             chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
-
 
         self.assertTrue(True)
 

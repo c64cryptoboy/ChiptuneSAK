@@ -86,9 +86,9 @@ for category, hist in histograms.items():
 '''
 Histograms:
 
-magic_id:       
+magic_id:
   b'PSID': 49119
-  b'RSID': 3208 
+  b'RSID': 3208
 
 version:
   2: 52121

@@ -353,7 +353,7 @@ class SidFile:
         self.c64_payload = None             #: The C64 payload
         self.load_addr_preamble = False     #: True if payload begins with 16-bit load addr
         self.flags = 0                      #: Collection of flags
-        self.flag_0 = False                 #: bit 0 from flags, True = Compute!'s Sidplayer MUS data
+        self.flag_0 = False                 #: bit 0 from flags, True = COMPUTE!'s Sidplayer MUS data
         self.flag_1 = False                 #: bit 1 from flags
         self.clock = 0                      #: video clock
         self.sid_model = 0                  #: SID1 chip type
@@ -366,8 +366,7 @@ class SidFile:
         self.sid_count = 1                  #: Number of SIDs used (1 to 3)
         self.is_rsid = None                 #: True if rsid, False if psid
 
-
-    def contains_basic(self): 
+    def contains_basic(self):
         # From documentation:
         # "If the C64 BASIC flag is set, the value at $030C must be set with the
         # song number to be played (0x00 for song 1)."
@@ -444,7 +443,7 @@ class SidFile:
 
         # FUTURE?
         # Assumed initial environment (if we want to up the fidelity of our emulation)
-        # 
+        #
         # PSID:
         # - if speed flag 0, raster IRQ on any value < 0x100
         # - if speed flag 1, CIA 1 timer A with NTSC/PAL KERNAL defaults with counter
@@ -454,7 +453,7 @@ class SidFile:
         # - raster IRQ set to 0x137, but not enabled
         # - CIA 1 timer A set to NTSC/PAL KERNAL defaults with counter running and
         #   IRQs active
- 
+
         if self.version == 1 or self.is_rsid:
             return False
 
@@ -465,7 +464,6 @@ class SidFile:
                 subtune = 31
 
         return self.speed & pow(2, subtune) != 0  # True if CIA IRQ, False if raster IRQ
-
 
     def parse_binary(self, sid_binary):
         """
@@ -628,8 +626,8 @@ class SidFile:
                         raise ChiptuneSAKValueError("Error: RSID flag 1 can't be set (BASIC) if init address != 0")
                     # Now we can finally confirm allowed RSID init address ranges
                     # ($07E8 - $9FFF, $C000 - $CFFF)
-                    if not ((2024 <= self.init_address <= 40959) or
-                            (49152 <= self.init_address <= 53247)):
+                    if not ((2024 <= self.init_address <= 40959)
+                            or (49152 <= self.init_address <= 53247)):
                         raise ChiptuneSAKValueError("Error: invalid RSID init address")
 
             # From documentation:
@@ -1147,7 +1145,6 @@ class SidImport:
 
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID play routine exited with a BRK")
-
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60):
         """

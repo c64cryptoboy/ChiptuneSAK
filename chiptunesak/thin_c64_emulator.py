@@ -3,10 +3,9 @@
 # Notes:
 # - All bank switching logic assumes the EXROM and GAME are both 1 (since not emulating
 #   cartridges)
-# 
+#
 # TODO:
-# - get_mem and set_mem mirroring needs to be overriden (or just removed) when we start to support
-#   2SID and 3SID
+# - will need to override get_mem and set_mem mirroring when we start to support 2SID and 3SID
 # - add hook of some kind:  If PC within BASIC or KERNAL, and that ROM is paged in, but
 #   the ROM wasn't loaded, then throw a stern warning.  This needs to be optional (default off),
 #   since in many places we stub our own ROM stuff, but this could be useful for SIDs.
@@ -90,6 +89,8 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         ])
 
     def get_mem(self, loc):
+        self.mem_usage[loc] |= emulator_6502.MEM_USAGE_READ
+
         if loc < 0xa000 or (0xc000 <= loc <= 0xcfff):
             return self.memory[loc]
 
@@ -159,6 +160,8 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         return self.memory[loc]
 
     def set_mem(self, loc, val):
+        self.mem_usage[loc] |= emulator_6502.MEM_USAGE_WRITE
+
         if not (0 <= val <= 255):
             exit("Error: POKE(%d),%d out of range" % (loc, val))
 
@@ -191,7 +194,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
             # Assuming that loc $0000 is always xxxxx111
             self.see_basic = self.see_kernal = self.see_io = self.see_char = False
 
-            # From https://www.c64-wiki.com/wiki/Bank_Switching
+            # From https://www.c64-wiki.com/wiki/Bank_Switching  (Validated)
             # Assumming the EXROM and GAME are both 1 (since not emulating cartridges),
             # here's the banks for the other three PLA latch states:
 
@@ -216,7 +219,6 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
                 self.see_io = True
             if 1 <= banks <= 3:
                 self.see_char = True
-
 
     def bank_in_IO(self):
         banks = self.memory[0x0001] & 0b00000111
