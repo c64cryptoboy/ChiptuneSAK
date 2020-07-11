@@ -349,7 +349,7 @@ class SidFile:
         self.play_address = None            #: often the play address
         self.num_subtunes = None            #: number of songs
         self.start_song = None              #: starting song
-        self.speed = None                   #: bitfield for each subtune indicating playback considerations
+        self.speed = None                   #: driver type for each subtune's play routine
         self.name = None                    #: SID name
         self.author = None                  #: SID author
         self.released = None                #: SID release details
@@ -367,7 +367,7 @@ class SidFile:
         self.sid2_address = 0               #: SID2 I/O starting address
         self.sid3_address = 0               #: SID3 I/O starting address
         self.sid_count = 1                  #: Number of SIDs used (1 to 3)
-
+        self.is_rsid = None                 #: True if rsid, False if psid
     def get_arch_from_headers(self):
         """
         Get ChiptuneSAK architecture type from SID headers
@@ -426,6 +426,28 @@ class SidFile:
 
         self.parse_binary(sid_binary)
 
+    def use_cia_timer(self, subtune):
+        """
+        Determines if play routine is driven by the CIA timer driver.  Defaults to 60Hz, but
+        can be changed by init and/or play routines.
+
+        :param subtune: subtune number (note: zero-indexed)
+        :type subtune: int
+        :return: True if speed bits designate CIA timer as the play routine driver
+        :rtype: boolean
+        """
+
+        if self.version == 1 or self.is_rsid:
+            return False
+
+        if subtune > 31:
+            if self.flag_1:
+                subtune %= 32
+            else:
+                subtune = 31
+
+        return self.speed & pow(2, subtune) != 0
+
     def parse_binary(self, sid_binary):
         """
         Parse a SID file binary
@@ -443,12 +465,13 @@ class SidFile:
         self.magic_id = sid_binary[0:4]
         if self.magic_id not in (b'PSID', b'RSID'):
             raise ChiptuneSAKValueError("Error: unexpected sid magic id")
+        self.is_rsid = (self.magic_id == b'RSID')
 
         # version is 0x0001 to 0x0004.  IFF >= 0x0002 means PSID v2NG or RSID
         self.version = big_endian_int(sid_binary[4:6])
         if not (1 <= self.version <= 4):
             raise ChiptuneSAKValueError("Error: unexpected SID version number")
-        if self.magic_id == 'RSID' and self.version == 1:
+        if self.is_rsid and self.version == 1:
             raise ChiptuneSAKValueError("Error: RSID can't be SID version 1")
 
         # Offset from the start of the file to the C64 binary data area
@@ -460,15 +483,13 @@ class SidFile:
 
         # load address is the starting memory location for the C64 payload.  0x0000 indicates
         # that the first two bytes of the payload contain the little-endian load address (which
-        # is always true for RSID files, even though they can't specify 0x0000 as the load address).
+        # is always true for RSID files).
         # If the first two bytes of the C64 payload are not the load address, this must not be zero.
         # Conversely, if this is a PSID with an loading address preamble to the C64 payload, this
         # must be zero.
         self.load_address = big_endian_int(sid_binary[8:10])
-        if self.load_address == 0 or self.magic_id == b'RSID':
+        if self.load_address == 0 or self.is_rsid:
             self.load_addr_preamble = True
-        if self.magic_id == 'RSID' and self.load_address < 2024:  # < $07E8
-            raise ChiptuneSAKValueError("Error: invalid RSID load address")
 
         # init address is the entry point for the song initialization.
         # If PSID and 0, will be set to the loading address
@@ -481,7 +502,7 @@ class SidFile:
         # expected to install an interrupt handler, which then calls the music player at
         # some place. This must always be true for RSID files.""
         self.play_address = big_endian_int(sid_binary[12:14])
-        if self.magic_id == 'RSID' and self.play_address != 0:
+        if self.is_rsid and self.play_address != 0:
             raise ChiptuneSAKValueError("Error: RSIDs don't specify a play address")
 
         # From documentation:
@@ -523,7 +544,7 @@ class SidFile:
         # v2NG! See also the 'clock' (video standard) field described below for 'flags'."
 
         self.speed = big_endian_int(sid_binary[18:22])
-        if self.magic_id == 'RSID' and self.speed != 0:
+        if self.is_rsid and self.speed != 0:
             raise ChiptuneSAKValueError("Error: RSIDs don't specify a speed setting")
 
         # name, author, and released (formerally copyright) fields.  From the docs:
@@ -579,7 +600,7 @@ class SidFile:
             # be played (with the BASIC portion executed) if the C64 BASIC flag is set. At
             # the same time, initAddress must be 0.""
             self.flag_1 = (self.flags & 0b00000010) >> 1
-            if self.magic_id == 'RSID':
+            if self.is_rsid:
                 if self.init_address == 0:
                     if self.flag_1 == 0:
                         raise ChiptuneSAKValueError("Error: RSID can't have init address zero unless BASIC included")
@@ -729,6 +750,9 @@ class SidFile:
             if self.load_addr_preamble:
                 self.load_address = self.get_load_addr_from_payload()
                 self.c64_payload = self.c64_payload[2:]
+
+            if self.is_rsid and self.load_address < 2024:  # < $07E8
+                raise ChiptuneSAKValueError("Error: invalid RSID load address")
 
     def get_payload_length(self):
         """
@@ -1191,7 +1215,7 @@ class SidImport:
         self.cpu_state.inject_bytes(sid_dump.sid_file.load_address, sid_dump.sid_file.c64_payload)
 
         # Bank out ROMs, the SID init can bring them back in if it wants to
-        self.cpu_state.set_mem(0x01, 0b00110101)
+        self.cpu_state.set_mem(0x0001, 0b00110101)
 
         self.cpu_state.debug = False
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)

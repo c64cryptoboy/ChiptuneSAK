@@ -25,6 +25,7 @@
 # - throw an exception if the break flag ever appears on flags
 
 from chiptunesak.errors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError
+from chiptunesak.byte_util import hexdump
 
 # 6502 vector locations
 NMI = 0xfffa  # on C64, vector points to NMI routine at $FE43/65091
@@ -2531,12 +2532,38 @@ class Cpu6502Emulator:
         raise ChiptuneSAKNotImplemented("Error: unknown/unimplemented opcode %s at %s" % (hex(instruction), hex(self.pc - 1)))
 
     def get_le_word(self, mem_loc):
+        """
+        Get a little-endian 16-bit value from a given memory loc
+
+        :param mem_loc: location from which to retreive 16-bit value
+        :type mem_loc: int
+        :return: 16-bit le value at mem_loc
+        :rtype: int
+        """
         return self.get_mem(mem_loc) | (self.get_mem(mem_loc + 1) << 8)
+
+    def set_le_word(self, mem_loc, word):
+        """
+        Set a little-endian 16-bit value at the given memory loc
+
+        :param mem_loc: location at which to set 16-bit value
+        :type mem_loc: int
+        :param word: value to store in memory
+        :type word: int
+        """
+        if not 0 <= word <= 65535:
+            raise ChiptuneSAKValueError('Error: word value "%s" out of range' % word)
+        lo = word%256
+        hi = word//256
+        self.set_mem(mem_loc, lo)
+        self.set_mem(mem_loc+1, hi)
 
     def inject_bytes(self, mem_loc, bytes):
         for i, a_byte in enumerate(bytes):
             self.memory[mem_loc + i] = a_byte
 
+    def print_stack(self):
+        print(hexdump(self.memory[256:512], 256))
 
 # The original C code used macros, which resulted in a crazy amount of polymorphism
 # Going to take the simple class approach to absorb some of that generality

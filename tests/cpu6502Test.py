@@ -76,6 +76,7 @@ class Test6502Emulator(unittest.TestCase):
         # Note: signature line is obfuscated by changing XOR mask
 
         cpuState = thin_c64_emulator.ThinC64Emulator()
+        cpuState.exit_on_empty_stack = True  # Stop when we hit the RTS
 
         """
         10 A=32768:FORB=ATOA+27:READC:POKEB,C:NEXT:SYSA
@@ -97,10 +98,11 @@ class Test6502Emulator(unittest.TestCase):
 
         cpuState.inject_bytes(32768, test_prog)
 
-        # Memory Patch:  Since kernal ROM not loaded, make $FFD2 just an RTS
+        # monkey patch:  since KERNAL ROM not loaded, make $FFD2 just an RTS
         cpuState.patch_kernal(0xffd2, [0x60])
 
         cpuState.init_cpu(32768)
+        cpuState.debug = False
 
         output_text = ""
         while cpuState.runcpu():
@@ -143,7 +145,7 @@ class Test6502Emulator(unittest.TestCase):
         $96/150 STX zp,Y        $BA/186 TSX         $00/0 BRK
     """
 
-    # @unittest.skip("Debugging, so skipping this test for now")
+    #@unittest.skip("Skipping this test for now")
     def test_C64_kernal_boot(self):
         cpuState = thin_c64_emulator.ThinC64Emulator()
 

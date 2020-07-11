@@ -16,6 +16,10 @@ from chiptunesak.byte_util import read_binary_file
 from chiptunesak.errors import ChiptuneSAKContentError
 from chiptunesak import emulator_6502
 
+# KERNAL ROM $FDDD-FDF3 gives these CIA#1 timer A cycle counts:
+CIA_TIMER_NTSC = 17045
+CIA_TIMER_PAL = 16421
+
 
 class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
     def __init__(self, arch=constants.DEFAULT_ARCH):
@@ -26,22 +30,27 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         self.has_kernal = False
         self.has_char = False
 
-        # True if paged in
-        self.see_basic = True
-        self.see_kernal = True
-        self.see_char = False
-        self.see_io = True
-
         self.rom_kernal = [0] * 8192   # KERNAL ROM 57344-65535 ($E000-$FFFF)
         self.rom_basic = [0] * 8192     # BASIC ROM 40960-49151 ($A000-$BFFF)
         self.rom_char = [0] * 4096      # Character set ROM 53248-57343 ($D000-$DFFF)
         self.registers_io = [0] * 4096  # Pretending I/O ($D000-$DFFF) are all registers
 
-        # RSID and PSID require this from an emulated environment
-        if arch.startswith("PAL-"):  # TODO Q: Should we be doing this based on partial string matching?
-            self.memory[0x02a6] = 0x01  # PAL
-        else:
+        self.is_ntsc = arch.startswith("NTSC")  # False if PAL
+
+        self.see_basic = None
+        self.see_kernal = None
+        self.see_char = None
+        self.see_io = None
+        # bank in BASIC, KERNAL, and I/O (not char)
+        self.set_mem(0x0001, 0b00110111)  # Sets the above four booleans
+
+        # SID file specs say setting $02A6 is required
+        if self.is_ntsc:
             self.memory[0x02a6] = 0x00  # NTSC
+            self.set_le_word(0xdc04, CIA_TIMER_NTSC)
+        else:
+            self.memory[0x02a6] = 0x01  # PAL
+            self.set_le_word(0xdc04, CIA_TIMER_PAL)
 
         # set kernal ROM hardware vectors to their kernal entry points
         # - $FFFA non-maskable interrupt vector points to NMI routine at $FE43
@@ -238,9 +247,6 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
             self.set_mem(0x0001, 0b110)
         else:
             pass  # I/O already banked in, nothing to change
-
-
-
 
     def load_rom(self, path_and_filename, expected_size):
         binary = read_binary_file(path_and_filename)

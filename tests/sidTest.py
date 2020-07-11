@@ -2,11 +2,13 @@
 # - this hardly covers all the sid functionality, need to add many more tests
 
 import unittest
+import chiptunesak
 from chiptunesak.sid import SID, SidImport
 from chiptunesak.constants import project_to_absolute_path, CONCERT_A, freq_arch_to_midi_num
 
 class sidTests(unittest.TestCase):
 
+    # @unittest.skip("Skipping this test for now")
     def test_SID_freqs_to_midi_notes(self):
         si_ntsc = SidImport(arch='NTSC-C64', tuning=CONCERT_A)
         si_pal = SidImport(arch='PAL-C64', tuning=CONCERT_A)
@@ -89,8 +91,8 @@ class sidTests(unittest.TestCase):
         self.assertEqual(si_ntsc.get_note(sharp_g2_freq,
             vibrato_cents_margin=15, prev_note=g2_midi_num + 1), g2_midi_num)
 
-
-    def test_SID_play_routine_sampling(self):
+    @unittest.skip("Skipping this test for now")
+    def test_SID_extraction(self):
         # TODO
         # Test SID import for expected values in RChirp
         #
@@ -105,21 +107,33 @@ class sidTests(unittest.TestCase):
             subtune=0, # Main theme
             # tuning=
             vibrato_cents_margin=10,
-            seconds=30,
-            gcf_row_reduce=False,
+            seconds=180,
+            gcf_row_reduce=True,
         )
 
-        #sid_dump = sid.capture()
+        sid_dump = sid.capture()
+
+        # TODO: check for expected SID parsed values (author name, speed bits, etc.)
 
         # debugging
-        # filename_no_ext = project_to_absolute_path('res/deleteme')
-        # print("writing %s.csv" % filename_no_ext)
-        # sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
+        filename_no_ext = project_to_absolute_path('res/deleteme')
+
+        print("writing %s.csv" % filename_no_ext)
+        sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
+
+        rchirp_song = sid.to_rchirp()
+        # 192 play calls per quarter note means this play routine is probably
+        # called more than once per refresh
+        chirp_song = rchirp_song.to_chirp(jiffies_per_quarter=192)
+        chirp_song.set_key_signature('F') # optional
+        chirp_song.set_time_signature(4, 4) # optional
+        chiptunesak.MIDI().to_file(
+            chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
 
 
         self.assertTrue(True)
-        
 
+    @unittest.skip("Skipping this test for now")
     def test_tuning(self):
         # TODO:
         # Measure tunings from a set of notes, then using that tuning, measure that the

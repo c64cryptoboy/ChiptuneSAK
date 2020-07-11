@@ -41,16 +41,16 @@ with zipfile.ZipFile(HVSC_LOG, 'r') as hvsc_zip:
         update_hist('load_address', parsed.load_address)
         update_hist('init_address', parsed.init_address)
         update_hist('play_address', parsed.play_address)
-        if parsed.magic_id == b'PSID':
-            if parsed.play_address == 0:
-                update_hist('init_sets_irq', 'PSID')
-            else:
-                update_hist('init_no_irq', 'PSID')
-        else:
+        if parsed.is_rsid:
             if parsed.play_address == 0:
                 update_hist('init_sets_irq', 'RSID')
             else:
                 update_hist('init_no_irq', 'RSID')
+        else:
+            if parsed.play_address == 0:
+                update_hist('init_sets_irq', 'PSID')
+            else:
+                update_hist('init_no_irq', 'PSID')
         update_hist('num_subtunes', parsed.num_subtunes)
         update_hist('start_song', parsed.start_song)
         update_hist('speed', parsed.speed)

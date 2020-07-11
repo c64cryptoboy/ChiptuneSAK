@@ -814,7 +814,10 @@ class TestSuitesForC64(unittest.TestCase):
         # skip the BASIC stub that starts at $801 (POKE2,0:SYS2070)
         # state gets reset between tests automaticlaly via each separate cpu instance
         cpuState.init_cpu(2070)  # $816
-        cpuState.exit_on_empty_stack = False  # wrapping required by TXS test
+
+        # wrapping required by TXS test, and we exit by checking for the IO load
+        # that would happen on a C64 to get the next test
+        cpuState.exit_on_empty_stack = False
 
         # This http://www.softwolves.com/arkiv/cbm-hackers/7/7114.html says when loading
         # a test yourself (instead of using test code's loader), do these settings:
@@ -885,13 +888,16 @@ class TestSuitesForC64(unittest.TestCase):
         self.assertTrue(passed_test)
 
     # on my machine, takes about 1.5 min to run
-    # @unittest.skip("Debugging, so skipping this test for now")
+    #@unittest.skip("Debugging, so skipping this test for now")
     def test_bcd(self):
         global cpuState
 
+        print("Running BCD tests...")
+        
         # test code wants to use location 1 as storage, so don't want c64 emulation
         # with bank management, just the 6502 emulator
         cpuState = emulator_6502.Cpu6502Emulator()
+        cpuState.exit_on_empty_stack = True
 
         test_prg = read_binary_file(project_to_absolute_path(
             'tests/emulatorTests/klausDormannTestsBin/6502_decimal_test.bin'))
