@@ -1189,7 +1189,22 @@ class SidImport:
         self.cpu_state.set_mem(0x0001, 0b00110101)
 
         self.cpu_state.debug = False
+        self.cpu_state.clear_memory_usage()  # clear out R/W values due to above init
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)
+
+        # self.cpu_state.print_memory_usage()
+
+        if self.arch == 'PAL-C64':
+            expected_cia_timer = thin_c64_emulator.CIA_TIMER_PAL
+        elif self.arch == 'NTSC-C64':
+            expected_cia_timer = thin_c64_emulator.CIA_TIMER_NTSC
+        else:
+            raise Exception('Error: unexpected architecture type "%s"' % self.arch)
+
+        # TODO: super small change init banked out I/O, so fix that here before checking CIA timer
+        cia_timer = self.cpu_state.get_le_word(0xdc04)
+        if cia_timer != expected_cia_timer:
+            print("multi-speed factor set in init: x{:f}".format(expected_cia_timer / cia_timer))
 
         # When play address is 0, the init routine installs an interrupt handler which calls
         # the music player (always the case with RSID files).  This attempts to get the play
