@@ -37,6 +37,16 @@ MIDI
     :show-inheritance:
     :noindex:
 
+SID
+---
+
+.. currentmodule:: chiptunesak.sid
+
+.. autoclass:: SID
+    :members: to_rchirp, to_csv_file
+    :show-inheritance:
+    :noindex:
+
 GoatTracker
 ---------------------
 

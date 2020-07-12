@@ -83,7 +83,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * [ABC](http://abcnotation.com/wiki/abc:standard:v2.1) Notation: Human-readable music format.  Used to allow user-submitted music in online games including Starbound, Lord of the Rings Online, and Shroud of the Avatar
 * jellybiscuits [Music Box Composer](http://www.jellybiscuits.com/?page_id=951) file format
 * A [Rob Hubbard engine](https://www.1xn.org/text/C64/rob_hubbards_music.txt)
-* RobTracker v1.11 (publicly released Dec 25th. 2019)
+* Other tracker file formats, such as RobTracker v1.11 (publicly released Dec 25th. 2019) or JCH's [SID Factory II](http://olivi.chordian.net/category/sid-factory-ii/)
 
 ## Recent milestones
 
