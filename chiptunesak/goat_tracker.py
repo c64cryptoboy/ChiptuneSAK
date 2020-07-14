@@ -1020,7 +1020,7 @@ class GTSong:
                     cs.curr_tempo = ad
 
         global_tick = -1
-        # Step through each tick.  For each tick, evaluate the state of each channel.
+        # Step through each tick (frame).  For each tick, evaluate the state of each channel.
         # Continue until all channels have hit the end of their respective orderlists
         while not all(cs.restarted for cs in channels_state):
             # When not using multispeed, tempo = ticks per row = screen refreshes per row.
@@ -1037,8 +1037,8 @@ class GTSong:
                     continue
 
                 rc_row = rchirp.RChirpRow()
-                rc_row.jiffy_num = global_tick
-                rc_row.jiffy_len = cs.curr_tempo
+                rc_row.milliframe_num = global_tick * 1000
+                rc_row.milliframe_len = cs.curr_tempo * 1000
 
                 # KeyOff (only recorded if there's a curr_note defined)
                 if cs.row_has_key_off:
@@ -1068,7 +1068,7 @@ class GTSong:
                         cs.curr_funktable_index = cs.local_tempo_update
                         # convert into a normal tempo change
                         cs.curr_tempo = GtChannelState.funktable[cs.curr_funktable_index]
-                    rc_row.jiffy_len = cs.curr_tempo
+                    rc_row.milliframe_len = cs.curr_tempo * 1000
 
                 # this channel signals a global tempo change that will affect all the channels
                 # once out of this per-channel loop
@@ -1096,7 +1096,7 @@ class GTSong:
                     # But if it's the very start of a new row, then override with the new global tempo
                     if cs.first_tick_of_row:
                         cs.row_ticks_left = new_tempo
-                        current_rc_row.jiffy_len = new_tempo
+                        current_rc_row.milliframe_len = new_tempo * 1000
 
                     cs.curr_tempo = new_tempo
 
@@ -1209,10 +1209,10 @@ class GTSong:
                     elif r.gate is False:  # if ending a note ('false' check because tri-state)
                         gt_row.note_data = GT_KEY_OFF
                         gt_row.instr_num = r.instr_num
-                    if r.new_jiffy_tempo is not None:
+                    if r.new_milliframe_tempo is not None:
                         gt_row.command = GT_TEMPO_CHNG_CMD
                         # insert local channel tempo change
-                        gt_row.command_data = r.new_jiffy_tempo + 0x80
+                        gt_row.command_data = r.new_milliframe_tempo // 1000  + 0x80
                     pattern.append(gt_row)
                 pattern.append(PATTERN_END_ROW)  # finish with end row marker
                 patterns.append(pattern)
@@ -1270,10 +1270,10 @@ class GTSong:
                         elif rchirp_row.gate is False:  # if ending a note ('false' check because tri-state)
                             gt_row.note_data = GT_KEY_OFF
 
-                        if rchirp_row.new_jiffy_tempo is not None:
+                        if rchirp_row.new_milliframe_tempo is not None:
                             gt_row.command = GT_TEMPO_CHNG_CMD
                             # insert local channel tempo change
-                            gt_row.command_data = rchirp_row.new_jiffy_tempo + 0x80
+                            gt_row.command_data = rchirp_row.new_milliframe_tempo // 1000 + 0x80
                         pattern.append(gt_row)
                     else:
                         pattern.append(PATTERN_EMPTY_ROW)

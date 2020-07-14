@@ -36,12 +36,12 @@ def op_row_match(r1, r2, xf=None):
     else:
         note_match = r1.note_num == r2.note_num
     return (
-        note_match
-        and r1.instr_num == r2.instr_num
-        and r1.new_instrument == r2.new_instrument
-        and r1.gate == r2.gate
-        and r1.jiffy_len == r2.jiffy_len
-        and r1.new_jiffy_tempo == r2.new_jiffy_tempo
+            note_match
+            and r1.instr_num == r2.instr_num
+            and r1.new_instrument == r2.new_instrument
+            and r1.gate == r2.gate
+            and r1.milliframe_len == r2.milliframe_len
+            and r1.new_milliframe_tempo == r2.new_milliframe_tempo
     )
 
 
@@ -86,8 +86,8 @@ def apply_xform(row, xform):
     ret_row = copy.copy(row)
     if ret_row.note_num is not None:
         ret_row.note_num += xform.transpose
-    if ret_row.jiffy_len is not None:
-        ret_row.jiffy_len *= xform.stretch
+    if ret_row.milliframe_len is not None:
+        ret_row.milliframe_len *= xform.stretch
     return ret_row
 
 

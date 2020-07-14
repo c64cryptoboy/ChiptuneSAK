@@ -125,7 +125,7 @@ class SID(ChiptuneSAKIO):
             for chip_num, chip in enumerate(sd_row.chips):
                 for chn_num, chn in enumerate(chip.channels):
                     rc_row = rchirp.RChirpRow()
-                    rc_row.jiffy_num = sd_row.frame_num
+                    rc_row.milliframe_num = sd_row.frame_num
 
                     if chn.note is not None:
                         rc_row.note_num = chn.note
