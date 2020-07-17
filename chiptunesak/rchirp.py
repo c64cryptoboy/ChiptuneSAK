@@ -1,7 +1,7 @@
 # cstRChirp.py
 #
 # RChirp is a row-based verison of chirp, useful for export from and to trackers,
-# and other jiffy-based music players.
+# and other interrupt-based music players.
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms.
 # Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
@@ -27,12 +27,12 @@ class RChirpRow:
     The basic RChirp row
     """
     row_num: int = None           #: rchirp row number
-    milliframe_num: int = None    #: jiffy  * 1000 num since time 0
+    milliframe_num: int = None    #: frames / 1000 since time 0
     note_num: int = None          #: MIDI note number; None means no note asserted
     instr_num: int = None         #: Instrument number
     new_instrument: int = None    #: Indicates new instrument number; None means no change
     gate: bool = None             #: Gate on/off tri-value True/False/None; None means no gate change
-    milliframe_len: int = None    #: Jiffies * 1000 to process this row (until next row)
+    milliframe_len: int = None    #: frames * 1000 to process this row (until next row)
     new_milliframe_tempo: int = None   #: Indicates new tempo for channel (not global); None means no change
 
     def match(self, other):
@@ -349,29 +349,29 @@ class RChirpVoice:
         self.name = chirp_track.name
 
         # Right now don't allow tempo variations; just use the initial tempo
-        ticks_per_jiffy = (self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60) \
-                          / constants.ARCH[self.rchirp_song.arch].frame_rate
-        jiffies_per_row = int(round(chirp_track.qticks_notes // ticks_per_jiffy))
-        ticks_per_row = ticks_per_jiffy * jiffies_per_row
+        ticks_per_frame = ((self.rchirp_song.metadata.qpm * self.rchirp_song.metadata.ppq / 60)
+                           / constants.ARCH[self.rchirp_song.arch].frame_rate)
+        frames_per_row = int(round(chirp_track.qticks_notes // ticks_per_frame))
+        ticks_per_row = ticks_per_frame * frames_per_row
         rows_per_quarter = int(round(self.rchirp_song.metadata.ppq / ticks_per_row))
-        jiffies_per_quarter = rows_per_quarter * jiffies_per_row
-        jiffies_per_row = jiffies_per_quarter * chirp_track.qticks_notes // self.rchirp_song.metadata.ppq
+        frames_per_quarter = rows_per_quarter * frames_per_row
+        frames_per_row = frames_per_quarter * chirp_track.qticks_notes // self.rchirp_song.metadata.ppq
         ticks_per_row = chirp_track.qticks_notes
         tmp_rows = collections.defaultdict(RChirpRow)
 
         # Always insert a row number 0
         tmp_rows[0] = RChirpRow(row_num=0,
                                 milliframe_num=0,
-                                milliframe_len=jiffies_per_row * 1000,
-                                new_milliframe_tempo=jiffies_per_row * 1000)
+                                milliframe_len=frames_per_row * 1000,
+                                new_milliframe_tempo=frames_per_row * 1000)
         # Insert the notes into the voice
         for n in chirp_track.notes:
             n_row = int(n.start_time // ticks_per_row)  # Note: if tempo varies this gets complicated.
             tmp_rows[n_row].row_num = n_row
-            tmp_rows[n_row].milliframe_num = n_row * jiffies_per_row * 1000
+            tmp_rows[n_row].milliframe_num = n_row * frames_per_row * 1000
             tmp_rows[n_row].note_num = n.note_num
             tmp_rows[n_row].gate = True
-            tmp_rows[n_row].milliframe_len = jiffies_per_row * 1000
+            tmp_rows[n_row].milliframe_len = frames_per_row * 1000
             e_row = int((n.start_time + n.duration) // ticks_per_row)
             tmp_rows[e_row].gate = False
 
@@ -455,7 +455,7 @@ class RChirpSong(ChiptuneSAKBase):
 
     def remove_tempo_changes(self):
         """
-        Removes and tempo changes and sets jiffies_per_row constant for the entire song. This
+        Removes tempo changes and sets milliframes_per_row constant for the entire song. This
         method is used to eliminate accelerandos and ritarandos throughout the song for better
         conversion to Chirp.
 
@@ -624,7 +624,7 @@ class RChirpSong(ChiptuneSAKBase):
         song.name = self.metadata.name
         song.set_options(arch=self.arch)  # So that round-trip will return the same arch
         note_milliframe_nums = [v.rows[r].milliframe_num for v in self.voices
-                           for r in v.rows if v.rows[r].gate is not None]
+                                for r in v.rows if v.rows[r].gate is not None]
         note_milliframe_nums.sort()
         notes_offset_mf = note_milliframe_nums[0]
         frames_per_quarter = self.get_option('frames_per_quarter', None)
@@ -633,7 +633,7 @@ class RChirpSong(ChiptuneSAKBase):
             # find the minimum divisor for note length
             milliframes_per_note = reduce(math.gcd, (t - notes_offset_mf for t in note_milliframe_nums))
 
-            # Guess: Set the minimum divisor to be a sixteenth note.     
+            # Guess: Set the minimum divisor to be a sixteenth note.
             frames_per_quarter = 4 * milliframes_per_note // 1000
 
         midi_ticks_per_quarter = constants.DEFAULT_MIDI_PPQN

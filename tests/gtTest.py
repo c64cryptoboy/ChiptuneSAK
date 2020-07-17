@@ -34,7 +34,8 @@ SNG_TEST_FILE = project_to_absolute_path('tests/data/gtTestData.sng')
 #     for rchirp_row in voice.sorted_rows():
 #         if rchirp_row.gate:
 #             midi_note_name = base.pitch_to_note_name(rchirp_row.note_num)
-#             channel_note_on_events.append('(%d, "%s")' % (rchirp_row.jiffy_num, midi_note_name))
+#             channel_note_on_events.append('(%d, "%s")' \
+#                 % (rchirp_row.milliframe_num * 1000, midi_note_name))
 #     line = '    (' + ', '.join(channel_note_on_events) + '),'
 #     print(line)
 # print(')')
@@ -69,8 +70,8 @@ class TestGoatTrackerFunctions(unittest.TestCase):
         for i, expected_channel in enumerate(EXPECTED_CHANNELS):
             with self.subTest(i=i):
                 actual_channel = {v.milliframe_num: v for k, v in rchirp_song.voices[i].rows.items()}
-                for expected_jiffy, expected_note in expected_channel:
-                    rchirp_row = actual_channel[expected_jiffy*1000]
+                for expected_frame, expected_note in expected_channel:
+                    rchirp_row = actual_channel[expected_frame * 1000]
                     self.assertIsNotNone(rchirp_row, "Null Row in channel %d" % i)
                     actual_note = base.pitch_to_note_name(rchirp_row.note_num)  # do enharmonic comparison
                     self.assertEqual(actual_note, expected_note)

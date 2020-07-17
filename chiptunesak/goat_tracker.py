@@ -971,7 +971,7 @@ class GTSong:
 
         In GoatTracker any channel can change all the channels' tempos or just its own tempo
         at any time.  This is too complex for RChirp representation.  So this code simulates
-        the playback on a jiffy (aka frame)-by-jiffy basis, "unrolling" the tempos.
+        the playback on a frame-by-frame (aka jiffy) basis, "unrolling" the tempos.
         What's left is only per-channel tempo changes, which can be different from the other
         channels (an important tracker feature worth preserving).
 
@@ -994,7 +994,7 @@ class GTSong:
         rchirp_song.metadata.composer = self.headers.author_name
         rchirp_song.metadata.copyright = self.headers.copyright
 
-        # init state holders for each channel to use as we step through each tick (aka jiffy aka frame)
+        # init state holders for each channel to use as we step through each tick (aka frame)
         channels_state = [GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i]) for i in range(self.num_channels)]
 
         rchirp_song.voices = [rchirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
@@ -1212,7 +1212,7 @@ class GTSong:
                     if r.new_milliframe_tempo is not None:
                         gt_row.command = GT_TEMPO_CHNG_CMD
                         # insert local channel tempo change
-                        gt_row.command_data = r.new_milliframe_tempo // 1000  + 0x80
+                        gt_row.command_data = r.new_milliframe_tempo // 1000 + 0x80
                     pattern.append(gt_row)
                 pattern.append(PATTERN_END_ROW)  # finish with end row marker
                 patterns.append(pattern)

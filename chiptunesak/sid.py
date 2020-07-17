@@ -278,12 +278,12 @@ class SID(ChiptuneSAKIO):
     def reduce_rows(self, sid_dump, rows_with_activity):
         """
         The SidImport class samples SID chip state after each call to the play routine.
-        This creates 1 row per jiffy (multi-speed not yet supported).
-        In most trackers, this would require speed 1 playback (1 jiffy per row), which
-        cannot be achieved.  So this method attempts to reduce the number of rows in the
-        representaton.  It does so by computing the greatest common divisor for the
-        count of inactive rows between active rows, and then eliminates the unnecessary
-        rows (while preserving rhythm structure).
+        This creates 1 row per play call.  For non-multispeed, in most trackers,
+        this would require speed 1 playback (1 frame per row), which cannot be achieved
+        (again, without multispeed).  So this method attempts to reduce the number of
+        rows in the representaton.  It does so by computing the greatest common divisor
+        for the count of inactive rows between active rows, and then eliminates the
+        unnecessary rows (while preserving rhythm structure).
 
         # TODO: A row in cvs output contains all channels at a point in time.  A row
         # in rchirp contains only one channel.  When not making CVS output, better
