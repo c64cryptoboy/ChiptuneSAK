@@ -105,7 +105,10 @@ def create_output_files(write_csv=True, write_midi=True):
             print("writing %s.mid" % filename_no_ext)
             rchirp_song = sid.to_rchirp()
 
-            chirp_song = rchirp_song.to_chirp(frames_per_quarter=32)  # determines QPM/BPM
+            play_calls_per_quarter = 32  # can see this in the csv output
+            # milliframes_per_quarter determines proper QPM/BPM
+            chirp_song = \
+                rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
 
             chirp_song.set_key_signature(starting_key)
             chirp_song.set_time_signature(time_sig_top, time_sig_bottom)

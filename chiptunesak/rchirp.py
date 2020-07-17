@@ -627,15 +627,16 @@ class RChirpSong(ChiptuneSAKBase):
                                 for r in v.rows if v.rows[r].gate is not None]
         note_milliframe_nums.sort()
         notes_offset_mf = note_milliframe_nums[0]
-        frames_per_quarter = self.get_option('frames_per_quarter', None)
-        if frames_per_quarter is None:
+        milliframes_per_quarter = self.get_option('milliframes_per_quarter', None)
+        if milliframes_per_quarter is None:
 
             # find the minimum divisor for note length
             milliframes_per_note = reduce(math.gcd, (t - notes_offset_mf for t in note_milliframe_nums))
 
             # Guess: Set the minimum divisor to be a sixteenth note.
-            frames_per_quarter = 4 * milliframes_per_note // 1000
+            milliframes_per_quarter = 4 * milliframes_per_note
 
+        frames_per_quarter = milliframes_per_quarter // 1000
         midi_ticks_per_quarter = constants.DEFAULT_MIDI_PPQN
         qpm = constants.ARCH[self.arch].frame_rate * 60 // frames_per_quarter
         song.set_qpm(qpm)

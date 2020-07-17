@@ -135,7 +135,11 @@ class sidTests(unittest.TestCase):
         # TODO: 192 play calls per quarter note means we need to deal (in a generalized way)
         # with the x8 multispeed going on here
         # TODO: won't be jiffies.  Should probably be based on multispeed measurement inside of the sid dump (which gets copied to the sid instance?)
-        chirp_song = rchirp_song.to_chirp(frames_per_quarter=192)
+        # TODO: rchirp is going to assume non-multispeed using
+        #     qpm = constants.ARCH[self.arch].frame_rate * 60 // frames_per_quarter
+        #     So scale this down before passing in?
+        play_calls_per_quarter = 192
+        chirp_song = rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
         chirp_song.set_key_signature('F')  # optional
         chirp_song.set_time_signature(4, 4)  # optional
         chiptunesak.MIDI().to_file(

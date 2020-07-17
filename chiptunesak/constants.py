@@ -93,6 +93,7 @@ class ArchDescription:
         return self.system_clock / self.cycles_per_frame
 
     @property
+    # e.g., 'PAL-C64' is ~19.95ms
     def ms_per_frame(self):
         return 1000. / self.frame_rate
 
