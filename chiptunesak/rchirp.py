@@ -466,8 +466,8 @@ class RChirpSong(ChiptuneSAKBase):
             r_min = min(v.rows)
             first_row = v.rows[r_min]
             milliframes_per_row = first_row.milliframe_len
-            if first_row.new_milliframe_tempo is None or first_row.new_milliframe_tempo != jiffies_per_row:
-                first_row.new_milliframe_tempo
+            if first_row.new_milliframe_tempo is None:
+                first_row.new_milliframe_tempo = milliframes_per_row
             for r in v.rows:
                 if r == r_min:
                     continue
