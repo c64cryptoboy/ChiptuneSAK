@@ -1,5 +1,5 @@
 # TODO:
-# - this hardly covers all the sid functionality, need to add many more tests
+# - finish partially written tests cases
 
 import unittest
 import chiptunesak
@@ -114,11 +114,12 @@ class sidTests(unittest.TestCase):
             subtune=0,  # Main theme
             # tuning=
             vibrato_cents_margin=10,
-            seconds=180,
-            gcf_row_reduce=True,
+            seconds=15,  # 61,
+            # TODO: For now, make row reduction programmtically disabled if multispeed
+            gcf_row_reduce=False,
         )
 
-        sid_dump = sid.capture()
+        # sid_dump = sid.capture()
 
         # TODO: check for expected SID parsed values (author name, speed bits, etc.)
 
@@ -128,16 +129,18 @@ class sidTests(unittest.TestCase):
         print("writing %s.csv" % filename_no_ext)
         sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
 
+        '''
         rchirp_song = sid.to_rchirp()
 
         # TODO: 192 play calls per quarter note means we need to deal (in a generalized way)
         # with the x8 multispeed going on here
-        chirp_song = rchirp_song.to_chirp(jiffies_per_quarter=192)
+        # TODO: won't be jiffies.  Should probably be based on multispeed measurement inside of the sid dump (which gets copied to the sid instance?)
+        chirp_song = rchirp_song.to_chirp(frames_per_quarter=192)
         chirp_song.set_key_signature('F')  # optional
         chirp_song.set_time_signature(4, 4)  # optional
         chiptunesak.MIDI().to_file(
             chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
-
+        '''
         self.assertTrue(True)
 
     @unittest.skip("Skipping this test for now")

@@ -19,9 +19,10 @@
 #    tuning and architecture-based frequencies at runtime.
 #
 # SidImport TODO:
-# - implement multispeed handling
+# - test multispeed handling
 # - print warning if jmp or jsr to memory outside of modified memory
 #   (emulator_6502 would need to track memory writes that tracks what mem locations written to)
+
 
 import csv
 import math
@@ -36,7 +37,7 @@ from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError
 from chiptunesak import rchirp
 
-MAX_CENTS = 50  # TODO: Move to constants?
+MAX_CENTS = 50
 
 
 class SID(ChiptuneSAKIO):
@@ -75,7 +76,7 @@ class SID(ChiptuneSAKIO):
             if op not in self.options_with_defaults:
                 raise ChiptuneSAKValueError('Error: Unexpected option "%s"' % (op))
 
-            # TODO: Put parameter validations here
+            # FUTURE: Put parameter validations here
 
             self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
 
@@ -125,7 +126,7 @@ class SID(ChiptuneSAKIO):
             for chip_num, chip in enumerate(sd_row.chips):
                 for chn_num, chn in enumerate(chip.channels):
                     rc_row = rchirp.RChirpRow()
-                    rc_row.milliframe_num = sd_row.frame_num
+                    rc_row.milliframe_num = sd_row.milliframe_num
 
                     if chn.note is not None:
                         rc_row.note_num = chn.note
@@ -171,12 +172,13 @@ class SID(ChiptuneSAKIO):
 
         # create CSV
         csv_rows = []
-        csv_row = ['Frame']
+
+        csv_row = ['playCall', 'Frame']
         for _ in range(sid_dump.sid_file.sid_count):
             # not going to include: no_sound_v3
             csv_row.extend(['Vol', 'Filters', 'FCutoff', 'FReson'])
             for i in range(1, 4):
-                # not going to include: release_frame or oscil_on
+                # not going to include: release_milliframe or oscil_on
                 csv_row.extend([
                     'v%dFreq' % i, 'v%dDeltaFreq' % i,
                     'v%dNoteName' % i, 'v%dNote' % i, 'v%dCents' % i,
@@ -187,7 +189,8 @@ class SID(ChiptuneSAKIO):
         csv_rows = [csv_row]
 
         for row in sid_dump.rows:
-            csv_row = ['{:05d}'.format(row.frame_num)]
+            csv_row = ['%d' % row.play_call_num]
+            csv_row.append('{:.3f}'.format(row.milliframe_num / 1000))
 
             for chip in row.chips:
                 csv_row.append(self.get_val(chip.vol))
@@ -796,14 +799,14 @@ class SidFile:
 
 MAX_INSTR = 0x100000
 
-# attack, decay, and release times in seconds (4-bit setting range)
+# attack, decay, and release times in ms (4-bit setting range)
 # Values should be close enough: according to https://www.c64-wiki.com/wiki/ADSR
 #     "these values assume a clock rate of 1MHz, while in fact the clock rate
 #     of a C64 is either 985.248 kHz PAL or 1.022727 MHz NTSC"
-attack_time = [0.002, 0.008, 0.016, 0.024, 0.038, 0.056, 0.068, 0.080,
-               0.10, 0.25, 0.5, 0.8, 1, 3, 5, 8]
-decay_release_time = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204,
-                      0.240, 0.30, 0.75, 1.5, 2.4, 3, 9, 15, 24]
+attack_time_ms = [2, 8, 16, 24, 38, 56, 68, 80, 100, 250, 500, 800, 1000, 3000,
+                  5000, 8000]
+decay_release_time_ms = [6, 24, 48, 72, 114, 168, 204, 240, 300, 750, 1500, 2400,
+                         3000, 9000, 15000, 24000]
 
 
 @dataclass
@@ -815,7 +818,7 @@ class Channel:
     decay: int = 0
     sustain: int = 0
     release: int = 0
-    release_frame: int = None  # If release possibly still in progress, frame # when it started
+    release_milliframe: int = None  # milliframe when release started
     gate_on: bool = False  # True = gate on
     sync_on: bool = False  # True = Synchronize c's Oscillator with (c-1)'s Oscillator frequency
     ring_on: bool = False  # True = c's triangle output becomes ring mod oscillators c and c-1
@@ -937,7 +940,8 @@ class Chip:
 
 class Row:
     def __init__(self, num_chips=1):
-        self.frame_num = None   # the frame number that was sampled to create this row
+        self.play_call_num = None
+        self.milliframe_num = None   # when the play call happened
         self.chips = None   # 1 to 3 Chip instances (2 for 2SID, 3 for 3SID)
         self.num_chips = num_chips  # Number of SID chips assumed by SID song
 
@@ -959,7 +963,7 @@ class Row:
             for chn in chip.channels:
                 # Don't include chn.new_note
                 chn.freq = chn.note = chn.adsr = chn.attack = chn.decay = \
-                    chn.sustain = chn.release = chn.release_frame = chn.gate_on = \
+                    chn.sustain = chn.release = chn.release_milliframe = chn.gate_on = \
                     chn.sync_on = chn.ring_on = chn.oscil_on = chn.waveforms = \
                     chn.triangle_on = chn.saw_on = chn.pulse_on = chn.noise_on = \
                     chn.pulse_width = chn.filtered = chn.df = None
@@ -973,6 +977,10 @@ class Dump:
         self.raw_freqs = []  # List of raw frequencies that can be used to derrive tuning
         self.arch = None  # Set by load_sid()
         self.first_row_with_note = None  # Row index for first row containing a note
+        self.multispeed = 1  # 1/multispeed = num times play routine called per frame
+
+    def is_multispeed(self):
+        return self.multispeed != 1
 
     def load_sid(self, filename):
         """
@@ -1101,9 +1109,6 @@ class SidImport:
         - any other criteria put into the while loop body (PC in certain
           memory ranges, etc.)
 
-        Usually called once per jiffy
-        TODO: mutli-speed not yet supported
-
         :param play_addr: The entry point for the play routine
         :type play_addr: int
         """
@@ -1201,10 +1206,12 @@ class SidImport:
         else:
             raise Exception('Error: unexpected architecture type "%s"' % self.arch)
 
-        # TODO: super small change init banked out I/O, so fix that here before checking CIA timer
-        cia_timer = self.cpu_state.get_le_word(0xdc04)
+        # TODO: Need to report throughout the play routine if this value changes
+        cia_timer = self.cpu_state.get_cia_1_timer_a()
         if cia_timer != expected_cia_timer:
-            print("multi-speed factor set in init: x{:f}".format(expected_cia_timer / cia_timer))
+            sid_dump.multispeed = cia_timer / expected_cia_timer
+            print("DEBUG: multi-speed factor set in init: x{:f}".format(
+                1 / sid_dump.multispeed))
 
         # When play address is 0, the init routine installs an interrupt handler which calls
         # the music player (always the case with RSID files).  This attempts to get the play
@@ -1219,20 +1226,21 @@ class SidImport:
                 # get play address from 6502-defined IRQ vector ($FFFE defaults to $FF48)
                 sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0xfffe)
 
-        self.play_call_num = 0
-
-        frames_to_capture = int(seconds * ARCH[self.arch].frame_rate)
+        max_play_calls = int(seconds * ARCH[self.arch].frame_rate * (1 / sid_dump.multispeed))
 
         row = Row(sid_dump.sid_file.sid_count)
-        row.frame_num = self.play_call_num
+        row.play_call_num = 0
+        row.milliframe_num = 0
 
         prev_row = Row(sid_dump.sid_file.sid_count)
         prev_row.null_all()  # makes the initial delta_row work
-        prev_row.frame_num = self.play_call_num - 1
+        prev_row.play_call_num = 0
+        prev_row.milliframe_num = -1  # Just as long as it's < 0
 
         delta_row = Row(sid_dump.sid_file.sid_count)
         delta_row.null_all()
-        delta_row.frame_num = self.play_call_num
+        delta_row.play_call_num = 0
+        delta_row.milliframe_num = 0
 
         # Note: We could set a reasonable stack pointer here if we wanted, but our
         # exit_on_empty_stack setting hopefully means we don't have to.
@@ -1249,7 +1257,7 @@ class SidImport:
 
         old_loc1_val = self.cpu_state.get_mem(0x0001)
         self.cpu_state.debug = False
-        while self.play_call_num < frames_to_capture:
+        while self.play_call_num < max_play_calls:
             self.call_sid_play(sid_dump.sid_file.play_address)
 
             # need to have I/O banked in, in order to read it
@@ -1258,7 +1266,7 @@ class SidImport:
                     print("DEBUG: SID banks out IO after play calls")
                 self.cpu_state.bank_in_IO()
 
-            # record the SID(s) state at the end of the frame
+            # record the SID(s) state
 
             # first, capture values that apply to all three channels
             for chip_num, sid_addr in enumerate(sid_dump.sid_base_addrs):
@@ -1321,9 +1329,9 @@ class SidImport:
                     chn.set_waveform_fields()
 
                     if chn.gate_on:
-                        chn.release_frame = None
+                        chn.release_milliframe = None
                     elif prev_row.chips[chip_num].channels[chn_num].gate_on and not chn.gate_on:
-                        chn.release_frame = self.play_call_num
+                        chn.release_milliframe = row.milliframe_num
 
                     # ADSR as four nibbles
                     chn.adsr = ((self.cpu_state.get_mem(sid_addr + 0x05 + 7 * chn_num) << 8)
@@ -1336,12 +1344,15 @@ class SidImport:
 
                     prev_chn = prev_row.chips[chip_num].channels[chn_num]
 
-                    # is a released note still in the process of releasing?
-                    within_release_window = (
-                        chn.release_frame is not None
-                        and (self.play_call_num - chn.release_frame)
-                        * ARCH[self.arch].ms_per_frame * 1000
-                        < decay_release_time[chn.release])
+                    # if within_release_window is true, note is still releasing
+                    # currently not using this variable, but it's here in case
+                    # we want to use it in the note_playing logic later
+                    if chn.release_milliframe is not None:
+                        # TODO: Add test case to check this release logic:
+                        ms_since_release = int((row.milliframe_num - chn.release_milliframe)
+                                               * (ARCH[self.arch].ms_per_frame / 1000))
+                        within_release_window = (  # noqa:F841
+                            ms_since_release <= decay_release_time_ms[chn.release])
 
                     # has sound been turned off for the channel?
                     channel_off = not chn.oscil_on
@@ -1350,8 +1361,7 @@ class SidImport:
 
                     # is a note playing?  (if so, it may or may not turn into a new note)
                     note_playing = (
-                        chn.waveforms > 0 and not channel_off
-                        and (chn.gate_on or within_release_window))
+                        chn.waveforms > 0 and not channel_off and chn.gate_on)
 
                     # see if no note playing after the previous play routine call
                     prev_note_off = not (prev_chn.gate_on and prev_chn.waveforms > 0)
@@ -1360,7 +1370,7 @@ class SidImport:
 
                     # The following logic should allow for new notes to be asserted when
                     # - gate is on and one or more waveforms defined, but on the previous
-                    #   frame, the gate was off or the waveform(s) undefined
+                    #   play call, the gate was off or the waveform(s) undefined
                     # - or when waveform(s) on and frequency changed enough (more than mere
                     #   vibrato)
                     # - or (above) when gate is off but there's still enough time left on the
@@ -1450,7 +1460,7 @@ class SidImport:
                     if include or chn.filtered != prev_chn.filtered:
                         delta_chn.filtered = chn.filtered
 
-                    # no need to include release_frame or new_note
+                    # no need to include release_milliframe or new_note
 
                     # end of per-channel loop
 
@@ -1458,19 +1468,23 @@ class SidImport:
 
             # setup chips and channels for next iteration:
 
-            self.play_call_num += 1
-
             prev_row = copy.deepcopy(row)
+            self.play_call_num += 1
+            millframes_to_next_call = int(sid_dump.multispeed * 1000)
 
             row = Row(sid_dump.sid_file.sid_count)
-            row.frame_num = self.play_call_num
+            row.play_call_num = self.play_call_num
+            row.milliframe_num = prev_row.milliframe_num + millframes_to_next_call
             for chip_num, chip in enumerate(row.chips):
+                # This needed because note duration also determined by release
                 for chn_num, chn in enumerate(chip.channels):
-                    chn.release_frame = prev_row.chips[chip_num].channels[chn_num].release_frame
+                    chn.release_milliframe = \
+                        prev_row.chips[chip_num].channels[chn_num].release_milliframe
 
             delta_row = Row(sid_dump.sid_file.sid_count)
             delta_row.null_all()
-            delta_row.frame_num = self.play_call_num
+            delta_row.play_call_num = self.play_call_num
+            delta_row.milliframe_num = prev_row.milliframe_num + millframes_to_next_call
 
             self.cpu_state.set_mem(0x0001, old_loc1_val)  # possibly swap I/O back out
 

@@ -1784,7 +1784,7 @@ class Cpu6502Emulator:
         # PHP instruction
         if instruction == 0x08:  # $08/8 PHP
             # add in the B flag: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
-            self.push(self.flags | FB)  # siddump.c neglected FB here
+            self.push(self.flags | FB)  # siddump.c < 1.08 neglected FB here
             return 1
 
         # case 0x68:
@@ -2257,7 +2257,7 @@ class Cpu6502Emulator:
 
         # TXS instruction
         if instruction == 0x9a:  # $9A/154 TXS
-            # Bug in siddump.c, TXS does NOT set flags
+            # Bug in siddump.c < v1.08, TXS does NOT set flags
             self.assign_no_flag_changes(SP_OPREF, X_OPREF)
             return 1
 

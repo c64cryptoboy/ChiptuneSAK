@@ -285,6 +285,9 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         for i, a_byte in enumerate(bytes):
             self.rom_basic[mem_loc + i] = a_byte
 
+    def get_cia_1_timer_a(self):
+        # get le word from 0xdc04 I/O reg without mem_usage noticing
+        return self.registers_io[0xc04] | (self.registers_io[0xc05] << 8)
 
 if __name__ == "__main__":
     test = ThinC64Emulator()
