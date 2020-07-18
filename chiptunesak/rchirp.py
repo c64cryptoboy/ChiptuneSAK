@@ -544,15 +544,18 @@ class RChirpSong(ChiptuneSAKBase):
                     rchirp_row.new_milliframe_tempo = rchirp_row.milliframe_len
                     prev_tempo = rchirp_row.milliframe_len
 
-    @property
     def milliframe_indexed_voices(self):
         """
-        Returns a list of lists, where many voices hold onto many rows.  Rows indexed by milliframe number.
+        Returns a list of dicts, where many voices hold onto many rows.  Rows indexed by
+        milliframe number.
 
-        :return: a list of lists (voices->rows)
+        :return: a list of dicts (voices->rows)
         :rtype: list
         """
-        return [voice.milliframe_indexed_rows for voice in self.voices]
+        result = []
+        for voice in self.voices:
+            result.append({v.milliframe_num: v for k, v in voice.rows.items()})
+        return result
 
     def validate_compression(self):
         if not self.compressed:
