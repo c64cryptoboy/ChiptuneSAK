@@ -98,7 +98,7 @@ class sidTests(unittest.TestCase):
             si_ntsc.get_note(sharp_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num + 1),
             g2_midi_num)
 
-    @unittest.skip("Skipping this test for now")
+    # @unittest.skip("Skipping this test for now")
     def test_SID_extraction(self):
         # TODO
         # Test SID import for expected values in RChirp
@@ -112,39 +112,37 @@ class sidTests(unittest.TestCase):
         sid.set_options(
             sid_in_filename=sid_filename,
             subtune=0,  # Main theme
-            # tuning=
             vibrato_cents_margin=10,
-            seconds=15,  # 61,
-            # TODO: For now, make row reduction programmtically disabled if multispeed
-            gcf_row_reduce=False,
+            seconds=4,  # just a small clip for testing
+            gcf_row_reduce=True,
+            verbose=False
         )
 
-        # sid_dump = sid.capture()
+        sid_dump = sid.capture()  # noqa: F841
 
         # TODO: check for expected SID parsed values (author name, speed bits, etc.)
 
-        # debugging
-        filename_no_ext = project_to_absolute_path('res/deleteme')
+        out_filename_no_ext = project_to_absolute_path('tests/sid/dotcExcerptTest')
 
-        print("writing %s.csv" % filename_no_ext)
-        sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
+        sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
 
-        '''
         rchirp_song = sid.to_rchirp()
 
-        # TODO: 192 play calls per quarter note means we need to deal (in a generalized way)
-        # with the x8 multispeed going on here
-        # TODO: won't be jiffies.  Should probably be based on multispeed measurement inside of the sid dump (which gets copied to the sid instance?)
-        # TODO: rchirp is going to assume non-multispeed using
-        #     qpm = constants.ARCH[self.arch].frame_rate * 60 // frames_per_quarter
-        #     So scale this down before passing in?
+        # CSV output shows 192 rows per quarter note (Note: output will be reduced to be more
+        # concise, but the delta in row numbers for a quarter note is 192).  This is a lot of
+        # rows for a quarter note, and it's due to the "multispeed" play routine being called
+        # ~6.6 times per frame.
         play_calls_per_quarter = 192
-        chirp_song = rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
+        # A quarter note only takes 29184 milliframes, but we'll be passing in a value
+        # ~6.6 times larger than that.  The larger number will act as a divisor in rchirp
+        # which will get the song back up to its proper play speed.
+        chirp_song = rchirp_song.to_chirp(
+            milliframes_per_quarter=play_calls_per_quarter * 1000)
         chirp_song.set_key_signature('F')  # optional
         chirp_song.set_time_signature(4, 4)  # optional
         chiptunesak.MIDI().to_file(
-            chirp_song, project_to_absolute_path('%s.mid' % filename_no_ext))
-        '''
+            chirp_song, project_to_absolute_path('%s.mid' % out_filename_no_ext))
+
         self.assertTrue(True)
 
     @unittest.skip("Skipping this test for now")

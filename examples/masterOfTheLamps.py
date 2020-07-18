@@ -106,7 +106,7 @@ def create_output_files(write_csv=True, write_midi=True):
             rchirp_song = sid.to_rchirp()
 
             play_calls_per_quarter = 32  # can see this in the csv output
-            # milliframes_per_quarter determines proper QPM/BPM
+            # milliframes_per_quarter will determine the QPM/BPM
             chirp_song = \
                 rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
 
@@ -119,4 +119,4 @@ def create_output_files(write_csv=True, write_midi=True):
 
 if __name__ == "__main__":
     # find_tunings()
-    create_output_files(False, True)
+    create_output_files(True, True)

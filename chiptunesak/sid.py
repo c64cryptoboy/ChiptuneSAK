@@ -33,6 +33,7 @@ from typing import List
 from chiptunesak.constants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
 from chiptunesak.byte_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
+from chiptunesak import emulator_6502
 from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError
 from chiptunesak import rchirp
@@ -51,15 +52,18 @@ class SID(ChiptuneSAKIO):
 
         self.options_with_defaults = dict(
             sid_in_filename=None,
-            subtune=0,           # subtune to extract
+            subtune=0,               # subtune to extract
             vibrato_cents_margin=0,  # cents margin to control snapping to previous note
             tuning=CONCERT_A,
-            seconds=60,          # seconds to capture
-            arch=DEFAULT_ARCH,   # note: will be overwritten if/when SID headers get parsed
-            gcf_row_reduce=True  # reduce rows based on greatest common factor of row-activity gaps
+            seconds=60,              # seconds to capture
+            arch=DEFAULT_ARCH,       # note: will be overwritten if/when SID headers get parsed
+            gcf_row_reduce=True,     # reduce rows via greatest common factor of row-activity gaps
+            verbose=True,            # False = suppress stdout details
         )
 
         self.set_options(**self.options_with_defaults)
+
+        self.sid_dump = None
 
     def set_options(self, **kwargs):
         """
@@ -82,12 +86,16 @@ class SID(ChiptuneSAKIO):
 
     def capture(self):
         importer = SidImport(self.get_option('arch'), self.get_option('tuning'))
+
         sid_dump = importer.import_sid(
             filename=self.get_option('sid_in_filename'),  # SID file to read in
             subtune=self.get_option('subtune'),
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
-            seconds=self.get_option('seconds')
+            seconds=self.get_option('seconds'),
+            verbose=self.get_option('verbose')
         )
+        self.sid_dump = sid_dump
+
         return sid_dump
 
     def to_rchirp(self):
@@ -97,7 +105,9 @@ class SID(ChiptuneSAKIO):
         :return: RChirpSong
         :rtype: RChirpSong
         """
-        sid_dump = self.capture()
+        sid_dump = self.sid_dump
+        if sid_dump is None:
+            sid_dump = self.capture()
 
         # create a more summarized representation by removing empty rows while maintaining structure
         if self.get_option('gcf_row_reduce'):
@@ -148,7 +158,9 @@ class SID(ChiptuneSAKIO):
         :param filename: output CSV filename
         :type filename: string
         """
-        sid_dump = self.capture()
+        sid_dump = self.sid_dump
+        if sid_dump is None:
+            sid_dump = self.capture()
 
         # create a more summarized representation by removing empty rows while maintaining structure
         if self.get_option('gcf_row_reduce'):
@@ -433,19 +445,19 @@ class SidFile:
 
         self.parse_binary(sid_binary)
 
-    def use_cia_timer(self, subtune):
+    def headers_specify_cia_timer(self, subtune):
         """
-        Determines if play routine is driven by the CIA timer driver.  Defaults to 60Hz, but
-        can be changed by init and/or play routines.
+        Determines if headers specify if the if play routine will be driven by the
+        CIA timer driver.  If so, speed is set by the init and/or play routine.
 
         :param subtune: subtune number (note: zero-indexed)
         :type subtune: int
-        :return: True if speed bits designate CIA timer as the play routine driver
+        :return: True if speed bits designate CIA timer, None if rsid (headers don't specify)
         :rtype: boolean
         """
 
-        # FUTURE?
-        # Assumed initial environment (if we want to up the fidelity of our emulation)
+        # FUTURE?  Assumed initial environment below (if we want to up the fidelity
+        # of our emulation someday)
         #
         # PSID:
         # - if speed flag 0, raster IRQ on any value < 0x100
@@ -457,7 +469,10 @@ class SidFile:
         # - CIA 1 timer A set to NTSC/PAL KERNAL defaults with counter running and
         #   IRQs active
 
-        if self.version == 1 or self.is_rsid:
+        if self.is_rsid:
+            return None
+
+        if self.version == 1:
             return False
 
         if subtune > 31:
@@ -1151,7 +1166,7 @@ class SidImport:
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID play routine exited with a BRK")
 
-    def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60):
+    def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1193,34 +1208,57 @@ class SidImport:
         # Bank out ROMs, the SID init can bring them back in if it wants to
         self.cpu_state.set_mem(0x0001, 0b00110101)
 
+        # A clean SID extraction is supposed to use either a VBI or CIA 1 timer A
+        # interrupt, so we're reasoning along those lines
+        if verbose:
+            if sid_dump.sid_file.is_rsid:
+                print("SID type: RSID")
+            else:
+                print("SID type: PSID")
+                if sid_dump.sid_file.headers_specify_cia_timer(subtune):
+                    print("headers indicate CIA timer driven")
+                else:
+                    print("headers indicate VBI driven")
+
         self.cpu_state.debug = False
-        self.cpu_state.clear_memory_usage()  # clear out R/W values due to above init
+        self.cpu_state.clear_memory_usage()  # set a clean baseline
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)
 
-        # self.cpu_state.print_memory_usage()
+        # self.cpu_state.print_memory_usage()  # See what init touched
 
-        if self.arch == 'PAL-C64':
-            expected_cia_timer = thin_c64_emulator.CIA_TIMER_PAL
-        elif self.arch == 'NTSC-C64':
-            expected_cia_timer = thin_c64_emulator.CIA_TIMER_NTSC
-        else:
-            raise Exception('Error: unexpected architecture type "%s"' % self.arch)
+        if ((self.cpu_state.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE)
+                or (self.cpu_state.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE)):
+            cia_timer = self.cpu_state.get_cia_1_timer_a()
+            if verbose:
+                print("init routine set CIA timer to %d cycles" % cia_timer)
 
-        # TODO: Need to report throughout the play routine if this value changes
-        cia_timer = self.cpu_state.get_cia_1_timer_a()
-        if cia_timer != expected_cia_timer:
-            sid_dump.multispeed = cia_timer / expected_cia_timer
-            print("DEBUG: multi-speed factor set in init: x{:f}".format(
-                1 / sid_dump.multispeed))
+            if self.arch == 'PAL-C64':
+                expected_cia_timer = thin_c64_emulator.CIA_TIMER_PAL
+            elif self.arch == 'NTSC-C64':
+                expected_cia_timer = thin_c64_emulator.CIA_TIMER_NTSC
+            else:
+                raise Exception('Error: unexpected architecture type "%s"' % self.arch)
+
+            # TODO: Need to report throughout the play routine if cia timer value changes
+
+            # if not much change, multispeed will snap to 1 (actually, it'll stay at 1)
+            if cia_timer != expected_cia_timer:
+                if (max(cia_timer, expected_cia_timer) / min(cia_timer, expected_cia_timer) > 1.3):
+                    sid_dump.multispeed = cia_timer / expected_cia_timer
+                    if verbose:
+                        print("multi-speed factor of x{:f}".format(
+                            1 / sid_dump.multispeed))
 
         # When play address is 0, the init routine installs an interrupt handler which calls
-        # the music player (always the case with RSID files).  This attempts to get the play
-        # address from the interrupt vector:
-        # TODO? Could actually monitor memory to see which one(s) the init changed.
+        # the music player (always the case with RSID files).  This code attempts to get the
+        # play address from the interrupt vector, so we don't have to emulate the interrupt
+        # driver, and instead, we can directly call the play routine.
         if sid_dump.sid_file.play_address == 0:
+            # FUTURE? Could check self.cpu_state.mem_usage to see which (if any) of these
+            # vectors init modified
             if self.cpu_state.see_kernal:
-                # get play address from the pointer to the routine normally called by
-                # the CIA #1 timer B ($0314 defaults to $EA31)
+                # get play address from the pointer to the KERNAL's standard interrupt
+                # service routine ($0314 defaults to $EA31)
                 sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0x0314)
             else:
                 # get play address from 6502-defined IRQ vector ($FFFE defaults to $FF48)
