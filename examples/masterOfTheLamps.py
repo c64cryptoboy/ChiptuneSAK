@@ -95,7 +95,9 @@ def create_output_files(write_csv=True, write_midi=True):
             gcf_row_reduce=True,
         )
 
-        filename_no_ext = 'tests/sid/motl_%s' % desc.replace(" ", "_")
+        filename_no_ext = 'examples/data/motl_%s' % desc.replace(" ", "_")
+
+        sid_dump = sid.capture()  # noqa: F841
 
         if write_csv:
             print("writing %s.csv" % filename_no_ext)

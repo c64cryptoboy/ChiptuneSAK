@@ -122,7 +122,7 @@ class sidTests(unittest.TestCase):
 
         # TODO: check for expected SID parsed values (author name, speed bits, etc.)
 
-        out_filename_no_ext = project_to_absolute_path('tests/sid/dotcExcerptTest')
+        out_filename_no_ext = project_to_absolute_path('tests/temp/dotcExcerptTest')
 
         sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
 

@@ -35,7 +35,7 @@ from chiptunesak.byte_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
 from chiptunesak import emulator_6502
 from chiptunesak import thin_c64_emulator
-from chiptunesak.errors import ChiptuneSAKValueError
+from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 from chiptunesak import rchirp
 
 MAX_CENTS = 50
@@ -1187,6 +1187,9 @@ class SidImport:
 
         sid_dump = Dump()
         sid_dump.load_sid(filename)
+
+        if sid_dump.sid_file.contains_basic():
+            raise ChiptuneSAKContentError("Error: BASIC code SIDs not yet supported")
 
         self.arch = sid_dump.arch  # override SidImport arch param to what's in the SID headers
         sid_dump.tuning = self.tuning
