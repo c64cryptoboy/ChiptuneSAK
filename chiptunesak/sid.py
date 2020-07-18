@@ -1008,14 +1008,13 @@ class Dump:
         self.sid_file.parse_file(filename)
         self.arch = self.sid_file.get_arch_from_headers()
 
-    def get_tuning(self):
+    def get_tuning(self, tuning_override=CONCERT_A):
         """
         As a throw-away first pass, the sid dump can be given a small sample
-        (e.g. seconds=10) from which to determine the tuning of the SID's
-        frequency tables.  Using this tuning on a second pass means that the
-        cents deltas from the assigned MIDI notes can be brought closer to 0.
-        This means that logic that understands when vibrato should not be
-        creating new notes can work more effectively.
+        (e.g. seconds=5) from which to determine the tuning of the SID's
+        frequency tables.  Using this tuning on the second full pass means
+        that the cents deltas can be brought closer to 0 to make better note
+        assignment decisions; especially helpful when there's wide vibrato.
 
         :return: tuple containing tuning, minimum_cents, and maximum_cents
         :rtype: (float, int, int)
@@ -1024,9 +1023,9 @@ class Dump:
         for freq_arch in self.raw_freqs:
             if freq_arch == 0:
                 continue
-            if freq_arch_to_midi_num(freq_arch, self.arch, CONCERT_A)[0] < 0:
+            if freq_arch_to_midi_num(freq_arch, self.arch, tuning_override)[0] < 0:
                 continue  # ChiptuneSAK does not support midi note numbers < 0 (< C-1)
-            (_, cents) = freq_arch_to_midi_num(freq_arch, self.arch, tuning=CONCERT_A)
+            (_, cents) = freq_arch_to_midi_num(freq_arch, self.arch, tuning=tuning_override)
             all_cents.append(cents)
 
         average_cents = sum(all_cents) / len(all_cents)
@@ -1035,6 +1034,7 @@ class Dump:
         assert (abs(minimum_cents) <= 50 and abs(maximum_cents) <= 50), \
             "Error: not expecting cents to deviate by more than 50 when already derrived from nearest note"
 
+        # Check deviation from CONCERT_A
         tuning = CONCERT_A * 2**(average_cents / 1200)
 
         return (tuning, minimum_cents, maximum_cents)

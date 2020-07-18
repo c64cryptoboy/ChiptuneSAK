@@ -1,6 +1,3 @@
-# TODO:
-# - finish partially written tests cases
-
 import unittest
 import chiptunesak
 from chiptunesak.sid import SID, SidImport
@@ -8,6 +5,24 @@ from chiptunesak.constants import project_to_absolute_path, CONCERT_A, freq_arch
 
 
 class sidTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        # Test data: Defender of the Crown, Cinemaware, 1986, later released as freeware
+        # CSDB: https://csdb.dk/sid/?id=15918
+        cls.sid_filename = project_to_absolute_path('res/Defender_of_the_Crown.sid')
+
+        cls.sid = SID()
+        cls.sid.set_options(
+            sid_in_filename=cls.sid_filename,
+            subtune=0,  # Main theme
+            vibrato_cents_margin=10,
+            seconds=4,  # just a small clip for testing
+            gcf_row_reduce=True,
+            verbose=False
+        )
+
+        cls.sid_dump = cls.sid.capture()
 
     # @unittest.skip("Skipping this test for now")
     def test_SID_freqs_to_midi_notes(self):
@@ -102,22 +117,7 @@ class sidTests(unittest.TestCase):
     def test_SID_extraction(self):
         # Test SID import for expected values in RChirp, and ability to transform extraction
 
-        # Test data: Defender of the Crown, Cinemaware, 1986, later released as freeware
-        # CSDB: https://csdb.dk/sid/?id=15918
-        sid_filename = project_to_absolute_path('res/Defender_of_the_Crown.sid')
-
-        sid = SID()
-        sid.set_options(
-            sid_in_filename=sid_filename,
-            subtune=0,  # Main theme
-            vibrato_cents_margin=10,
-            seconds=4,  # just a small clip for testing
-            gcf_row_reduce=True,
-            verbose=False
-        )
-
-        sid_dump = sid.capture()
-        headers = sid_dump.sid_file
+        headers = self.sid_dump.sid_file
 
         # Check for expected header values
 
@@ -144,10 +144,10 @@ class sidTests(unittest.TestCase):
 
         # Check for no runtime errors when converting to CSV output:
         out_filename_no_ext = project_to_absolute_path('tests/temp/dotcExcerptTest')
-        sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
+        self.sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
 
         # Check for no runtime errors when converting to rchirp, then to a midi file
-        rchirp_song = sid.to_rchirp()
+        rchirp_song = self.sid.to_rchirp()
 
         # CSV output shows 192 rows per quarter note (Note: output will be reduced to be more
         # concise, but the delta in row numbers for a quarter note is 192).  This is a lot of
@@ -176,12 +176,40 @@ class sidTests(unittest.TestCase):
             self.assertTrue(
                 milliframe_indexed_rows[exp_note[0]][exp_note[1]].note_num == exp_note[2])
 
-    @unittest.skip("Skipping this test for now")
+    # @unittest.skip("Skipping this test for now")
     def test_tuning(self):
-        # TODO:
         # Measure tunings from a set of notes, then using that tuning, measure that the
-        # cents deviations get closer to zero
-        self.assertTrue(True)
+        # deviations get closer to CONCERT_A
+
+        # (~448.973, 34, 35)
+        (orig_tuning, orig_min_cents, orig_max_cents) \
+            = self.sid_dump.get_tuning()  # CONCERT_A
+
+        # Don't need this test code, since no note decisions are going to change based
+        # on this small tuning
+        '''
+        tuned_sid = SID()
+        tuned_sid.set_options(
+            sid_in_filename=self.sid_filename,
+            subtune=0,
+            vibrato_cents_margin=10,
+            seconds=4,
+            gcf_row_reduce=False,
+            verbose=False,
+            tuning=orig_tuning
+        )
+        tuned_sid_dump = tuned_sid.capture()
+
+        (new_tuning, new_min_cents, new_max_cents) \
+            = tuned_sid_dump.get_tuning(orig_tuning)
+        '''
+
+        # (~439.987574, -1, 0)
+        (new_tuning, new_min_cents, new_max_cents) \
+            = self.sid_dump.get_tuning(orig_tuning)
+
+        self.assertTrue(abs(CONCERT_A - new_tuning) < abs(CONCERT_A - orig_tuning))
+        self.assertTrue(abs(new_max_cents) <= abs(orig_max_cents))
 
 
 if __name__ == '__main__':
