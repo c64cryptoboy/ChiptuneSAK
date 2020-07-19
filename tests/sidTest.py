@@ -18,6 +18,7 @@ class sidTests(unittest.TestCase):
             subtune=0,  # Main theme
             vibrato_cents_margin=10,
             seconds=4,  # just a small clip for testing
+            create_gate_off_notes=True,
             gcf_row_reduce=True,
             verbose=False
         )

@@ -19,7 +19,6 @@
 #    tuning and architecture-based frequencies at runtime.
 #
 # SidImport TODO:
-# - test multispeed handling
 # - print warning if jmp or jsr to memory outside of modified memory
 #   (emulator_6502 would need to track memory writes that tracks what mem locations written to)
 
@@ -52,13 +51,14 @@ class SID(ChiptuneSAKIO):
 
         self.options_with_defaults = dict(
             sid_in_filename=None,
-            subtune=0,               # subtune to extract
-            vibrato_cents_margin=0,  # cents margin to control snapping to previous note
+            subtune=0,                    # subtune to extract
+            vibrato_cents_margin=0,       # cents margin to control snapping to previous note
             tuning=CONCERT_A,
-            seconds=60,              # seconds to capture
-            arch=DEFAULT_ARCH,       # note: will be overwritten if/when SID headers get parsed
-            gcf_row_reduce=True,     # reduce rows via greatest common factor of row-activity gaps
-            verbose=True,            # False = suppress stdout details
+            seconds=60,                   # seconds to capture
+            arch=DEFAULT_ARCH,            # note: will be overwritten if/when SID headers get parsed
+            gcf_row_reduce=True,          # reduce rows via GCF of row-activity gaps
+            create_gate_off_notes=False,  # allow new note starts when gate is off
+            verbose=True,                 # False = suppress stdout details
         )
 
         self.set_options(**self.options_with_defaults)
@@ -91,6 +91,7 @@ class SID(ChiptuneSAKIO):
             filename=self.get_option('sid_in_filename'),  # SID file to read in
             subtune=self.get_option('subtune'),
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
+            create_gate_off_notes=self.get_option('create_gate_off_notes'),
             seconds=self.get_option('seconds'),
             verbose=self.get_option('verbose')
         )
@@ -215,9 +216,9 @@ class SID(ChiptuneSAKIO):
                     if chn.df is None:
                         csv_row.append('')
                     elif chn.df < 0:
-                        csv_row.append(chn.df, '- {:d}')
+                        csv_row.append('- {:d}'.format(chn.df))
                     else:
-                        csv_row.append(chn.df, '+ {:d}')
+                        csv_row.append('+ {:d}'.format(chn.df))
                     csv_row.append(chn.get_note_name())
                     csv_row.append(self.get_val(chn.note))
                     if chn.freq is not None:
@@ -846,6 +847,7 @@ class Channel:
     pulse_width: int = 0  # 12-bit
     filtered: bool = False  # True = channel passes through filter
     new_note: bool = False  # This state considered to be the start of a new note
+    active_note: bool = False
     df: int = 0  # if no new note, record small delta in frequency (if any)
 
     def set_adsr_fields(self):
@@ -976,12 +978,12 @@ class Row:
             chip.vol = chip.filters = chip.cutoff = chip.resonance = \
                 chip.no_sound_v3 = None
             for chn in chip.channels:
-                # Don't include chn.new_note
                 chn.freq = chn.note = chn.adsr = chn.attack = chn.decay = \
                     chn.sustain = chn.release = chn.release_milliframe = chn.gate_on = \
                     chn.sync_on = chn.ring_on = chn.oscil_on = chn.waveforms = \
                     chn.triangle_on = chn.saw_on = chn.pulse_on = chn.noise_on = \
-                    chn.pulse_width = chn.filtered = chn.df = None
+                    chn.pulse_width = chn.filtered = chn.active_note = chn.df = \
+                    chn.new_note = None
 
 
 class Dump:
@@ -1166,7 +1168,8 @@ class SidImport:
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID play routine exited with a BRK")
 
-    def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60, verbose=True):
+    def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
+                   create_gate_off_notes=False, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1369,11 +1372,6 @@ class SidImport:
                     chn.waveforms = vcr >> 4
                     chn.set_waveform_fields()
 
-                    if chn.gate_on:
-                        chn.release_milliframe = None
-                    elif prev_row.chips[chip_num].channels[chn_num].gate_on and not chn.gate_on:
-                        chn.release_milliframe = row.milliframe_num
-
                     # ADSR as four nibbles
                     chn.adsr = ((self.cpu_state.get_mem(sid_addr + 0x05 + 7 * chn_num) << 8)
                                 | self.cpu_state.get_mem(sid_addr + 0x06 + 7 * chn_num))
@@ -1381,49 +1379,67 @@ class SidImport:
 
                     # See comments on Filter Resonance Control Filter (above)
                     voices_filtered = filt_ctrl & 0b00000111
+                    # Determine if this channel is using the filter
                     chn.filtered = (voices_filtered & (2 ** chn_num)) != 0
 
                     prev_chn = prev_row.chips[chip_num].channels[chn_num]
 
-                    # if within_release_window is true, note is still releasing
-                    # currently not using this variable, but it's here in case
-                    # we want to use it in the note_playing logic later
+                    # determine channel's envelope release status
+                    if chn.gate_on or (not chn.gate_on and self.play_call_num == 0):
+                        chn.release_milliframe = None  # No release in progress
+                    else:  # channel gate is off
+                        if prev_chn.gate_on:  # If gate just turned off
+                            # start of new release
+                            chn.release_milliframe = row.milliframe_num
+                        else:
+                            # possible release continuation
+                            chn.release_milliframe = prev_chn.release_milliframe
+
+                    # set within_release_window to True if envelope is still releasing
+                    within_release_window = False
                     if chn.release_milliframe is not None:
-                        # TODO: Add test case to check this release logic:
                         ms_since_release = int((row.milliframe_num - chn.release_milliframe)
                                                * (ARCH[self.arch].ms_per_frame / 1000))
-                        within_release_window = (  # noqa:F841
-                            ms_since_release <= decay_release_time_ms[chn.release])
+                        within_release_window = \
+                            ms_since_release <= decay_release_time_ms[chn.release]
 
                     # has sound been turned off for the channel?
                     channel_off = not chn.oscil_on
                     if (chn_num == 2) and row.chips[chip_num].no_sound_v3:
                         channel_off = True
 
-                    # is a note playing?  (if so, it may or may not turn into a new note)
-                    note_playing = (
-                        chn.waveforms > 0 and not channel_off and chn.gate_on)
+                    # Is there an active (not released) note playing?
+                    chn.active_note = (
+                        not channel_off
+                        and chn.waveforms != 0  # tri, saw, pulse, and/or noise active
+                        and chn.gate_on)
 
-                    # see if no note playing after the previous play routine call
-                    prev_note_off = not (prev_chn.gate_on and prev_chn.waveforms > 0)
+                    # what the note would be for the current frequency
+                    chn.note = self.get_note(chn.freq, vibrato_cents_margin, prev_chn.note)
 
-                    chn.note = self.get_note(chn.freq, 5, prev_chn.note)
-
-                    # The following logic should allow for new notes to be asserted when
-                    # - gate is on and one or more waveforms defined, but on the previous
-                    #   play call, the gate was off or the waveform(s) undefined
-                    # - or when waveform(s) on and frequency changed enough (more than mere
-                    #   vibrato)
-                    # - or (above) when gate is off but there's still enough time left on the
-                    #   release that large changes in frequencies are worth turning into notes
+                    # The following logic asserts a new note when
+                    # a) there's an active note (gate on with waveform) and on the previous
+                    #    play call, there wasn't an active note, or
+                    # b) the active note was assigned a different note value from the
+                    #    previous play call's note value, or
+                    # c) gate is off, but create_gate_off_notes is True, and
+                    #    the note is different than the previous, and its release window
+                    #    hasn't run out yet.
                     make_new_note = (
-                        note_playing and (prev_note_off or chn.note != prev_chn.note))
+                        chn.active_note and (
+                            not prev_chn.active_note
+                            or chn.note != prev_chn.note
+                        ) or (
+                            create_gate_off_notes
+                            and chn.note != prev_chn.note
+                            and within_release_window
+                        )
+                    )
 
-                    if (self.play_call_num == 0 or make_new_note):
-                        chn.new_note = True
+                    chn.new_note = (self.play_call_num == 0 or make_new_note)
 
-                    # if not a new note, but there's a small change in frequency...
-                    if prev_chn.freq is not None:  # It's only None the first time
+                    # if not a new note, but there's a change in frequency...
+                    if self.play_call_num > 0:
                         delta = chn.freq - prev_chn.freq
                     else:
                         delta = 0
@@ -1469,11 +1485,9 @@ class SidImport:
                         delta_chn.freq = chn.freq
                         delta_chn.note = chn.note
 
-                    # TODO: Untested code here
                     if chn.df > 0:
                         delta_chn.freq = chn.freq
                         delta_chn.df = chn.df
-                        print("DEBUG: Haven't seen the df pouplated yet (%d)" % chn.df)
 
                     if chn.waveforms != prev_chn.waveforms:
                         delta_chn.waveforms = chn.waveforms
@@ -1516,11 +1530,6 @@ class SidImport:
             row = Row(sid_dump.sid_file.sid_count)
             row.play_call_num = self.play_call_num
             row.milliframe_num = prev_row.milliframe_num + millframes_to_next_call
-            for chip_num, chip in enumerate(row.chips):
-                # This needed because note duration also determined by release
-                for chn_num, chn in enumerate(chip.channels):
-                    chn.release_milliframe = \
-                        prev_row.chips[chip_num].channels[chn_num].release_milliframe
 
             delta_row = Row(sid_dump.sid_file.sid_count)
             delta_row.null_all()
