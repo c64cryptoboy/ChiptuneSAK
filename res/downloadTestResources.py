@@ -96,43 +96,47 @@ def main():
     # The below URL works for navigating, but not for downloading:
     # https://www.sannic.nl/hvsc/?dir=C64Music/MUSICIANS
 
-    resources.append(ResourceFile(
-        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', 'examples/sid'))
+    download_dir = 'examples/sid'
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/D/Daglish_Ben/Butcher_Hill.sid', 'examples/sid'))
+        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', download_dir))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', 'examples/sid'))
+        an_hvsc_mirror + '/D/Daglish_Ben/Butcher_Hill.sid', download_dir))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', 'examples/sid'))
+        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', download_dir))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', 'examples/sid'))
+        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', download_dir))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', 'examples/sid'))
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', download_dir))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'examples/sid'))
+        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', download_dir))
+
+    resources.append(ResourceFile(
+        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', download_dir))
 
     # Apple ][ music examples
 
-    resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/must', 'apps/ultima/data/appleii_u4'))
+    download_dir = 'examples/data/appleii_u4'
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/muso', 'apps/ultima/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/must', download_dir))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musd', 'apps/ultima/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/muso', download_dir))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musc', 'apps/ultima/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/musd', download_dir))
 
     resources.append(ResourceFile(
-        'http://youdzone.com/testData/appleii/u4/musb', 'apps/ultima/data/appleii_u4'))
+        'http://youdzone.com/testData/appleii/u4/musc', download_dir))
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/appleii/u4/musb', download_dir))
 
     # MS-DOS music examples
 

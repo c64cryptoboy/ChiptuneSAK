@@ -4,6 +4,7 @@ from chiptunesak import constants
 from chiptunesak.base import *
 from chiptunesak.chirp import ChirpSong, ChirpTrack, Note
 from chiptunesak.midi import MIDI
+from chiptunesak.byte_util import little_endian_int
 
 
 class Ultima4Song:
@@ -311,4 +312,7 @@ for song in info:
     print("Number of songs in file: ", music.num_songs)
     chirp_song = music.import_song_to_chirp(int(song['songno']) - 1)
     midi_song = MIDI()
-    midi_song.export_chirp_to_midi(chirp_song, song['title'] + '.mid')
+    output_filename = \
+        constants.project_to_absolute_path('examples/data/appleii_u4/%s.mid'
+                                           % song['title'])
+    midi_song.export_chirp_to_midi(chirp_song, output_filename)

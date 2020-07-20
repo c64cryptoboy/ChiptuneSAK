@@ -63,7 +63,7 @@ def join(a, *cs):
     return [cs[0].join(join(t, *cs[1:])) for t in a] if cs else a
 
 
-def hexdump(data, start = 0):
+def hexdump(data, start=0):
     toHex = lambda c: '{:02X}'.format(c)
     toChr = lambda c: chr(c) if 32 <= c < 127 else '.'
     make = lambda f, *cs: join(group(list(map(f, data)), 8, 2), *cs)
