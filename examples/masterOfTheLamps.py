@@ -13,7 +13,7 @@
 import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
 
-sid_filename = project_to_absolute_path('tests/sid/Master_of_the_Lamps_PAL.sid')
+sid_filename = project_to_absolute_path('examples/sid/Master_of_the_Lamps_PAL.sid')
 
 # list of subtunes to extract
 to_extract = [

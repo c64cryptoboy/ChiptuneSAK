@@ -68,11 +68,7 @@ def manage_resources(resources):
 def main():
     resources = []
 
-    resources.append(ResourceFile(
-        'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
-        'examples/data',
-        'MonkeyIsland_LechuckTheme.mid'
-    ))
+    # C64 ROMs
 
     resources.append(ResourceFile(
         'http://www.zimmers.net/anonftp/pub/cbm/firmware/computers/c64/kernal.901227-03.bin',
@@ -92,6 +88,8 @@ def main():
         'c64char.bin'
     ))
 
+    # C64 music examples
+
     # An HVSC mirror:
     an_hvsc_mirror = 'https://www.sannic.nl/hvsc/C64Music/MUSICIANS'
     # Note above URL base works for downloading, but not HTML navigating.
@@ -99,25 +97,27 @@ def main():
     # https://www.sannic.nl/hvsc/?dir=C64Music/MUSICIANS
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', 'tests/sid'))
+        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', 'examples/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', 'tests/sid'))
+        an_hvsc_mirror + '/D/Daglish_Ben/Butcher_Hill.sid', 'examples/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', 'tests/sid'))
+        an_hvsc_mirror + '/D/Dunbar_Tommy/Archon.sid', 'examples/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', 'tests/sid'))
+        an_hvsc_mirror + '/F/Fulton_Douglas/Skyfox.sid', 'examples/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps.sid', 'tests/sid'))
+        an_hvsc_mirror + '/L/Lieblich_Russell/Master_of_the_Lamps_PAL.sid', 'examples/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', 'tests/sid'))
+        an_hvsc_mirror + '/N/Norman_Paul/Super_Huey.sid', 'examples/sid'))
 
     resources.append(ResourceFile(
-        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'tests/sid'))
+        an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', 'examples/sid'))
+
+    # Apple ][ music examples
 
     resources.append(ResourceFile(
         'http://youdzone.com/testData/appleii/u4/must', 'apps/ultima/data/appleii_u4'))
@@ -133,6 +133,18 @@ def main():
 
     resources.append(ResourceFile(
         'http://youdzone.com/testData/appleii/u4/musb', 'apps/ultima/data/appleii_u4'))
+
+    # MS-DOS music examples
+
+    resources.append(ResourceFile(
+        'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
+        'examples/data',
+        'MonkeyIsland_LechuckTheme.mid'
+    ))
+
+    resources.append(ResourceFile(
+        'http://youdzone.com/testData/msdos/betrayalKrondorMercantile.mid',
+        'examples/data/mercantile'))
 
     manage_resources(resources)
 

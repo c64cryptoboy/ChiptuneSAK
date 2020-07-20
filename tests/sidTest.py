@@ -10,7 +10,7 @@ class sidTests(unittest.TestCase):
     def setUpClass(cls):
         # Test data: Defender of the Crown, Cinemaware, 1986, later released as freeware
         # CSDB: https://csdb.dk/sid/?id=15918
-        cls.sid_filename = project_to_absolute_path('res/Defender_of_the_Crown.sid')
+        cls.sid_filename = project_to_absolute_path('tests/data/Defender_of_the_Crown.sid')
 
         cls.sid = SID()
         cls.sid.set_options(
