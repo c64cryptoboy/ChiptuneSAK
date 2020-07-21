@@ -11,6 +11,7 @@ def create_output_files():
         subtune=1,
         vibrato_cents_margin=0,
         create_gate_off_notes=True,
+        assert_gate_on_new_notes=True,
         seconds=175,
         gcf_row_reduce=False,
     )

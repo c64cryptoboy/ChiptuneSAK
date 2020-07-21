@@ -631,11 +631,10 @@ class RChirpSong(ChiptuneSAKBase):
         note_milliframe_nums.sort()
         notes_offset_mf = note_milliframe_nums[0]
         milliframes_per_quarter = self.get_option('milliframes_per_quarter', None)
-        if milliframes_per_quarter is None:
 
+        if milliframes_per_quarter is None:
             # find the minimum divisor for note length
             milliframes_per_note = reduce(math.gcd, (t - notes_offset_mf for t in note_milliframe_nums))
-
             # Guess: Set the minimum divisor to be a sixteenth note.
             milliframes_per_quarter = 4 * milliframes_per_note
 
@@ -651,13 +650,44 @@ class RChirpSong(ChiptuneSAKBase):
             track.name = 'Track %d' % (iv + 1)
             track.channel = iv
             current_note = None
+
             for r in sorted(v.rows):
                 row = v.rows[r]
                 midi_tick = int(round((row.milliframe_num - notes_offset_mf) // 1000 * midi_ticks_per_frame))
+
+                # In midi, note-on and note-off events are clear.  Note-on begins a note.  A note-off
+                # (either a note-off or a note-on with velocity 0) starts the release phase of the
+                # note.  On a commodore 64, it's less clear.  A gate on is necessary (but not
+                # sufficient) to start a note playing, and is sometimes used to merely change an
+                # existing note from its release back to its attack.  The note (pitch) can change
+                # without a new gate on event.  A gate off, like midi note-off, starts the release.
+                # But notes are free to change their pitch during the release, which can be as long
+                # as 24 seconds.
+                #
+                # RChirp borrows the concept of "gate" state from the C64 SID chip.  Chirp note
+                # creation depends on the gate, which is passed to RChirp as a tri-state:
+                # - True  = gate was turned on (usually means a new note started)
+                # - False = gate was turned off (frequently means a note is ending)
+                # - None  = gate is unchanged from previous row (the prior state is continuing)
+                #
+                # Chirp note is created when:
+                # a) gate becomes True and there's a note in progress (meaning, current_note
+                #    is not None).  After which, there's a different note in progress.
+                # b) gate becomes False and there's a note in progress.  After which, there's no
+                #    no in progress.
+                #
+                # If a note change happens when the gate is None, then that note is not
+                # created in the Chirp conversion.  Often, this creates excellent musical
+                # summarization when encountering what I'll call note storms (e.g., "arpeggio
+                # chords" and the like), as C64 composers frequently use gate changes to
+                # represent the starts and ends of such runs.
+                # If you want every note preserved, creating a gate on event for each note
+                # will do the trick, and the option assert_gate_on_new_notes will do this.
                 if row.gate:
                     if current_note:
                         new_note = chirp.Note(
-                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                            current_note.start_time, current_note.note_num,
+                            midi_tick - current_note.start_time
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
@@ -665,14 +695,17 @@ class RChirpSong(ChiptuneSAKBase):
                 elif row.gate is False:
                     if current_note:
                         new_note = chirp.Note(
-                            current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                            current_note.start_time, current_note.note_num,
+                            midi_tick - current_note.start_time
                         )
                         if new_note.duration > 0:
                             track.notes.append(new_note)
                     current_note = None
+
             if current_note:
                 new_note = chirp.Note(
-                    current_note.start_time, current_note.note_num, midi_tick - current_note.start_time
+                    current_note.start_time, current_note.note_num,
+                    midi_tick - current_note.start_time
                 )
                 if new_note.duration > 0:
                     track.notes.append(new_note)

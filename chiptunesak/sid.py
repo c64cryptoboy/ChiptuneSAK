@@ -51,14 +51,15 @@ class SID(ChiptuneSAKIO):
 
         self.options_with_defaults = dict(
             sid_in_filename=None,
-            subtune=0,                    # subtune to extract
-            vibrato_cents_margin=0,       # cents margin to control snapping to previous note
+            subtune=0,                       # subtune to extract
+            vibrato_cents_margin=0,          # cents margin to control snapping to previous note
             tuning=CONCERT_A,
-            seconds=60,                   # seconds to capture
-            arch=DEFAULT_ARCH,            # note: will be overwritten if/when SID headers get parsed
-            gcf_row_reduce=True,          # reduce rows via GCF of row-activity gaps
-            create_gate_off_notes=False,  # allow new note starts when gate is off
-            verbose=True,                 # False = suppress stdout details
+            seconds=60,                      # seconds to capture
+            arch=DEFAULT_ARCH,               # note: will be overwritten if/when SID headers get parsed
+            gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
+            create_gate_off_notes=True,      # allow new note starts when gate is off
+            assert_gate_on_new_notes=False,  # True forces a gate on event in delta rows with new notes
+            verbose=True,                    # False = suppress stdout details
         )
 
         self.set_options(**self.options_with_defaults)
@@ -92,6 +93,7 @@ class SID(ChiptuneSAKIO):
             subtune=self.get_option('subtune'),
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
             create_gate_off_notes=self.get_option('create_gate_off_notes'),
+            assert_gate_on_new_notes=self.get_option('assert_gate_on_new_notes'),
             seconds=self.get_option('seconds'),
             verbose=self.get_option('verbose')
         )
@@ -1169,7 +1171,7 @@ class SidImport:
             print("Warning: SID play routine exited with a BRK")
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
-                   create_gate_off_notes=False, verbose=True):
+                   create_gate_off_notes=True, assert_gate_on_new_notes=False, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1493,7 +1495,9 @@ class SidImport:
                         delta_chn.waveforms = chn.waveforms
                         delta_chn.set_waveform_fields()
 
-                    if chn.gate_on != prev_chn.gate_on:
+                    if assert_gate_on_new_notes and chn.new_note:
+                        delta_chn.gate_on = True  # Used to influence RChirp->Chirp note creation
+                    elif chn.gate_on != prev_chn.gate_on:
                         delta_chn.gate_on = chn.gate_on
 
                     if include or chn.sync_on != prev_chn.sync_on:
