@@ -37,8 +37,6 @@ from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 from chiptunesak import rchirp
 
-MAX_CENTS = 50
-
 
 class SID(ChiptuneSAKIO):
 
@@ -58,7 +56,8 @@ class SID(ChiptuneSAKIO):
             arch=DEFAULT_ARCH,               # note: will be overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off
-            assert_gate_on_new_notes=False,  # True forces a gate on event in delta rows with new notes
+            assert_gate_on_new_notes=False,  # True forces a gate on in delta rows with new notes
+            always_include_freq=False,       # False = include freq in delta rows only with new note
             verbose=True,                    # False = suppress stdout details
         )
 
@@ -94,6 +93,7 @@ class SID(ChiptuneSAKIO):
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
             create_gate_off_notes=self.get_option('create_gate_off_notes'),
             assert_gate_on_new_notes=self.get_option('assert_gate_on_new_notes'),
+            always_include_freq=self.get_option('always_include_freq'),
             seconds=self.get_option('seconds'),
             verbose=self.get_option('verbose')
         )
@@ -1057,24 +1057,27 @@ class SidImport:
         self.play_call_num = 0
 
     def get_note(self, freq_arch, vibrato_cents_margin=0, prev_note=None):
-        # siddump.c has an "old note factor" that helps return more consistant
-        # results when a large vibrato is in effect.  This works by allowing the user
-        # to set how influential the previous note is in interpreting the next note.
-        # Here's the algorithm (translated to python), but none of this logic reasoned
-        # consistently (linearly) about frequencies:
-        #     dist = 0x7fffffff; return_note = None
-        #     for d in range(96):
-        #         cmp_freq = freq_lo[d] | freq_hi[d] << 8
-        #         if abs(freq - cmp_freq) < dist:
-        #             dist = abs(freq - cmp_freq)
-        #             if prev_note == d:
-        #                 dist /= old_note_factor
-        #             return_note = d
-        #     return return_note
+        """
+        For a given sound chip frequency, convert to a audio frequency
+        and get the note.  If the frequency is within vibrato_cents_margin
+        of the previous note, then snap to the previous note.
 
-        if not 0 <= vibrato_cents_margin < MAX_CENTS:
+        :param freq_arch: A sound chip frequency
+        :type freq_arch: int
+        :param vibrato_cents_margin: snaps to previous note if within this margin, defaults to 0
+        :type vibrato_cents_margin: int, optional
+        :param prev_note: previous midi note number, defaults to None
+        :type prev_note: int, optional
+        :return: midi note number
+        :rtype: int
+        """
+
+        MAX_CENTS_IN_NOTE = 50
+        max_extent = 90  # nearly an entire note
+
+        if not 0 <= vibrato_cents_margin < max_extent:
             raise ChiptuneSAKValueError(
-                "ERROR: vibrato_cents_margin must be >= 0 and < %d" % MAX_CENTS)
+                "ERROR: vibrato_cents_margin must be >= 0 and < %d" % max_extent)
 
         # C-1 is the lowest note ChiptuneSAK handles, and the low-end of C-1 (midi
         #     note 0) when A4=440 is ~8.0Hz
@@ -1084,17 +1087,18 @@ class SidImport:
         if freq_arch != 0 and freq_arch_to_midi_num(freq_arch, self.arch, self.tuning)[0] >= 0:
             (midi_num, cents_offset) = freq_arch_to_midi_num(freq_arch, self.arch, self.tuning)
         else:
-            (midi_num, cents_offset) = (0, -MAX_CENTS + 1)  # for anything < 8Hz
+            (midi_num, cents_offset) = (0, -MAX_CENTS_IN_NOTE + 1)  # for anything < 8Hz
 
         # cents scale: note-1, -45, -40, ... -10, -5, note, +5, +10, ... +40, +45, note+1
         if prev_note is not None and abs(midi_num - prev_note) == 1 \
                 and cents_offset != 0 and vibrato_cents_margin != 0:
-            if cents_offset < 0:
-                cents_offset = MAX_CENTS + cents_offset
-            else:
-                cents_offset = MAX_CENTS - cents_offset
-            if cents_offset < vibrato_cents_margin:
-                midi_num = prev_note
+
+            if prev_note > midi_num:  # extend the margin into lower frequencies
+                if cents_offset >= MAX_CENTS_IN_NOTE - vibrato_cents_margin:
+                    midi_num = prev_note
+            else:  # extend the margin into higher frequencies
+                if cents_offset <= vibrato_cents_margin - MAX_CENTS_IN_NOTE:
+                    midi_num = prev_note
 
         return midi_num
 
@@ -1171,7 +1175,8 @@ class SidImport:
             print("Warning: SID play routine exited with a BRK")
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
-                   create_gate_off_notes=True, assert_gate_on_new_notes=False, verbose=True):
+                   create_gate_off_notes=True, assert_gate_on_new_notes=False,
+                   always_include_freq=False, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1186,6 +1191,15 @@ class SidImport:
         :type vibrato_cents_margin: int, optional
         :param seconds: seconds to capture, defaults to 60
         :type seconds: int, optional
+        :param create_gate_off_notes: If True, can create new notes when gate is off
+        :type bool
+        :param assert_gate_on_new_notes: If True, creates gate on event on new notes in
+                                         delta rows
+        :type bool
+        :param always_include_freq: If False, only includes freq with new notes
+        :type bool
+        :param verbose: If False, stdout suppressed
+        :type bool                   
         :return: A SID dump instance
         :rtype: Dump
         """
@@ -1483,8 +1497,10 @@ class SidImport:
                     prev_chn = prev_chip.channels[chn_num]
                     delta_chn = delta_chip.channels[chn_num]
 
-                    if chn.new_note:
+                    if always_include_freq or chn.new_note:
                         delta_chn.freq = chn.freq
+
+                    if chn.new_note:
                         delta_chn.note = chn.note
 
                     if chn.df > 0:

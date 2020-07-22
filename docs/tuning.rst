@@ -13,7 +13,7 @@ MIDI note numbers are based on an even-tempered chromatic scale with middle C (C
 
 Using this convention, the frequency of MIDI note number *n* is given by :math:`440*2^{(n - 69)/12}`
 
-Some MIDI octave conventions differ, e.g., calling middle C (261.63Hz) C3 instead of C4.  However, since MIDI does not internally use a note-octave representation, but rather a pitch number, this difference is only one of convention. With respect to ChiptuneSAK, such a system would have an octave offset of -1.
+Some MIDI octave conventions differ, e.g., calling middle C (261.63Hz) C3 instead of C4.  However, since MIDI does not internally use a note-octave representation, but rather a pitch number, this difference is only one of convention. With respect to ChiptuneSAK, such a system would have an octave offset of -1.  SID-Wizard is an example of an octave offset +1 system (an A4 in a SIDWizard NTSC export creates a SID frequency of 3610 which is 220.063 in audio frequency `which is an A3 <https://www.colincrawley.com/midi-note-to-audio-frequency-calculator/>`_).
 
 Pitches and Cents
 -----------------
