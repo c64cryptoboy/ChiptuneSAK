@@ -1,7 +1,4 @@
 # Convert goattracker .sng file into a midi .mid file
-#
-# TODOs:
-# - Need to consider inferring time signature and/or having the user be able to set it
 
 import argparse
 
@@ -29,9 +26,7 @@ def main():
 
     chirp_song = rchirp_song.to_chirp()
 
-    # TODO:  Need to consider inferring time signature and/or having the user be able to set it
-    # chirp_song.time_signature_changes.insert(0, ctsSong.TimeSignature(0, 3, 4))
-
+    # TODO:  Allow time signature to be set here?
     midi.MIDI().to_file(chirp_song, args.midi_out_file)
 
     print("\ndone")

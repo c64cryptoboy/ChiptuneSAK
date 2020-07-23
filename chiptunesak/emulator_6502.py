@@ -21,7 +21,6 @@
 #    https://github.com/irmen/pyc64
 
 # TODOs:
-# - Test a mirror set in VICE (on some vic register, not SID)
 # - throw an exception if the break flag ever appears on flags
 
 from chiptunesak.errors import ChiptuneSAKNotImplemented, ChiptuneSAKValueError
@@ -376,7 +375,6 @@ class Cpu6502Emulator:
     #     }                                                                    \
     # }
     def SBC(self, operand_ref):
-        # TODO: once this all works, clean up temp vars
         tempval = operand_ref.get_byte(self)
         temp = (self.a - tempval - ((self.flags & FC) ^ FC)) & 0xffff  # not a byte
 
@@ -2471,7 +2469,7 @@ class Cpu6502Emulator:
                            0xb2, 0xd2, 0xf2):
             raise ChiptuneSAKValueError("Error: CPU halt on ${:02X} at ${:04X}\n".format(instruction, self.pc - 1))
 
-        # Pseudo-ops I'm not likely to need for SID playback (TODO: implement later)
+        # Pseudo-ops probably not needed for SID content extraction
         # $03/3 ASL-ORA (zp,X)
         # $07/7 ASL-ORA zp
         # $0B/11 AND #n/MOV b7->Cy

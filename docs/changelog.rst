@@ -10,6 +10,10 @@ No releases yet
 Development History
 -------------------
 
+0.4.1 (2020-07-23)
+++++++++++++++++++
+* SID importing with support for multispeed
+
 0.4.0 (2020-06-27)
 ++++++++++++++++++
 * Package
@@ -52,7 +56,7 @@ Development History
 0.2.7 (2020-04-25)
 ++++++++++++++++++
 
-* 6502 simulation
+* 6502 emulation
 
 0.2.6 (2020-04-15)
 ++++++++++++++++++

@@ -20,7 +20,6 @@
 #
 # SidImport TODO:
 # - print warning if jmp or jsr to memory outside of modified memory
-#   (emulator_6502 would need to track memory writes that tracks what mem locations written to)
 
 
 import csv
@@ -1119,6 +1118,7 @@ class SidImport:
             if self.cpu_state.pc > MAX_INSTR:
                 raise Exception("CPU executed a high number of instructions in init routine")
 
+        # This is often an indication of a problem
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID init routine exited with a BRK")
 
@@ -1171,6 +1171,7 @@ class SidImport:
             if self.cpu_state.see_kernal and (0xea31 <= self.cpu_state.pc <= 0xea83):
                 return  # done with play call
 
+        # This is often an indication of a problem
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID play routine exited with a BRK")
 
@@ -1262,6 +1263,7 @@ class SidImport:
                 raise Exception('Error: unexpected architecture type "%s"' % self.arch)
 
             # TODO: Need to report throughout the play routine if cia timer value changes
+            # as has been done here with the init routine
 
             # if not much change, multispeed will snap to 1 (actually, it'll stay at 1)
             if cia_timer != expected_cia_timer:
@@ -1322,8 +1324,8 @@ class SidImport:
 
             # need to have I/O banked in, in order to read it
             if not self.cpu_state.see_io:
-                if self.play_call_num == 0:
-                    print("DEBUG: SID banks out IO after play calls")
+                if self.play_call_num == 0 and verbose:
+                    print("SID banks out IO after play calls")
                 self.cpu_state.bank_in_IO()
 
             # record the SID(s) state

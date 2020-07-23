@@ -26,8 +26,6 @@ def main():
         parser.error('Cannot find "%s"' % args.midi_in_file)
 
     # midi -> mchirp
-
-    # song = midi.import_midi_to_chirp(args.midi_in_file) # TODO remove this line
     song = midi.MIDI().to_chirp(args.midi_in_file)
 
     song.remove_keyswitches(8)
@@ -42,8 +40,6 @@ def main():
         song.metadata.name = args.midi_in_file.split(os.sep)[-1].lower()
 
     # chirp -> mchirp
-
-    # mchirp_song = MChirpSong(song) # TODO remove this line
     mchirp_song = song.to_mchirp()
 
     # mchirp -> C128 Basic

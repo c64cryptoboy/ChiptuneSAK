@@ -122,18 +122,22 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         # When I/O banked in:
         # - $D000-$D02E: reads/writes go to VIC-II chip registers
         # - $D02F-$D03F: In a real C64, always read as $FF, and cannot be altered
-        # - $D040-$D3FF: In a real C64, every 64-byte block here is a "mirror" of VIC-II registers at $D000
-        # - $D400-$D418: Write-only SID registers (read value is not SID register or the RAM underneath)
+        # - $D040-$D3FF: In a real C64, every 64-byte block here is a "mirror" of VIC-II
+        #                registers at $D000
+        # - $D400-$D418: Write-only SID registers (read value is not SID register or the
+        #                RAM underneath)
         # - $D419-$D41C: Read-only SID registers
         # - $D41D-$D41F: In a real C64, always read as $FF, and cannot be altered
-        # - $D420-$D4FF: In a real C64, every 32-bytes block here is a "mirror" of the SID registers at $D400
+        # - $D420-$D4FF: In a real C64, every 32-bytes block here is a "mirror" of the SID
+        #                registers at $D400
         # - $D800-$DBFF: reads/writes go to Color RAM
         # - $DC00-$DC0F: reads/writes go to CIA #1
-        # - $DC10-$DCFF: In a real C64, every 16-bytes block here is a "mirror" of the CIA registers at $DC00
+        # - $DC10-$DCFF: In a real C64, every 16-bytes block here is a "mirror" of the CIA
+        #                registers at $DC00
         # - $DD00-$DD0F: reads/writes go to CIA #2
-        # - $DD10-$DDFF: In a real C64, every 16-bytes block here is a "mirror" of the CIA registers at $DD00
-        # - $DE00-$DEFF: TODO: When no cart present, read/write behavior here is confusing
-        # - $DF00-$DFFF: TODO: When no cart present, read/write behavior here is confusing
+        # - $DD10-$DDFF: In a real C64, every 16-bytes block here is a "mirror" of the CIA
+        #                registers at $DD00
+        # - $DE00-$DFFF: When no cart present, read/write behavior here is undefined
 
         if self.see_io:  # If the I/O is banked in
             if 0xd02f <= loc <= 0xd03f or 0xd41d <= loc <= 0xd41f:
@@ -142,6 +146,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
             if 0xd040 <= loc <= 0xd3ff:  # VIC-II mirroring
                 return self.registers_io[((loc - 0xd040) % 64) + 0x040]
 
+            # TODO: This will need to be modified for 2SID and 3SID emulation
             if 0xd420 <= loc <= 0xd4ff:  # SID mirroring
                 return self.registers_io[((loc - 0xd420) % 32) + 0x420]
 

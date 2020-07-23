@@ -3,9 +3,10 @@ import copy
 from chiptunesak.base import *
 from chiptunesak.chirp import Note
 
+LP_VERSION = '2.18.2'  # TODO: 2.18.2 released 3/23/14, 2.20.0 released 3/1/20
 
 # TODO:
-# - There's possibly redundant code between export_clip_to_lilypond and export_song_to_lilypond
+# - Refactor common code out of export_clip_to_lilypond and export_song_to_lilypond?
 
 lp_pitches = {
     'sharps': ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"],
@@ -266,7 +267,7 @@ class Lilypond(ChiptuneSAKIO):
         if ts.start_time < measures[0].start_time:
             measures[0].events.insert(0, TimeSignatureEvent(measures[0].start_time, ts.num, ts.denom))
 
-        output.append('\\version "2.18.2"')
+        output.append('\\version "%s"' % LP_VERSION)
         output.append('''
             \\paper {
             indent=0\\mm line-width=120\\mm oddHeaderMarkup = ##f
@@ -305,7 +306,7 @@ class Lilypond(ChiptuneSAKIO):
         self.current_ottava = 0
         self.ppq = mchirp_song.metadata.ppq
         output = []
-        output.append('\\version "2.18.2"')
+        output.append('\\version "%s"' % LP_VERSION)
         output.append('\\header {')
         if len(mchirp_song.metadata.name) > 0:
             output.append(' title = "%s"' % mchirp_song.metadata.name)
