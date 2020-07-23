@@ -12,8 +12,8 @@ from chiptunesak.errors import *
 # Version information.  Update BUILD_VERSION with every significant bugfix;
 # update MINOR_VERSION with every feature addition
 MAJOR_VERSION = 0
-MINOR_VERSION = 4
-BUILD_VERSION = 0
+MINOR_VERSION = 5
+BUILD_VERSION = 2
 
 CHIPTUNESAK_VERSION = f"{MAJOR_VERSION}.{MINOR_VERSION}.{BUILD_VERSION}"
 CHIPTUNESAK_RELEASE = f"{MAJOR_VERSION}.{MINOR_VERSION}"
