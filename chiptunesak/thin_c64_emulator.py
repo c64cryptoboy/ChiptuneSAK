@@ -292,7 +292,12 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
 
     def get_cia_1_timer_a(self):
         # get le word from 0xdc04 I/O reg without mem_usage noticing
+        # note: registers_io index 0 = $D000
         return self.registers_io[0xc04] | (self.registers_io[0xc05] << 8)
+
+    def cia_1_timer_a_changed(self):
+        return ((self.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE)
+                or (self.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE))
 
 
 if __name__ == "__main__":

@@ -31,7 +31,6 @@ from typing import List
 from chiptunesak.constants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
 from chiptunesak.byte_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
-from chiptunesak import emulator_6502
 from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 from chiptunesak import rchirp
@@ -1200,7 +1199,7 @@ class SidImport:
         :param always_include_freq: If False, only includes freq with new notes
         :type bool
         :param verbose: If False, stdout suppressed
-        :type bool                   
+        :type bool
         :return: A SID dump instance
         :rtype: Dump
         """
@@ -1249,8 +1248,7 @@ class SidImport:
 
         # self.cpu_state.print_memory_usage()  # See what init touched
 
-        if ((self.cpu_state.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE)
-                or (self.cpu_state.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE)):
+        if self.cpu_state.cia_1_timer_a_changed():
             cia_timer = self.cpu_state.get_cia_1_timer_a()
             if verbose:
                 print("init routine set CIA timer to %d cycles" % cia_timer)
@@ -1261,9 +1259,6 @@ class SidImport:
                 expected_cia_timer = thin_c64_emulator.CIA_TIMER_NTSC
             else:
                 raise Exception('Error: unexpected architecture type "%s"' % self.arch)
-
-            # TODO: Need to report throughout the play routine if cia timer value changes
-            # as has been done here with the init routine
 
             # if not much change, multispeed will snap to 1 (actually, it'll stay at 1)
             if cia_timer != expected_cia_timer:
@@ -1317,10 +1312,21 @@ class SidImport:
         # will take over that responsibility.  This means we could set the stack pointer
         # to $F9 when calling the play routine.
 
+        play_updated_speed_cnt = 0
         old_loc1_val = self.cpu_state.get_mem(0x0001)
         self.cpu_state.debug = False
+
         while self.play_call_num < max_play_calls:
+            cia_timer = self.cpu_state.get_cia_1_timer_a()
+            self.cpu_state.clear_memory_usage()
+
             self.call_sid_play(sid_dump.sid_file.play_address)
+
+            # FUTURE: Currently this code doesn't change honor speed changes from the play
+            # routine (e.g., accelerandos, ritardandos, etc.), but multispeed settings from
+            # the init routine are processed.  But it will notify you if it happens.
+            if self.cpu_state.cia_1_timer_a_changed():
+                play_updated_speed_cnt += 1
 
             # need to have I/O banked in, in order to read it
             if not self.cpu_state.see_io:
@@ -1559,6 +1565,10 @@ class SidImport:
             delta_row.milliframe_num = prev_row.milliframe_num + millframes_to_next_call
 
             self.cpu_state.set_mem(0x0001, old_loc1_val)  # possibly swap I/O back out
+
+        # TODO: This code block line not yet tested
+        if verbose and play_updated_speed_cnt > 1:
+            print("Play routine changed the playback speed %d times" % play_updated_speed_cnt)
 
         if sid_dump.first_row_with_note > 0:
             sid_dump.trim_leading_rows(sid_dump.first_row_with_note)
