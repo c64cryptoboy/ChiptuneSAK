@@ -10,8 +10,8 @@ def create_output_files():
         sid_in_filename=sid_filename,
         subtune=1,
         vibrato_cents_margin=0,
-        create_gate_off_notes=True,
-        assert_gate_on_new_notes=True,
+        # For this piece, True enables arpeggios, and False enables just the chord root
+        assert_gate_on_new_notes=False,
         seconds=175,
         gcf_row_reduce=False,
     )

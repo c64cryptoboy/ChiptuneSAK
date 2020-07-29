@@ -17,8 +17,7 @@ class sidTests(unittest.TestCase):
             sid_in_filename=cls.sid_filename,
             subtune=0,  # Main theme
             vibrato_cents_margin=10,
-            seconds=4,  # just a small clip for testing
-            create_gate_off_notes=True,
+            seconds=4,  # just a 4 sec clip for testing, but ~80 if you want the whole tune
             gcf_row_reduce=True,
             verbose=False
         )
@@ -161,7 +160,6 @@ class sidTests(unittest.TestCase):
             vibrato_cents_margin=0,
             seconds=6,
             gcf_row_reduce=False,
-            create_gate_off_notes=True,
             always_include_freq=True,
             verbose=False,
         )
@@ -182,7 +180,6 @@ class sidTests(unittest.TestCase):
             vibrato_cents_margin=42,
             seconds=6,
             gcf_row_reduce=False,
-            create_gate_off_notes=True,
             always_include_freq=True,
             verbose=False,
         )
@@ -270,25 +267,6 @@ class sidTests(unittest.TestCase):
         # (~448.973, 34, 35)
         (orig_tuning, orig_min_cents, orig_max_cents) \
             = self.sid_dump.get_tuning()  # CONCERT_A
-
-        # Don't need this test code, since no note decisions are going to change based
-        # on this small tuning
-        '''
-        tuned_sid = SID()
-        tuned_sid.set_options(
-            sid_in_filename=self.sid_filename,
-            subtune=0,
-            vibrato_cents_margin=10,
-            seconds=4,
-            gcf_row_reduce=False,
-            verbose=False,
-            tuning=orig_tuning
-        )
-        tuned_sid_dump = tuned_sid.capture()
-
-        (new_tuning, new_min_cents, new_max_cents) \
-            = tuned_sid_dump.get_tuning(orig_tuning)
-        '''
 
         # (~439.987574, -1, 0)
         (new_tuning, new_min_cents, new_max_cents) \

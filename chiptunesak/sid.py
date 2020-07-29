@@ -54,7 +54,7 @@ class SID(ChiptuneSAKIO):
             arch=DEFAULT_ARCH,               # note: will be overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off
-            assert_gate_on_new_notes=False,  # True forces a gate on in delta rows with new notes
+            assert_gate_on_new_notes=True,   # True forces a gate on event in delta rows with new notes
             always_include_freq=False,       # False = include freq in delta rows only with new note
             verbose=True,                    # False = suppress stdout details
         )
@@ -834,7 +834,7 @@ class Channel:
     decay: int = 0
     sustain: int = 0
     release: int = 0
-    release_milliframe: int = None  # milliframe when release started
+    release_milliframe: int = None  # mf when release started, None if gate unchanged since last on
     gate_on: bool = False  # True = gate on
     sync_on: bool = False  # True = Synchronize c's Oscillator with (c-1)'s Oscillator frequency
     ring_on: bool = False  # True = c's triangle output becomes ring mod oscillators c and c-1
@@ -1175,7 +1175,7 @@ class SidImport:
             print("Warning: SID play routine exited with a BRK")
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
-                   create_gate_off_notes=True, assert_gate_on_new_notes=False,
+                   create_gate_off_notes=True, assert_gate_on_new_notes=True,
                    always_include_freq=False, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
@@ -1409,14 +1409,14 @@ class SidImport:
                     prev_chn = prev_row.chips[chip_num].channels[chn_num]
 
                     # determine channel's envelope release status
-                    if chn.gate_on or (not chn.gate_on and self.play_call_num == 0):
+                    if chn.gate_on or self.play_call_num == 0:
                         chn.release_milliframe = None  # No release in progress
-                    else:  # channel gate is off
+                    else:  # if channel gate is off
                         if prev_chn.gate_on:  # If gate just turned off
                             # start of new release
                             chn.release_milliframe = row.milliframe_num
                         else:
-                            # possible release continuation
+                            # continue with previous value (may be None)
                             chn.release_milliframe = prev_chn.release_milliframe
 
                     # set within_release_window to True if envelope is still releasing
@@ -1432,11 +1432,16 @@ class SidImport:
                     if (chn_num == 2) and row.chips[chip_num].no_sound_v3:
                         channel_off = True
 
+                    # True if the last (not necessarily previous) change in gate status was to on
+                    #    TODO: there's a small edge case on the very first row that likely doesn't
+                    #    matter but to fix it, a chn.last_gate_change could be added.
+                    gate_is_on = chn.release_milliframe is None
+
                     # Is there an active (not released) note playing?
                     chn.active_note = (
                         not channel_off
                         and chn.waveforms != 0  # tri, saw, pulse, and/or noise active
-                        and chn.gate_on)
+                        and gate_is_on)
 
                     # what the note would be for the current frequency
                     chn.note = self.get_note(chn.freq, vibrato_cents_margin, prev_chn.note)
@@ -1462,11 +1467,11 @@ class SidImport:
 
                     chn.new_note = (self.play_call_num == 0 or make_new_note)
 
-                    # if not a new note, but there's a change in frequency...
                     if self.play_call_num > 0:
                         delta = chn.freq - prev_chn.freq
                     else:
                         delta = 0
+                    # if not a new note, but there's a change in frequency...
                     if not chn.new_note:
                         chn.df = delta
                     else:

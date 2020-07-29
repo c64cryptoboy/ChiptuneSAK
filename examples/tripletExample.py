@@ -2,12 +2,59 @@ import os
 import subprocess
 import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
+from chiptunesak.sid import SID, SidImport
 
 """
 This example shows how to do metric modulation to remove triplets
 
-
+TODO:
+- Can now get the Skyfox data from ChiptuneSAK itself.  Rewrite lilypond export to use that data.
 """
+
+sid_filename = project_to_absolute_path('examples/sid/Skyfox.sid')
+
+sid = SID()
+sid.set_options(
+    sid_in_filename=sid_filename,
+    vibrato_cents_margin=0,
+    seconds=100,  # Skyfox SID playback continues to repeat, 100 secs is enough
+    # always_include_freq=True,
+    # gcf_row_reduce=False,
+    verbose=True
+)
+
+sid_dump = sid.capture()  # noqa: F841
+
+# Notes:
+# - When assert_gate_on_new_notes=False, CSV shows that Skyfox turns the note gates on,
+#   and never changes the gate value again
+# - Voice 2 does a portamento from F4 to B2 and back to F3 from frame (play call) 3792 to 3818,
+#   during which, freq only seems to be updated every other frame.
+#   Q: Were these stored as discrete notes, or as a pair of portamento events?
+
+# filename_no_ext = 'examples/data/Skyfox'
+
+# csv_filename = '%s.csv' % filename_no_ext
+# print("writing %s" % csv_filename)
+# sid.to_csv_file(project_to_absolute_path(csv_filename))
+
+# midi_filename = '%s.mid' % filename_no_ext
+# print("writing %s" % midi_filename)
+rchirp_song = sid.to_rchirp()
+
+# CSV shows 24 plays calls per quarter note
+#   24 = 2^3 * 3, the factor of 3 is necessary for all the division-by-three rhythms
+play_calls_per_quarter = 24
+chirp_song = \
+    rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
+
+# chirp_song.set_key_signature('G')
+# chirp_song.set_time_signature(6, 4)
+
+# chiptunesak.MIDI().to_file(
+#     chirp_song, project_to_absolute_path(midi_filename))
+
+exit("early exit")
 
 output_folder = str(project_to_absolute_path('examples\\data\\triplets')) + '\\'
 input_folder = output_folder
@@ -33,7 +80,7 @@ chirp_song.scale_ticks(6.25)
 chirp_song.metadata.ppq = 960
 chirp_song.set_qpm(original_qpm * 1.25)
 chirp_song.set_time_signature(4, 4)
-chirp_song.set_key_signature('B')
+chirp_song.set_key_signature('G')
 
 chirp_song.quantize(80, 80)
 chirp_song.remove_polyphony()
