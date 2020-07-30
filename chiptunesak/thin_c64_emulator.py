@@ -29,7 +29,9 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         self.has_kernal = False
         self.has_char = False
 
-        self.rom_kernal = [0] * 8192   # KERNAL ROM 57344-65535 ($E000-$FFFF)
+        self.set_mem_callback = None  # optional callback for processing memory writes
+
+        self.rom_kernal = [0] * 8192    # KERNAL ROM 57344-65535 ($E000-$FFFF)
         self.rom_basic = [0] * 8192     # BASIC ROM 40960-49151 ($A000-$BFFF)
         self.rom_char = [0] * 4096      # Character set ROM 53248-57343 ($D000-$DFFF)
         self.registers_io = [0] * 4096  # Pretending I/O ($D000-$DFFF) are all registers
@@ -170,6 +172,9 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         if not (0 <= val <= 255):
             exit("Error: POKE(%d),%d out of range" % (loc, val))
 
+        if self.set_mem_callback is not None:
+            self.set_mem_callback(loc, val)
+
         if (0xd000 < loc < 0xdfff) and self.see_io:
             if 0xd02f <= loc <= 0xd03f or 0xd41d <= loc <= 0xd41f:
                 return  # unsettable
@@ -296,8 +301,8 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         return self.registers_io[0xc04] | (self.registers_io[0xc05] << 8)
 
     def cia_1_timer_a_changed(self):
-        return ((self.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE)
-                or (self.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE))
+        return ((self.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE != 0)
+                or (self.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE != 0))
 
 
 if __name__ == "__main__":
