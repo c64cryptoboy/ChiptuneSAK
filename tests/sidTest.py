@@ -17,8 +17,7 @@ class sidTests(unittest.TestCase):
             sid_in_filename=cls.sid_filename,
             subtune=0,  # Main theme
             vibrato_cents_margin=10,
-            seconds=4,  # just a small clip for testing
-            create_gate_off_notes=True,
+            seconds=4,  # just a 4 sec clip for testing, but ~80 if you want the whole tune
             gcf_row_reduce=True,
             verbose=False
         )
@@ -114,6 +113,89 @@ class sidTests(unittest.TestCase):
             si_ntsc.get_note(sharp_g2_freq, vibrato_cents_margin=15, prev_note=g2_midi_num + 1),
             g2_midi_num)
 
+    def v1_vibrato_bounded(self, sid_rows, start_frame):
+        unique_notes = set()
+        sid_chip_index = 0
+        channel_index = 0
+        for row_num in range(start_frame, start_frame + 70):
+            note = sid_rows[row_num].chips[sid_chip_index].channels[channel_index].note
+            if note is not None:
+                unique_notes.add(note)
+        return len(unique_notes) == 1
+
+    # @unittest.skip("Skipping this test for now")
+    def test_vibrato_handling(self):
+        # test vibrato handling on notes with increasingly higher amplitudes
+
+        # Test data created with SID-Wizard 1.8, Extra engine
+        # Desc:
+        # - Used a simple triangle waveform (just ADSR 80F9, ADHR 0F00, WFARP 11)
+        # - 08 in col 3 overrides vibrato.
+        # - First nibble of column 4 is vibrato amplitude (0 is none, F is largest)
+        # - Second nibble of column 4 is vibrato frequency (0 is fastest, F is slowest)
+        # - SID-Wizard has an octave offset of +1
+        # - Not multi-speed, so play call = frame #
+        # Data:
+        # - 00: col 1: A-4 col 3-4: 08 27
+        # - 06: note off
+        # - 0C: col 1: A-4 col 3-4: 08 67
+        # - 12: note off
+        # - 18: col 1: A-4 col 3-4: 08 87
+        # - 1E: note off
+        # - 24: col 1: A-4 col 3-4: 08 A7
+        # - 2A: note off
+        # Vibrato ranges:
+        # - 1st note, frames   3- 72:  A3 -20 cents to  A3 +17 cents
+        # - 2nd note, frames  75-144: G#3 +44 cents to  A3 +42 cents
+        # - 3rd note, frames 147-216: G#3 + 8 cents to A#3 -33 cents
+        # - 4th note, frames 219-288: G#3 -49 cents to A#3 + 6 cents
+
+        vibrato_test_filename = project_to_absolute_path('tests/data/vibratotest.sid')
+
+        # First test has 0 cents margin, so only first vibrato note will stay
+        # a single note
+        vibrato_test_sid = SID()
+        vibrato_test_sid.set_options(
+            sid_in_filename=vibrato_test_filename,
+            vibrato_cents_margin=0,
+            seconds=6,
+            gcf_row_reduce=False,
+            always_include_freq=True,
+            verbose=False,
+        )
+        vibrato_test_dump = vibrato_test_sid.capture()
+        sid_rows = vibrato_test_dump.rows
+
+        # out_filename_no_ext = project_to_absolute_path('tests/temp/vibratoTest0cents')
+        # vibrato_test_sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
+
+        self.assertTrue(self.v1_vibrato_bounded(sid_rows, 3))
+        self.assertFalse(self.v1_vibrato_bounded(sid_rows, 75))
+        self.assertFalse(self.v1_vibrato_bounded(sid_rows, 147))
+        self.assertFalse(self.v1_vibrato_bounded(sid_rows, 219))
+
+        vibrato_test_sid = SID()
+        vibrato_test_sid.set_options(
+            sid_in_filename=vibrato_test_filename,
+            vibrato_cents_margin=42,
+            seconds=6,
+            gcf_row_reduce=False,
+            always_include_freq=True,
+            verbose=False,
+        )
+        vibrato_test_dump = vibrato_test_sid.capture()
+        sid_rows = vibrato_test_dump.rows
+
+        # out_filename_no_ext = project_to_absolute_path('tests/temp/vibratoTest42cents')
+        # vibrato_test_sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
+
+        # Second test has a 42 cents margin, so all but the last vibrato note will
+        # collapse into a single note
+        self.assertTrue(self.v1_vibrato_bounded(sid_rows, 3))
+        self.assertTrue(self.v1_vibrato_bounded(sid_rows, 75))
+        self.assertTrue(self.v1_vibrato_bounded(sid_rows, 147))
+        self.assertFalse(self.v1_vibrato_bounded(sid_rows, 219))
+
     # @unittest.skip("Skipping this test for now")
     def test_SID_extraction(self):
         # Test SID import for expected values in RChirp, and ability to transform extraction
@@ -185,25 +267,6 @@ class sidTests(unittest.TestCase):
         # (~448.973, 34, 35)
         (orig_tuning, orig_min_cents, orig_max_cents) \
             = self.sid_dump.get_tuning()  # CONCERT_A
-
-        # Don't need this test code, since no note decisions are going to change based
-        # on this small tuning
-        '''
-        tuned_sid = SID()
-        tuned_sid.set_options(
-            sid_in_filename=self.sid_filename,
-            subtune=0,
-            vibrato_cents_margin=10,
-            seconds=4,
-            gcf_row_reduce=False,
-            verbose=False,
-            tuning=orig_tuning
-        )
-        tuned_sid_dump = tuned_sid.capture()
-
-        (new_tuning, new_min_cents, new_max_cents) \
-            = tuned_sid_dump.get_tuning(orig_tuning)
-        '''
 
         # (~439.987574, -1, 0)
         (new_tuning, new_min_cents, new_max_cents) \

@@ -677,12 +677,12 @@ class RChirpSong(ChiptuneSAKBase):
                 #    no in progress.
                 #
                 # If a note change happens when the gate is None, then that note is not
-                # created in the Chirp conversion.  Often, this creates excellent musical
+                # created in the Chirp conversion.  Sometimes, this creates excellent musical
                 # summarization when encountering what I'll call note storms (e.g., "arpeggio
                 # chords" and the like), as C64 composers frequently use gate changes to
                 # represent the starts and ends of such runs.
-                # If you want every note preserved, creating a gate on event for each note
-                # will do the trick, and the option assert_gate_on_new_notes will do this.
+                # To see if this is useful in your use case, turn assert_gate_on_new_notes to
+                # False when extracting the SID.
                 if row.gate:
                     if current_note:
                         new_note = chirp.Note(

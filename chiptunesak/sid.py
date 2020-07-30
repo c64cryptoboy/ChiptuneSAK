@@ -20,7 +20,6 @@
 #
 # SidImport TODO:
 # - print warning if jmp or jsr to memory outside of modified memory
-#   (emulator_6502 would need to track memory writes that tracks what mem locations written to)
 
 
 import csv
@@ -32,12 +31,9 @@ from typing import List
 from chiptunesak.constants import ARCH, DEFAULT_ARCH, CONCERT_A, freq_arch_to_freq, freq_arch_to_midi_num
 from chiptunesak.byte_util import big_endian_int, little_endian_int
 from chiptunesak.base import ChiptuneSAKIO, pitch_to_note_name
-from chiptunesak import emulator_6502
 from chiptunesak import thin_c64_emulator
 from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 from chiptunesak import rchirp
-
-MAX_CENTS = 50
 
 
 class SID(ChiptuneSAKIO):
@@ -58,7 +54,8 @@ class SID(ChiptuneSAKIO):
             arch=DEFAULT_ARCH,               # note: will be overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off
-            assert_gate_on_new_notes=False,  # True forces a gate on event in delta rows with new notes
+            assert_gate_on_new_notes=True,   # True forces a gate on event in delta rows with new notes
+            always_include_freq=False,       # False = include freq in delta rows only with new note
             verbose=True,                    # False = suppress stdout details
         )
 
@@ -94,6 +91,7 @@ class SID(ChiptuneSAKIO):
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
             create_gate_off_notes=self.get_option('create_gate_off_notes'),
             assert_gate_on_new_notes=self.get_option('assert_gate_on_new_notes'),
+            always_include_freq=self.get_option('always_include_freq'),
             seconds=self.get_option('seconds'),
             verbose=self.get_option('verbose')
         )
@@ -836,7 +834,7 @@ class Channel:
     decay: int = 0
     sustain: int = 0
     release: int = 0
-    release_milliframe: int = None  # milliframe when release started
+    release_milliframe: int = None  # mf when release started, None if gate unchanged since last on
     gate_on: bool = False  # True = gate on
     sync_on: bool = False  # True = Synchronize c's Oscillator with (c-1)'s Oscillator frequency
     ring_on: bool = False  # True = c's triangle output becomes ring mod oscillators c and c-1
@@ -1057,24 +1055,27 @@ class SidImport:
         self.play_call_num = 0
 
     def get_note(self, freq_arch, vibrato_cents_margin=0, prev_note=None):
-        # siddump.c has an "old note factor" that helps return more consistant
-        # results when a large vibrato is in effect.  This works by allowing the user
-        # to set how influential the previous note is in interpreting the next note.
-        # Here's the algorithm (translated to python), but none of this logic reasoned
-        # consistently (linearly) about frequencies:
-        #     dist = 0x7fffffff; return_note = None
-        #     for d in range(96):
-        #         cmp_freq = freq_lo[d] | freq_hi[d] << 8
-        #         if abs(freq - cmp_freq) < dist:
-        #             dist = abs(freq - cmp_freq)
-        #             if prev_note == d:
-        #                 dist /= old_note_factor
-        #             return_note = d
-        #     return return_note
+        """
+        For a given sound chip frequency, convert to a audio frequency
+        and get the note.  If the frequency is within vibrato_cents_margin
+        of the previous note, then snap to the previous note.
 
-        if not 0 <= vibrato_cents_margin < MAX_CENTS:
+        :param freq_arch: A sound chip frequency
+        :type freq_arch: int
+        :param vibrato_cents_margin: snaps to previous note if within this margin, defaults to 0
+        :type vibrato_cents_margin: int, optional
+        :param prev_note: previous midi note number, defaults to None
+        :type prev_note: int, optional
+        :return: midi note number
+        :rtype: int
+        """
+
+        MAX_CENTS_IN_NOTE = 50
+        max_extent = 90  # nearly an entire note
+
+        if not 0 <= vibrato_cents_margin < max_extent:
             raise ChiptuneSAKValueError(
-                "ERROR: vibrato_cents_margin must be >= 0 and < %d" % MAX_CENTS)
+                "ERROR: vibrato_cents_margin must be >= 0 and < %d" % max_extent)
 
         # C-1 is the lowest note ChiptuneSAK handles, and the low-end of C-1 (midi
         #     note 0) when A4=440 is ~8.0Hz
@@ -1084,17 +1085,18 @@ class SidImport:
         if freq_arch != 0 and freq_arch_to_midi_num(freq_arch, self.arch, self.tuning)[0] >= 0:
             (midi_num, cents_offset) = freq_arch_to_midi_num(freq_arch, self.arch, self.tuning)
         else:
-            (midi_num, cents_offset) = (0, -MAX_CENTS + 1)  # for anything < 8Hz
+            (midi_num, cents_offset) = (0, -MAX_CENTS_IN_NOTE + 1)  # for anything < 8Hz
 
         # cents scale: note-1, -45, -40, ... -10, -5, note, +5, +10, ... +40, +45, note+1
         if prev_note is not None and abs(midi_num - prev_note) == 1 \
                 and cents_offset != 0 and vibrato_cents_margin != 0:
-            if cents_offset < 0:
-                cents_offset = MAX_CENTS + cents_offset
-            else:
-                cents_offset = MAX_CENTS - cents_offset
-            if cents_offset < vibrato_cents_margin:
-                midi_num = prev_note
+
+            if prev_note > midi_num:  # extend the margin into lower frequencies
+                if cents_offset >= MAX_CENTS_IN_NOTE - vibrato_cents_margin:
+                    midi_num = prev_note
+            else:  # extend the margin into higher frequencies
+                if cents_offset <= vibrato_cents_margin - MAX_CENTS_IN_NOTE:
+                    midi_num = prev_note
 
         return midi_num
 
@@ -1115,6 +1117,7 @@ class SidImport:
             if self.cpu_state.pc > MAX_INSTR:
                 raise Exception("CPU executed a high number of instructions in init routine")
 
+        # This is often an indication of a problem
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID init routine exited with a BRK")
 
@@ -1167,11 +1170,13 @@ class SidImport:
             if self.cpu_state.see_kernal and (0xea31 <= self.cpu_state.pc <= 0xea83):
                 return  # done with play call
 
+        # This is often an indication of a problem
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID play routine exited with a BRK")
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
-                   create_gate_off_notes=True, assert_gate_on_new_notes=False, verbose=True):
+                   create_gate_off_notes=True, assert_gate_on_new_notes=True,
+                   always_include_freq=False, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
         interacts with the virtual SID chip(s), and records these interactions
@@ -1186,6 +1191,15 @@ class SidImport:
         :type vibrato_cents_margin: int, optional
         :param seconds: seconds to capture, defaults to 60
         :type seconds: int, optional
+        :param create_gate_off_notes: If True, can create new notes when gate is off
+        :type bool
+        :param assert_gate_on_new_notes: If True, creates gate on event on new notes in
+                                         delta rows
+        :type bool
+        :param always_include_freq: If False, only includes freq with new notes
+        :type bool
+        :param verbose: If False, stdout suppressed
+        :type bool
         :return: A SID dump instance
         :rtype: Dump
         """
@@ -1234,8 +1248,7 @@ class SidImport:
 
         # self.cpu_state.print_memory_usage()  # See what init touched
 
-        if ((self.cpu_state.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE)
-                or (self.cpu_state.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE)):
+        if self.cpu_state.cia_1_timer_a_changed():
             cia_timer = self.cpu_state.get_cia_1_timer_a()
             if verbose:
                 print("init routine set CIA timer to %d cycles" % cia_timer)
@@ -1246,8 +1259,6 @@ class SidImport:
                 expected_cia_timer = thin_c64_emulator.CIA_TIMER_NTSC
             else:
                 raise Exception('Error: unexpected architecture type "%s"' % self.arch)
-
-            # TODO: Need to report throughout the play routine if cia timer value changes
 
             # if not much change, multispeed will snap to 1 (actually, it'll stay at 1)
             if cia_timer != expected_cia_timer:
@@ -1301,15 +1312,26 @@ class SidImport:
         # will take over that responsibility.  This means we could set the stack pointer
         # to $F9 when calling the play routine.
 
+        play_updated_speed_cnt = 0
         old_loc1_val = self.cpu_state.get_mem(0x0001)
         self.cpu_state.debug = False
+
         while self.play_call_num < max_play_calls:
+            cia_timer = self.cpu_state.get_cia_1_timer_a()
+            self.cpu_state.clear_memory_usage()
+
             self.call_sid_play(sid_dump.sid_file.play_address)
+
+            # FUTURE: Currently this code doesn't change honor speed changes from the play
+            # routine (e.g., accelerandos, ritardandos, etc.), but multispeed settings from
+            # the init routine are processed.  But it will notify you if it happens.
+            if self.cpu_state.cia_1_timer_a_changed():
+                play_updated_speed_cnt += 1
 
             # need to have I/O banked in, in order to read it
             if not self.cpu_state.see_io:
-                if self.play_call_num == 0:
-                    print("DEBUG: SID banks out IO after play calls")
+                if self.play_call_num == 0 and verbose:
+                    print("SID banks out IO after play calls")
                 self.cpu_state.bank_in_IO()
 
             # record the SID(s) state
@@ -1387,14 +1409,14 @@ class SidImport:
                     prev_chn = prev_row.chips[chip_num].channels[chn_num]
 
                     # determine channel's envelope release status
-                    if chn.gate_on or (not chn.gate_on and self.play_call_num == 0):
+                    if chn.gate_on or self.play_call_num == 0:
                         chn.release_milliframe = None  # No release in progress
-                    else:  # channel gate is off
+                    else:  # if channel gate is off
                         if prev_chn.gate_on:  # If gate just turned off
                             # start of new release
                             chn.release_milliframe = row.milliframe_num
                         else:
-                            # possible release continuation
+                            # continue with previous value (may be None)
                             chn.release_milliframe = prev_chn.release_milliframe
 
                     # set within_release_window to True if envelope is still releasing
@@ -1410,11 +1432,16 @@ class SidImport:
                     if (chn_num == 2) and row.chips[chip_num].no_sound_v3:
                         channel_off = True
 
+                    # True if the last (not necessarily previous) change in gate status was to on
+                    #    TODO: there's a small edge case on the very first row that likely doesn't
+                    #    matter but to fix it, a chn.last_gate_change could be added.
+                    gate_is_on = chn.release_milliframe is None
+
                     # Is there an active (not released) note playing?
                     chn.active_note = (
                         not channel_off
                         and chn.waveforms != 0  # tri, saw, pulse, and/or noise active
-                        and chn.gate_on)
+                        and gate_is_on)
 
                     # what the note would be for the current frequency
                     chn.note = self.get_note(chn.freq, vibrato_cents_margin, prev_chn.note)
@@ -1440,11 +1467,11 @@ class SidImport:
 
                     chn.new_note = (self.play_call_num == 0 or make_new_note)
 
-                    # if not a new note, but there's a change in frequency...
                     if self.play_call_num > 0:
                         delta = chn.freq - prev_chn.freq
                     else:
                         delta = 0
+                    # if not a new note, but there's a change in frequency...
                     if not chn.new_note:
                         chn.df = delta
                     else:
@@ -1483,8 +1510,10 @@ class SidImport:
                     prev_chn = prev_chip.channels[chn_num]
                     delta_chn = delta_chip.channels[chn_num]
 
-                    if chn.new_note:
+                    if always_include_freq or chn.new_note:
                         delta_chn.freq = chn.freq
+
+                    if chn.new_note:
                         delta_chn.note = chn.note
 
                     if chn.df > 0:
@@ -1541,6 +1570,10 @@ class SidImport:
             delta_row.milliframe_num = prev_row.milliframe_num + millframes_to_next_call
 
             self.cpu_state.set_mem(0x0001, old_loc1_val)  # possibly swap I/O back out
+
+        # TODO: This code block line not yet tested
+        if verbose and play_updated_speed_cnt > 1:
+            print("Play routine changed the playback speed %d times" % play_updated_speed_cnt)
 
         if sid_dump.first_row_with_note > 0:
             sid_dump.trim_leading_rows(sid_dump.first_row_with_note)

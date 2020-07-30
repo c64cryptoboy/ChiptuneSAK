@@ -1,7 +1,4 @@
 # Convert midi .mid file into a goattracker .sng file
-#
-# TODOs:
-# -
 
 import argparse
 from os import path
