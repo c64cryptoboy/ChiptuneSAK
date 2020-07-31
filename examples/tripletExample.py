@@ -66,7 +66,7 @@ subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=Tru
 
 chirp_song.modulate(3, 2)
 chirp_song.quantize(120, 120)
-chiptunesak.MIDI().to_file(chirp_song, output_mid_file)
+chiptunesak.MIDI().to_file(chirp_song, output_mod_mid_file)
 
 mchirp_song = chirp_song.to_mchirp()
 chiptunesak.Lilypond().to_file(mchirp_song, output_ly_file_mod, format='song')
