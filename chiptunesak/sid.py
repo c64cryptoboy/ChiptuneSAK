@@ -917,11 +917,11 @@ class Channel:
 
 @dataclass
 class Chip:
-    vol: int = 0    # 4-bit resolution
-    filters: int = 0  # 3 bits showing if hi, band, and/or lo filters enabled
-    cutoff: int = 0  # 11-bit filter cutoff
-    resonance: int = 0  # 4-bit filter resonance
-    no_sound_v3: bool = False  # True = channel 3 doesn't produce sound
+    vol: int = 0                    # 4-bit resolution
+    filters: int = 0                # 3 bits showing if hi, band, and/or lo filters enabled
+    cutoff: int = 0                 # 11-bit filter cutoff
+    resonance: int = 0              # 4-bit filter resonance
+    no_sound_v3: bool = False       # True = channel 3 doesn't produce sound
     channels: List[Channel] = None  # three Channel instances
 
     def __post_init__(self):
@@ -959,8 +959,8 @@ class Row:
     def __init__(self, num_chips=1):
         self.play_call_num = None
         self.milliframe_num = None   # when the play call happened
-        self.chips = None   # 1 to 3 Chip instances (2 for 2SID, 3 for 3SID)
-        self.num_chips = num_chips  # Number of SID chips assumed by SID song
+        self.chips = None            # 1 to 3 Chip instances (2 for 2SID, 3 for 3SID)
+        self.num_chips = num_chips   # Number of SID chips assumed by SID song
 
         if not 1 <= self.num_chips <= 3:
             raise Exception("Error: Row must specify 1 to 3 SID chips")
@@ -1047,12 +1047,13 @@ class Dump:
 
 class SidImport:
     def __init__(self, arch=DEFAULT_ARCH, tuning=CONCERT_A):
-        self.arch = arch  # Note, overwritten when SID file loaded
+        self.arch = arch      # Note, overwritten when SID file loaded
         self.tuning = tuning  # proper tuning can mean better vibrato note capture
 
         self.cpu_state = thin_c64_emulator.ThinC64Emulator()
         self.cpu_state.exit_on_empty_stack = True
         self.play_call_num = 0
+        self.ordered_io_settings = []
 
     def get_note(self, freq_arch, vibrato_cents_margin=0, prev_note=None):
         """
@@ -1174,6 +1175,37 @@ class SidImport:
         if self.cpu_state.last_instruction == 0x00:
             print("Warning: SID play routine exited with a BRK")
 
+    def track_io_settings(self, loc, val):
+        """
+        Callback method that keeps track of each I/O address and what was
+        written to it in the play routine.  Events are ordered.
+
+        :param loc: [description]
+        :type loc: [type]
+        :param val: [description]
+        :type val: [type]
+        """
+        if (0xd000 < loc < 0xdfff):
+            self.ordered_io_settings.append((loc, val))
+
+    def gate_was_set_for_voice(self, voice_ctrl_reg, gate_setting):
+        """
+        Returns True if the given voice control register was set in the play call
+        with gate_setting True indicating gate was set on, or with gate_setting False
+        indicating gate was set off.  Otherwise, False.
+
+        :param voice_ctrl_reg: the voice control register location
+        :type voice_ctrl_reg: int
+        :param gate_setting: the gate setting to check for (True = set on, False = set off)
+        :type gate_setting: bool
+        :return: True if voice_ctrl_reg's gate was set to get_setting during play call
+        :rtype: bool
+        """
+        for (io_loc, io_val) in self.ordered_io_settings:
+            if io_loc == voice_ctrl_reg and (gate_setting == (io_val & 0b00000001 == 1)):
+                return True
+        return False
+
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
                    create_gate_off_notes=True, assert_gate_on_new_notes=True,
                    always_include_freq=False, verbose=True):
@@ -1226,6 +1258,7 @@ class SidImport:
             raise ChiptuneSAKValueError("Error: SID data continues past end of C64 memory")
 
         self.cpu_state.inject_bytes(sid_dump.sid_file.load_address, sid_dump.sid_file.c64_payload)
+        self.cpu_state.set_mem_callback = self.track_io_settings
 
         # Bank out ROMs, the SID init can bring them back in if it wants to
         self.cpu_state.set_mem(0x0001, 0b00110101)
@@ -1243,7 +1276,11 @@ class SidImport:
                     print("headers indicate VBI driven")
 
         self.cpu_state.debug = False
-        self.cpu_state.clear_memory_usage()  # set a clean baseline
+
+        # both of these are useful for seeing how init and play routines touch the SID
+        self.cpu_state.clear_memory_usage()
+        self.ordered_io_settings = []
+
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)
 
         # self.cpu_state.print_memory_usage()  # See what init touched
@@ -1319,12 +1356,13 @@ class SidImport:
         while self.play_call_num < max_play_calls:
             cia_timer = self.cpu_state.get_cia_1_timer_a()
             self.cpu_state.clear_memory_usage()
+            self.ordered_io_settings = []
 
             self.call_sid_play(sid_dump.sid_file.play_address)
 
-            # FUTURE: Currently this code doesn't change honor speed changes from the play
-            # routine (e.g., accelerandos, ritardandos, etc.), but multispeed settings from
-            # the init routine are processed.  But it will notify you if it happens.
+            # FUTURE: Currently this code doesn't honor speed changes from the play routine
+            # (e.g., accelerandos, ritardandos, etc.), only the init routine.  But it will
+            # notify you if it happens.
             if self.cpu_state.cia_1_timer_a_changed():
                 play_updated_speed_cnt += 1
 
@@ -1369,7 +1407,10 @@ class SidImport:
 
                 # Next, capture channel-specific values
                 for chn_num, chn in enumerate(row.chips[chip_num].channels):
-                    chn.freq = self.cpu_state.get_le_word(sid_addr + 7 * chn_num)
+                    prev_chn = prev_row.chips[chip_num].channels[chn_num]
+
+                    mem_freq = sid_addr + 7 * chn_num
+                    chn.freq = self.cpu_state.get_le_word(mem_freq)
                     sid_dump.raw_freqs.append(chn.freq)
 
                     # 12-bit pulse
@@ -1401,12 +1442,9 @@ class SidImport:
                                 | self.cpu_state.get_mem(sid_addr + 0x06 + 7 * chn_num))
                     chn.set_adsr_fields()
 
-                    # See comments on Filter Resonance Control Filter (above)
                     voices_filtered = filt_ctrl & 0b00000111
                     # Determine if this channel is using the filter
                     chn.filtered = (voices_filtered & (2 ** chn_num)) != 0
-
-                    prev_chn = prev_row.chips[chip_num].channels[chn_num]
 
                     # determine channel's envelope release status
                     if chn.gate_on or self.play_call_num == 0:
@@ -1433,9 +1471,8 @@ class SidImport:
                         channel_off = True
 
                     # True if the last (not necessarily previous) change in gate status was to on
-                    #    TODO: there's a small edge case on the very first row that likely doesn't
-                    #    matter but to fix it, a chn.last_gate_change could be added.
                     gate_is_on = chn.release_milliframe is None
+                    prev_gate_is_on = prev_chn.release_milliframe is None
 
                     # Is there an active (not released) note playing?
                     chn.active_note = (
@@ -1443,8 +1480,18 @@ class SidImport:
                         and chn.waveforms != 0  # tri, saw, pulse, and/or noise active
                         and gate_is_on)
 
-                    # what the note would be for the current frequency
+                    # what the note will or would be for the current frequency
                     chn.note = self.get_note(chn.freq, vibrato_cents_margin, prev_chn.note)
+
+                    # Normally, we sample the state of the SID chip after a play call.
+                    # However, this checks if a gate got breifly (microseconds) changed then
+                    # restored in the play loop, but the note frequency was unchanged:
+                    # - on->playLoop(off->on) means attack restarted on same note
+                    # - off->playLoop(on->off) means restarting a note on its release phase
+                    note_reasserted = (
+                        chn.freq == prev_chn.freq
+                        and gate_is_on == prev_gate_is_on  # if gate same before and after play call
+                        and self.gate_was_set_for_voice(ctrl_reg, not prev_gate_is_on))
 
                     # The following logic asserts a new note when
                     # a) there's an active note (gate on with waveform) and on the previous
@@ -1453,14 +1500,17 @@ class SidImport:
                     #    previous play call's note value, or
                     # c) gate is off, but create_gate_off_notes is True, and
                     #    the note is different than the previous, and its release window
-                    #    hasn't run out yet.
+                    #    hasn't run out yet, or
+                    # d) the freq is the same as the previous freq, but the voice's gate was
+                    #    double toggled in the play routine
                     make_new_note = (
                         chn.active_note and (
                             not prev_chn.active_note
                             or chn.note != prev_chn.note
+                            or note_reasserted
                         ) or (
                             create_gate_off_notes
-                            and chn.note != prev_chn.note
+                            and (chn.note != prev_chn.note or note_reasserted)
                             and within_release_window
                         )
                     )

@@ -69,17 +69,17 @@ MEM_USAGE_WRITE = 0b00000010
 
 class Cpu6502Emulator:
     def __init__(self):
-        self.memory = 0x10000 * [0x00]  #: 64K memory as integers
-        self.mem_usage = 0x10000 * [0x00]  # help developers monitor a program's memory r/w usage
-        self.a = 0  #: accumulator (byte)
-        self.x = 0  #: x register (byte)
-        self.y = 0  #: y register (byte)
-        self.flags = FU  #: flags (byte)
-        self.sp = 0  #: stack pointer (byte)
-        self.pc = 0  #: program counter (16-bit)
-        self.cpucycles = 0  #: count of cpu cycles processed
-        self.last_instruction = None  #: last instruction processed
-        self.exit_on_empty_stack = False  #: True = RTI/RTS exists on empty stack
+        self.memory = 0x10000 * [0x00]     # 64K memory as integers
+        self.mem_usage = 0x10000 * [0x00]  # monitor a program's memory r/w usage
+        self.a = 0                         # accumulator (byte)
+        self.x = 0                         # x register (byte)
+        self.y = 0                         # y register (byte)
+        self.flags = FU                    # processor flags (byte)
+        self.sp = 0                        # stack pointer (byte)
+        self.pc = 0                        # program counter (16-bit)
+        self.cpucycles = 0                 # count of cpu cycles processed
+        self.last_instruction = None       # last instruction processed
+        self.exit_on_empty_stack = False   # True = RTI/RTS exists on empty stack
         self.debug = False
         self.invocationCount = -1
 

@@ -2,7 +2,7 @@ import os
 import subprocess
 import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
-from chiptunesak.sid import SID, SidImport
+from chiptunesak.sid import SID
 
 """
 This example shows how to do metric modulation to remove triplets
@@ -18,28 +18,26 @@ sid.set_options(
     sid_in_filename=sid_filename,
     vibrato_cents_margin=0,
     seconds=100,  # Skyfox SID playback continues to repeat, 100 secs is enough
-    # always_include_freq=True,
-    # gcf_row_reduce=False,
     verbose=True
 )
 
 sid_dump = sid.capture()  # noqa: F841
 
 # Notes:
-# - When assert_gate_on_new_notes=False, CSV shows that Skyfox turns the note gates on,
-#   and never changes the gate value again
+# - between play calls, the voice gates are always on.  They breifly turn off and back on again
+#   inside of play calls.  This is detected/handled by ChiptunesSAK.
 # - Voice 2 does a portamento from F4 to B2 and back to F3 from frame (play call) 3792 to 3818,
-#   during which, freq only seems to be updated every other frame.
-#   Q: Were these stored as discrete notes, or as a pair of portamento events?
+#   during which, freq only seems to be updated every other frame.  Cent deviations are so small
+#   that it looks like it was stored as individual notes, and not as a portamento effect.
 
-# filename_no_ext = 'examples/data/Skyfox'
+filename_no_ext = 'examples/data/Skyfox'
 
-# csv_filename = '%s.csv' % filename_no_ext
-# print("writing %s" % csv_filename)
-# sid.to_csv_file(project_to_absolute_path(csv_filename))
+csv_filename = '%s.csv' % filename_no_ext
+print("writing %s" % csv_filename)
+sid.to_csv_file(project_to_absolute_path(csv_filename))
 
-# midi_filename = '%s.mid' % filename_no_ext
-# print("writing %s" % midi_filename)
+midi_filename = '%s.mid' % filename_no_ext
+print("writing %s" % midi_filename)
 rchirp_song = sid.to_rchirp()
 
 # CSV shows 24 plays calls per quarter note
@@ -48,11 +46,11 @@ play_calls_per_quarter = 24
 chirp_song = \
     rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
 
-# chirp_song.set_key_signature('G')
-# chirp_song.set_time_signature(6, 4)
+chirp_song.set_key_signature('G')
+chirp_song.set_time_signature(6, 4)
 
-# chiptunesak.MIDI().to_file(
-#     chirp_song, project_to_absolute_path(midi_filename))
+chiptunesak.MIDI().to_file(
+    chirp_song, project_to_absolute_path(midi_filename))
 
 exit("early exit")
 
@@ -110,4 +108,3 @@ os.chdir(output_folder)
 ly_file = os.path.basename(output_ly_file_mod)
 # Run lilypond
 subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file_mod), shell=True)
-
