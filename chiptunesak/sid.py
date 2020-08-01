@@ -99,35 +99,22 @@ class SID(ChiptuneSAKIO):
 
         return sid_dump
 
-    '''
-    Dang, function overloading not allowed in python
-    TODO: discuss interfaces with Knapp
-    SAKIR assumes rchirp doesn't come from a source file
-    SAKIO assumes rchirp always comes from a source file
-    We're in SAKIO land here, where we might want to do either
-
-    One easy option is to insist on the inputfile positional
-    argument (required by SAKIO), but to ignore it if the SID has already
-    been imported.  In that case, we'd use the signature below.
-
     def to_rchirp(self, sid_in_filename, /, **kwargs):
-    (Note: '/' syntax only available python >= 3.8)
-
-    Then something like
-    if sid_dump is None: 
-        kwargs['sid_in_filename'] = sid_in_filename
-    '''
-
-    def to_rchirp(self, **kwargs):
         """
         Convert a SID subtune into an RChirpSong
 
-        :return: RChirpSong
+        :param sid_in_filename: SID input filename
+        :type sid_in_filename: string
+        :return: SID converted to RChrip rows
         :rtype: RChirpSong
         """
 
+        # If we don't have the SID import yet (via a prior capture() call) or if
+        # the requested input filename is different than the one we used in
+        # capture(), then import the SID file
         sid_dump = self.sid_dump
-        if sid_dump is None:  # If not None, sid export already created by capture() call
+        if sid_dump is None or self.get_option('sid_in_filename') != sid_in_filename:
+            kwargs['sid_in_filename'] = sid_in_filename
             self.set_options(**kwargs)
             sid_dump = self.capture()
 

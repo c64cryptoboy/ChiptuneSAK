@@ -26,7 +26,7 @@ def create_output_files():
     sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
 
     print("writing %s.mid" % filename_no_ext)
-    rchirp_song = sid.to_rchirp()
+    rchirp_song = sid.to_rchirp(sid_filename)
 
     # cvs output shows that a 4/4 measure is 96 play calls, so 24
     play_calls_per_quarter = 24

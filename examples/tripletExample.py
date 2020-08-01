@@ -19,10 +19,8 @@ output_ly_file_mod = os.path.join(output_folder, file_name + '_mod.ly')
 
 sid = SID()
 
-rchirp_song = sid.to_rchirp(
-    sid_in_filename=input_sid_file,
-    seconds=100,  # Skyfox SID playback continues to repeat, 100 secs is enough
-)
+# Skyfox SID playback continues to repeat, 100 secs is enough
+rchirp_song = sid.to_rchirp(input_sid_file, seconds=100)
 
 # CSV shows 24 plays calls per quarter note
 #   24 = 2^3 * 3, the factor of 3 is necessary for all the division-by-three rhythms
