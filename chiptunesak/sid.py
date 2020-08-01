@@ -47,15 +47,15 @@ class SID(ChiptuneSAKIO):
 
         self.options_with_defaults = dict(
             sid_in_filename=None,
-            subtune=0,                       # subtune to extract
+            subtune=0,                       # subtune to extract (zero-indexed)
             vibrato_cents_margin=0,          # cents margin to control snapping to previous note
             tuning=CONCERT_A,
             seconds=60,                      # seconds to capture
-            arch=DEFAULT_ARCH,               # note: will be overwritten if/when SID headers get parsed
+            arch=DEFAULT_ARCH,               # note: overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off
-            assert_gate_on_new_notes=True,   # True forces a gate on event in delta rows with new notes
-            always_include_freq=False,       # False = include freq in delta rows only with new note
+            assert_gate_on_new_notes=True,   # True = gate on event in delta rows with new notes
+            always_include_freq=False,       # False = freq in delta rows only with new note
             verbose=True,                    # False = suppress stdout details
         )
 
@@ -78,7 +78,7 @@ class SID(ChiptuneSAKIO):
             if op not in self.options_with_defaults:
                 raise ChiptuneSAKValueError('Error: Unexpected option "%s"' % (op))
 
-            # FUTURE: Put parameter validations here
+            # FUTURE: May put parameter validations here
 
             self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
 
@@ -99,18 +99,27 @@ class SID(ChiptuneSAKIO):
 
         return sid_dump
 
-    def to_rchirp(self):
+    def to_rchirp(self, sid_in_filename, /, **kwargs):
         """
         Convert a SID subtune into an RChirpSong
 
-        :return: RChirpSong
+        :param sid_in_filename: SID input filename
+        :type sid_in_filename: string
+        :return: SID converted to RChrip rows
         :rtype: RChirpSong
         """
+
+        # If we don't have the SID import yet (via a prior capture() call) or if
+        # the requested input filename is different than the one we used in
+        # capture(), then import the SID file
         sid_dump = self.sid_dump
-        if sid_dump is None:
+        if sid_dump is None or self.get_option('sid_in_filename') != sid_in_filename:
+            kwargs['sid_in_filename'] = sid_in_filename
+            self.set_options(**kwargs)
             sid_dump = self.capture()
 
-        # create a more summarized representation by removing empty rows while maintaining structure
+        # create a more summarized representation by removing empty rows while
+        # maintaining structure
         if self.get_option('gcf_row_reduce'):
             # determine which rows have activity that rchirp cares about
             rows_with_activity = [[] for _ in range(sid_dump.sid_file.sid_count)]
@@ -152,15 +161,16 @@ class SID(ChiptuneSAKIO):
         rchirp_song.set_row_delta_values()
         return rchirp_song
 
-    def to_csv_file(self, filename):
+    def to_csv_file(self, output_filename, /, **kwargs):
         """
         Convert a SID subtune into a CSV file
 
-        :param filename: output CSV filename
-        :type filename: string
+        :param output_filename: output CSV filename
+        :type output_filename: string
         """
         sid_dump = self.sid_dump
-        if sid_dump is None:
+        if sid_dump is None:  # If not None, sid export already created by capture() call
+            self.set_options(**kwargs)
             sid_dump = self.capture()
 
         # create a more summarized representation by removing empty rows while maintaining structure
@@ -246,7 +256,7 @@ class SID(ChiptuneSAKIO):
 
             csv_rows.append(csv_row)
 
-        with open(filename, "w", newline="") as f:
+        with open(output_filename, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(csv_rows)
 

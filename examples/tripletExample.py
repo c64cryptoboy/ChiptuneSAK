@@ -6,9 +6,6 @@ from chiptunesak.sid import SID
 
 """
 This example shows how to do metric modulation to remove triplets
-
-TODO:
-- Can now get the Skyfox data from ChiptuneSAK itself.  Rewrite lilypond export to use that data.
 """
 
 file_name = 'Skyfox'
@@ -21,14 +18,9 @@ output_ly_file = os.path.join(output_folder, file_name + '.ly')
 output_ly_file_mod = os.path.join(output_folder, file_name + '_mod.ly')
 
 sid = SID()
-sid.set_options(
-    sid_in_filename=input_sid_file,
-    vibrato_cents_margin=0,
-    seconds=100,  # Skyfox SID playback continues to repeat, 100 secs is enough
-    verbose=True
-)
 
-rchirp_song = sid.to_rchirp()
+# Skyfox SID playback continues to repeat, 100 secs is enough
+rchirp_song = sid.to_rchirp(input_sid_file, seconds=100)
 
 # CSV shows 24 plays calls per quarter note
 #   24 = 2^3 * 3, the factor of 3 is necessary for all the division-by-three rhythms

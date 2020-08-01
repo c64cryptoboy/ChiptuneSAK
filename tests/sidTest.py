@@ -230,7 +230,7 @@ class sidTests(unittest.TestCase):
         self.sid.to_csv_file(project_to_absolute_path('%s.csv' % out_filename_no_ext))
 
         # Check for no runtime errors when converting to rchirp, then to a midi file
-        rchirp_song = self.sid.to_rchirp()
+        rchirp_song = self.sid.to_rchirp(self.sid_filename)
 
         # CSV output shows 192 rows per quarter note (Note: output will be reduced to be more
         # concise, but the delta in row numbers for a quarter note is 192).  This is a lot of

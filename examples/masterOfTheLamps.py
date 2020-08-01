@@ -105,7 +105,7 @@ def create_output_files(write_csv=True, write_midi=True):
 
         if write_midi:
             print("writing %s.mid" % filename_no_ext)
-            rchirp_song = sid.to_rchirp()
+            rchirp_song = sid.to_rchirp(sid_filename)
 
             play_calls_per_quarter = 32  # can see this in the csv output
             # milliframes_per_quarter will determine the QPM/BPM
