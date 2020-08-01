@@ -51,9 +51,7 @@ for t, name in zip(chirp_song.tracks, ['Square1', 'Square2', 'Square3']):
 chirp_song.quantize(80, 80)
 chirp_song.remove_polyphony()
 
-mchirp_song = chirp_song.to_mchirp()
-for track in mchirp_song.tracks:
-    track.measures.pop()
+mchirp_song = chirp_song.to_mchirp(trim_partial=True)
 chiptunesak.Lilypond().to_file(mchirp_song, output_ly_file, format='song')
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.
@@ -62,13 +60,14 @@ os.chdir(output_folder)
 # Adjust the path the the file
 ly_file = os.path.basename(output_ly_file)
 # Run lilypond
+print('lilypond -o %s %s' % (output_folder, output_ly_file))
 subprocess.call('lilypond -o %s %s' % (output_folder, output_ly_file), shell=True)
 
 chirp_song.modulate(3, 2)
 chirp_song.quantize(120, 120)
 chiptunesak.MIDI().to_file(chirp_song, output_mod_mid_file)
 
-mchirp_song = chirp_song.to_mchirp()
+mchirp_song = chirp_song.to_mchirp(trim_partial=True)
 chiptunesak.Lilypond().to_file(mchirp_song, output_ly_file_mod, format='song')
 
 # Change directory to the data directory so we don't fill the source directory with intermediate files.

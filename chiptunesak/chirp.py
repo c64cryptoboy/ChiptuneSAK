@@ -1,8 +1,8 @@
 # Midi Simple Processing Library
 #
-# 2019, David Knapp / David Youd
+# (c) 2020, David Knapp / David Youd
 #
-# Recommended Python version installed >= 3.7.4
+# Recommended Python version installed >= 3.8.1
 # Must first install midi: https://github.com/olemb/mido/blob/master/docs/installing.rst
 #    pip install mido
 #

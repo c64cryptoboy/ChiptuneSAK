@@ -311,7 +311,7 @@ class MChirpSong(ChiptuneSAKBase):
         Gets all the measures from all the tracks in a song, and removes any empty (note-free) measures from the end.
 
         :param chirp_song: A chirp.ChirpSong song
-        :type chirp_song: ChripSong
+        :type chirp_song: ChirpSong
         """
         if not chirp_song.is_quantized():
             raise ChiptuneSAKQuantizationError("ChirpSong must be quantized before populating measures.")
@@ -323,6 +323,8 @@ class MChirpSong(ChiptuneSAKBase):
         self.qticks_notes, self.qticks_durations = chirp_song.qticks_notes, chirp_song.qticks_durations
         self.other = copy.deepcopy(chirp_song.other)
         self.trim()
+        if chirp_song.get_option('trim_partial', False):
+            self.trim_partial_measures()
 
     def trim(self):
         """
@@ -335,6 +337,20 @@ class MChirpSong(ChiptuneSAKBase):
                 t.measures.pop()
                 if len(t.measures) == 0:
                     raise ChiptuneSAKContentError("No measures left in track %s" % t.name)
+
+    def trim_partial_measures(self):
+        """
+        Trims any partial measures from the end of the file
+
+        :return:
+        :rtype:
+        """
+        if all(isinstance(t.measures[-1].events[-1], Rest) for t in self.tracks):
+            for t in self.tracks:
+                t.measures.pop()
+                if len(t.measures) == 0:
+                    raise ChiptuneSAKContentError("No measures left in track %s" % t.name)
+
 
     def get_time_signature(self, time_in_ticks):
         """
