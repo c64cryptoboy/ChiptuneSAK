@@ -1295,8 +1295,8 @@ class SidImport:
 
         # self.cpu_state.print_memory_usage()  # See what init touched
 
-        if self.cpu_state.cia_1_timer_a_changed():
-            cia_timer = self.cpu_state.get_cia_1_timer_a()
+        if self.cpu_state.timer_was_updated(1, 'a'):
+            cia_timer = self.cpu_state.get_cia_timer(1, 'a')
             if verbose:
                 print("init routine set CIA timer to %d cycles" % cia_timer)
 
@@ -1329,6 +1329,11 @@ class SidImport:
             else:
                 # get play address from 6502-defined IRQ vector ($FFFE defaults to $FF48)
                 sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0xfffe)
+
+        # TODO: should print if digis are detected when rsid
+        # e.g., change to $FFFA/$FFFB (NMI) when ROMs banked out, or
+        # if ROMs present, changes to $0318/$0319 (NMI handler)
+        # should also not unexpected changes to cia 1/2 timer b
 
         max_play_calls = int(seconds * ARCH[self.arch].frame_rate * (1 / sid_dump.multispeed))
 
@@ -1364,7 +1369,6 @@ class SidImport:
         self.cpu_state.debug = False
 
         while self.play_call_num < max_play_calls:
-            cia_timer = self.cpu_state.get_cia_1_timer_a()
             self.cpu_state.clear_memory_usage()
             self.ordered_io_settings = []
 
@@ -1372,8 +1376,8 @@ class SidImport:
 
             # FUTURE: Currently this code doesn't honor speed changes from the play routine
             # (e.g., accelerandos, ritardandos, etc.), only the init routine.  But it will
-            # notify you if it happens.
-            if self.cpu_state.cia_1_timer_a_changed():
+            # notify you (at the end) if it happens.
+            if self.cpu_state.timer_was_updated(1, 'a'):
                 play_updated_speed_cnt += 1
 
             # need to have I/O banked in, in order to read it

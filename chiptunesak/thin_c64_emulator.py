@@ -12,7 +12,7 @@
 
 from chiptunesak import constants
 from chiptunesak.byte_util import read_binary_file
-from chiptunesak.errors import ChiptuneSAKContentError
+from chiptunesak.errors import ChiptuneSAKContentError, ChiptuneSAKValueError
 from chiptunesak import emulator_6502
 
 # KERNAL ROM $FDDD-FDF3 gives these CIA#1 timer A cycle counts:
@@ -160,10 +160,9 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
 
             # Note: no special treatment for $D400-$D418
             #    In this low-fidelity emulator, you can read anything that was stored in a
-            #    write-only SID register, which is useful for our capture of SID values
+            #    write-only SID register, which is used when we sample regs after a play call
             return self.registers_io[loc - 0xd000]
 
-        # nothing bad RAM here in the $Dxxx range...
         return self.memory[loc]
 
     def set_mem(self, loc, val):
@@ -173,7 +172,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
             exit("Error: POKE(%d),%d out of range" % (loc, val))
 
         if self.set_mem_callback is not None:
-            self.set_mem_callback(loc, val)
+            self.set_mem_callback(loc, val)  # ignore the pylint "not callable" error
 
         if (0xd000 < loc < 0xdfff) and self.see_io:
             if 0xd02f <= loc <= 0xd03f or 0xd41d <= loc <= 0xd41f:
@@ -231,6 +230,9 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
                 self.see_char = True
 
     def bank_in_IO(self):
+        """
+        Will bank in the IO (if not already banked in)
+        """
         banks = self.memory[0x0001] & 0b00000111
 
         #       m1:b2   m1:b1   m1:b0   $1000-  $8000-  $A000-  $C000-  $D000-  $E000-
@@ -295,14 +297,63 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         for i, a_byte in enumerate(bytes):
             self.rom_basic[mem_loc + i] = a_byte
 
-    def get_cia_1_timer_a(self):
-        # get le word from 0xdc04 I/O reg without mem_usage noticing
-        # note: registers_io index 0 = $D000
-        return self.registers_io[0xc04] | (self.registers_io[0xc05] << 8)
+    def get_timer_base_loc(self, cia_num, timer):
+        """
+        Get the base address for the given cia and cia timer
 
-    def cia_1_timer_a_changed(self):
-        return ((self.mem_usage[0xdc04] & emulator_6502.MEM_USAGE_WRITE != 0)
-                or (self.mem_usage[0xdc05] & emulator_6502.MEM_USAGE_WRITE != 0))
+        :param cia_num: cia chip number
+        :type cia_num: int
+        :param timer: cia timer designation
+        :type timer: string
+        :return: base address of cia timer
+        :rtype: int
+        """
+        if cia_num not in [1, 2]:
+            raise ChiptuneSAKValueError("Error: Invalid cia number %s" % cia_num)
+        timer = timer.lower()
+        if timer not in ['a', 'b']:
+            raise ChiptuneSAKValueError("Error: Invalid cia timer %s" % timer)
+        if cia_num == 1:
+            if timer == 'a':
+                return 0xdc04  # $dc04/$dc05 cia 1 timer a lo/hi (IRQ)
+            else:
+                return 0xdc06  # $dc06/$dc07 cia 1 timer b lo/hi (IRQ)
+        else:
+            if timer == 'a':
+                return 0xdd04  # $dd04/$dd05 cia 2 timer a lo/hi (NMI)
+            else:
+                return 0xdd06  # $dd06/$dd07 cia 2 timer b lo/hi (NMI)
+
+    def get_cia_timer(self, cia_num, timer):
+        """
+        Get the requested 16 bit timer value
+
+        :param cia_num: cia chip number
+        :type cia_num: int
+        :param timer: cia timer designation
+        :type timer: string
+        :return: 16-bit timer value
+        :rtype: int
+        """
+        # get le word from 0xdc04 I/O reg without mem_usage noticing
+        base_addr = self.get_timer_base_loc(cia_num, timer)
+        return (self.registers_io[base_addr - 0xd000]
+                | (self.registers_io[base_addr + 1 - 0xd000] << 8))
+
+    def timer_was_updated(self, cia_num, timer):
+        """
+        Returns True if the timer setting was written to
+
+        :param cia_num: cia chip number
+        :type cia_num: int
+        :param timer: cia timer designation
+        :type timer: string
+        :return: True if the timer setting was written to
+        :rtype: bool
+        """
+        base_addr = self.get_timer_base_loc(cia_num, timer)
+        return ((self.mem_usage[base_addr] & emulator_6502.MEM_USAGE_WRITE != 0)
+                or (self.mem_usage[base_addr + 1] & emulator_6502.MEM_USAGE_WRITE != 0))
 
 
 if __name__ == "__main__":
