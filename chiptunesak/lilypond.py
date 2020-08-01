@@ -3,7 +3,9 @@ import copy
 from chiptunesak.base import *
 from chiptunesak.chirp import Note
 
-LP_VERSION = '2.20.0'  # TODO: 2.18.2 released 3/23/14, 2.20.0 released 3/1/20
+
+# This is not the required version:  use any version later than this
+LP_VERSION = '2.18.2'
 
 # TODO:
 # - Refactor common code out of export_clip_to_lilypond and export_song_to_lilypond?
