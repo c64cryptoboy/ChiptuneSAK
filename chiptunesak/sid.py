@@ -18,9 +18,12 @@
 #    some or all notes in a subtune).  And instead of fixed frequency tables, we derive
 #    tuning and architecture-based frequencies at runtime.
 #
-# SidImport TODO:
-# - print warning if jmp or jsr to memory outside of modified memory
-
+# TODO:
+# - SidImport:print warning if jmp or jsr to memory outside of modified memory
+#
+# FUTURE:
+# - sid2midi apparently created midi placeholders for digi content.  That might be useful
+#   to add if the digi is, say, drums.
 
 import csv
 import math
@@ -1305,6 +1308,26 @@ class SidImport:
             if self.cia_event_display_count > MAX_DISPLAY_COUNT:
                 print("etc. (too many CIA events to display)")
 
+    def set_banks_before_psid_call(self, call_address):
+        """
+        Before any PSID init or play call, the bank settings must be reasserted
+        (according to the expected SID environment settings, specified here
+        https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt)
+        This is not to be called for RSIDs.
+
+        :param call_address: the PSID's init or play address
+        :type call_address: int
+        """
+
+        if call_address < 0xa000:
+            self.cpu_state.set_mem(0x0001, 0b00110111)  # 0x37: I/O, KERNAL, BASIC
+        elif call_address < 0xd000:
+            self.cpu_state.set_mem(0x0001, 0b00110110)  # 0x36: I/O, KERNAL
+        elif call_address < 0xe000:
+            self.cpu_state.set_mem(0x0001, 0b00110101)  # 0x35: I/O
+        else:
+            self.cpu_state.set_mem(0x0001, 0b00110100)  # 0x34: A full 64K of RAM exposed
+
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
                    create_gate_off_notes=True, assert_gate_on_new_notes=True,
                    always_include_freq=False, verbose=True):
@@ -1359,11 +1382,13 @@ class SidImport:
         self.cpu_state.inject_bytes(sid_dump.sid_file.load_address, sid_dump.sid_file.c64_payload)
         self.cpu_state.set_mem_callback = self.track_io_settings
 
-        # Bank out BASIC ROMs, leave KERNAL and I/O, the SID init can change what it wants
-        self.cpu_state.set_mem(0x0001, 0b00110110)
+        if sid_dump.sid_file.is_rsid:
+            # RSIDs only have the initial bank setup
+            self.cpu_state.set_mem(0x0001, 0b00110111)  # 0x37: I/O, KERNAL, BASIC
+        else:
+            self.set_banks_before_psid_call(sid_dump.sid_file.init_address)
 
-        # A clean SID extraction is supposed to use either a VBI or CIA 1 timer A
-        # interrupt, so we're reasoning along those lines
+        # A clean PSID SID extraction is supposed to use either a VBI or CIA 1 timer A
         if verbose:
             if sid_dump.sid_file.is_rsid:
                 print("SID type: RSID")
@@ -1374,6 +1399,12 @@ class SidImport:
                 else:
                     print("headers indicate VBI driven")
 
+            if not sid_dump.sid_file.is_rsid and not sid_dump.sid_file.headers_specify_cia_timer(subtune):
+                print("SID default environment assumption: all CIA timers disabled, loaded with 0xFFFF")
+            else:
+                print("SID default environment assumption: CIA 1 timer A active (continuous mode), "
+                      + "all other off timers disabled and loaded with 0xFFFF")
+
         timer_hists = timerHistograms()
         self.cpu_state.debug = False
 
@@ -1381,6 +1412,7 @@ class SidImport:
         self.cpu_state.clear_memory_usage()
         self.ordered_io_settings = []
 
+        # Initialize the SID subtune
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)
 
         # self.cpu_state.print_memory_usage()  # See what init touched
@@ -1390,7 +1422,7 @@ class SidImport:
 
         # See if we're multispeed:
         # Note: this can't determine all RSID multispeed approaches, but should cover
-        # PSID, which is supposed to use cia 1 timer a
+        # PSID, which is supposed to use cia 1 timer a for multispeed
         if self.cpu_state.timer_was_updated(1, 'a'):
             cia_timer = self.cpu_state.get_cia_timer(1, 'a')
             timer_hists.update_hist(0, cia_timer)
@@ -1411,17 +1443,14 @@ class SidImport:
                             1 / sid_dump.multispeed))
 
         if self.cpu_state.timer_was_updated(1, 'b'):
-            cia_timer = self.cpu_state.get_cia_timer(1, 'b')
-            timer_hists.update_hist(1, cia_timer)
+            timer_hists.update_hist(1, self.cpu_state.get_cia_timer(1, 'b'))
         # FUTURE: If we want to develop this more, then check if new vector was
         # assigned to $FFFA/$FFFB (NMI) if ROMs banked out, or $0318/$0319 (NMI
         # handler) if ROMs banked in.
         if self.cpu_state.timer_was_updated(2, 'a'):
-            cia_timer = self.cpu_state.get_cia_timer(2, 'a')
-            timer_hists.update_hist(2, cia_timer)
+            timer_hists.update_hist(2, self.cpu_state.get_cia_timer(2, 'a'))
         if self.cpu_state.timer_was_updated(2, 'b'):
-            cia_timer = self.cpu_state.get_cia_timer(2, 'b')
-            timer_hists.update_hist(3, cia_timer)
+            timer_hists.update_hist(3, self.cpu_state.get_cia_timer(2, 'b'))
 
         # When play address is 0, the init routine installs an interrupt handler which calls
         # the music player (always the case with RSID files).  This code attempts to get the
@@ -1467,14 +1496,18 @@ class SidImport:
         # will take over that responsibility.  This means we could set the stack pointer
         # to $F9 when calling the play routine.
 
-        old_loc1_val = self.cpu_state.get_mem(0x0001)
         self.cpu_state.debug = False
 
         while self.play_call_num < max_play_calls:
             self.cpu_state.clear_memory_usage()
             self.ordered_io_settings = []
 
+            if not sid_dump.sid_file.is_rsid:
+                self.set_banks_before_psid_call(sid_dump.sid_file.play_address)
+
             self.call_sid_play(sid_dump.sid_file.play_address)
+
+            post_call_bank_settings = self.cpu_state.get_mem(0x0001)
 
             if verbose:
                 self.print_call_log_for_cia_activity(self.ordered_io_settings, self.play_call_num)
@@ -1482,22 +1515,18 @@ class SidImport:
             # FUTURE: Currently this code doesn't honor speed changes from the play routine
             # (e.g., accelerandos, ritardandos, etc., or digi), only the init routine.
             if self.cpu_state.timer_was_updated(1, 'a'):
-                cia_timer = self.cpu_state.get_cia_timer(1, 'a')
-                timer_hists.update_hist(0, cia_timer)
+                timer_hists.update_hist(0, self.cpu_state.get_cia_timer(1, 'a'))
             if self.cpu_state.timer_was_updated(1, 'b'):
-                cia_timer = self.cpu_state.get_cia_timer(1, 'b')
-                timer_hists.update_hist(1, cia_timer)
+                timer_hists.update_hist(1, self.cpu_state.get_cia_timer(1, 'b'))
             if self.cpu_state.timer_was_updated(2, 'a'):
-                cia_timer = self.cpu_state.get_cia_timer(2, 'a')
-                timer_hists.update_hist(2, cia_timer)
+                timer_hists.update_hist(2, self.cpu_state.get_cia_timer(2, 'a'))
             if self.cpu_state.timer_was_updated(2, 'b'):
-                cia_timer = self.cpu_state.get_cia_timer(2, 'b')
-                timer_hists.update_hist(3, cia_timer)
+                timer_hists.update_hist(3, self.cpu_state.get_cia_timer(2, 'b'))
 
             # need to have I/O banked in, in order to read it
             if not self.cpu_state.see_io:
                 if self.play_call_num == 0 and verbose:
-                    print("SID banks out IO after play calls")
+                    print("note: SID banks out IO after play calls")
                 self.cpu_state.bank_in_IO()
 
             # record the SID(s) state
@@ -1747,7 +1776,7 @@ class SidImport:
             delta_row.play_call_num = self.play_call_num
             delta_row.milliframe_num = prev_row.milliframe_num + millframes_to_next_call
 
-            self.cpu_state.set_mem(0x0001, old_loc1_val)  # possibly swap I/O back out
+            self.cpu_state.set_mem(0x0001, post_call_bank_settings)  # possibly swap I/O back out
 
         if verbose:
             timer_hists.print_results()
