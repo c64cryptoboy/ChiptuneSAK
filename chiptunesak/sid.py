@@ -20,6 +20,7 @@
 #
 # TODO:
 # - SidImport:print warning if jmp or jsr to memory outside of modified memory
+# - haven't tested extracting from a 2SID or 3SID yet
 #
 # FUTURE:
 # - sid2midi apparently created midi placeholders for digi content.  That might be useful
@@ -57,7 +58,7 @@ class SID(ChiptuneSAKIO):
             arch=DEFAULT_ARCH,               # note: overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off
-            assert_gate_on_new_notes=True,   # True = gate on event in delta rows with new notes
+            assert_gate_on_new_note=True,    # True = gate on event in delta rows with new notes
             always_include_freq=False,       # False = freq in delta rows only with new note
             verbose=True,                    # False = suppress stdout details
         )
@@ -93,7 +94,7 @@ class SID(ChiptuneSAKIO):
             subtune=self.get_option('subtune'),
             vibrato_cents_margin=self.get_option('vibrato_cents_margin'),
             create_gate_off_notes=self.get_option('create_gate_off_notes'),
-            assert_gate_on_new_notes=self.get_option('assert_gate_on_new_notes'),
+            assert_gate_on_new_note=self.get_option('assert_gate_on_new_note'),
             always_include_freq=self.get_option('always_include_freq'),
             seconds=self.get_option('seconds'),
             verbose=self.get_option('verbose')
@@ -1329,7 +1330,7 @@ class SidImport:
             self.cpu_state.set_mem(0x0001, 0b00110100)  # 0x34: A full 64K of RAM exposed
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
-                   create_gate_off_notes=True, assert_gate_on_new_notes=True,
+                   create_gate_off_notes=True, assert_gate_on_new_note=True,
                    always_include_freq=False, verbose=True):
         """
         Emulates the SID song execution, watches how the machine language program
@@ -1347,7 +1348,7 @@ class SidImport:
         :type seconds: int, optional
         :param create_gate_off_notes: If True, can create new notes when gate is off
         :type bool
-        :param assert_gate_on_new_notes: If True, creates gate on event on new notes in
+        :param assert_gate_on_new_note: If True, creates gate on event on new notes in
                                          delta rows
         :type bool
         :param always_include_freq: If False, only includes freq with new notes
@@ -1731,7 +1732,9 @@ class SidImport:
                         delta_chn.waveforms = chn.waveforms
                         delta_chn.set_waveform_fields()
 
-                    if assert_gate_on_new_notes and chn.new_note:
+                    # sid2midi will (always?) fail to create new notes when the gate is simply
+                    # left on (see Pool of Radiance).  This is why we have assert_gate_on_new_note.
+                    if assert_gate_on_new_note and chn.new_note:
                         delta_chn.gate_on = True  # Used to influence RChirp->Chirp note creation
                     elif chn.gate_on != prev_chn.gate_on:
                         delta_chn.gate_on = chn.gate_on

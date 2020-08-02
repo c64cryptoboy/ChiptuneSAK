@@ -11,7 +11,7 @@ def create_output_files():
         subtune=1,
         vibrato_cents_margin=0,
         # For this piece, True enables arpeggios, and False enables just the chord root
-        assert_gate_on_new_notes=False,
+        assert_gate_on_new_note=False,
         seconds=175,
         gcf_row_reduce=False,
     )

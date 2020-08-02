@@ -681,7 +681,7 @@ class RChirpSong(ChiptuneSAKBase):
                 # summarization when encountering what I'll call note storms (e.g., "arpeggio
                 # chords" and the like), as C64 composers frequently use gate changes to
                 # represent the starts and ends of such runs.
-                # To see if this is useful in your use case, turn assert_gate_on_new_notes to
+                # To see if this is useful in your use case, turn assert_gate_on_new_note to
                 # False when extracting the SID.
                 if row.gate:
                     if current_note:
