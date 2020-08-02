@@ -1,26 +1,35 @@
+# Place were I test out SID importing
+
 import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
 
-sid_filename = project_to_absolute_path('examples/sid/Butcher_Hill.sid')
-
 
 def create_output_files():
+    params = [
+        (project_to_absolute_path('examples/sid/Great_Giana_Sisters.sid'), 0, 'examples/ggs', 24, 30),
+
+        # assert_gate_on_new_note: True includes arpeggios, and False includes just the chord root        
+        (project_to_absolute_path('examples/sid/Butcher_Hill.sid'), 1, 'examples/bh', 12, 175),
+        
+        (project_to_absolute_path('examples/sid/Pool_of_Radiance.sid'), 0, 'examples/por', 12, 120),
+    ]
+    params = params[1]  # select one
+
+    sid_filename = params[0]
+    filename_no_ext = params[2]
+
     sid = chiptunesak.SID()
     sid.set_options(
         sid_in_filename=sid_filename,
-        subtune=1,
+        subtune=params[1],
         vibrato_cents_margin=0,
-        # For this piece, True enables arpeggios, and False enables just the chord root
-        assert_gate_on_new_note=False,
-        seconds=175,
-        gcf_row_reduce=False,
+        seconds=params[4],
+        # create_gate_off_notes=False,
+        # assert_gate_on_new_note=False,
+        gcf_row_reduce=True,
     )
 
-    filename_no_ext = 'examples/bh'
-
     sid_dump = sid.capture()  # noqa: F841
-
-    # print(sid_dump.get_tuning())  # Note: tuning almost exactly CONCERT_A
 
     print('writing %s.csv' % filename_no_ext)
     sid.to_csv_file(project_to_absolute_path('%s.csv' % filename_no_ext))
@@ -28,13 +37,10 @@ def create_output_files():
     print("writing %s.mid" % filename_no_ext)
     rchirp_song = sid.to_rchirp(sid_filename)
 
-    # cvs output shows that a 4/4 measure is 96 play calls, so 24
-    play_calls_per_quarter = 24
-    # milliframes_per_quarter will determine the QPM/BPM
+    play_calls_per_quarter = params[3]
     chirp_song = \
         rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter * 1000)
 
-    chirp_song.set_key_signature('D')
     chirp_song.set_time_signature(4, 4)
 
     chiptunesak.MIDI().to_file(
