@@ -352,6 +352,17 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         :rtype: bool
         """
         base_addr = self.get_timer_base_loc(cia_num, timer)
+        return self.word_was_updated(base_addr)
+
+    def word_was_updated(self, base_addr):
+        """
+        Returns true if the 16-bit value at base_addr was written to
+
+        :param base_addr: lo byte of the 16-bit lo/hi value
+        :type base_addr: int
+        :return: True if value was written to
+        :rtype: bool
+        """
         return ((self.mem_usage[base_addr] & emulator_6502.MEM_USAGE_WRITE != 0)
                 or (self.mem_usage[base_addr + 1] & emulator_6502.MEM_USAGE_WRITE != 0))
 

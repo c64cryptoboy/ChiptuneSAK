@@ -1055,6 +1055,32 @@ class Dump:
         self.rows = self.rows[rows_to_remove:]
 
 
+class timerHistograms:
+    def __init__(self):
+        self.timers = [{}, {}, {}, {}]
+
+    def update_hist(self, timer_index, value):
+        """
+        Update histogram of counts for values set for the specified CIA timer
+
+        :param timer_index: 0=cia1a, 1=cia1b, 2=cia2a, 3=cia2b
+        :type timer_index: int
+        :param value: the 16-bit cycle count written to the timer
+        :type value: int
+        """
+        timer_hist = self.timers[timer_index]
+        if value not in timer_hist:
+            timer_hist[value] = 0
+        timer_hist[value] += 1
+
+    def print_results(self):
+        labels = ['CIA 1 timer A', 'CIA 1 timer B', 'CIA 2 timer A', 'CIA 2 timer B']
+        for i in range(4):
+            if len(self.timers[i]) > 0:
+                print("%s latch value written to %d times, histogram: %s"
+                      % (labels[i], sum(self.timers[i].values()), self.timers[i]))
+
+
 class SidImport:
     def __init__(self, arch=DEFAULT_ARCH, tuning=CONCERT_A):
         self.arch = arch      # Note, overwritten when SID file loaded
@@ -1064,6 +1090,8 @@ class SidImport:
         self.cpu_state.exit_on_empty_stack = True
         self.play_call_num = 0
         self.ordered_io_settings = []
+
+        self.cia_event_display_count = 0
 
     def get_note(self, freq_arch, vibrato_cents_margin=0, prev_note=None):
         """
@@ -1177,7 +1205,7 @@ class SidImport:
             # to return, so we won't be using this bug/feature to exit play routines.
 
             # Test if exiting through KERNAL interrupt handler
-            #     e.g., $EA31, $EA73, and $EA81 exit attempts:
+            #     e.g., $EA31, $EA7E, and $EA81 exit attempts:
             if self.cpu_state.see_kernal and (0xea31 <= self.cpu_state.pc <= 0xea83):
                 return  # done with play call
 
@@ -1215,6 +1243,67 @@ class SidImport:
             if io_loc == voice_ctrl_reg and (gate_setting == (io_val & 0b00000001 == 1)):
                 return True
         return False
+
+    def print_call_log_for_cia_activity(self, ordered_io_settings, play_call_num=None):
+        MAX_DISPLAY_COUNT = 50
+
+        for loc, val in ordered_io_settings:
+            if self.cia_event_display_count > MAX_DISPLAY_COUNT:
+                return
+
+            if play_call_num is None:
+                init_desc = 'during SID init'
+            else:
+                init_desc = 'on play call %d' % play_call_num
+
+            if 0xdc00 <= loc <= 0xdcff:
+                cia_desc = 'CIA 1'
+            else:  # 0xdd--
+                cia_desc = 'CIA 2'
+
+            if loc in (0xdc04, 0xdc05, 0xdc0e, 0xdd04, 0xdd05, 0xdd0e):
+                timer_desc = 'timer A'
+            else:
+                timer_desc = 'timer B'
+
+            # process the two interrupt control registers' activity
+            if loc in (0xdc0d, 0xdd0d):
+                if val & 0b00000001 == 0:
+                    print("%s timer A disabled %s" % (cia_desc, init_desc))
+                else:
+                    print("%s timer A enabled %s" % (cia_desc, init_desc))
+                if val & 0b00000010 == 0:
+                    print("%s timer B disabled %s" % (cia_desc, init_desc))
+                else:
+                    print("%s timer B enabled %s" % (cia_desc, init_desc))
+            # process the four control registers' activity
+            elif loc in (0xdc0e, 0xdc0f, 0xdd0e, 0xdd0f):
+                if val & 0b00001000 == 0:
+                    run_mode_desc = 'continuous'
+                else:
+                    run_mode_desc = 'one-shot'
+
+                if val & 0b00000001 == 0:
+                    print("%s %s stopped %s" % (cia_desc, timer_desc, init_desc))
+                else:
+                    print("%s %s started (%s run mode) %s" % (cia_desc, timer_desc, run_mode_desc, init_desc))
+
+                if val & 0b00010000 != 0:
+                    print("%s %s set by the latched timer value %s" % (cia_desc, timer_desc, init_desc))
+            # process the timer latch setting activity:
+            elif (0xdc04 <= loc <= 0xdc07) or (0xdd04 <= loc <= 0xdd07):
+                if loc % 2 == 0:
+                    byte_desc = 'lo'
+                else:
+                    byte_desc = 'hi'
+                print("%s %s %s-byte timer latch value written %s"
+                      % (cia_desc, timer_desc, byte_desc, init_desc))
+            else:
+                continue
+
+            self.cia_event_display_count += 1
+            if self.cia_event_display_count > MAX_DISPLAY_COUNT:
+                print("etc. (too many CIA events to display)")
 
     def import_sid(self, filename, subtune=0, vibrato_cents_margin=0, seconds=60,
                    create_gate_off_notes=True, assert_gate_on_new_notes=True,
@@ -1270,8 +1359,8 @@ class SidImport:
         self.cpu_state.inject_bytes(sid_dump.sid_file.load_address, sid_dump.sid_file.c64_payload)
         self.cpu_state.set_mem_callback = self.track_io_settings
 
-        # Bank out ROMs, the SID init can bring them back in if it wants to
-        self.cpu_state.set_mem(0x0001, 0b00110101)
+        # Bank out BASIC ROMs, leave KERNAL and I/O, the SID init can change what it wants
+        self.cpu_state.set_mem(0x0001, 0b00110110)
 
         # A clean SID extraction is supposed to use either a VBI or CIA 1 timer A
         # interrupt, so we're reasoning along those lines
@@ -1285,6 +1374,7 @@ class SidImport:
                 else:
                     print("headers indicate VBI driven")
 
+        timer_hists = timerHistograms()
         self.cpu_state.debug = False
 
         # both of these are useful for seeing how init and play routines touch the SID
@@ -1295,10 +1385,15 @@ class SidImport:
 
         # self.cpu_state.print_memory_usage()  # See what init touched
 
+        if verbose:
+            self.print_call_log_for_cia_activity(self.ordered_io_settings)
+
+        # See if we're multispeed:
+        # Note: this can't determine all RSID multispeed approaches, but should cover
+        # PSID, which is supposed to use cia 1 timer a
         if self.cpu_state.timer_was_updated(1, 'a'):
             cia_timer = self.cpu_state.get_cia_timer(1, 'a')
-            if verbose:
-                print("init routine set CIA timer to %d cycles" % cia_timer)
+            timer_hists.update_hist(0, cia_timer)
 
             if self.arch == 'PAL-C64':
                 expected_cia_timer = thin_c64_emulator.CIA_TIMER_PAL
@@ -1315,25 +1410,33 @@ class SidImport:
                         print("multi-speed factor of x{:f}".format(
                             1 / sid_dump.multispeed))
 
+        if self.cpu_state.timer_was_updated(1, 'b'):
+            cia_timer = self.cpu_state.get_cia_timer(1, 'b')
+            timer_hists.update_hist(1, cia_timer)
+        # FUTURE: If we want to develop this more, then check if new vector was
+        # assigned to $FFFA/$FFFB (NMI) if ROMs banked out, or $0318/$0319 (NMI
+        # handler) if ROMs banked in.
+        if self.cpu_state.timer_was_updated(2, 'a'):
+            cia_timer = self.cpu_state.get_cia_timer(2, 'a')
+            timer_hists.update_hist(2, cia_timer)
+        if self.cpu_state.timer_was_updated(2, 'b'):
+            cia_timer = self.cpu_state.get_cia_timer(2, 'b')
+            timer_hists.update_hist(3, cia_timer)
+
         # When play address is 0, the init routine installs an interrupt handler which calls
         # the music player (always the case with RSID files).  This code attempts to get the
         # play address from the interrupt vector, so we don't have to emulate the interrupt
         # driver, and instead, we can directly call the play routine.
         if sid_dump.sid_file.play_address == 0:
-            # FUTURE? Could check self.cpu_state.mem_usage to see which (if any) of these
-            # vectors init modified
-            if self.cpu_state.see_kernal:
+            if self.cpu_state.word_was_updated(0x0314):
                 # get play address from the pointer to the KERNAL's standard interrupt
                 # service routine ($0314 defaults to $EA31)
                 sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0x0314)
-            else:
+            elif self.cpu_state.word_was_updated(0xfffe):
                 # get play address from 6502-defined IRQ vector ($FFFE defaults to $FF48)
                 sid_dump.sid_file.play_address = self.cpu_state.get_le_word(0xfffe)
-
-        # TODO: should print if digis are detected when rsid
-        # e.g., change to $FFFA/$FFFB (NMI) when ROMs banked out, or
-        # if ROMs present, changes to $0318/$0319 (NMI handler)
-        # should also not unexpected changes to cia 1/2 timer b
+            else:
+                raise ChiptuneSAKContentError("Error: unable to determine play address")
 
         max_play_calls = int(seconds * ARCH[self.arch].frame_rate * (1 / sid_dump.multispeed))
 
@@ -1364,7 +1467,6 @@ class SidImport:
         # will take over that responsibility.  This means we could set the stack pointer
         # to $F9 when calling the play routine.
 
-        play_updated_speed_cnt = 0
         old_loc1_val = self.cpu_state.get_mem(0x0001)
         self.cpu_state.debug = False
 
@@ -1374,11 +1476,23 @@ class SidImport:
 
             self.call_sid_play(sid_dump.sid_file.play_address)
 
+            if verbose:
+                self.print_call_log_for_cia_activity(self.ordered_io_settings, self.play_call_num)
+
             # FUTURE: Currently this code doesn't honor speed changes from the play routine
-            # (e.g., accelerandos, ritardandos, etc.), only the init routine.  But it will
-            # notify you (at the end) if it happens.
+            # (e.g., accelerandos, ritardandos, etc., or digi), only the init routine.
             if self.cpu_state.timer_was_updated(1, 'a'):
-                play_updated_speed_cnt += 1
+                cia_timer = self.cpu_state.get_cia_timer(1, 'a')
+                timer_hists.update_hist(0, cia_timer)
+            if self.cpu_state.timer_was_updated(1, 'b'):
+                cia_timer = self.cpu_state.get_cia_timer(1, 'b')
+                timer_hists.update_hist(1, cia_timer)
+            if self.cpu_state.timer_was_updated(2, 'a'):
+                cia_timer = self.cpu_state.get_cia_timer(2, 'a')
+                timer_hists.update_hist(2, cia_timer)
+            if self.cpu_state.timer_was_updated(2, 'b'):
+                cia_timer = self.cpu_state.get_cia_timer(2, 'b')
+                timer_hists.update_hist(3, cia_timer)
 
             # need to have I/O banked in, in order to read it
             if not self.cpu_state.see_io:
@@ -1635,9 +1749,8 @@ class SidImport:
 
             self.cpu_state.set_mem(0x0001, old_loc1_val)  # possibly swap I/O back out
 
-        # TODO: This code block line not yet tested
-        if verbose and play_updated_speed_cnt > 1:
-            print("Play routine changed the playback speed %d times" % play_updated_speed_cnt)
+        if verbose:
+            timer_hists.print_results()
 
         if sid_dump.first_row_with_note > 0:
             sid_dump.trim_leading_rows(sid_dump.first_row_with_note)
