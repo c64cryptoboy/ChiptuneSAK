@@ -9,8 +9,8 @@ This example processes a MIDI file captured from Betrayal at Krondor to both she
 a GoatTracker song.
 
 It is an example of extremely complex music processing, done entirely in ChiptuneSAK.
-One external tool, a windows program called Midi Editor, was used to inspect the MIDI file,
-evaluate and plan the required transformations, and verify the results.
+A program called MidiEditor (windows / linux, https://www.midieditor.org/), was used to
+inspect the MIDI file, evaluate and plan the required transformations, and verify the results.
 
 It shows the steps needed for this conversion:
  1. Remove unused tracks, reorder and rename tracks to use
