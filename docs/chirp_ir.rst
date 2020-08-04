@@ -8,7 +8,7 @@ ChiptuneSAK Intermediate Representations
 Intermediate Representations
 ----------------------------
 
-Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  **Chirp** (abstraction is notes and durations), **MChirp** (abstraction is measures) and **RChirp** (abstracton is tracker rows).
+Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  **Chirp** (abstraction is notes and durations), **MChirp** (abstraction is measures) and **RChirp** (abstraction is tracker rows).
 
 Chirp Representation
 ####################

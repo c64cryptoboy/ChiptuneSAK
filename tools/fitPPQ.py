@@ -91,7 +91,7 @@ def main():
     best_f, min_e = get_best_f(f_min, f_max, f_step, offset_est)
     best_offset, min_e = get_best_offset(best_f)
 
-    # Now refine the scale factor and ofset iteratively until they converge
+    # Now refine the scale factor and offset iteratively until they converge
     print('Refining...')
     while min_e < last_min_e:
         last_min_e = min_e
