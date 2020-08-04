@@ -77,7 +77,7 @@ class RChirpPattern:
     A pattern made up of a set of rows
     """
     def __init__(self, rows=None):
-        self.rows = []                  #: List of RChirpRow instances (NOT a dictionary!m No gaps allowed!)
+        self.rows = []                  #: List of RChirpRow instances (NOT a dictionary! No gaps allowed!)
 
         if rows is not None:
             base_row = min(r.row_num for r in rows)      # Starting row frame number

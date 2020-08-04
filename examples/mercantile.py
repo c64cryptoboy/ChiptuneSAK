@@ -74,8 +74,8 @@ chirp_song.tracks[2].name = 'Strings/Bass'
 
 # Result, after some fiddling (and FitPPQ is very fiddly):
 # scale_factor = 5.8904467169, offset = 2399, total error = 3136.3 ticks (21.79 ticks/note for ppq = 960)
-chirp_song.move_ticks(-2399)
-chirp_song.scale_ticks(5.8904467169)
+chirp_song.move_ticks(-2398)
+chirp_song.scale_ticks(5.89000)
 chirp_song.metadata.ppq = 960
 
 # Now get rid of the very weird short notes in the flute part; set minimum length to an eighth note

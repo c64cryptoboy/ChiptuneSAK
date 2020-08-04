@@ -12,6 +12,7 @@ ChiptuneSAK documentation
    chirp_ir
    other_formats
    import_export
+   transformations
    examples
    class_reference
 

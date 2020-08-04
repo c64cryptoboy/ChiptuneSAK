@@ -17,7 +17,7 @@ If the desired quantization is known *a priori*, ChiptuneSAK will quantize note 
 
 For source material where note starts and durations are close to exact note lengths, but are noisy, and/or the  minimum note length is not known, ChiptuneSAK provides an algorithm that automatically finds and applies the optimum quantization.
 
-For source material where the note lengths and time offsets are not known well, ChiptuneSAK provides tools to help adjust the music to the point where quantization can be used.
+**Note**:  The ChiptuneSAK quantization functions are only meant for music where the quarter-note length is known and the note start times and durations are close to the quantized values.  For source material where the note lengths and time offsets are *not* known well (such as in most midi rips of game music), ChiptuneSAK provides other tools to help adjust the music to the point where quantization can be used.
 
 Base Quantization Functions
 +++++++++++++++++++++++++++

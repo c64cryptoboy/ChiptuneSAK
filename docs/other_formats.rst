@@ -1,6 +1,6 @@
-==========================
-ChirptuneSAK Music Formats
-==========================
+=========================
+ChiptuneSAK Music Formats
+=========================
 
 .. toctree::
    :maxdepth: 2

@@ -32,6 +32,16 @@ ChirpSong
 MChirp
 ------
 
+Rest
+++++
+
+.. autoclass:: chiptunesak.base.Rest
+
+Triplet
++++++++
+
+.. autoclass:: chiptunesak.base.Triplet
+
 Measure
 +++++++
 
@@ -58,6 +68,24 @@ RChirpRow
 +++++++++
 
 .. autoclass:: chiptunesak.rchirp.RChirpRow
+    :members:
+
+RChirpOrderEntry
+++++++++++++++++
+
+.. autoclass:: chiptunesak.rchirp.RChirpOrderEntry
+    :members:
+
+RChirpOrderList
++++++++++++++++
+
+.. autoclass:: chiptunesak.rchirp.RChirpOrderList
+    :members:
+
+RChirpPattern
++++++++++++++
+
+.. autoclass:: chiptunesak.rchirp.RChirpPattern
     :members:
 
 RChirpVoice

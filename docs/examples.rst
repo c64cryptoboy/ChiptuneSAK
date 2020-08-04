@@ -37,6 +37,40 @@ In this example a MIDI song is read and converted to C128 BASIC:
 .. literalinclude:: ../examples/c128BasicExample.py
     :language: python
 
+DOS MIDI File Example
+---------------------
+
+In this example a midi file captured from a DOS game is processed and turned into sheet music as well as exported to GoatTracker.
+
+Often, `midi ripped from old DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.
+
+So first use the FitPPQ.py script to estimate the true note lengths and adjust them to a ppq of 960.  From the tools directory, run:
+
+::
+
+    FitPPQ.py -s 4.0 ../examples/data/mercantile/betrayalKrondorMercantile.mid ../examples/data/mercantile/tmp.mid
+
+
+This should generate the following output:
+
+::
+
+        Reading file ../examples/data/mercantile/betrayalKrondorMercantile.mid
+        Finding initial parameters...
+        Refining...
+        scale_factor = 5.8900000, offset = 2398, total error = 4082.2 ticks (22.51 ticks/note for ppq = 960)
+        Writing file ../examples/data/mercantile/tmp.mid
+
+It is a good idea to do a sanity check on the output file, as the algorithm in FitPPQ often fails to give the best solution.  A general algorithm to find the beats in a midi file is a daunting task!
+
+In fact, an ideal method now is to use the output obtained from FitPPQ, open the resulting fileand adjust the first beat of the final measure to lie *exactly* at the start of the final measure.  If we do this with tmp.mid, we find that the first note of the final measure is at MIDI tick 226588 for measure 60.  For a PPQ of 960 and 4 quqarter notes per measure, the last measure should start at tick 960 * 59 * 4 = 226560, so we are coming in only 28 ticks late.  Since we plan to quantize to a 16th note (960 / 4 = 240 ticks) tyhen the value we found should be fine.
+
+Now you can use those parameters (5.89 and 2398) to scale the mercantile file in the Python script, which generates Lilypond sheet music and a GoatTracker SNG file.  Note that because you need to move the music to an *earlier* time, the offset you give to the ``move_ticks()`` method will be negative.
+
+.. literalinclude:: ../examples/mercantile.py
+    :language: python
+
+
 Metric Modulation Examples
 --------------------------
 

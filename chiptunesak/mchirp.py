@@ -351,7 +351,6 @@ class MChirpSong(ChiptuneSAKBase):
                 if len(t.measures) == 0:
                     raise ChiptuneSAKContentError("No measures left in track %s" % t.name)
 
-
     def get_time_signature(self, time_in_ticks):
         """
         Finds the active key signature at a given time in the song

@@ -17,7 +17,6 @@ Chirp maps note events to a tick timeline.  This mapping is different than midi,
 
 Chirp notes are not necessarily quantized and polyphony is allowed.
 
-
 MChirp Representation
 #####################
 
@@ -40,7 +39,7 @@ Chirp Workflows
 This diagram illustrates the relationships between the various intermediate representations and external music formats.
 
 .. image:: _images/chirpWorkflow.png
-   :width: 500px
+   :width: 800px
    :alt: chirp workflow diagram
    :align: center
 
@@ -48,8 +47,63 @@ For example, a Goattracker .sng file can be imported to RChirp, which may then b
 
 Most basic transformations of music (such as transposition, quantization, etc) are implemented for the Chirp representation.
 
+Details of Intermediate Representations
+---------------------------------------
 
-Notes on Chirp music representation
+Chirp details
+#############
+
+.. image:: _images/ChirpStructure.png
+   :width: 500px
+   :alt: Chirp structure
+   :align: center
+
+
+The Chirp representation is primarily dependent on three basic concepts, each implemented as a class. These classes are the :ref:`ChirpSong`, the :ref:`ChirpTrack`, and the :ref:`Note`.
+
+A :ref:`ChirpSong` contains information about a song.  It contains a variety of information, but he most important data member of the :ref:`ChirpSong` class is ``ChirpSong.Tracks``, which is list of :ref:`ChirpTrack` objects.
+
+Each :ref:`ChirpTrack` represents one voice; while the instrument for a :ref:`ChirpTrack`  can change, it can only be one instrument at a time.  The primary data member of the :ref:`ChirpTrack` class is ``ChirpTrack.Notes``, a list of :ref:`Note` objects.
+
+Each :ref:`Note` object represents a single note. The ref:`Note` has a pitch (specified using MIDI note numbers), a start time (measured in MIDI ticks), a duration, and a velocity (which is mostly used for volume). These properties are all that is required for the Chirp representation of a note.'
+
+MChirp details
+##############
+
+.. image:: _images/MChirpStructure.png
+   :width: 500px
+   :alt: MChirp structure
+   :align: center
+
+
+The MChirp representation, like the Chirp representation, has song (:ref:`MChirpSong`) and track (:ref:`MChirpTrack`) objects, which, at a high level, behave much like their Chirp counterparts.
+
+However, :ref:`MChirpTrack` objects have a list of :ref:`Measure` objects instead of a list of notes.  Each :ref:`Measure` object contains a list of events that occur in the measure, including :ref:`Note` and :ref:`Rest` objects, along with other events that can occur during a measure.
+
+Each :ref:`Measure` is guaranteed to contain exactly the content of a single measure.  All space is used; space between notes is filled with rests.
+
+In a :ref:`Measure`, notes that form triplets are contained within :ref:`Triplet` objects.
+
+To support measure-based representation of notes, two members that refer to ties between notes have been added to the ref:`Note` class:  ``Note.tied_from`` and ``Note.tied_to``.  These members are only used in the MChirp representation.
+
+RChirp details
+##############
+
+.. image:: _images/RChirpStructure.png
+   :width: 500px
+   :alt: RChirp structure
+   :align: center
+
+
+The RChirp representation is quite different from the other intermediate representations in ChiptuneSAK.  While the song is represented by the :ref:`RChirpSong` class, it contains no tracks.  Instead, :ref:`RChirpSong` contains a list of :ref:`RChirpVoice` classes, each representing a single voice.  The distinction is made because voices, unlke tracks, reflect the underlying hardware.
+
+The musical content of each :ref:`RChirpVoice` is contained in its ``RChirpVoice.rows`` member, which is a list of :ref:`RChirpRow` objects, each representing a tracker row.
+
+However, the :ref:`RChirpVoice` can optionally contain the content in a separate format as well: as an :ref:`RChirpOrderList` that specifies patterns and repeats. The :ref:`RChirpOrderList` is a list of :ref:`RChirpOrderEntry` objects, which in turn point to :ref:`RChirpPattern` entries in the ``RChirpSong.patterns`` list for the song as a whole.
+
+The :ref:`RChirpPattern` and :ref:`RChirpOrderList` objects are created by compression algorithms that discover and exploit repetitions in the musical content to make the song smaller.  For the most part, they are not meant to be manipulated directly.
+
+Notes on Chirp Music Representation
 -----------------------------------
 
 Tempo (BPM and QPM)
