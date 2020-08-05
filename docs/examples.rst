@@ -2,43 +2,13 @@
 ChiptuneSAK Examples
 ====================
 
-.. toctree::
-   :caption: Table of Contents
-   :maxdepth: 2
+.. contents::
 
 Chirp Examples
 --------------
 
-
-Lilypond Sheet Music Examples
------------------------------
-
-Lilypond Song to PDF
-++++++++++++++++++++
-
-In this example a MIDI song is read in and output to a multi-page PDF document:
-
-.. literalinclude:: ../examples/lilypondExample.py
-    :language: python
-
-Lilypond Measures to PNG
-++++++++++++++++++++++++
-
-In this example a MIDI song is read, and a snippet of measures is converted to a PNG image;
-
-.. literalinclude:: ../examples/lilypondClipExample.py
-    :language: python
-
-C128 Basic Example
-------------------
-
-In this example a MIDI song is read and converted to C128 BASIC:
-
-.. literalinclude:: ../examples/c128BasicExample.py
-    :language: python
-
 DOS MIDI File Example
----------------------
++++++++++++++++++++++
 
 In this example a midi file captured from a DOS game is processed and turned into sheet music as well as exported to GoatTracker.
 
@@ -68,6 +38,35 @@ In fact, an ideal method now is to use the output obtained from FitPPQ, open the
 Now you can use those parameters (5.89 and 2398) to scale the mercantile file in the Python script, which generates Lilypond sheet music and a GoatTracker SNG file.  Note that because you need to move the music to an *earlier* time, the offset you give to the ``move_ticks()`` method will be negative.
 
 .. literalinclude:: ../examples/mercantile.py
+    :language: python
+
+
+
+Lilypond Sheet Music Examples
+-----------------------------
+
+Lilypond Song to PDF
+++++++++++++++++++++
+
+In this example a MIDI song is read in and output to a multi-page PDF document:
+
+.. literalinclude:: ../examples/lilypondExample.py
+    :language: python
+
+Lilypond Measures to PNG
+++++++++++++++++++++++++
+
+In this example a MIDI song is read, and a snippet of measures is converted to a PNG image;
+
+.. literalinclude:: ../examples/lilypondClipExample.py
+    :language: python
+
+C128 Basic Example
+------------------
+
+In this example a MIDI song is read and converted to C128 BASIC:
+
+.. literalinclude:: ../examples/c128BasicExample.py
     :language: python
 
 

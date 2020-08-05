@@ -2,6 +2,8 @@
 Music Processing and Transformation in Chirp
 ============================================
 
+.. contents::
+
 Most music transformation and processing capabilities in the ChiptuneSAK are in the Chirp respresentation. The Chirp classes together implement a rich set of transformations to allow straightforward programmatic control over many song details.
 
 To perform these operations, music is imported and converted to the Chirp representation.  The :ref:`ChirpSong` and :ref:`ChirpTrack` classes have a large number of pre-defined music transformation methods, and are designed to make addition of new methods quite simple.
