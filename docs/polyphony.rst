@@ -35,12 +35,6 @@ The :ref:`Chirp` intermediate representation has methods to eliminate polyphony 
 Chirp Polyphony Methods
 +++++++++++++++++++++++
 
-.. automethod:: chiptunesak.chirp.ChirpTrack.is_polyphonic
-    :noindex:
-
-.. automethod:: chiptunesak.chirp.ChirpTrack.remove_polyphony
-    :noindex:
-
 .. automethod:: chiptunesak.chirp.ChirpSong.is_polyphonic
     :noindex:
 
@@ -49,3 +43,10 @@ Chirp Polyphony Methods
 
 .. automethod:: chiptunesak.chirp.ChirpSong.explode_polyphony
     :noindex:
+
+.. automethod:: chiptunesak.chirp.ChirpTrack.is_polyphonic
+    :noindex:
+
+.. automethod:: chiptunesak.chirp.ChirpTrack.remove_polyphony
+    :noindex:
+

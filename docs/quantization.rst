@@ -37,10 +37,18 @@ Quantization Methods
 
 Primary use of the quantization algorithms occurs through methods of the :ref:`ChirpSong` and :ref:`ChirpTrack` classes.
 
-.. autoclass:: chiptunesak.chirp.ChirpSong
-    :members: estimate_quantization, quantize, quantize_from_note_name
+.. automethod:: chiptunesak.chirp.ChirpSong.estimate_quantization
     :noindex:
 
-.. autoclass:: chiptunesak.chirp.ChirpTrack
-    :members: estimate_quantization, quantize
+.. automethod:: chiptunesak.chirp.ChirpSong.quantize
+    :noindex:
+
+.. automethod:: chiptunesak.chirp.ChirpSong.quantize_from_note_name
+    :noindex:
+
+
+.. automethod:: chiptunesak.chirp.ChirpTrack.estimate_quantization
+    :noindex:
+
+.. automethod:: chiptunesak.chirp.ChirpTrack.quantize
     :noindex:
