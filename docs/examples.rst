@@ -63,7 +63,7 @@ This should generate the following output:
 
 It is a good idea to do a sanity check on the output file, as the algorithm in FitPPQ often fails to give the best solution.  A general algorithm to find the beats in a midi file is a daunting task!
 
-In fact, an ideal method now is to use the output obtained from FitPPQ, open the resulting fileand adjust the first beat of the final measure to lie *exactly* at the start of the final measure.  If we do this with tmp.mid, we find that the first note of the final measure is at MIDI tick 226588 for measure 60.  For a PPQ of 960 and 4 quqarter notes per measure, the last measure should start at tick 960 * 59 * 4 = 226560, so we are coming in only 28 ticks late.  Since we plan to quantize to a 16th note (960 / 4 = 240 ticks) tyhen the value we found should be fine.
+In fact, an ideal method now is to use the output obtained from FitPPQ, open the resulting file and adjust the first beat of the final measure to lie *exactly* at the start of the final measure.  If we do this with tmp.mid, we find that the first note of the final measure is at MIDI tick 226588 for measure 60.  For a PPQ of 960 and 4 quarter notes per measure, the last measure should start at tick 960 * 59 * 4 = 226560, so we are coming in only 28 ticks late.  Since we plan to quantize to a 16th note (960 / 4 = 240 ticks) then the value we found should be fine.
 
 Now you can use those parameters (5.89 and 2398) to scale the mercantile file in the Python script, which generates Lilypond sheet music and a GoatTracker SNG file.  Note that because you need to move the music to an *earlier* time, the offset you give to the ``move_ticks()`` method will be negative.
 
@@ -79,7 +79,7 @@ Fix too-short note durations
 
 examples/data/C128/BWV_799.mid is a three-part Bach invention. It contains a few 32nd notes near the end.
 
-Unfortuately, C128 BASIC only supports notes down to 16th notes, so exporting this piece to C128 BASIC without loss of those notes is not possible without metric modulation.
+Unfortunately, C128 BASIC only supports notes down to 16th notes, so exporting this piece to C128 BASIC without loss of those notes is not possible without metric modulation.
 
 In the :ref:`C128 Basic Example`, the line
 

@@ -51,6 +51,6 @@ The result will be `bach.png` that looks like this:
 Example 2:  Midi game music to sheet music
 ******************************************
 
- Often, `midi ripped from old DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.  This example workflow shows how to turn such music into Lilypond-generated sheet music, and will use `a piece of music <http://www.midi-karaoke.info/21868cd1.html>`_ from an MS-DOS RPG Betrayal At Krondor (Sierra On-Line, 1993).
+ Often, `midi ripped from MS-DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.  This example workflow shows how to turn such music into Lilypond-generated sheet music, and will use `a piece of music <http://www.midi-karaoke.info/21868cd1.html>`_ from an MS-DOS RPG Betrayal At Krondor (Sierra On-Line, 1993).
 
 View the :ref:`DOS MIDI File Example` for the details of this example.

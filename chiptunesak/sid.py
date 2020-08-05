@@ -19,8 +19,10 @@
 #    tuning and architecture-based frequencies at runtime.
 #
 # TODO:
+# - Improve code by writing a driver program to test a 10 second extraction from every SID
+#   in HVSC, then autogather results.
 # - SidImport:print warning if jmp or jsr to memory outside of modified memory
-# - haven't tested extracting from a 2SID or 3SID yet
+# - haven't tested processing of 2SID or 3SID yet
 #
 # FUTURE:
 # - sid2midi apparently created midi placeholders for digi content.  That might be useful
