@@ -401,7 +401,6 @@ class RChirpSong(ChiptuneSAKBase):
         self.voices = []                                #: List of RChirpVoice instances
         self.voice_groups = []                          #: Voice groupings for lowering to multiple chips
         self.patterns = []                              #: Patterns to be shared among the voices
-        self.stats = {}                                 #: TODO: ???
         self.metadata = None                            #: Song metadata (author, copyright, etc.)
         self.other = None                               #: Other meta-events in song
         self.compressed = False                         #: Has song been through compression algorithm?

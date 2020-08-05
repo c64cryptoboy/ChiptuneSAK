@@ -120,9 +120,8 @@ def main():
     p_state = "" if song.is_polyphonic() else "not"
     print("Output ChirpSong is %s quantized and %s polyphonic" % (q_state, p_state))
 
-    # print('\n'.join("%24s %s" % (s, str(v)) for s, v in song.stats.items()))
-
     print("Exporting to MIDI...")
+
     midi.MIDI().to_file(song, args.midi_out_file)
 
 

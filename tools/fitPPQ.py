@@ -21,7 +21,7 @@ def objective_function(notes, desired_q, offset, scale_factor):
         start = (n.start_time - offset) * scale_factor
         delta = chirp.quantization_error(start, desired_q)
         err += abs(delta)
-    return err / scale_factor
+    return err
 
 
 def find_best_f(notes, desired_q, f_start, f_end, step, offset):
@@ -70,8 +70,8 @@ def main():
     f_min = round(desired_ppq / song.metadata.ppq / 2, 3)
     f_max = f_min * 8.
     if args.scalefactor:
-        f_min = args.scalefactor * .66
-        f_max = args.scalefactor * 1.5
+        f_min = args.scalefactor * .9
+        f_max = args.scalefactor * 1.1
     else:
         if f_min < 1.:
             f_min = 1.
@@ -96,7 +96,7 @@ def main():
     while min_e < last_min_e:
         last_min_e = min_e
         f_step /= 10.
-        f_min = best_f - (f_step * 100)
+        f_min = best_f - (f_step * 200)
         if (f_min < 1.0):
             f_min = 1.0
         f_max = f_min + (f_step * 200)

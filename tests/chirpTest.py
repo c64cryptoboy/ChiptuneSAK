@@ -18,7 +18,7 @@ class SongTestCase(unittest.TestCase):
         """
         Tests that the total number of notes imported is correct.
         """
-        self.assertEqual(self.test_song.stats['Notes'], 143)
+        self.assertEqual(sum(len(t.notes) for t in self.test_song.tracks), 143)
         self.assertEqual(max(n.note_num for t in self.test_song.tracks for n in t.notes), 69)
         self.assertEqual(max(n.duration for t in self.test_song.tracks for n in t.notes), 3840)
 

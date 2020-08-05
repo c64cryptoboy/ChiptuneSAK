@@ -78,7 +78,7 @@ MChirp details
 
 The MChirp representation, like the Chirp representation, has song (:ref:`MChirpSong`) and track (:ref:`MChirpTrack`) objects, which, at a high level, behave much like their Chirp counterparts.
 
-However, :ref:`MChirpTrack` objects have a list of :ref:`Measure` objects instead of a list of notes.  Each :ref:`Measure` object contains a list of events that occur in the measure, including :ref:`Note` and :ref:`Rest` objects, along with other events that can occur during a measure.
+However, :ref:`MChirpTrack` objects have a list of :ref:`Measure` objects instead of a list of notes.  Each :ref:`Measure` object contains a list of events that occur in the measure, including :ref:`Note` and :ref:`Rest` objects.  Measures also contain events for the measure number, program changes, tempo changes, etc.
 
 Each :ref:`Measure` is guaranteed to contain exactly the content of a single measure.  All space is used; space between notes is filled with rests.
 

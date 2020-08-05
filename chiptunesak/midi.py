@@ -185,25 +185,16 @@ class MIDI(ChiptuneSAKIO):
 
         # Sort all time changes from meta tracks into a single time signature change list
         chirp_song.time_signature_changes = sorted(chirp_song.time_signature_changes)
-        chirp_song.stats['Time Signature Changes'] = len(chirp_song.time_signature_changes)
         chirp_song.key_signature_changes = sorted(chirp_song.key_signature_changes)
-        chirp_song.stats['Key Signature Changes'] = len(chirp_song.key_signature_changes)
         chirp_song.tempo_changes = sorted(chirp_song.tempo_changes)
-        chirp_song.stats['Tempo Changes'] = len(chirp_song.tempo_changes)
 
         # Find all tracks that contain notes
         midi_note_tracks = [t for t in in_midi.tracks if sum(1 for m in t if m.type == 'note_on') > 0]
-
-        chirp_song.stats["MIDI notes"] = sum(1 for t in midi_note_tracks
-                                             for m in t if m.type == 'note_on' and m.velocity != 0)
 
         # Now generate the note tracks
         for track in midi_note_tracks:
             chirp_track = self.midi_track_to_chirp_track(chirp_song, track)
             chirp_song.tracks.append(chirp_track)
-
-        chirp_song.stats["Notes"] = sum(len(t.notes) for t in chirp_song.tracks)
-        chirp_song.stats["Track names"] = [t.name for t in chirp_song.tracks]
 
         if self.get_option('keyswitch', True):
             chirp_song.remove_keyswitches(ks_max=8)

@@ -295,7 +295,6 @@ class MChirpSong(ChiptuneSAKBase):
         self.qticks_notes = self.metadata.ppq  #: Quantization for note starts, in ticks
         self.qticks_durations = self.metadata.ppq  #: Quantization for note durations, in ticks
         self.other = []  #: Other MIDI events not used in measures
-        self.stats = {}
         if chirp_song is not None:
             if chirp_song.cts_type() != 'Chirp':
                 raise ChiptuneSAKTypeError("MChirpSong init can only import ChirpSong objects")

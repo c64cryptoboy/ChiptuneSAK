@@ -71,7 +71,6 @@ def events_to_ml64(events, song, last_continue=False):
     :rtype: tuple
     """
     content = []
-    stats = collections.Counter()
     for e in events:
         if isinstance(e, chirp.Note):
             if last_continue:
@@ -80,19 +79,15 @@ def events_to_ml64(events, song, last_continue=False):
                 tmp_note = make_ml64_notes(pitch_to_ml64_note_name(e.note_num), e.duration, song.metadata.ppq)
             content.append(tmp_note)
             last_continue = e.tied_from
-            stats['note'] += 1
-            stats['continue'] += tmp_note.count('c(')
         elif isinstance(e, Rest):
             tmp_note = make_ml64_notes('r', e.duration, song.metadata.ppq)
             content.append(tmp_note)
             last_continue = False
-            stats['rest'] += tmp_note.count('r(')
         elif isinstance(e, MeasureMarker):
             content.append('[m%d]' % e.measure_number)
         elif isinstance(e, ProgramEvent):
             content.append('i(%d)' % e.program)
-            stats['program'] += 1
-    return (content, stats, last_continue)
+    return (content, last_continue)
 
 
 class ML64(ChiptuneSAKIO):
@@ -172,7 +167,6 @@ class ML64(ChiptuneSAKIO):
 
         mode = self.format
 
-        stats = collections.Counter()
         output.append('ML64(1.3)')
         output.append('song(1)')
         output.append('tempo(%d)' % chirp_song.metadata.qpm)
@@ -196,12 +190,11 @@ class ML64(ChiptuneSAKIO):
                         track_events.append(MeasureMarker(m, im + 1))
             track_events.sort(key=ml64_sort_order)
             # Now send the entire list of events to the ml64 creator
-            track_content, stats, *_ = events_to_ml64(track_events, chirp_song)
+            track_content, *_ = events_to_ml64(track_events, chirp_song)
             output.append(''.join(track_content).strip())
             output.append('track(-)')
         output.append('song(-)')
         output.append('ML64(-)')
-        chirp_song.stats['ML64'] = stats
         return '\n'.join(output)
 
     def export_mchirp_to_ml64(self, mchirp_song):
@@ -212,7 +205,6 @@ class ML64(ChiptuneSAKIO):
         :type mchirp_song: MChirpSong
         """
         output = []
-        stats = collections.Counter()
         output.append('ML64(1.3)')
         output.append('song(1)')
         output.append('tempo(%d)' % mchirp_song.metadata.qpm)
@@ -222,11 +214,9 @@ class ML64(ChiptuneSAKIO):
             measures = t.measures
             last_continue = False
             for im, measure in enumerate(measures):
-                measure_content, tmp_stats, last_continue = events_to_ml64(measure.events, mchirp_song, last_continue)
+                measure_content, last_continue = events_to_ml64(measure.events, mchirp_song, last_continue)
                 output.append(''.join(measure_content))
-                stats.update(tmp_stats)
             output.append('track(-)')
         output.append('song(-)')
         output.append('ML64(-)')
-        mchirp_song.stats['ML64'] = stats
         return '\n'.join(output)

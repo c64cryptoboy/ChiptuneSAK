@@ -441,6 +441,13 @@ class ChirpTrack:
             self.notes[i] = copy.copy(n)
 
     def set_program(self, program):
+        '''
+        Sets the default program (instrument) for the track at the start and
+        removes any existing program changes.
+
+        :param program: program number
+        :type program: int
+        '''
         self.program_changes = [ProgramEvent(0, int(program))]
 
     def __str__(self):
@@ -471,7 +478,6 @@ class ChirpSong(ChiptuneSAKBase):
         self.time_signature_changes = []  #: List of time signature changes
         self.key_signature_changes = []  #: List of key signature changes
         self.tempo_changes = []  #: List of tempo changes
-        self.stats = {}  #: Statistics about the song
         if mchirp_song is not None:
             if mchirp_song.cts_type() != 'MChirp':
                 raise ChiptuneSAKTypeError("ChirpSong init can only import MChirpSong objects")
@@ -493,7 +499,6 @@ class ChirpSong(ChiptuneSAKBase):
         self.time_signature_changes = []  #: List of time signature changes
         self.key_signature_changes = []  #: List of key signature changes
         self.tempo_changes = []  #: List of tempo changes
-        self.stats = {}  #: Statistics about the song
 
     def to_rchirp(self, **kwargs):
         """
@@ -616,16 +621,12 @@ class ChirpSong(ChiptuneSAKBase):
         :type qticks_durations: int
         """
 
-        self.stats['Note Start Deltas'] = collections.Counter()
-        self.stats['Duration Deltas'] = collections.Counter()
         if qticks_notes:
             self.qticks_notes = qticks_notes
         if qticks_durations:
             self.qticks_durations = qticks_durations
         for t in self.tracks:
             note_start_changes, duration_changes = t.quantize(self.qticks_notes, self.qticks_durations)
-            self.stats['Note Start Deltas'].update(note_start_changes)
-            self.stats['Duration Deltas'].update(duration_changes)
 
         for i, m in enumerate(self.tempo_changes):
             self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.qpm)
@@ -715,12 +716,8 @@ class ChirpSong(ChiptuneSAKBase):
         """
         Eliminate polyphony from all tracks.
         """
-        self.stats['Truncated'] = 0
-        self.stats['Deleted'] = 0
         for t in self.tracks:
-            deleted, truncated = t.remove_polyphony()
-            self.stats['Truncated'] += truncated
-            self.stats['Deleted'] += deleted
+            t.remove_polyphony()
 
     def is_polyphonic(self):
         """
@@ -968,7 +965,6 @@ class ChirpSong(ChiptuneSAKBase):
             if b > last.num:
                 m += 1
                 b = 1
-        self.stats['Measures'] = m
         return measures
 
     def get_measure_beat(self, time_in_ticks):
@@ -1148,13 +1144,15 @@ def find_duration_quantization(durations, qticks_note):
 
 def quantize_fn(t, qticks):
     """
-    This function quantizes a time to a certain number of ticks.
-    :param t:
-    :type t:
-    :param qticks:
-    :type qticks:
-    :return:
-    :rtype:
+    This function quantizes a time to a certain number of ticks.  Essentially, it snaps to the
+    nearest quantized value.
+
+    :param t: a stgart time or duration, in ticks
+    :type t: int
+    :param qticks: quantization in ticks
+    :type qticks: int
+    :return: quantized start time or duration
+    :rtype: int
     """
     current = t // qticks
     next = current + 1
