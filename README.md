@@ -93,7 +93,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 
 ## Requirements/Building
 
-* [Python 3.7+](https://www.python.org/downloads/)
+* [Python 3.8+](https://www.python.org/downloads/)
     * pip install
         * matplotlib
         * mido
