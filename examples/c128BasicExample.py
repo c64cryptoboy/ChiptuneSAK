@@ -24,13 +24,17 @@ chirp_song = chiptunesak.MIDI().to_chirp(input_mid_file, quantization='32', poly
 # Perform a metric modulation by making every note length value twice as long, but
 # increasing the tempo by the same factor so it sounds the same.  Now the shortest
 # note will be a 16th note which the C128 BASIC can play.
+print('Modulating music...')
 chirp_song.modulate(2, 1)
 
 # Convert to mchirp, parsing the song for measures
+print('Converting to MChirp...')
 mchirp_song = chirp_song.to_mchirp()
 
 # Write it straight to a file using the Lilypond class with format 'song' for the entire song.
 exporter = chiptunesak.C128Basic()
 exporter.set_options(instruments=['trumpet', 'guitar', 'guitar'])
+print(f'Writing {output_bas_file}...')
 exporter.to_file(mchirp_song, output_bas_file, format='bas')
+print(f'Writing {output_prg_file}...')
 exporter.to_file(mchirp_song, output_prg_file, format='prg')

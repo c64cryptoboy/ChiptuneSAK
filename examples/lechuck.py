@@ -113,5 +113,5 @@ rchirp_song = compressor.compress(rchirp_song, min_length=16)
 # Now export the compressed song to goattracker format.
 print(f'Writing GoatTracker file {output_gt_file}')
 GT = chiptunesak.GoatTracker()
-GT.set_options(instruments=['Lead2', 'Harpsichord', 'Bass3'])
+GT.set_options(instruments=['LongGuitar', 'C128Xylophone', 'SimpleTriangle'])
 GT.to_file(rchirp_song, output_gt_file)
