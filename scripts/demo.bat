@@ -23,6 +23,9 @@ start /wait %gtpath2% ..\examples\data\lechuck\lechuck.sng
 
 rem Demo 3: Skyfox SID import
 python ..\examples\tripletExample.py
+echo Hit any key to listen to extracted MIDI
+pause
+start /wait ..\examples\data\triplets\Skyfox.mid
 echo Hit any key to see unmodulated PDF
 pause
 start /wait ..\examples\data\triplets\Skyfox.pdf

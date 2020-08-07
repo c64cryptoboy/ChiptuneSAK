@@ -30,8 +30,6 @@ chirp_song = rchirp_song.to_chirp(milliframes_per_quarter=play_calls_per_quarter
 chirp_song.set_key_signature('G')
 chirp_song.set_time_signature(4, 4)
 
-chiptunesak.MIDI().to_file(chirp_song, project_to_absolute_path(output_mid_file))
-
 # First thing, we rename the song
 chirp_song.metadata.name = "SkyFox - Main Theme"
 chirp_song.metadata.composer = "Douglas Fulton"
@@ -39,9 +37,12 @@ chirp_song.metadata.composer = "Douglas Fulton"
 # Now name the tracks
 for t, name in zip(chirp_song.tracks, ['Square1', 'Square2', 'Square3']):
     t.name = name
+    t.set_program(81)  # Set program to General Midi square lead
 
 chirp_song.quantize(80, 80)
 chirp_song.remove_polyphony()
+
+chiptunesak.MIDI().to_file(chirp_song, project_to_absolute_path(output_mid_file))
 
 mchirp_song = chirp_song.to_mchirp(trim_partial=True)
 chiptunesak.Lilypond().to_file(mchirp_song, output_ly_file, format='song')
