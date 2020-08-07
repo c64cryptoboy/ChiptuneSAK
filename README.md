@@ -135,10 +135,10 @@ python3 -m unittest discover -p "*Test.py"
 The following instructions make the following assumptions:
 
 * You installed [Python 3.8 from the Windows Store](https://www.microsoft.com/en-us/p/python-38/9mssztt1n39l)
-* You are doing your development in Windows PowerShell
+* You are installing using Windows PowerShell or the Command Prompt
 
 ```ps1
-# In a PowerShell Admin window:
+# If PowerShell, run as Admin:
 
 # Set Powershell Execution Policy to all running local scripts:
 Set-ExecutionPolicy RemoteSigned
@@ -151,7 +151,7 @@ python --version  # Python 3.8.3
 
 # Create a Python virtual environment (EXPLICITLY use `python` instead of `python3`)
 python -m venv venv
-.\venv\Scripts\Activate.ps1
+.\venv\Scripts\Activate
 
 # Install requirements in to virtualenv
 pip install -r .\requirements.txt
@@ -160,7 +160,7 @@ pip install -r .\requirements.txt
 pip install --editable .
 
 # Run the unittests to make sure things are working as expected
-python -m unittest discover -p "*Test.py"
+tests\testall.bat
 ```
 
 ## Generating Documentation
