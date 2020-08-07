@@ -39,6 +39,7 @@ chirp_song = chiptunesak.MIDI().to_chirp(input_file)
 
 # First thing, we rename the song
 chirp_song.metadata.name = "Betrayal at Krondor - Mercantile Theme"
+chirp_song.metadata.composer = "Jan Paul Moorhead"
 
 print(f'Original song:')
 print(f'#tracks = {len(chirp_song.tracks)}')
