@@ -1,6 +1,6 @@
 {
     "restructuredtext.confPath": "${workspaceFolder}\\docs",
-    "python.pythonPath": "venv\\Scripts\\python.exe",
+    "python.pythonPath": "venv/bin/python",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
