@@ -127,3 +127,7 @@ class TrackTestCase(unittest.TestCase):
         total_notes_test = sum(len(t.notes) for t in tmp_song.tracks)
         expected_lost = short_notes // 2  # In this piece, the short notes come in pairs
         self.assertEqual(total_notes_test + expected_lost, total_notes)
+
+
+if __name__ == '__main__':
+    unittest.main(failfast=False)

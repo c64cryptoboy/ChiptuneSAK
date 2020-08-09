@@ -1,4 +1,4 @@
-10 rem BWV 799
+10 rem bwv 799
 20 tempo 5
 100 aa$="v1o4qa v3o2iao3a v1o4b v3o3#g m"
 110 ab$="v1o5qc v3o3iae v1o5d v3o3f m"

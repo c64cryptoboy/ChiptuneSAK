@@ -23,8 +23,20 @@ class TestC128BASIC(unittest.TestCase):
         known_good_basic_program_hash = testing_tools.md5_hash_no_spaces_file(KNOWN_GOOD)
 
         basic_program = self.BASIC.to_bin(self.mchirp_song, format='bas')
+
         test_hash = testing_tools.md5_hash_no_spaces(basic_program)
 
+        '''
+        # Code needed when creating new known-good test hashes
+        self.BASIC.to_file(
+            self.mchirp_song,
+            constants.project_to_absolute_path('tests/data/BWV_799.bas'),
+            format='bas')
+        self.BASIC.to_file(
+            self.mchirp_song,
+            constants.project_to_absolute_path('tests/data/BWV_799.prg'),
+            format='prg')
+        '''
         self.assertEqual(known_good_basic_program_hash, test_hash)
 
 

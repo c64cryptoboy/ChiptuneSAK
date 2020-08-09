@@ -24,7 +24,7 @@ Importing SID files
 
 ChiptuneSAK has functionality that can import music in a SID file into RChirp, which can then be converted to a variety of output formats.
 
-Our importer is meant to be an alternative to Michael Schwendt's `SID2MIDI tool <https://csdb.dk/release/?id=136776>`_, as that tool is closed source, has not been updated since 2007, is Windows only, and won't process RSIDs.  SID2MIDI also creates fairly messy sheet music when first imported into music engraving tools (such as Sibelius, Dorico, Finale, MuseScore, etc.), since its output is not processed with the intention of having notes fall cleanly into time-signature governed measures.  Our tool chain is designed to directly addresses these issues.
+Our importer is meant to be an alternative to Michael Schwendt's `SID2MIDI tool <https://csdb.dk/release/?id=136776>`_, as that tool is closed source (not updated since 2007), is Windows only, and won't process RSIDs.  SID2MIDI also creates fairly messy sheet music when first imported into music engraving tools (such as Sibelius, Dorico, Finale, MuseScore, etc.), since its output is not processed with the intention of having notes fall cleanly into time-signature governed measures.  Our tool chain is designed to directly addresses these issues.
 
 The ChiptuneSAK's SID importing capabilities were originally based on Lassee Oorni's (Cadaver, of Goat Tracker fame) and Stein Pedersen's excellent `SIDDump tool <https://csdb.dk/release/?id=192079>`_ (i.e., our python emulator_6502.py module is very close in functionality to SIDDump's cpu.c code).
 

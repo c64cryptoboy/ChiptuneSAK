@@ -6,7 +6,6 @@ from chiptunesak.constants import project_to_absolute_path
 
 def create_output_files():
     params = [
-        
         # has the notes that sid2midi misses
         (project_to_absolute_path('examples/sid/Pool_of_Radiance.sid'), 0, 'examples/por', 12, 120),
 
@@ -15,7 +14,7 @@ def create_output_files():
         # contains digi, which is ignored
         (project_to_absolute_path('examples/sid/Great_Giana_Sisters.sid'), 0, 'examples/ggs', 24, 30),
 
-        # assert_gate_on_new_note: True includes arpeggios, and False includes just the chord root        
+        # assert_gate_on_new_note: True includes arpeggios, and False includes just the chord root
         (project_to_absolute_path('examples/sid/Butcher_Hill.sid'), 1, 'examples/bh', 12, 175),
 
     ]

@@ -58,23 +58,37 @@ class C128Basic(base.ChiptuneSAKIO):
     def set_options(self, **kwargs):
         """
         Sets the options for commodore export
+
+        :param kwargs: keyword arguments for options
+        :type kwargs: keyword arguments
         """
         for op, value in kwargs.items():
             op = op.lower()  # All option names must be lowercase
+            if op not in ['arch', 'format', 'instruments', 'tempo_override', 'rem_override']:
+                raise ChiptuneSAKValueError(f'Error: unknown option "{op}"')
+
             if op == 'arch':
                 if value not in constants.ARCH.keys():
-                    raise ChiptuneSAKValueError(f"Invalid architecture setting {value}")
+                    raise ChiptuneSAKValueError(f"Error: Invalid architecture setting {value}")
             elif op == 'format':
                 if value == 'ascii':
                     value = 'bas'
                 if value not in ['prg', 'bas']:
-                    ChiptuneSAKValueError(f"Invalid format setting {value}")
+                    ChiptuneSAKValueError(f"Error: Invalid format setting {value}")
             elif op == 'instruments':
                 if len(value) != 3:
-                    raise ChiptuneSAKValueError("3 instruments required for C128")
+                    raise ChiptuneSAKValueError("Error: 3 instruments required for C128")
                 value = [v.lower() for v in value]
                 if any(v not in C128_INSTRUMENTS for v in value):
-                    raise ChiptuneSAKValueError("Illegal instrument name(s)")
+                    raise ChiptuneSAKValueError("Error: Illegal instrument name(s)")
+            elif op == 'tempo_override':
+                if not 1 <= value <= 255:
+                    # Note: some Commodore manuals erroneously show 0 as the slowest
+                    # tempo.  "TEMPO 0" will throw a BASIC illegal quantity error.
+                    raise ChiptuneSAKContentError("Error: tempo must be between 1 and 255")
+            elif op == 'rem_override':
+                value = value[:72].lower()
+
             self._options[op] = value
 
     def to_bin(self, mchirp_song, **kwargs):
@@ -86,14 +100,7 @@ class C128Basic(base.ChiptuneSAKIO):
         :return: C128 BASIC program
         :rtype: string or bytearray
 
-        :keyword options:
-            * **arch** (string) - architecture name (see base for complete list)
-            * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
-            * **instruments** (list of string) - List of 3 instruments to be used for the three voices (in order).
-                - Default is ['piano', 'piano', 'piano']
-                - Supports the default C128 BASIC instruments:
-                  0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute',
-                  5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
+        :keyword options:  see `to_file()`        
         """
         self.set_options(**kwargs)
         if mchirp_song.cts_type() != 'MChirp':
@@ -116,8 +123,16 @@ class C128Basic(base.ChiptuneSAKIO):
         :param filename: path and filename
         :type filename: string
 
-        :keyword options:  see `to_bin()`
-
+        :keyword options:
+            * **arch** (string) - architecture name (see base for complete list)
+            * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
+            * **instruments** (list of string) - list of 3 instruments for the three voices (in order).         
+                - Default is ['piano', 'piano', 'piano']
+                - Supports the default C128 BASIC instruments:
+                  0:'piano', 1:'accordion', 2:'calliope', 3:'drum', 4:'flute',
+                  5:'guitar', 6:'harpsichord', 7:'organ', 8:'trumpet', 9:'xylophone
+            * **tempo_override** (int) - override the computed tempo
+            * **rem_override** (string) - use passed string for leading REM statement instead of filename
         """
         prog = self.to_bin(mchirp_song, **kwargs)
 
@@ -143,12 +158,21 @@ class C128Basic(base.ChiptuneSAKIO):
         result = []
         current_line = 10
 
-        result.append('%d rem %s' % (current_line, mchirp_song.metadata.name))
+        if self.get_option('rem_override'):
+            rem_desc = self.get_option('rem_override')
+        else:
+            rem_desc = mchirp_song.metadata.name.lower()
+
+        result.append('%d rem %s' % (current_line, rem_desc))
         current_line += 10
 
         # Tempo 1 is slowest, and 255 is fastest
-        tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE / constants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
-        tempo = int(round(tempo))
+        if self.get_option('tempo_override'):
+            tempo = self.get_option('tempo_override')
+        else:
+            tempo = (mchirp_song.metadata.qpm * WHOLE_NOTE
+                     / constants.ARCH[self.get_option('arch')].frame_rate / 60 / 4)
+            tempo = int(round(tempo))
 
         result.append('%d tempo %d' % (current_line, tempo))
 
