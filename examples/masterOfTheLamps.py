@@ -13,7 +13,7 @@
 import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
 
-sid_filename = project_to_absolute_path('examples/sid/Master_of_the_Lamps_PAL.sid')
+sid_filename = project_to_absolute_path('examples/data/sid/Master_of_the_Lamps_PAL.sid')
 
 # list of subtunes to extract
 to_extract = [
@@ -95,7 +95,7 @@ def create_output_files(write_csv=True, write_midi=True):
             gcf_row_reduce=True,
         )
 
-        filename_no_ext = 'examples/data/motl_%s' % desc.replace(" ", "_")
+        filename_no_ext = 'examples/data/motl/motl_%s' % desc.replace(" ", "_")
 
         sid_dump = sid.capture()  # noqa: F841
 

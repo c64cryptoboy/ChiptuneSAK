@@ -96,7 +96,7 @@ def main():
     # The below URL works for navigating, but not for downloading:
     # https://www.sannic.nl/hvsc/?dir=C64Music/MUSICIANS
 
-    download_dir = 'examples/sid'
+    download_dir = 'examples/data/sid'
 
     resources.append(ResourceFile(
         an_hvsc_mirror + '/B/Boles_Howard/Dragonworld.sid', download_dir))
@@ -142,7 +142,7 @@ def main():
 
     resources.append(ResourceFile(
         'https://www.midiarchive.co.uk/downloadfile/Games/Monkey%20Island%201/Monkey%20Island%201%20-%20The%20Ghost%20Pirate%20Lechuck%20Ver%203.mid',
-        'examples/data',
+        'examples/data/lechuck',
         'MonkeyIsland_LechuckTheme.mid'
     ))
 
