@@ -6,9 +6,9 @@ from chiptunesak import testing_tools
 from chiptunesak.lilypond import Lilypond
 from chiptunesak.constants import project_to_absolute_path
 
-MIDI_TEST_FILE = project_to_absolute_path('tests/data/bach_invention_4.mid')
-KNOWN_GOOD_LY_FILE_CLIP = project_to_absolute_path('tests/data/bach_invention_4_clip_good.ly')
-TEST_LY_FILE_CLIP = project_to_absolute_path('tests/data/test_bach_invention_4_clip_good.ly')
+MIDI_TEST_FILE = project_to_absolute_path('tests/data/BWV_775.mid')
+KNOWN_GOOD_LY_FILE_CLIP = project_to_absolute_path('tests/data/BWV_775_clip_good.ly')
+TEST_LY_FILE_CLIP = project_to_absolute_path('tests/data/BWV_775_clip_good.ly')
 
 
 class TestExportLilypond(unittest.TestCase):

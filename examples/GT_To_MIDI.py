@@ -7,10 +7,10 @@ This minimal example imports a GoatTracker song and exports as MIDI.
 """
 
 # Set up input and output paths
-output_folder = str(project_to_absolute_path('examples\\data\\bleibet')) + '\\'
+output_folder = str(project_to_absolute_path('examples\\data\\BWV_147')) + '\\'
 input_folder = output_folder
-input_file = str(project_to_absolute_path(input_folder + 'bleibet.sng'))
-output_midi_file = str(project_to_absolute_path(output_folder + 'bleibet.mid'))
+input_file = str(project_to_absolute_path(input_folder + 'BWV_147_Bleibet.sng'))
+output_midi_file = str(project_to_absolute_path(output_folder + 'BWV_147_Bleibet.mid'))
 
 # Read in the song using the GoatTracker I/O class
 print(f'Reading and converting {input_file}')

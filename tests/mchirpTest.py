@@ -5,7 +5,7 @@ from chiptunesak.mchirp import MChirpSong
 from chiptunesak.chirp import ChirpSong
 from chiptunesak.constants import project_to_absolute_path
 
-TEST_SONG = project_to_absolute_path('tests/data/bach_invention_4.mid')
+TEST_SONG = project_to_absolute_path('tests/data/BWV_775.mid')
 
 
 class SongTestCase(unittest.TestCase):

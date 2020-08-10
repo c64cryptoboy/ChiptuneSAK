@@ -28,8 +28,8 @@ class TestExportML64(unittest.TestCase):
 
         self.assertEqual(known_good_ml64_hash, test_ml64_hash)
 
-        midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
-        known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good.ml64')
+        midi_file = project_to_absolute_path('tests/data/BWV_775.mid')
+        known_good_ml64_file = project_to_absolute_path('tests/data/BWV_775_good.ml64')
         known_good_ml64_hash = testing_tools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = midi.MIDI().to_chirp(midi_file)
@@ -47,8 +47,8 @@ class TestExportML64(unittest.TestCase):
         """
         ml64 = ML64()
 
-        midi_file = project_to_absolute_path('tests/data/bach_invention_4.mid')
-        known_good_ml64_file = project_to_absolute_path('tests/data/bach_invention_4_good_std.ml64')
+        midi_file = project_to_absolute_path('tests/data/BWV_775.mid')
+        known_good_ml64_file = project_to_absolute_path('tests/data/BWV_775_good_std.ml64')
         known_good_ml64_hash = testing_tools.md5_hash_no_spaces_file(known_good_ml64_file)
 
         song = midi.MIDI().to_chirp(midi_file)

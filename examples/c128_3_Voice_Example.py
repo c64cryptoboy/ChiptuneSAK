@@ -2,10 +2,10 @@ import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
 
 """
-This example shows how to convert a song to C128 Basic:
+This example shows how to convert a 3-voice song to C128 Basic:
 
  1. Import the song to chirp format from a MIDI file, quantizing the notes to the nearest 32nd note
- 2. Since C1287 cannot do notes shorter than a 16th note, perform a metric modulation
+ 2. Since C128 BASIC cannot do notes shorter than a 16th note, perform a metric modulation to double note lengths
  3. Convert the song to mchirp format
  3. Save the BASIC as source
  4. Save the BASIC as a prg file
