@@ -387,6 +387,9 @@ class ChirpTrack:
         :param num:   Numerator of modulation
         :param denom: Denominator of modulation
         """
+        f = Fraction(num, denom).limit_denominator(32)
+        num = f.numerator
+        denom = f.denominator
         # Change the start times of all the "other" events
         for i, (t, m) in enumerate(self.other):
             t = (t * num) // denom
