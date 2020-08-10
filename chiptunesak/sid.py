@@ -1411,15 +1411,16 @@ class SidImport:
         timer_hists = timerHistograms()
         self.cpu_state.debug = False
 
-        # both of these are useful for seeing how init and play routines touch the SID
-        self.cpu_state.clear_memory_usage()
-        self.ordered_io_settings = []
+        # useful for seeing how init and play routines touch the SID
+        self.cpu_state.clear_memory_usage()  # records if there was R or W activity per loc
+        self.ordered_io_settings = []  # records multiple accesses to same loc
+        zero_page_usage = set()  # across all init and play calls
 
         # Initialize the SID subtune
         self.call_sid_init(sid_dump.sid_file.init_address, subtune)
 
         # self.cpu_state.print_memory_usage()  # See what init touched
-
+        self.cpu_state.update_zp_usage(zero_page_usage)
         if verbose:
             self.print_call_log_for_cia_activity(self.ordered_io_settings)
 
@@ -1502,13 +1503,16 @@ class SidImport:
         self.cpu_state.debug = False
 
         while self.play_call_num < max_play_calls:
-            self.cpu_state.clear_memory_usage()
-            self.ordered_io_settings = []
-
             if not sid_dump.sid_file.is_rsid:
                 self.set_banks_before_psid_call(sid_dump.sid_file.play_address)
 
+            self.cpu_state.clear_memory_usage()
+            self.ordered_io_settings = []
+
             self.call_sid_play(sid_dump.sid_file.play_address)
+
+            # self.cpu_state.print_memory_usage()  # See what play touched
+            self.cpu_state.update_zp_usage(zero_page_usage)
 
             post_call_bank_settings = self.cpu_state.get_mem(0x0001)
 
@@ -1785,7 +1789,11 @@ class SidImport:
 
         if verbose:
             timer_hists.print_results()
-
+            if len(zero_page_usage) == 0:
+                print("no zero page usage!")
+            else:
+                print("zero page usage: %s" %
+                      ', '.join(str(loc) for loc in sorted(zero_page_usage)))
         if sid_dump.first_row_with_note > 0:
             sid_dump.trim_leading_rows(sid_dump.first_row_with_note)
 

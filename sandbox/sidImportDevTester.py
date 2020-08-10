@@ -17,8 +17,10 @@ def create_output_files():
         # assert_gate_on_new_note: True includes arpeggios, and False includes just the chord root
         (project_to_absolute_path('examples/sid/Butcher_Hill.sid'), 1, 'examples/bh', 12, 175),
 
+        (project_to_absolute_path('examples/sid/Nitro.sid'), 1, 'examples/nitro', 12, 15),
+
     ]
-    params = params[1]  # select one
+    params = params[4]  # select one
 
     sid_filename = params[0]
     filename_no_ext = params[2]

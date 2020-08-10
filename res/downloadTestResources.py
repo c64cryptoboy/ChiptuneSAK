@@ -119,6 +119,9 @@ def main():
     resources.append(ResourceFile(
         an_hvsc_mirror + '/W/Warhol_Dave/Pool_of_Radiance.sid', download_dir))
 
+    resources.append(ResourceFile(
+        'https://www.sannic.nl/hvsc/C64Music/DEMOS/M-R/Nitro.sid', download_dir))
+
     # Apple ][ music examples
 
     download_dir = 'examples/data/appleii_u4'

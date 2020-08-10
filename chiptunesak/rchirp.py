@@ -683,14 +683,15 @@ class RChirpSong(ChiptuneSAKBase):
                 # To see if this is useful in your use case, turn assert_gate_on_new_note to
                 # False when extracting the SID.
                 if row.gate:
-                    if current_note:
-                        new_note = chirp.Note(
-                            current_note.start_time, current_note.note_num,
-                            midi_tick - current_note.start_time
-                        )
-                        if new_note.duration > 0:
-                            track.notes.append(new_note)
-                    current_note = chirp.Note(midi_tick, row.note_num, 1)
+                    if row.note_num is not None:  # e.g., a gate on with no WF would make it None
+                        if current_note:
+                            new_note = chirp.Note(
+                                current_note.start_time, current_note.note_num,
+                                midi_tick - current_note.start_time
+                            )
+                            if new_note.duration > 0:
+                                track.notes.append(new_note)
+                        current_note = chirp.Note(midi_tick, row.note_num, 1)
                 elif row.gate is False:
                     if current_note:
                         new_note = chirp.Note(

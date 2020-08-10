@@ -2602,6 +2602,14 @@ class Cpu6502Emulator:
                     output += 'W'
                 print(output)
 
+    def update_zp_usage(self, a_set):
+        """
+        Update the passed in set with zero page locations with write activity
+        """
+        for loc in range(0, 256):
+            if self.mem_usage[loc] & MEM_USAGE_WRITE:
+                a_set.add(loc)
+
 
 # The original C code used macros, which resulted in a crazy amount of polymorphism
 # Going to take the simple class approach to absorb some of that generality
