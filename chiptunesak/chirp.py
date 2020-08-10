@@ -786,6 +786,9 @@ class ChirpSong(ChiptuneSAKBase):
         :param denom:  Denominator of metric modulation
         :type denom: int
         """
+        f = Fraction(num, denom).limit_denominator(32)
+        num = f.numerator
+        denom = f.denominator
         # First adjust the time signatures
         for i, ts in enumerate(self.time_signature_changes):
             # The time signature always has to be whole numbers so if the new numerator is not an integer fix that
