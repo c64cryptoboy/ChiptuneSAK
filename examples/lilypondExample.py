@@ -15,7 +15,7 @@ This example shows how to process a song into PDF file using Lilypond using the 
 """
 
 output_folder = str(project_to_absolute_path('examples\\data\\lilypond')) + '\\'
-input_folder = output_folder
+input_folder = str(project_to_absolute_path('examples\\data\\common')) + '\\'
 input_mid_file = input_folder + 'BWV_799.mid'
 output_ly_file = output_folder + 'BWV_799.ly'
 

@@ -13,7 +13,7 @@ This example shows how to convert a 3-voice song to C128 Basic:
 """
 
 output_folder = str(project_to_absolute_path('examples\\data\\C128')) + '\\'
-input_folder = output_folder
+input_folder = str(project_to_absolute_path('examples\\data\\common')) + '\\'
 input_mid_file = input_folder + 'BWV_799.mid'
 output_bas_file = output_folder + 'BWV_799.bas'
 output_prg_file = output_folder + 'BWV_799.prg'
