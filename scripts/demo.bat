@@ -25,7 +25,7 @@ rem Demo 3: Skyfox SID import
 python ..\examples\tripletExample.py
 echo Hit any key to listen to extracted MIDI
 pause
-start /wait ..\examples\data\triplets\Skyfox.mid
+start ..\examples\data\triplets\Skyfox.mid
 echo Hit any key to see unmodulated PDF
 pause
 start /wait ..\examples\data\triplets\Skyfox.pdf
@@ -34,7 +34,11 @@ pause
 start /wait ..\examples\data\triplets\skyfox_mod.pdf
 
 rem Demo 4: C128
-python ..\examples\c128basicExample.py
+python ..examples/c128_2_Voice_From_Manual.py
+echo Hit any key to load Vice C128 program
+pause
+start /wait %viceath% ..\examples\data\C128\BWV_784.prg
+python ..examples/c128_3_Voice_Example.py
 echo Hit any key to load Vice C128 program
 pause
 start /wait %viceath% ..\examples\data\C128\BWV_799.prg
