@@ -22,7 +22,7 @@ Some SIDs are "multispeed", meaning that the play routine is called more than on
 Importing SID files
 +++++++++++++++++++
 
-ChiptuneSAK has functionality that can import music in a SID file into RChirp, which can then be converted to a variety of output formats.
+ChiptuneSAK implements a  :ref:`SID Class` that will extract music from a  SID file and convert it into RChirp, which can then be converted to a variety of output formats.
 
 Our importer is meant to be an alternative to Michael Schwendt's `SID2MIDI tool <https://csdb.dk/release/?id=136776>`_, as that tool is closed source (not updated since 2007), is Windows only, and won't process RSIDs.  SID2MIDI also creates fairly messy sheet music when first imported into music engraving tools (such as Sibelius, Dorico, Finale, MuseScore, etc.), since its output is not processed with the intention of having notes fall cleanly into time-signature governed measures.  Our tool chain is designed to directly addresses these issues.
 

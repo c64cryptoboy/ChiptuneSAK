@@ -60,7 +60,7 @@ class SID(ChiptuneSAKIO):
             subtune=0,                       # subtune to extract (zero-indexed)
             vibrato_cents_margin=0,          # cents margin to control snapping to previous note
             tuning=CONCERT_A,
-            seconds=60,                      # seconds to capture
+            seconds=60,           # seconds to capture
             arch=DEFAULT_ARCH,               # note: overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off
@@ -82,6 +82,8 @@ class SID(ChiptuneSAKIO):
 
         :param kwargs: keyword arguments for options
         :type kwargs: keyword arguments
+
+        See to_rchirp() for possible options
         """
         for op, val in kwargs.items():
             op = op.lower()  # All option names must be lowercase
@@ -117,6 +119,18 @@ class SID(ChiptuneSAKIO):
         :type sid_in_filename: string
         :return: SID converted to RChrip rows
         :rtype: RChirpSong
+
+        :keyword options:
+            * **subtune** (int = 0) - subtune to extract (zero-indexed)
+            * **vibrato_cents_margin** (int = 0) - cents margin to control snapping to previous note
+            * **tuning** (int = CONCERT_A) - tuning to use,
+            * **seconds** (float = 60) -  seconds to capture
+            * **arch** (string='NTSC-C64') - architecture. **Note:** overwritten if/when SID headers get parsed
+            * **gcf_row_reduce** (bool = True) - reduce rows via GCF of row-activity gaps
+            * **create_gate_off_notes** (bool = True) - allow new note starts when gate is off
+            * **assert_gate_on_new_note** (bool = True)  - True => gate on event in delta rows with new notes
+            * **always_include_freq** (bool = False) - False => freq in delta rows only with new note
+            * **verbose** (bool = True) - print details to stdout
         """
 
         # If we don't have the SID import yet (via a prior capture() call) or if
