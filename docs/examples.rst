@@ -40,6 +40,17 @@ Now you can use those parameters (5.89 and 2398) to scale the mercantile file in
 .. literalinclude:: ../examples/mercantile.py
     :language: python
 
+DOS MIDI File Chord Splitting
++++++++++++++++++++++++++++++
+
+In this example, DOS midi music with polyphony in one track capture is turned into a stereo GoatTracker song.
+
+Using the same method as above, the scale factor and offset are determined and the chirp is scaled to make the notes fit into measures. One of the tracks has chords made of 3 notes, so the ``ChirpSong.explode_polyphony()`` method is used to turn the single track into three tracks without polyphony.
+
+These three tracks are the used along with the two other original tracks to form a song with 5-voice polyphony, which is then exported to a stereo GoatTracker song.
+
+.. literalinclude:: ../examples/lechuck.py
+    :language: python
 
 
 Lilypond Sheet Music Examples
