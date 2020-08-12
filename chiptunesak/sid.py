@@ -44,6 +44,10 @@ from chiptunesak import rchirp
 
 class SID(ChiptuneSAKIO):
 
+    """
+    Parses and exports RChirp from SIDs using 6510 emulation with thin C64 emulation.
+    """
+
     @classmethod
     def cts_type(cls):
         return "SID"

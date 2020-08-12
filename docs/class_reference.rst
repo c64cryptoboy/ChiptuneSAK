@@ -119,6 +119,14 @@ GoatTracker Class
     :members:
     :show-inheritance:
 
+
+SID Class
+---------
+
+.. autoclass:: chiptunesak.sid.SID
+    :members:
+    :show-inheritance:
+
 Lilypond Class
 --------------
 

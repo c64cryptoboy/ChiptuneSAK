@@ -66,7 +66,7 @@ C128 Basic Example
 
 In this example a MIDI song is read and converted to C128 BASIC:
 
-.. literalinclude:: ../examples/c128BasicExample.py
+.. literalinclude:: ../examples/c128_3_Voice_Example.py
     :language: python
 
 
