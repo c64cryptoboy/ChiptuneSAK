@@ -25,10 +25,11 @@ lp_durations = {
 def lp_pitch_to_note_name(note_num, pitches, octave_offset=-3):
     """
     Gets the Lilypond note name for a given pitch.
-        :param note_num:       MIDI note number
-        :param pitches:        Set of pitches to use (sharp or flat)
-        :param octave_offset:  Octave offset (the default is 4, which is the lilypond standard)
-        :return:               Lilypond pitch name
+
+    :param note_num:       MIDI note number
+    :param pitches:        Set of pitches to use (sharp or flat)
+    :param octave_offset:  Octave offset (the default is 4, which is the lilypond standard)
+    :return:               Lilypond pitch name
     """
     if not 0 <= note_num <= 127:
         raise ChiptuneSAKValueError("Illegal note number %d" % note_num)
@@ -44,10 +45,11 @@ def lp_pitch_to_note_name(note_num, pitches, octave_offset=-3):
 def make_lp_notes(note_name, duration, ppq):
     """
     Makes a series of Lilypond notes/rests to fill a specified duration
-        :param note_name:  Lilypond note name (from lp_pitch_to_note_name) or 'r' for rest.
-        :param duration:   Duration of the note in ppq ticks
-        :param ppq:        ppq from the song in which the note exists
-        :return:           String representing the notes in Lilypond format
+
+    :param note_name:  Lilypond note name (from lp_pitch_to_note_name) or 'r' for rest.
+    :param duration:   Duration of the note in ppq ticks
+    :param ppq:        ppq from the song in which the note exists
+    :return:           String representing the notes in Lilypond format
     """
     if duration <= 0:
         raise ChiptuneSAKValueError("Illegal note duration: %d" % duration)
@@ -63,8 +65,8 @@ def avg_pitch(track):
     """
     Gives the average pitch for a track
 
-        :param track: an MChirpTrack
-        :return: average pitch as MIDI note number
+    :param track: an MChirpTrack
+    :return: average pitch as MIDI note number
     """
     total = sum(n.note_num for measure in track.measures for n in measure.events if isinstance(n, Note))
     number = sum(1 for measure in track.measures for n in measure.events if isinstance(n, Note))
@@ -162,8 +164,9 @@ class Lilypond(ChiptuneSAKIO):
     def measure_to_lilypond(self, measure):
         """
         Converts contents of a measure into Lilypond text
-            :param measure: A ctsMeasure.Measure object
-            :return:        Lilypond text encoding the measure content.
+
+        :param measure: A ctsMeasure.Measure object
+        :return:        Lilypond text encoding the measure content.
         """
         measure_contents = []
         measure_notes = [e.note_num for e in measure.events if isinstance(e, Note)]

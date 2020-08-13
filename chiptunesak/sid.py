@@ -45,7 +45,16 @@ from chiptunesak import rchirp
 class SID(ChiptuneSAKIO):
 
     """
-    Parses and exports RChirp from SIDs using 6510 emulation with thin C64 emulation.
+    Parses and exports RChirp from SIDs using 6510 emulation with thin C64 layer.
+
+    This class is the import/export interface for ChiptuneSAK for SIDs.  It runs the SID in the emulator, using the
+    information in the SID header to configure the driver, and captures information from the interaction of the code
+    with the SID chip(s).
+
+    The resulting data can be exported to an RChirpSong object and/or written as a csv file that has a row for each
+    invocation of the play routine. The csv file is highly useful for diagnosing how the play routine is modifying
+    the SID chip and helps inform choices about the conversion of the SID music to the rchirp format.
+
     """
 
     @classmethod
@@ -95,6 +104,15 @@ class SID(ChiptuneSAKIO):
             self._options[op] = val  # Accessed via ChiptuneSAKIO.get_option()
 
     def capture(self):
+        """
+        Captures data by emulating the SID song execution
+
+        This method calls internal methods that watch how the machine language program interacts with virtual
+        SID chip(s), and records these interactions on a call-by-call basis (of the play routine).
+
+        :return: captured SID data as a Dump object
+        :rtype: Dump
+        """
         importer = SidImport(self.get_option('arch'), self.get_option('tuning'))
 
         sid_dump = importer.import_sid(
@@ -113,11 +131,11 @@ class SID(ChiptuneSAKIO):
 
     def to_rchirp(self, sid_in_filename, /, **kwargs):
         """
-        Convert a SID subtune into an RChirpSong
+        Converts a SID subtune into an RChirpSong
 
         :param sid_in_filename: SID input filename
         :type sid_in_filename: string
-        :return: SID converted to RChrip rows
+        :return: SID converted to RChirpSong
         :rtype: RChirpSong
 
         :keyword options:
@@ -188,6 +206,8 @@ class SID(ChiptuneSAKIO):
     def to_csv_file(self, output_filename, /, **kwargs):
         """
         Convert a SID subtune into a CSV file
+
+        Each row of the csv file represents one call of the play routine.
 
         :param output_filename: output CSV filename
         :type output_filename: string
