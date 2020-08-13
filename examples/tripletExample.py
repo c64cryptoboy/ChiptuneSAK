@@ -10,7 +10,7 @@ This example shows how to do metric modulation to remove triplets
 
 file_name = 'Skyfox'
 output_folder = str(project_to_absolute_path('examples/data/triplets/'))
-input_folder = str(project_to_absolute_path('examples/sid/'))
+input_folder = str(project_to_absolute_path('examples/data/sid/'))
 input_sid_file = os.path.join(input_folder, file_name + '.sid')
 output_mid_file = os.path.join(output_folder, file_name + '.mid')
 output_mod_mid_file = os.path.join(output_folder, file_name + '_mod.mid')
