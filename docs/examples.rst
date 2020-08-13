@@ -59,7 +59,13 @@ Lilypond Sheet Music Examples
 Lilypond Song to PDF
 ++++++++++++++++++++
 
-In this example a MIDI song is read in and output to a multi-page PDF document:
+In this example a MIDI song is read in and output to a multi-page PDF document.
+
+Often, `midi ripped from MS-DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy
+midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.  This example
+workflow shows how to turn such music into Lilypond-generated sheet music, and will use
+`a piece of music <http://www.midi-karaoke.info/21868cd1.html>`_
+from an MS-DOS RPG Betrayal At Krondor (Sierra On-Line, 1993).
 
 .. literalinclude:: ../examples/lilypondExample.py
     :language: python
@@ -67,7 +73,17 @@ In this example a MIDI song is read in and output to a multi-page PDF document:
 Lilypond Measures to PNG
 ++++++++++++++++++++++++
 
-In this example a MIDI song is read, and a snippet of measures is converted to a PNG image;
+In this example a MIDI song is read, and a snippet of measures is converted to a PNG image
+
+Often, you'd like to turn a small clip from a song into an image to use as an illustration for a document.
+In this case, you may not want the entire piece exported as a pdf file, but just the clip.
+
+Currently, ChiptuneSAK can only extract measures for a clip from a single voice.
+
+This example gives the following output:
+
+.. image:: _images/BWV_755_clip.png
+    :alt: alternate BWV 755 Clip
 
 .. literalinclude:: ../examples/lilypondClipExample.py
     :language: python

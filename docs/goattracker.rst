@@ -7,11 +7,11 @@ GoatTracker (and GoatTracker Stereo)
 GoatTracker in ChiptuneSAK
 ++++++++++++++++++++++++++
 
-ChiptuneSAK can import and export GoatTracker song files in the .sng format to the various native Chirp representations.  The :ref:`GoatTracker` class is designed to convert between the GoatTracker sng format and RChirp.
+ChiptuneSAK can import and export GoatTracker song files in the .sng format to the various native Chirp representations.  The :ref:`GoatTracker` class is designed to convert between the GoatTracker sng format and the :ref:`RChirp Representation`.
 
 The GoatTracker sng file format does not contain information about the target architecture or whether the song requires multispeed. As a result, to take advantage of either, music should be exported to the sng file, opened in GoatTracker, and any adjustments made there.
 
-**Note:** GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will not be tuned to the standard A440 tuning of the rest of ChiptuneSAK. To make the notes play at the desired pitch, the song must be encoded in PAL mode.
+**Note:** GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will *not* be tuned to the standard A440 tuning of the rest of ChiptuneSAK. To make the notes play at the desired pitch, the song must be encoded in PAL mode.
 
 GoatTracker comes in two versions: the original, which can play 3 voices with one SID, and a stereo version, which can play 6 voices using 2 SIDs. ChiptuneSAK supports both versions, automatically selecting the version based on the number of voices.
 
@@ -33,7 +33,7 @@ Assuming LeChuck.sng was already created, then in stereo GoatTracker:
 
 3. Accept the default $1000 start address and default zeropage settings.
 
-     * Note: The VIC-II chip cannot "see" the 4K of RAM that starts at $1000 or $9000 (the PLA maps the character ROM to those ranges).  So RAM at $1000 is a common default for music routines.
+    * Note: The VIC-II chip cannot "see" the 4K of RAM that starts at $1000 or $9000 (the PLA maps the character ROM to those ranges).  So RAM at $1000 is a common default for music routines.
 
 4. Accept the default format "PRG - C64 native format".  This appends a two-byte load address of $1000 to the binary before exporting.
 

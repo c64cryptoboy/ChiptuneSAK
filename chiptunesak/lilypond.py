@@ -246,7 +246,7 @@ class Lilypond(ChiptuneSAKIO):
         Turns a set of measures into Lilypond suitable for use as a clip.  All the music will be on a single line
         with no margins.  It is recommended that this clip be turned into Lilypond using the command line:
 
-        lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha --png <filename>
+        ``lilypond -ddelete-intermediate-files -dbackend=eps -dresolution=600 -dpixmap-format=pngalpha --png <filename>``
 
         :param mchirp_song: ChirpSong from which the measures were taken.
         :type mchirp_song: MChirpSong
@@ -296,7 +296,7 @@ class Lilypond(ChiptuneSAKIO):
         Converts a song to Lilypond format. Optimized for multi-page PDF output of the song.
         Recommended lilypond command:
 
-        lilypond <filename>
+        ``lilypond <filename>``
 
         :param mchirp_song: ChirpSong to convert to Lilypond format
         :type mchirp_song: MChirpSong
