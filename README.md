@@ -94,14 +94,8 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 ## Requirements/Building
 
 * [Python 3.8+](https://www.python.org/downloads/)
-    * pip install
-        * matplotlib
-        * mido
-        * more-itertools
-        * numpy
-        * parameterized
-        * sphinx
 * [Lilypond](https://lilypond.org/download.html)
+    * Must be in your path (e.g., "C:\Program Files (x86)\LilyPond\usr\bin")
 * [MidiEditor](https://www.midieditor.org/) - *optional, useful for visualizing what is happening to the midi files*
 
 ### Bootstrap: Ubuntu 20.04
