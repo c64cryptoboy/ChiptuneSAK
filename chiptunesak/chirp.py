@@ -157,11 +157,7 @@ class ChirpTrack:
         :type qticks_notes: int
         :param qticks_durations: Resolution of note durations in ticks.  Also length of shortest note.
         :type qticks_durations: int
-        :return: tuple of note start changes and note duration changes
-        :rtype: tuple
         """
-        note_start_changes = []
-        duration_changes = []
         # Update the members to reflect the quantization applied
         if qticks_notes:
             self.qticks_notes = qticks_notes
@@ -179,16 +175,10 @@ class ChirpTrack:
             if n.duration < self.qticks_durations:
                 n.duration = self.qticks_durations
             self.notes[i] = n
-            # Update the statistics
-            note_start_changes.append(n.start_time - start_before)
-            duration_changes.append(n.duration - duration_before)
 
         # Quantize the other MIDI messages in the track
         for i, m in enumerate(self.other):
             self.other[i] = OtherMidiEvent(quantize_fn(m.start_time, self.qticks_notes), m.msg)
-
-        # Return the statistics about changes
-        return (note_start_changes, duration_changes)
 
     def quantize_long(self, qticks):
         """
@@ -213,10 +203,7 @@ class ChirpTrack:
 
         :param max_merge_length_ticks: Length of the longest note to merge, in ticks
         :type max_merge_length_ticks: int
-        :return: number of notes merged
-        :rtype: int
         """
-        merged = 0
         ret_notes = []
         last = self.notes[0]
         for n in self.notes[1:]:
@@ -224,7 +211,6 @@ class ChirpTrack:
                     and n.note_num == last.note_num \
                     and n.duration <= max_merge_length_ticks:
                 last.duration += n.duration
-                merged += 1
                 continue
             else:
                 ret_notes.append(last)
@@ -232,7 +218,6 @@ class ChirpTrack:
         ret_notes.append(last)
         self.notes = ret_notes
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
-        return merged
 
     def remove_short_notes(self, max_duration_ticks):
         """
@@ -240,19 +225,13 @@ class ChirpTrack:
 
         :param max_duration_ticks: maximum duration of notes to remove, in ticks
         :type max_duration_ticks: int
-        :return: Number of notes deleted
-        :rtype: int
-       """
-        deleted = 0
+        """
         ret_notes = []
         for n in self.notes:
-            if n.duration <= max_duration_ticks:
-                deleted += 1
-            else:
+            if n.duration > max_duration_ticks:
                 ret_notes.append(n)
         self.notes = ret_notes
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
-        return deleted
 
     def set_min_note_len(self, min_len_ticks):
         """
@@ -262,60 +241,44 @@ class ChirpTrack:
 
         :param min_len_ticks: Minimum note length
         :type min_len_ticks: int
-        :return: tuple of (number of notes extended, number of notes with start adjusted)
-        :rtype: tuple (int, int)
         """
-        extended = 0
-        trimmed = 0
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
         for i, n in enumerate(self.notes):
             if 0 < n.duration < min_len_ticks:
                 n.duration = min_len_ticks
                 self.notes[i] = n
                 last_end = n.start_time + n.duration
-                extended += 1
                 j = i + 1
                 while j < len(self.notes):
                     if self.notes[j].start_time < last_end:
                         tmp_end = self.notes[j].start_time + self.notes[j].duration
                         self.notes[j].start_time = last_end
                         self.notes[j].duration = tmp_end - self.notes[j].start_time
-                        trimmed += 1
                         j += 1
                     else:
                         break
         self.notes = [n for n in self.notes if n.duration >= min_len_ticks]
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))  # Notes must be sorted
-        return (extended, trimmed)
 
     def remove_polyphony(self):
         """
         This function eliminates polyphony, so that in each channel there is only one note
         active at a time. If a chord is struck all at the same time, it will retain the highest
         note. Otherwise, when a new note is started, the previous note is truncated.
-
-        :return: (deleted, truncated)
-        :rtype: (int, int)
         """
-        deleted = 0
-        truncated = 0
         ret_notes = []
         last = self.notes[0]
         for n in self.notes[1:]:
             if n.start_time == last.start_time:
-                deleted += 1
                 continue
             elif n.start_time < last.start_time + last.duration:
                 last.duration = n.start_time - last.start_time
-                truncated += 1
-            if last.duration <= 0:
-                deleted += 1
-            ret_notes.append(last)
+            if last.duration > 0:
+                ret_notes.append(last)
             last = n
         ret_notes.append(last)
         self.notes = ret_notes
         self.notes.sort(key=lambda n: (n.start_time, -n.note_num))
-        return (deleted, truncated)
 
     def is_polyphonic(self):
         """
@@ -628,7 +591,7 @@ class ChirpSong(ChiptuneSAKBase):
         if qticks_durations:
             self.qticks_durations = qticks_durations
         for t in self.tracks:
-            note_start_changes, duration_changes = t.quantize(self.qticks_notes, self.qticks_durations)
+            t.quantize(self.qticks_notes, self.qticks_durations)
 
         for i, m in enumerate(self.tempo_changes):
             self.tempo_changes[i] = TempoEvent(quantize_fn(m.start_time, self.qticks_notes), m.qpm)

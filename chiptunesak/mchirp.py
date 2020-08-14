@@ -40,6 +40,7 @@ class Measure:
     def __init__(self, start_time, duration):
         """
         Creation for Measure object.  Populating the measure with events is a separate method populate()
+
         :param start_time:  Start time of the measure, in MIDI ticks
         :param duration:    Duration of the measure, in MIDI ticks
         """
@@ -341,9 +342,6 @@ class MChirpSong(ChiptuneSAKBase):
     def trim_partial_measures(self):
         """
         Trims any partial measures from the end of the file
-
-        :return:
-        :rtype:
         """
         if all(isinstance(t.measures[-1].events[-1], Rest) for t in self.tracks):
             for t in self.tracks:
