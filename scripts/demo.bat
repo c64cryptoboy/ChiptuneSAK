@@ -1,11 +1,11 @@
 
 rem path to goattracker executable
-set gtpath=E:\GoatTracker\win32\goattrk2.exe
+set gtpath=C:\Users\crypt\Desktop\sound\SIDwork\GoatTracker_2.74\win32\goattrk2.exe
 rem path to stereo GT
-set gtpath2=E:\GoatTracker\gtStereo\win32\gt2stereo.exe
+set gtpath2=C:\Users\crypt\Desktop\sound\SIDwork\GoatTracker_2.76_Stereo\trunk\win32\gt2stereo.exe
 rem path to Vice C128
-set vicepath=E:\GTK3VICE-3.4-win64-r37296\x128.exe
-
+set vicepath=C:\Users\crypt\Desktop\retro8-bit\c64\WinVICE-3.1-x86\x128.exe
+ 
 rem Demo 1: Mercantile
 python ..\examples\mercantile.py
 echo Hit any key to load PDF
@@ -36,13 +36,13 @@ start /wait ..\examples\data\triplets\skyfox_mod.pdf
 rem Demo 4: C128
 echo Hit any key to load buggy BWV_784
 pause
-start /wait %vicpeath% BWV_784_buggy.prg
+start /wait %vicepath% BWV_784_buggy.prg
 python ..examples/c128_2_Voice_From_Manual.py
 echo Hit any key to load Vice C128 program
 pause
-start /wait %vicpeath% ..\examples\data\C128\BWV_784.prg
+start /wait %vicepath% ..\examples\data\C128\BWV_784.prg
 python ..examples/c128_3_Voice_Example.py
 echo Hit any key to load Vice C128 program
 pause
-start /wait %vicpeath% ..\examples\data\C128\BWV_799.prg
+start /wait %vicepath% ..\examples\data\C128\BWV_799.prg
 
