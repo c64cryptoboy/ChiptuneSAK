@@ -1,10 +1,24 @@
-
 rem path to goattracker executable
-set gtpath=C:\Users\crypt\Desktop\sound\SIDwork\GoatTracker_2.74\win32\goattrk2.exe
+IF "%COMPUTERNAME%"=="FIZZYMAGIC" (
+   set gtpath=E:\GoatTracker\win32\goattrk2.exe
+) ELSE (
+   set gtpath=C:\Users\crypt\Desktop\sound\SIDwork\GoatTracker_2.74\win32\goattrk2.exe
+)
+
 rem path to stereo GT
-set gtpath2=C:\Users\crypt\Desktop\sound\SIDwork\GoatTracker_2.76_Stereo\trunk\win32\gt2stereo.exe
+IF "%COMPUTERNAME%"=="FIZZYMAGIC" (
+   set gtpath2=E:\GoatTracker\gtStereo\win32\gt2stereo.exe
+) ELSE (
+   set gtpath2=C:\Users\crypt\Desktop\sound\SIDwork\GoatTracker_2.76_Stereo\trunk\win32\gt2stereo.exe
+)
+
 rem path to Vice C128
-set vicepath=C:\Users\crypt\Desktop\retro8-bit\c64\WinVICE-3.1-x86\x128.exe
+IF "%COMPUTERNAME%"=="FIZZYMAGIC" (
+   set vicepath=E:\GTK3VICE-3.4-win64-r37296\x128.exe
+) ELSE (
+   set vicepath=C:\Users\crypt\Desktop\retro8-bit\c64\WinVICE-3.1-x86\x128.exe
+)
+
  
 rem Demo 1: Mercantile
 python ..\examples\mercantile.py
