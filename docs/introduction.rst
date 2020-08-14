@@ -7,48 +7,52 @@ Introduction
 ChiptuneSAK
 -----------
 
-**C**\ hiptune **S**\ wiss **A**\ rmy **K**\ nife is a Python toolset built for processing music for constrained (i.e. chiptunes) environments.
+**C**\ hiptune **S**\ wiss **A**\ rmy **K**\ nife is a Python music processing toolset for note data.  It can transform music originating from (or being importing into) a constrained playback environment.  The goal is to take some of the tedium out of processing chiptune music.
 
-The package includes a Python library, chiptunesak, examples, and supporting scripts.
+Typical Workflow:
 
-Who is ChiptuneSAK for?
-+++++++++++++++++++++++
+#. Import note data from a music format
 
-ChiptuneSAK was built for chiptunes enthusiasts who prefer to work in a sheet-music-like environment, with music represented as notes in measures. It is designed to enable conversion from chiptunes sources to the "sheet music" model, transformations of the music while in that environment, and conversion back to chiptunes formats. With these capabilities, it is possible to parse, print, and modify a wide range of chiptunes music.
+#. Data converted into Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation), which can be processed and transformed in many ways
+
+#. Export note data to a (potentially different) music format
+
+Initial focus is Commodore music, but can be extended to other “chiptune platforms”
+
 
 What can I do with ChiptuneSAK?
 +++++++++++++++++++++++++++++++
 
-ChiptuneSAK allows you to convert music between different chiptunes formats, such as MIDI, GoatTracker, and C128 BASIC.
+Our `CRX2020 <http://www.crxevent.com>`_ announcement `slides <https://github.com/c64cryptoboy/ChiptuneSAK/tree/master/docs/crx2020PresentationSlides.pdf>`_ gives many examples of the kinds of things you can do with these tools, including:
 
-It is not designed to convert exact music, including instruments and sound effects.  Rather, the intent is to allow you to move musical *content* (i.e. notes) between formats and representations.  For example, with ChiptuneSAK you can:
+* Import music from C64 SIDs and turn it into sheet music
 
-*  Convert a song written for a DOS game into a C64 SID and print sheet music.
+*  Perform transformations on music note data, including transposition, tempo changes, separation of chords, trimming, time shifting, quantizing, and metric modulation.
 
-*  Convert a C64 SID to MIDI and print it as sheet music.
+*  Convert music from MS-DOS games into C64 SIDs
 
-*  Convert classical music (e.g. Bach) to C64 SIDs.
+*  Automatically generate C128 BASIC music programs
 
-*  Perform many operations on chiptunes music:
-
-   * Transposition
-   * Tempo changes
-   * "Explode" chords into multiple tracks
-   * Edit (trim, move, quantize, metric modulation)
-   * Convert to sheet music
 
 What do I need to run ChiptuneSAK?
 ++++++++++++++++++++++++++++++++++
 
-ChiptuneSAK requires a computer with a Python interpreter, v 3.8 or higher.  It will work on any operating system that has a qualifying Python interpreter.
+ChiptuneSAK requires a computer with a Python interpreter (v3.8 or higher).
+
 
 What are some limitations of ChiptuneSAK?
 +++++++++++++++++++++++++++++++++++++++++
 
-ChiptuneSAK is primarily concerned with musical *content* as opposed to *sound quality*.  What it does, it does well.  But there are a number of things it does *not* do:
+ChiptuneSAK is primarily concerned with processing note *content* as opposed to musical *timbre*.  It is not a tool for:
 
-*  It is not particularly good at dealing with percussion.
-*  It does not provide many tools for editing and tweaking instruments or particular sounds.
-*  It does not work with waveform music, such as MP3 or WAV files.
-*  It is not intended for conversion or processing of sound effects.
+*  Editing and tweaking instruments or particular sounds
 
+*  Processing waveform music, such as MP3 or WAV files
+
+*  Processing of sound effects
+
+
+How mature is ChiptuneSAK?
+++++++++++++++++++++++++++
+
+ChiptunesSAK should be considered to be at an Alpha level of maturity.  For instance, the SID Importer has been tested on tens of SIDs, but needs to scripted to run against all of HVSC to improve robustness and account for important edge cases.  This will happen as we have time.  We are also in the progress of making ChiptuneSAK a PyPy package.

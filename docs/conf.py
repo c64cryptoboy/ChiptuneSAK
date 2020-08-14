@@ -15,7 +15,7 @@ from chiptunesak import constants  # noqa
 # -- Project information -----------------------------------------------------
 
 project = 'ChiptuneSAK'
-copyright = '2020, David Youd and David Knapp'
+copyright = '2020 (free software, MIT License)'
 author = 'David Youd and David Knapp'
 
 # The full version, including alpha/beta/rc tags
