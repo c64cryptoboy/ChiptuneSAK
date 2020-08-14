@@ -170,7 +170,7 @@ class Measure:
 
         :param track: Track from which events are to be imported
         :param carry: If last note in previous measure is continued in this measure, the note with
-        remaining time
+            remaining time
         :return: Carry note, if last note is to be carried into the next measure.
         """
         ppq = track.chirp_song.metadata.ppq

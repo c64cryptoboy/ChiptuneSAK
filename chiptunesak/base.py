@@ -173,6 +173,8 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param ir_song: song to export
         :type ir_song: ChirpSong, MChirpSong, or RChirpSong
+        :param filename: Name of output file
+        :type filename: str
         :return: True on success
         :rtype: boolean
         """

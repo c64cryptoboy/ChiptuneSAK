@@ -356,7 +356,7 @@ class ChirpTrack:
         Truncate the track to max_tick
 
         :param max_tick:  maximum tick number for events to start (track will play to end of
-        any notes started)
+            any notes started)
         :type max_tick: int
         """
         self.notes = [n for n in self.notes if n.start_time <= max_tick]
@@ -747,7 +747,7 @@ class ChirpSong(ChiptuneSAKBase):
         Truncate the song to max_tick
 
         :param max_tick:  maximum tick number for events to start (song will play to end of any
-        notes started)
+            notes started)
         :type max_tick: int
         """
         self.time_signature_changes = [ts for ts in self.time_signature_changes if ts.start_time <= max_tick]
