@@ -167,7 +167,7 @@ class RChirpVoice:
         are consecutive and that the corresponding milliframe numbers have no gaps.
 
         :return: True if rows are contiguous, False if not
-        :rtype: boolean
+        :rtype: bool
         """
         start_row = 0 if len(self.rows) == 0 else min(self.rows)
         curr_mf, curr_row = self.rows[start_row].milliframe_num, self.rows[start_row].row_num
@@ -331,7 +331,7 @@ class RChirpVoice:
            and orderlists performed.  Track must be non-polyphonic and quantized.
 
         :param chirp_track: A chirp track
-        :type chirp_track: chirp.ChirpTrack
+        :type chirp_track: ChirpTrack
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
@@ -414,7 +414,7 @@ class RChirpSong(ChiptuneSAKBase):
         Converts the RChirpSong into a ChirpSong
 
         :return: Chirp song
-        :rtype: chirp.ChirpSong
+        :rtype: ChirpSong
         """
         self.set_options(**kwargs)
         return self.convert_to_chirp()
@@ -424,7 +424,7 @@ class RChirpSong(ChiptuneSAKBase):
         Imports a ChirpSong
 
         :param chirp_song: A chirp song
-        :type chirp_song: chirp.ChirpSong
+        :type chirp_song: ChirpSong
         :raises ChiptuneSAKQuantizationError: Thrown if chirp track is not quantized
         :raises ChiptuneSAKPolyphonyError: Thrown if a single voice contains polyphony
         """
@@ -486,7 +486,7 @@ class RChirpSong(ChiptuneSAKBase):
         Creates a program map of Chirp program numbers (patches) to instruments
 
         :param chirp_song: chirp song
-        :type chirp_song: chirp.ChirpSong
+        :type chirp_song: ChirpSong
         :return: program_map
         :rtype: dict of {chirp_program:rchirp_instrument}
         """
@@ -504,7 +504,7 @@ class RChirpSong(ChiptuneSAKBase):
         Determines if the voices' rows are contiguous, without gaps in time
 
         :return: True if rows are contiguous, False if not
-        :rtype: boolean
+        :rtype: bool
         """
         return all(voice.is_contiguous() for voice in self.voices)
 

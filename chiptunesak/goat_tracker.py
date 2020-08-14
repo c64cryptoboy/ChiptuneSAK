@@ -47,6 +47,7 @@ GT_TEMPO_CHNG_CMD = 0x0F
 class GoatTracker(base.ChiptuneSAKIO):
     """
     The IO interface for GoatTracker and GoatTracker Stereo
+
     Supports conversions between RChirp and GoatTracker .sng format
     """
     @classmethod
@@ -119,7 +120,7 @@ class GoatTracker(base.ChiptuneSAKIO):
         :param rchirp_song: rchirp data
         :type rchirp_song: RChirpSong
         :param filename: output path and file name
-        :type filename: string
+        :type filename: str
 
         :keyword options:  see `to_bin()`
 
@@ -132,7 +133,7 @@ class GoatTracker(base.ChiptuneSAKIO):
         Import a GoatTracker sng file to RChirp
 
         :param filename: File name of .sng file
-        :type filename: string
+        :type filename: str
         :return: rchirp song
         :rtype: RChirpSong
 
@@ -429,7 +430,7 @@ def get_chars(in_bytes, trim_nulls=True):
     :param trim_nulls: if true, trim off the zero-padding, defaults to True
     :type trim_nulls: bool, optional
     :return: String conversion
-    :rtype: string
+    :rtype: str
     """
     result = in_bytes.decode('Latin-1')
     if trim_nulls:
@@ -544,9 +545,9 @@ def add_gt_instrument_to_rchirp(rchirp_song, gt_inst_name, path=DEFAULT_INSTR_PA
     :param rchirp_song: An RChirpSong instance
     :type rchirp_song: RChirpSong
     :param gt_inst_name: Filename of GoatTracker instrument (without path or .ins extension)
-    :type gt_inst_name: string
+    :type gt_inst_name: str
     :param path: path from project root, defaults to 'res/gtInstruments/'
-    :type path: string, optional
+    :type path: str, optional
     """
     create_gt_metadata_if_missing(rchirp_song)
     extensions = rchirp_song.metadata.extensions
@@ -592,7 +593,7 @@ class GTSong:
         Determines if this is stereo GoatTracker
 
         :return: True if stereo, False if not
-        :rtype: boolean
+        :rtype: bool
         """
         return self.num_channels >= 4
 
@@ -657,8 +658,8 @@ class GTSong:
         """
         Heuristic to determine if .sng binary is 1SID or 2SID (aka "stereo")
 
-        :param index_at_start_of_orderlist: index of start of orderlists in sng_bytes
-        :type index_at_start_of_orderlist: int
+        :param index_at_start_of_orderlists: index of start of orderlists in sng_bytes
+        :type index_at_start_of_orderlists: int
         :param sng_bytes: bytes containing orderlists
         :type sng_bytes: bytes
         :return: True if 2SID, False if 1SID
@@ -682,7 +683,10 @@ class GTSong:
         if orderlist_count == expected_num_orderlists_for_6sid:
             return True
 
-        raise ChiptuneSAKContentError("Error: found %d orderlists (expected %d or %d)" % (orderlist_count, expected_num_orderlists_for_3sid, expected_num_orderlists_for_6sid))
+        raise ChiptuneSAKContentError("Error: found %d orderlists (expected %d or %d)" \
+                                      % (orderlist_count,
+                                         expected_num_orderlists_for_3sid,
+                                         expected_num_orderlists_for_6sid))
 
     def import_sng_file_to_parsed_gt(self, input_filename):
         """
@@ -690,7 +694,7 @@ class GTSong:
         Supports 1SID and 2SID (stereo) goattracker '.sng' files.
 
         :param input_filename: Filename for input .sng file
-        :type input_filename: string
+        :type input_filename: str
         """
         with open(input_filename, 'rb') as f:
             sng_bytes = f.read()
@@ -979,8 +983,6 @@ class GTSong:
         complex processing.  However, we expect many C64 game music engines to have patterns
         and orderlists that can be directly mapped without much effort.
 
-        :param sng_data: Parsed goattracker file
-        :type sng_data: GTSong
         :param subtune_num: The subtune number to convert to rchirp, defaults to 0
         :type subtune_num: int, optional
         :return: rchirp song instance
@@ -994,7 +996,8 @@ class GTSong:
         rchirp_song.metadata.copyright = self.headers.copyright
 
         # init state holders for each channel to use as we step through each tick (aka frame)
-        channels_state = [GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i]) for i in range(self.num_channels)]
+        channels_state = \
+            [GtChannelState(i + 1, self.subtune_orderlists[subtune_num][i]) for i in range(self.num_channels)]
 
         rchirp_song.voices = [rchirp.RChirpVoice(rchirp_song) for i in range(self.num_channels)]
 
@@ -1135,15 +1138,20 @@ class GTSong:
         outside of this module (not adding instruments directly to GTSong).
 
         :param gt_inst_name: Filename of GoatTracker instrument (without path or .ins extension)
-        :type gt_inst_name: string
+        :type gt_inst_name: str
         :param path: path from project root, defaults to 'res/gtInstruments/'
-        :type path: string, optional
+        :type path: str, optional
 
         """
         new_instr_num = len(self.instruments)  # no +1 here
 
         (instr, self.wave_table, self.pulse_table, self.filter_table, self.speed_table) = \
-            instrument_appender(gt_inst_name, new_instr_num, self.wave_table, self.pulse_table, self.filter_table, self.speed_table)
+            instrument_appender(gt_inst_name,
+                                new_instr_num,
+                                self.wave_table,
+                                self.pulse_table,
+                                self.filter_table,
+                                self.speed_table)
 
         self.instruments.append(instr)
 

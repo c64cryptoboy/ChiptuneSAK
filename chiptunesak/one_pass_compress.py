@@ -258,7 +258,7 @@ class OnePass(ChiptuneSAKCompress):
         :param order:
         :type order:
         :return:
-        :rtype: boolean
+        :rtype: bool
         """
         retval = True
         positions = sorted(order)

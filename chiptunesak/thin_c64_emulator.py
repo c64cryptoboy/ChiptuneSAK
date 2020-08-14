@@ -302,7 +302,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         :param cia_num: cia chip number
         :type cia_num: int
         :param timer: cia timer designation
-        :type timer: string
+        :type timer: str
         :return: base address of cia timer
         :rtype: int
         """
@@ -329,7 +329,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         :param cia_num: cia chip number
         :type cia_num: int
         :param timer: cia timer designation
-        :type timer: string
+        :type timer: str
         :return: 16-bit timer value
         :rtype: int
         """
@@ -345,7 +345,7 @@ class ThinC64Emulator(emulator_6502.Cpu6502Emulator):
         :param cia_num: cia chip number
         :type cia_num: int
         :param timer: cia timer designation
-        :type timer: string
+        :type timer: str
         :return: True if the timer setting was written to
         :rtype: bool
         """

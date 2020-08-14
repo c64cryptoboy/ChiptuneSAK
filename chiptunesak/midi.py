@@ -47,11 +47,12 @@ class MIDI(ChiptuneSAKIO):
         :param filename: filename to import
         :type filename: str
         :return: chirp song
-        :rtype: chirp.ChirpSong
+        :rtype: ChirpSong
         :keyword options:
             * **keyswitch** (bool) Remove keyswitch notes with midi number <=8 (default True)
             * **polyphony** (bool) Allow polyphony (removal occurs after any quantization) (default True)
             * **quantize** (str)
+
                 - 'auto': automatically determines required quantization
                 - '8', '16', '32', etc. : quantize to the named duration
         """

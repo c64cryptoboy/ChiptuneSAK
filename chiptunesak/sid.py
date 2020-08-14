@@ -45,12 +45,13 @@ from chiptunesak import rchirp
 class SID(ChiptuneSAKIO):
 
     """
-    Parses and exports RChirp from SIDs using 6502/6510 emulation with a thin C64 layer.
+    Parses and imports SIDs into RChirp using 6502/6510 emulation with a thin C64 layer.
 
-    This class is the import/export interface for ChiptuneSAK for SIDs.  It runs the SID in the emulator, using the
-    information in the SID header to configure the driver, and captures information from the interaction of the code with the SID chip(s) following init and play calls.
+    This class is the import interface for ChiptuneSAK for SIDs.  It runs the SID in the emulator, using the
+    information in the SID header to configure the driver, and captures information from the interaction of the code
+    with the SID chip(s) following init and play calls.
 
-    The resulting data can be exported to an RChirpSong object and/or written as a csv file that has a row for each
+    The resulting data can be converted to an RChirpSong object and/or written as a csv file that has a row for each
     invocation of the play routine. The csv file is useful for diagnosing how the play routine is modifying
     the SID chip and helps inform choices about the conversion of the SID music to the rchirp format.
 
@@ -133,7 +134,7 @@ class SID(ChiptuneSAKIO):
         Converts a SID subtune into an RChirpSong
 
         :param sid_in_filename: SID input filename
-        :type sid_in_filename: string
+        :type sid_in_filename: str
         :return: SID converted to RChirpSong
         :rtype: RChirpSong
 
@@ -209,7 +210,7 @@ class SID(ChiptuneSAKIO):
         Each row of the csv file represents one call of the play routine.
 
         :param output_filename: output CSV filename
-        :type output_filename: string
+        :type output_filename: str
         """
         sid_dump = self.sid_dump
         if sid_dump is None:  # If not None, sid export already created by capture() call
@@ -307,12 +308,12 @@ class SID(ChiptuneSAKIO):
         """
         Used to create CSV string values when not None
 
-        :param val: string or int
-        :type val: string or int
+        :param val: str or int
+        :type val: str or int
         :param format: format descriptor, defaults to None
-        :type format: string, optional
+        :type format: str, optional
         :return: empty string, passed in value (with possible formatting)
-        :rtype: string or int
+        :rtype: str or int
         """
         if val is None:
             return ''
@@ -332,7 +333,7 @@ class SID(ChiptuneSAKIO):
         :param false_str: string if false, defaults to 'off'
         :type false_str: str, optional
         :return: string description of boolean
-        :rtype: string
+        :rtype: str
         """
         if bool is None:
             return ''
@@ -446,7 +447,7 @@ class SidFile:
         Get ChiptuneSAK architecture type from SID headers
 
         :return: architecture type
-        :rtype: string
+        :rtype: str
         """
         if self.clock == 1:
             return 'PAL-C64'
@@ -460,7 +461,7 @@ class SidFile:
         Decode clock numerical value to string description
 
         :return: system clock description
-        :rtype: string
+        :rtype: str
         """
         if self.clock == 1:
             return 'PAL'
@@ -477,7 +478,7 @@ class SidFile:
         :param sid_model_inst: either sid_model, sid2_model, or sid3_model
         :type sid_model_inst: int
         :return: sid model description
-        :rtype: string
+        :rtype: str
         """
         if sid_model_inst == 1:
             return 'MOS6581'
@@ -492,7 +493,7 @@ class SidFile:
         Parse the SID file header structure and extract the binary
 
         :param sid_filename: SID filename to parse
-        :type sid_filename: string
+        :type sid_filename: str
         """
         with open(sid_filename, mode='rb') as in_file:
             sid_binary = in_file.read()
@@ -507,7 +508,7 @@ class SidFile:
         :param subtune: subtune number (note: zero-indexed)
         :type subtune: int
         :return: True if speed bits designate CIA timer, None if rsid (headers don't specify)
-        :rtype: boolean
+        :rtype: bool
         """
 
         # FUTURE?  Assumed initial environment below (if we want to up the fidelity
@@ -929,7 +930,7 @@ class Channel:
         :param waveforms: a 4-bit value
         :type waveforms: int
         :return: text display of waveform flags
-        :rtype: string
+        :rtype: str
         """
         result = ''
         if waveforms is None:
@@ -957,7 +958,7 @@ class Channel:
         Converts the midi note number to its string note name representation
 
         :return: note name
-        :rtype: string
+        :rtype: str
         """
         if self.note is None:
             return ''
@@ -988,7 +989,7 @@ class Chip:
         :param filters: 3-bit filter flags
         :type filters: int
         :return: string representation of filter settings
-        :rtype: string
+        :rtype: str
         """
         result = ''
         if filters is None:
@@ -1377,7 +1378,7 @@ class SidImport:
         on a call-by-call basis (on the play routine).
 
         :param filename: The filename of the SID song to import
-        :type filename: string
+        :type filename: str
         :param subtune: the subtune to import, defaults to 0
         :type subtune: int, optional
         :param vibrato_cents_margin: if new note adjacent to old but within cents margin

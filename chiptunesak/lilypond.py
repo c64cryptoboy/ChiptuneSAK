@@ -98,7 +98,7 @@ class Lilypond(ChiptuneSAKIO):
         :param mchirp_song: song to export
         :type mchirp_song: MChirpSong
         :return: lilypond text
-        :rtype: string
+        :rtype: str
 
         :keyword options:
             * **format** (string) - format, either 'song' or 'clip'
@@ -122,9 +122,9 @@ class Lilypond(ChiptuneSAKIO):
         :param mchirp_song: song to export
         :type mchirp_song: MChirpSong
         :param filename:  filename to write
-        :type filename: string
+        :type filename: str
         :return: lilypond text
-        :rtype: string
+        :rtype: str
 
         :keyword options: see to_bin()
         """

@@ -518,7 +518,7 @@ class ChirpSong(ChiptuneSAKBase):
         Convert to MChirp.  This calls the creation of an MChirp object
 
         :return: new MChirp object
-        :rtype: mchirp.MChirpSong
+        :rtype: MChirpSong
         """
         self.set_options(**kwargs)
         self.set_metadata()
@@ -727,7 +727,7 @@ class ChirpSong(ChiptuneSAKBase):
         Is the song polyphonic?  Returns true if ANY of the tracks contains polyphony of any kind.
 
         :return: Boolean True if any track in the song is polyphonic
-        :rtype: boolean
+        :rtype: bool
         """
         return any(t.is_polyphonic() for t in self.tracks)
 

@@ -49,7 +49,7 @@ class ChiptuneSAKBase:
         Get an option
 
         :param arg: option name
-        :type arg: string
+        :type arg: str
         :param default: default value
         :type default: type of option
         :return: value of option
@@ -91,8 +91,9 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         """
         Converts a song to Chirp IR
 
+        :param kwargs: Keyword options for the particular IR conversion
         :return: chirp song
-        :rtype: chirp.ChirpSong
+        :rtype: ChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to Chirp not implemented")
 
@@ -100,8 +101,9 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         """
         Converts a song to MChirp IR
 
+        :param kwargs: Keyword options for the particular IR conversion
         :return: chirp song
-        :rtype: mchirp.MChirpSong
+        :rtype: MChirpSong
         """
         raise ChiptuneSAKNotImplemented("Conversion to MChirp not implemented")
 
@@ -109,6 +111,7 @@ class ChiptuneSAKIR(ChiptuneSAKBase):
         """
         Converts a song to RChirp IR
 
+        :param kwargs: Keyword options for the particular IR conversion
         :return: chirp song
         :rtype: rchirp.RChirpSong
         """
@@ -129,8 +132,9 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param filename: filename to import
         :type filename: str
+        :param kwargs: Keyword options for the particular I/O class
         :return: Chirp song
-        :rtype: chirp.ChirpSong object
+        :rtype: ChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -140,6 +144,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param filename: filename to import
         :type filename: str
+        :param kwargs: Keyword options for the particular I/O class
         :return: RChirp song
         :rtype: rchirp.RChirpSong object
         """
@@ -151,8 +156,9 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param filename: filename to import
         :type filename: str
+        :param kwargs: Keyword options for the particular I/O class
         :return: MChirp song
-        :rtype: mchirp.MChirpSong object
+        :rtype: MChirpSong object
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented")
 
@@ -162,6 +168,7 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
 
         :param ir_song: song to export
         :type ir_song: ChirpSong, MChirpSong, or RChirpSong
+        :param kwargs: Keyword options for the particular I/O class
         :return: binary
         :rtype: either str or bytearray, depending on the output
         """
@@ -175,8 +182,9 @@ class ChiptuneSAKIO(ChiptuneSAKBase):
         :type ir_song: ChirpSong, MChirpSong, or RChirpSong
         :param filename: Name of output file
         :type filename: str
+        :param kwargs: Keyword options for the particular I/O class
         :return: True on success
-        :rtype: boolean
+        :rtype: bool
         """
         raise ChiptuneSAKNotImplemented(f"Not implemented for type {ir_song.cts_type()}")
 
@@ -195,6 +203,7 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
 
         :param rchirp_song: song to compress
         :type rchirp_song: rchirp.RChirpSong
+        :param kwargs: Keyword options for the particular compression class
         :return: rchirp_song with compression
         :rtype: rchirp.RChirpSong
         """
@@ -219,9 +228,9 @@ def duration_to_note_name(duration, ppq, locale='US'):
     :param ppq: pulses per quarter note (e.g. 960)
     :type ppq: int
     :param locale: 'US' or 'UK'
-    :type locale: string
+    :type locale: str
     :return: note description
-    :rtype: string
+    :rtype: str
     """
     f = Fraction(duration / ppq).limit_denominator(64)
     return constants.DURATIONS[locale.upper()].get(f, '<unknown>')

@@ -98,7 +98,7 @@ class C128Basic(base.ChiptuneSAKIO):
         :param mchirp_song: mchirp data
         :type mchirp_song: MChirpSong
         :return: C128 BASIC program
-        :rtype: string or bytearray
+        :rtype: str or bytearray
 
         :keyword options:  see `to_file()`
         """
@@ -121,14 +121,14 @@ class C128Basic(base.ChiptuneSAKIO):
         :param mchirp_song: mchirp data
         :type mchirp_song: MChirpSong
         :param filename: path and filename
-        :type filename: string
+        :type filename: str
 
         :keyword options:
-            * **arch** (string) - architecture name (see base for complete list)
+            * **arch** (str) - architecture name (see base for complete list)
 
-            * **format** (string) - 'bas' for BASIC source code or 'prg' for prg
+            * **format** (str) - 'bas' for BASIC source code or 'prg' for prg
 
-            * **instruments** (list of string) - list of 3 instruments for the three voices (in order).
+            * **instruments** (list of str) - list of 3 instruments for the three voices (in order).
 
                 - Default is ['piano', 'piano', 'piano']
                 - Supports the default C128 BASIC instruments:
@@ -156,7 +156,7 @@ class C128Basic(base.ChiptuneSAKIO):
         :param mchirp_song: An mchirp song
         :type mchirp_song: MChirpSong
         :return: Returns an ascii BASIC program
-        :rtype: string
+        :rtype: str
         """
         basic_strings = measures_to_basic(mchirp_song)
 
@@ -247,7 +247,7 @@ def pitch_to_basic_note_name(note_num, octave_offset=0):
     Gets note name for a given MIDI pitch
 
     :return: note name string and octave number
-    :rtype: string, int
+    :rtype: str, int
     """
     note_name = base.pitch_to_note_name(note_num)[::-1]  # Reverse the note name
     return note_name[1:], note_name[0]
@@ -262,7 +262,7 @@ def duration_to_basic_name(duration, ppq):
     :param ppq: ppq (midi pulses per quarter note)
     :type ppq: int
     :return: C128 BASIC name for the duration
-    :rtype: string
+    :rtype: str
     """
     f = constants.Fraction(duration / ppq).limit_denominator(16)
     if f not in basic_durations:
@@ -377,7 +377,7 @@ def num_to_str_name(num, upper=False):
     :param upper: return upper case, defaults to False
     :type upper: bool, optional
     :return: C128 BASIC variable name
-    :rtype: string
+    :rtype: str
     """
     if num < 0 or num > 675:
         raise ChiptuneSAKValueError("number to convert to str var name out of range")

@@ -152,7 +152,7 @@ def midi_num_to_freq_arch(midi_num, cents=0, arch=DEFAULT_ARCH, tuning=CONCERT_A
     :param midi_num: midi note number
     :type midi_num: int
     :param architecture: Architecture description string
-    :type architecture: string
+    :type architecture: str
     :return: int frequency for arch
     :rtype: int
     """

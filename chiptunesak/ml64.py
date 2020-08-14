@@ -117,9 +117,9 @@ class ML64(ChiptuneSAKIO):
         Generates an ML64 string for a song
 
         :param song: song
-        :type song: chirp.ChirpSong or mchirp.MChirpSong
+        :type song: ChirpSong or mchirp.MChirpSong
         :return: ML64 encoding of song
-        :rtype: string
+        :rtype: str
 
         :keyword options:
             * **format** (string) - 'compact', 'standard', or 'measures';
@@ -147,9 +147,9 @@ class ML64(ChiptuneSAKIO):
         Writes ML64 to a file
 
         :param song: song
-        :type song: chirp.ChirpSong or mchirp.MChirpSong
+        :type song: ChirpSong or mchirp.MChirpSong
         :return: ML64 encoding of song
-        :rtype: string
+        :rtype: str
 
         :keyword options:  see `to_bin()`
 
