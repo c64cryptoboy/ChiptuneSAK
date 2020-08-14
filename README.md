@@ -1,17 +1,13 @@
 # ChiptuneSAK
 
-[comment]: # (Note: for now, can't link to image unless authenticated to private repo)
 ![logo](https://github.com/c64cryptoboy/ChiptuneSAK/blob/master/res/logoSmall.png)
 
-ChiptuneSAK (swiss army knife) is a generalized pipeline for processing music and targeting various constrained playback environments.
+ChiptuneSAK (**S**wiss **A**rmy **K**nife) is a generalized pipeline for processing music note data and targeting various constrained playback environments.
 
 It imports from many music formats and converts them to a common representation chirp (**CH**iptunesak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.
 
 ## Background
-
-Many one-off music processing tools were created for the Youd/Knapp/Van Haren [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), as well as for processing the music format for user-contributed content to Unknown Realm (Note: we have no details on the development status of the game, so please don't ask).  Recently, Youd/Brenner began work on a (not-yet-released) Commodore 64 Ultima-game music demo, requiring similar processing pipelines.
-
-It became apparent that there were low-hanging opportunities to introduce generality into our workflow.  Therefore, these separate efforts have been redirected into this standalone library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
+We've written a number of one-off note data processing tools for previous projects (e.g. the  [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), the Unknown Realm Bard midi->ml64 importer, etc.).  And with more similar projects on the way, it became apparent that there were opportunities to introduce generality and reusability into our processing pipelines.  Therefore, our separate efforts have been redirected into this library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
 
 ## Team
 
@@ -20,12 +16,13 @@ It became apparent that there were low-hanging opportunities to introduce genera
 * Ian Lee: python practices consultant
 
 * We are particularly grateful to:
-    * Markus Brenner: For providing Apple II Mockingboard Ultima music importing/exporting
     * Hasse Axəlsson-Svala: For offering up much-needed GoatTracker and GoatTracker stereo sample data
+    * Markus Brenner: For providing an Apple II Mockingboard Ultima music import example in our framework
+
 
 ## Project Status
 
-The code is currently in a pre-alpha state.  Features are being debated and fundamental data representations are in flux.  Currently working on a variety of concrete importers and exporters from which to generalize the processing pipeline.  Details:
+The code is currently in an alpha state.  Fundamental data representations have mostly stabilized.  Currently working on a variety of concrete importers and exporters from which to continue to generalize the processing pipeline.  Details:
 
 ### Music importers
 
@@ -43,6 +40,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * Subset of [MusicXML](https://www.musicxml.com/for-developers/): A digital sheet music interchange format
 * [MOD](http://web.archive.org/web/20120806024858/http://16-bits.org/mod/) (Amiga Module) files
 * [NSF](https://wiki.nesdev.com/w/index.php/NSF) (Nintendo Sound Format).  We already have a pure-python 6502 emulator working for the C64 SID importer that can be reused.
+* [SAP](http://asap.sourceforge.net/sap-format.html) (Slight Atari Player).  Atari 8-bit music file, again 6502-based.
 * Many opportunities with VGM (Video Game Music)  -- a sample-accurate sound logging format for [many machines](https://vgmrips.net/packs/systems) and many [sound chips](https://vgmrips.net/packs/chips)
 * COMPUTE!'s [Sidplayer](https://archive.org/details/Computes_Music_System_for_the_Commodore_128_and_64/mode/2up) [format](https://ist.uwaterloo.ca/~schepers/formats/SIDPLAY.TXT)
 
@@ -83,13 +81,7 @@ The code is currently in a pre-alpha state.  Features are being debated and fund
 * [ABC](http://abcnotation.com/wiki/abc:standard:v2.1) Notation: Human-readable music format.  Used to allow user-submitted music in online games including Starbound, Lord of the Rings Online, and Shroud of the Avatar
 * jellybiscuits [Music Box Composer](http://www.jellybiscuits.com/?page_id=951) file format
 * A [Rob Hubbard engine](https://www.1xn.org/text/C64/rob_hubbards_music.txt)
-* Other tracker file formats, such as RobTracker v1.11 (publicly released Dec 25th. 2019) or JCH's [SID Factory II](http://olivi.chordian.net/category/sid-factory-ii/)
-
-## Recent milestones
-
-* Exported some Monkey Island (MS-DOS 1990) midi capture into 2SID GoatTracker.  Patterns automatically computed to reduce file size.
-* Exported some Betrayal at Krondor (MS-DOS, 1993) midi capture to pdf sheet music, goat tracker, and Commodore 128 BASIC program
-* SID imported now implemented
+* Other tracker file formats, such as JCH's [SID Factory II](http://olivi.chordian.net/category/sid-factory-ii/)
 
 ## Requirements/Building
 
@@ -136,7 +128,7 @@ The following instructions make the following assumptions:
 
 # Set Powershell Execution Policy to all running local scripts:
 Set-ExecutionPolicy RemoteSigned
-# Answer "[A] Yes to All" when prommpted
+# Answer "[A] Yes to All" when prompted
 ```
 
 ```ps1

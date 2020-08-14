@@ -23,6 +23,9 @@
 #   driver program to test a 10 second extraction from every SID in HVSC, then autogather results.
 # - SidImport:print warning if jmp or jsr to memory outside of modified memory
 # - haven't tested processing of 2SID or 3SID yet
+# - Fast-apeggio chord detection and reduction
+# - would be nice when a note is predominately noise waveform, to mark it as percussion in the
+#   RChirp.  Then when exported (say, musicXML some day), it can come out as a cross note.
 #
 # FUTURE:
 # - According to Abbott, sid2midi created midi placeholders for digi content.  That might be useful
