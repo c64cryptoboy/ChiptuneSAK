@@ -19,7 +19,7 @@ IF "%COMPUTERNAME%"=="FIZZYMAGIC" (
    set vicepath=C:\Users\crypt\Desktop\retro8-bit\c64\WinVICE-3.1-x86\x128.exe
 )
 
- 
+
 rem Demo 1: Mercantile
 python ..\examples\mercantile.py
 echo Hit any key to load PDF
@@ -27,13 +27,13 @@ pause
 start /wait ..\examples\data\mercantile\mercantile.pdf
 echo Hit any key to load GoatTracker song
 pause
-start /wait %gtpath% ..\examples\data\mercantile\mercantile.sng
+start /wait %gtpath% -N ..\examples\data\mercantile\mercantile.sng
 
 rem Demo 2: LeChuck
 python ..\examples\lechuck.py
 echo Hit any key to load stereo GoatTracker song
 pause
-start /wait %gtpath2% ..\examples\data\lechuck\lechuck.sng
+start /wait %gtpath2% -P ..\examples\data\lechuck\lechuck.sng
 
 rem Demo 3: Skyfox SID import
 python ..\examples\tripletExample.py
