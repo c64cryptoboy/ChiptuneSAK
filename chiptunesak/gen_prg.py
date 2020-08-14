@@ -6,7 +6,7 @@
 #
 # FUTUREs
 # - Probably don't want to implement a syntax for control characters (e.g. {CYN})
-#   https://www.c64-wiki.com/wiki/control_character
+#   https://www.c64-wiki.com/wiki/control_character but we could.
 #   Currently, one must simply use the petscii byte with the correct control code value
 
 """
@@ -105,7 +105,7 @@ def ab2pb(ascii_byte):
     if ord('A') <= ascii_byte <= ord('Z'):
         return ascii_byte + 32
 
-        # The rest are either correct (such as printable symbols <= ordinal 64, and a few above that, like
+    # The rest are either correct (such as printable symbols <= ordinal 64, and a few above that, like
     # '[', ']', and '^' (which turns into an up arrow)).  In many cases, there's no equivalent value to
     # translate to (without using unicode, as https://pypi.org/project/cbmcodecs/ does), so the chars
     # are just passed through unchanged.

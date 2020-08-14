@@ -1,7 +1,7 @@
 # Code to import and export goattracker .sng files (both regular and stereo)
 #
 # Notes:
-# - This code ignores multispeed (for now)
+# - This code ignores multispeed considerations (for now)
 
 from os import path, listdir
 from os.path import isfile, join
@@ -24,7 +24,6 @@ GT_DEFAULT_TEMPO = 6
 GT_DEFAULT_FUNKTEMPOS = [9, 6]  # default alternating tempos, from GT's gplay.c
 
 # All these MAXes are the same for goattracker 2 (1SID) and goattracker 2 stereo (2SID)
-# (Note: MAXes vary in the SID-Wizard 1SID, 2SID, and 3SID engines)
 # Most found in gcommon.h
 GT_MAX_SUBTUNES_PER_SONG = 32  # Each subtune gets its own orderlist of patterns
 # "song" means a collection of independently-playable subtunes

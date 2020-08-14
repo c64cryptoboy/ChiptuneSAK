@@ -36,18 +36,10 @@ def big_endian_bytes(a_num, min_bytes=2):
 
 
 def little_endian_int(a_bytearray, signed=False):
-    # val = 0
-    # for i, byte in enumerate(a_bytearray):
-    #    val |= (byte << (8*i))
-    # return val
     return int.from_bytes(a_bytearray, byteorder='little', signed=signed)
 
 
 def big_endian_int(a_bytearray, signed=False):
-    # val = 0
-    # for byte in a_bytearray:
-    #    val = (val << 8) | byte
-    # return val
     return int.from_bytes(a_bytearray, byteorder='big', signed=signed)
 
 

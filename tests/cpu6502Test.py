@@ -127,7 +127,7 @@ class Test6502Emulator(unittest.TestCase):
 
         BCD in ADC and SBC
         Setting the V flag in SBC (when not BCD)
-        Settig the C flag in ASL
+        Setting the C flag in ASL
 
         And these instructions:
         $75/117 ADC zp,X        $6D/109 ADC abs     $7D/125 ADC abs,X       $61/97 ADC (zp,X)

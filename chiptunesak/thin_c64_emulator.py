@@ -1,14 +1,12 @@
-# Adds C64-specific behaviors to Cpu6502Emulator
+# Adds C64-specific behaviors atop the emulator_6502.py code
+# Hopefully, other thin layers like this will be created for extracting NES and Atari 8-bit music
 #
 # Notes:
 # - All bank switching logic assumes the EXROM and GAME are both 1 (since not emulating
 #   cartridges)
 #
 # TODO:
-# - will need to override get_mem and set_mem mirroring when we start to support 2SID and 3SID
-# - add hook of some kind:  If PC within BASIC or KERNAL, and that ROM is paged in, but
-#   the ROM wasn't loaded, then throw a stern warning.  This needs to be optional (default off),
-#   since in many places we stub our own ROM stuff, but this could be useful for SIDs.
+# - More generalization will be needed for 2SID and 3SID
 
 from chiptunesak import constants
 from chiptunesak.byte_util import read_binary_file

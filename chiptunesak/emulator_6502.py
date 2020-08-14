@@ -1,6 +1,6 @@
 # 6502 instruction-level emulation
 #
-# This module can emulate 6502 machine language programs at an instruction-level
+# This module emulates 6502 machine language program execution at an instruction-level
 # of granularity (not a cycle-level).
 #
 # runcpu() can be called in a while loop.  (Non-error) Exit conditions:
@@ -8,8 +8,8 @@
 # - RTI or RTS if exit_on_empty_stack is True and stack is empty or has already wrapped
 #
 # Code references used during development:
-# 1) C code: siddumper: https://csdb.dk/release/?id=152422
-#    This started as a direct python adaptation of siddumper.  At this time, the original
+# 1) C code: SIDDump: https://csdb.dk/release/?id=152422
+#    This started as a direct python adaptation of SIDDump.  At this time, the original
 #    C code is still included in this file as reference.  It made heavy use of macros
 #    (something python doesn't have) for register/value/address polymorphism.
 # 2) python code: py65: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
@@ -603,15 +603,11 @@ class Cpu6502Emulator:
     def runcpu(self):
         # execute instruction.
         # If RTS/RTI (when stack empty) or BRK, return 0, else return 1
-        # Throw exception on not-yet-implemented pseduo-op codes
+        # Throw exception on the not-yet-implemented pseduo-op codes
         if self.debug:
             self.invocationCount += 1
             output_str = "{:08d},PC=${:04x},A=${:02x},X=${:02x},Y=${:02x},SP=${:02x},P=%{:08b}" \
                 .format(self.cpucycles, self.pc, self.a, self.x, self.y, self.sp, self.flags)
-
-            # match siddump.c output...
-            # output_str = "count: {:08d} PC: {:04x} A: {:02x} X: {:02x} Y: {:02x} flags: {:02x} SP: {:02x}" \
-            #     .format(self.invocationCount, self.pc, self.a, self.x, self.y, self.flags, self.sp)
 
             print(output_str)
 
@@ -1782,7 +1778,7 @@ class Cpu6502Emulator:
         # PHP instruction
         if instruction == 0x08:  # $08/8 PHP
             # add in the B flag: https://github.com/eteran/pretendo/blob/master/doc/cpu/6502.txt
-            self.push(self.flags | FB)  # siddump.c < 1.08 neglected FB here
+            self.push(self.flags | FB)
             return 1
 
         # case 0x68:

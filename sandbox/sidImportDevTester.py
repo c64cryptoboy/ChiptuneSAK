@@ -1,4 +1,5 @@
-# Place were I test out SID importing
+# Place where I'm testing various SID importing
+# TODO: Need to write a script to test against all HVSC, that'll find a lot of gotchas
 
 import chiptunesak
 from chiptunesak.constants import project_to_absolute_path
@@ -19,8 +20,10 @@ def create_output_files():
 
         (project_to_absolute_path('examples/sid/Nitro.sid'), 1, 'examples/nitro', 12, 15),
 
+        (project_to_absolute_path('examples/sid/HelloWorld.sid'), 1, 'examples/hw', 12, 15),
+
     ]
-    params = params[4]  # select one
+    params = params[5]  # select one
 
     sid_filename = params[0]
     filename_no_ext = params[2]

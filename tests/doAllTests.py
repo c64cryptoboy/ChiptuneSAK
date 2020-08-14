@@ -1,6 +1,5 @@
-#
-# Run the unit tests for the entire project.  They are python files in the test direcyory with names that end in 'test'
-#
+# Run the unit tests for the entire project.  They are python files in the test directory with
+# names that end in 'test'
 
 from subprocess import run
 

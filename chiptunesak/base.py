@@ -208,16 +208,17 @@ class ChiptuneSAKCompress(ChiptuneSAKBase):
 
 def duration_to_note_name(duration, ppq, locale='US'):
     """
-    Given a ppq (pulses per quaver) convert a duration to a human readable note length, e.g., 'eighth'
+    Given a ppq (pulses per quarter note) convert a duration to a human readable note length,
+    e.g., 'eighth'
     Works for notes, dotted notes, and triplets down to sixty-fourth notes.
-    :param duration:
-    :type duration:
-    :param ppq:
-    :type ppq:
-    :param locale:
-    :type locale:
-    :return:
-    :rtype:
+    :param duration: a duration in ticks
+    :type duration: int
+    :param ppq: pulses per quarter note (e.g. 960)
+    :type ppq: int
+    :param locale: 'US' or 'UK'
+    :type locale: string
+    :return: note description
+    :rtype: string
     """
     f = Fraction(duration / ppq).limit_denominator(64)
     return constants.DURATIONS[locale.upper()].get(f, '<unknown>')
@@ -226,10 +227,10 @@ def duration_to_note_name(duration, ppq, locale='US'):
 def pitch_to_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
-    :param note_num:
-    :type note_num:
-    :param octave_offset:
-    :type octave_offset:
+    :param note_num: a midi note number
+    :type note_num: int
+    :param octave_offset: value that shifts one or more octaves up or down
+    :type octave_offset: int
     :return: string representation of note and octave
     :rtype: str
     """

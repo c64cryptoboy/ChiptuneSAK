@@ -1,11 +1,5 @@
 # Midi Simple Processing Library
 #
-# (c) 2020, David Knapp / David Youd
-#
-# Recommended Python version installed >= 3.8.1
-# Must first install midi: https://github.com/olemb/mido/blob/master/docs/installing.rst
-#    pip install mido
-#
 
 import copy
 import bisect
@@ -18,8 +12,8 @@ from chiptunesak import constants
 
 class Note:
     """
-    This class represents a note in human-friendly form:  as a note with a start time, a duration, and
-    a velocity.
+    This class represents a note in human-friendly form:  as a note with a start time,
+    a duration, and a velocity.
     """
 
     def __init__(self, start, note, duration, velocity=100, tied_from=False, tied_to=False):
@@ -198,8 +192,9 @@ class ChirpTrack:
 
     def quantize_long(self, qticks):
         """
-        Quantizes only notes longer than 3/4 qticks; quantizes both start time and duration.  This function
-        is useful for quantization that also preserves some ornaments, such as grace notes.
+        Quantizes only notes longer than 3/4 qticks; quantizes both start time and duration.
+        This function is useful for quantization that also preserves some ornaments, such as
+        grace notes.
 
         :param qticks: Quantization for notes and durations
         :type qticks: int
@@ -261,8 +256,9 @@ class ChirpTrack:
 
     def set_min_note_len(self, min_len_ticks):
         """
-        Sets the minimum note length for the track.  Notes shorter than min_len_ticks will be lengthened
-        and any notes that overlap will have their start times adjusted to allow the new longer note.
+        Sets the minimum note length for the track.  Notes shorter than min_len_ticks will
+        be lengthened and any notes that overlap will have their start times adjusted to allow
+        the new longer note.
 
         :param min_len_ticks: Minimum note length
         :type min_len_ticks: int
@@ -332,8 +328,8 @@ class ChirpTrack:
 
     def is_quantized(self):
         """
-        Returns whether the current track is quantized or not.  Since a quantization of 1 is equivalent to no
-        quantization, a track quantized to tick will return False.
+        Returns whether the current track is quantized or not.  Since a quantization of 1 is
+        equivalent to no quantization, a track quantized to tick will return False.
 
         :return: True if the track is quantized.
         :rtype: bool
@@ -346,9 +342,9 @@ class ChirpTrack:
 
     def remove_keyswitches(self, ks_max=8):
         """
-        Removes all MIDI notes with values less than or equal to ks_max. Some MIDI devices and applications use
-        these extremely low notes to convey patch change or other information, so removing them (especially if
-        you do not want polyphony) is a good idea.
+        Removes all MIDI notes with values less than or equal to ks_max. Some MIDI devices
+        and applications use these extremely low notes to convey patch change or other
+        information, so removing them (especially if you do not want polyphony) is a good idea.
 
         :param ks_max: maximum note number for keyswitches in the track (often 8)
         :type ks_max: int
@@ -359,7 +355,8 @@ class ChirpTrack:
         """
         Truncate the track to max_tick
 
-        :param max_tick:  maximum tick number for events to start (track will play to end of any notes started)
+        :param max_tick:  maximum tick number for events to start (track will play to end of
+        any notes started)
         :type max_tick: int
         """
         self.notes = [n for n in self.notes if n.start_time <= max_tick]
@@ -368,7 +365,8 @@ class ChirpTrack:
 
     def transpose(self, semitones):
         """
-        Transposes track in-place by semitones, which can be positive (transpose up) or negative (transpose down)
+        Transposes track in-place by semitones, which can be positive (transpose up) or
+        negative (transpose down)
 
         :param semitones:  Number of semitones to transpose
         """
@@ -400,7 +398,8 @@ class ChirpTrack:
             n.start_time = (n.start_time * num) // denom
             n.duration = (n.duration * num) // denom
             self.notes[i] = n
-        # Now adjust the quantizations in case quantization has been applied to reflect the new lengths
+        # Now adjust the quantizations in case quantization has been applied to reflect the
+        # new lengths
         self.qticks_notes = (self.qticks_notes * num) // denom
         self.qticks_durations = (self.qticks_durations * num) // denom
 
@@ -426,8 +425,8 @@ class ChirpTrack:
 
     def move_ticks(self, offset_ticks):
         """
-        Moves all the events in this track by offset_ticks.  Any events that would have a time in ticks less than 0 are
-        set to time zero.
+        Moves all the events in this track by offset_ticks.  Any events that would have a time
+        in ticks less than 0 are set to time zero.
 
         :param offset_ticks:
         :type offset_ticks: int (signed)
@@ -548,7 +547,7 @@ class ChirpSong(ChiptuneSAKBase):
     def set_metadata(self):
         """
         Sets the song metadata to reflect the current status of the song.  This function cleans up
-        any redundant tiem siognature, key signature, or tempo changes (two events that have the same
+        any redundant item signature, key signature, or tempo changes (two events that have the same
         timestamp) and keeps the last one it finds, then sets the metadata values to the first of each
         respectively.
         """
@@ -670,8 +669,8 @@ class ChirpSong(ChiptuneSAKBase):
 
     def is_quantized(self):
         """
-        Has the song been quantized?  This requires that all the tracks have been quantized with their
-        current qticks_notes and qticks_durations values.
+        Has the song been quantized?  This requires that all the tracks have been quantized
+        with their current qticks_notes and qticks_durations values.
 
         :return:  Boolean True if all tracks in the song are quantized
         """
@@ -679,9 +678,10 @@ class ChirpSong(ChiptuneSAKBase):
 
     def explode_polyphony(self, i_track):
         """
-        'Explodes' a single track into multi-track polyphony.  The new tracks replace the old track in the
-        song's list of tracks, so later tracks will be pushed to higher indexes.  The new tracks are named
-        using the name of the original track with '_sx' appended, where x is a number for the split notes.
+        'Explodes' a single track into multi-track polyphony.  The new tracks replace the old
+        track in the song's list of tracks, so later tracks will be pushed to higher indexes.
+        The new tracks are named using the name of the original track with '_sx' appended, where
+        x is a number for the split notes.
         The polyphony is split using a first-available-track algorithm, which works well for splitting chords.
 
         :param i_track:  zero-based index of the track for the song (ignore the meta track - first track is 0)
@@ -746,7 +746,8 @@ class ChirpSong(ChiptuneSAKBase):
         """
         Truncate the song to max_tick
 
-        :param max_tick:  maximum tick number for events to start (song will play to end of any notes started)
+        :param max_tick:  maximum tick number for events to start (song will play to end of any
+        notes started)
         :type max_tick: int
         """
         self.time_signature_changes = [ts for ts in self.time_signature_changes if ts.start_time <= max_tick]
@@ -1036,10 +1037,10 @@ class ChirpSong(ChiptuneSAKBase):
 def quantization_error(t_ticks, q_ticks):
     """
     Calculate the error, in ticks, for the given time for a quantization of q ticks.
-    :param t_ticks:
-    :type t_ticks:
-    :param q_ticks:
-    :type q_ticks:
+    :param t_ticks: time ticks
+    :type t_ticks: int
+    :param q_ticks: quantization of ticks
+    :type q_ticks: int
     :return: quantization error, in ticks
     :rtype: int
     """

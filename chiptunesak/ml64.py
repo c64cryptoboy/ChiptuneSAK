@@ -4,6 +4,15 @@ from chiptunesak import constants
 
 '''
 This file contains functions required to export MidiSimple songs to ML64 format.
+
+This is the format created by Stirring Dragon Games for music content contributed
+by those who backed the Unknown Realm kickstarter at the bard tier.
+A few years ago, Knapp and Youd wrote a midi->ml64 tool in Python 2 for the Unknown
+Realm developers.  ChiptuneSAK (in Python 3) replaces that tool.
+Note:  We haven't seen the game or any source code for it.  We know they're cranking
+away at it, but have no details as to when the game will be released.  Please
+direct all questions regarding Unknown Realm to Stirring Dragon Games
+(https://stirringdragon.games)
 '''
 
 ml64_durations = {

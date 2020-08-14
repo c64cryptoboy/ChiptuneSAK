@@ -1,16 +1,10 @@
 # cstRChirp.py
 #
-# RChirp is a row-based verison of chirp, useful for export from and to trackers,
+# RChirp is a row-based version of chirp, useful for export from and to trackers,
 # and other interrupt-based music players.
 # Rows can be constructed and accessed in both sparse (dictionary-like) and contiguous (list-like) forms.
 # Optionally, rows can be organized into orderlists of (contiguous) row patterns
 
-# The "jiffy" time unit:
-# In early 8-bit computers, the term jiffy is synonymous with screen refresh duration
-# (e.g., ~16.8ms on NTSC C64).  In computing, Jiffy originally referred to the time between
-# two ticks of a system timer interrupt.  In electronics, it's the time between alternating
-# current power cycles.  And in most early 8-bit machines, an interrupt would occur with
-# each screen refresh which was synced to the AC power cycles.
 
 import copy
 from functools import reduce

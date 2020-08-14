@@ -9,7 +9,7 @@ from chiptunesak.errors import ChiptuneSAKValueError, ChiptuneSAKContentError
 
 WHOLE_NOTE = 1152  # counter found in the PLAY routines in the BASIC ROM
 
-# These are the defaults that can be overwritten by the ENVELOPE command
+# These are the defaults that can be overwritten by the BASIC ENVELOPE command
 # Note: waveform (WF) is a little different in the BASIC, it's
 #    0=triangle, 1=sawtooth, 2=pulse, 3=noise, and 4=ring modulation
 C128_INSTRUMENTS = {
@@ -100,7 +100,7 @@ class C128Basic(base.ChiptuneSAKIO):
         :return: C128 BASIC program
         :rtype: string or bytearray
 
-        :keyword options:  see `to_file()`        
+        :keyword options:  see `to_file()`
         """
         self.set_options(**kwargs)
         if mchirp_song.cts_type() != 'MChirp':
@@ -196,7 +196,6 @@ class C128Basic(base.ChiptuneSAKIO):
             current_line += 10
 
         current_line = 7000  # data might reach line 6740
-        # Note: U9 = volume 15
         volume = 9
         # FUTURE: For each voice, provide a way to pick (or override) the default envelopes
         instr_assign = 'u%dv1t%dv2t%dv3t%d' % \
@@ -247,7 +246,7 @@ def pitch_to_basic_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
 
-    :return: note name string and ocatave number
+    :return: note name string and octave number
     :rtype: string, int
     """
     note_name = base.pitch_to_note_name(note_num)[::-1]  # Reverse the note name

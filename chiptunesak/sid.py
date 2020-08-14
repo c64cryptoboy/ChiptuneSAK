@@ -4,7 +4,7 @@
 #    Playback details for PSID/RSID ("The SID file environment")
 #    - https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt
 #
-#    Has some support for RSIDs.  From sid documentation concerning RSIDs:
+#    This class supports many RSIDs.  From sid documentation concerning RSIDs:
 #    "Tunes that are multi-speed and/or contain samples and/or use additional interrupt
 #    sources or do busy looping will cause older SID emulators to lock up or play very
 #    wrongly (if at all)."
@@ -19,13 +19,13 @@
 #    tuning and architecture-based frequencies at runtime.
 #
 # TODO:
-# - Improve code by writing a driver program to test a 10 second extraction from every SID
-#   in HVSC, then autogather results.
+# - Only a small number of SIDs have been tested.  Improve code robustness by writing a 
+#   driver program to test a 10 second extraction from every SID in HVSC, then autogather results.
 # - SidImport:print warning if jmp or jsr to memory outside of modified memory
 # - haven't tested processing of 2SID or 3SID yet
 #
 # FUTURE:
-# - sid2midi apparently created midi placeholders for digi content.  That might be useful
+# - According to Abbott, sid2midi created midi placeholders for digi content.  That might be useful
 #   to add if the digi is, say, drums.
 
 import csv
@@ -45,14 +45,13 @@ from chiptunesak import rchirp
 class SID(ChiptuneSAKIO):
 
     """
-    Parses and exports RChirp from SIDs using 6510 emulation with thin C64 layer.
+    Parses and exports RChirp from SIDs using 6502/6510 emulation with a thin C64 layer.
 
     This class is the import/export interface for ChiptuneSAK for SIDs.  It runs the SID in the emulator, using the
-    information in the SID header to configure the driver, and captures information from the interaction of the code
-    with the SID chip(s).
+    information in the SID header to configure the driver, and captures information from the interaction of the code with the SID chip(s) following init and play calls.
 
     The resulting data can be exported to an RChirpSong object and/or written as a csv file that has a row for each
-    invocation of the play routine. The csv file is highly useful for diagnosing how the play routine is modifying
+    invocation of the play routine. The csv file is useful for diagnosing how the play routine is modifying
     the SID chip and helps inform choices about the conversion of the SID music to the rchirp format.
 
     """
@@ -69,7 +68,7 @@ class SID(ChiptuneSAKIO):
             subtune=0,                       # subtune to extract (zero-indexed)
             vibrato_cents_margin=0,          # cents margin to control snapping to previous note
             tuning=CONCERT_A,
-            seconds=60,           # seconds to capture
+            seconds=60,                      # seconds to capture
             arch=DEFAULT_ARCH,               # note: overwritten if/when SID headers get parsed
             gcf_row_reduce=True,             # reduce rows via GCF of row-activity gaps
             create_gate_off_notes=True,      # allow new note starts when gate is off

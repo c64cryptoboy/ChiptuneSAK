@@ -4,7 +4,7 @@ from chiptunesak.base import *
 from chiptunesak.chirp import Note
 
 
-# This is not the required version:  use any version later than this
+# This is not the required version:  use any version >= to this
 LP_VERSION = '2.18.2'
 
 # TODO:

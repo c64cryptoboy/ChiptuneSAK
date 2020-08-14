@@ -169,7 +169,8 @@ class Measure:
         Populates a single measure with notes, rests, and other events.
 
         :param track: Track from which events are to be imported
-        :param carry: If last note in previous measure is continued in this measure, the note with remainining time
+        :param carry: If last note in previous measure is continued in this measure, the note with
+        remaining time
         :return: Carry note, if last note is to be carried into the next measure.
         """
         ppq = track.chirp_song.metadata.ppq
@@ -260,7 +261,7 @@ class MChirpTrack:
 
         :param chirp_track: A ctsSongTrack that has been quantized and had polyphony removed
         :type chirp_track: ChirpTrack
-        :return:      List of Measure objects corresponding to the measures
+        :return: List of Measure objects corresponding to the measures
         """
         if not chirp_track.is_quantized():
             raise ChiptuneSAKQuantizationError("Track must be quantized to populate measures.")

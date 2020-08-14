@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from chiptunesak.errors import ChiptuneSAKValueError
 import collections
 
 KeySignature = collections.namedtuple('Key', ['name', 'offset', 'type', 'sharps', 'flats'])

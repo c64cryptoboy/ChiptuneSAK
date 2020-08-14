@@ -26,7 +26,7 @@ DEFAULT_ARCH = 'NTSC-C64'
 C0_MIDI_NUM = 12
 C4_MIDI_NUM = 60
 A4_MIDI_NUM = C4_MIDI_NUM + 9
-CONCERT_A = 440.0  # note: scene sometimes uses 435Hz to reach B7 on PAL
+CONCERT_A = 440.0
 
 
 PITCHES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
