@@ -211,6 +211,7 @@ def duration_to_note_name(duration, ppq, locale='US'):
     Given a ppq (pulses per quarter note) convert a duration to a human readable note length,
     e.g., 'eighth'
     Works for notes, dotted notes, and triplets down to sixty-fourth notes.
+
     :param duration: a duration in ticks
     :type duration: int
     :param ppq: pulses per quarter note (e.g. 960)
@@ -227,6 +228,7 @@ def duration_to_note_name(duration, ppq, locale='US'):
 def pitch_to_note_name(note_num, octave_offset=0):
     """
     Gets note name for a given MIDI pitch
+
     :param note_num: a midi note number
     :type note_num: int
     :param octave_offset: value that shifts one or more octaves up or down
@@ -243,7 +245,6 @@ def pitch_to_note_name(note_num, octave_offset=0):
 
 # Regular expression for matching note names
 note_name_format = re.compile('^([A-G])(#|##|b|bb)?(-{0,1}[0-7])$')
-
 
 def note_name_to_pitch(note_name, octave_offset=0):
     """
@@ -274,16 +275,17 @@ def decompose_duration(duration, ppq, allowed_durations):
     """
     Decomposes a given duration into a sum of allowed durations.
     This function uses a greedy algorithm, which iteratively finds the largest allowed duration shorter than
-    the remaining duration and subtracts it from the remaining
+    the remaining duration and subtracts it from the remaining duration
+
     :param duration:           Duration to be decomposed, in ticks.
     :type duration:            int
     :param ppq:                Ticks per quarter note.
     :type ppq:                 int
     :param allowed_durations:  Dictionary of allowed durations.  Allowed durations are expressed as fractions
                                of a quarter note.
-    :type allowed_durations:   dictionary (or set) of allowed durations, as fractions of a quarter note
-    :return:                   List of fractions
-    :rtype:                    list
+    :type allowed_durations:   Dictionary (or set) of Fractions
+    :return:                   List of decomposed durations
+    :rtype:                    list of Fraction
     """
     ret_durations = []
     min_allowed_duration = min(allowed_durations)
@@ -301,7 +303,9 @@ def decompose_duration(duration, ppq, allowed_durations):
 
 def is_triplet(note, ppq):
     """
-    Determine if note is a triplet
+    Determine if note is a triplet, which is true if the note length divided by the quarter-note length has a
+    denominator divisible by 3
+
     :param note:  note
     :type note:   chirp.Note
     :param ppq:   ppq
@@ -319,6 +323,7 @@ def start_beat_type(time, ppq):
     """
     Gets the beat type that would have to be used to make this note an integral number of beats
     from the start of the measure
+
     :param time:  Time in ticks from the start of the measure.
     :type time:   int
     :param ppq:   ppq for the song

@@ -1037,9 +1037,10 @@ class ChirpSong(ChiptuneSAKBase):
 def quantization_error(t_ticks, q_ticks):
     """
     Calculate the error, in ticks, for the given time for a quantization of q ticks.
-    :param t_ticks: time ticks
+
+    :param t_ticks: time in ticks
     :type t_ticks: int
-    :param q_ticks: quantization of ticks
+    :param q_ticks: quantization in ticks
     :type q_ticks: int
     :return: quantization error, in ticks
     :rtype: int
@@ -1048,19 +1049,20 @@ def quantization_error(t_ticks, q_ticks):
     return int(min(abs(t_ticks - q_ticks * j), abs(t_ticks - q_ticks * (j + 1))))
 
 
-def objective_error(notes, test_quantization):
+def objective_error(note_start_times, test_quantization):
     """
     This is the objective function for getting the error for the entire set of notes for a
     given quantization in ticks.  The function used here could be a sum, RMS, or other
     statistic, but empirical tests indicate that the max used here works well and is robust.
-    :param notes:
-    :type notes:
-    :param test_quantization:
-    :type test_quantization:
-    :return: objective error function
-    :rtype:  int or float, depending on what you want
+
+    :param note_start_times: note start times in ticks
+    :type note_start_times: list of int
+    :param test_quantization: test quantization, in ticks
+    :type test_quantization: int
+    :return: objective error function value
+    :rtype: int
     """
-    return max(quantization_error(n, test_quantization) for n in notes)
+    return max(quantization_error(n, test_quantization) for n in note_start_times)
 
 
 def find_quantization(time_series, ppq):
@@ -1082,10 +1084,10 @@ def find_quantization(time_series, ppq):
     The algorithm does not seem to work as well for note durations as it does for note starts, probably
     because performed music rarely has clean note cutoffs.
 
-    :param time_series:
-    :type time_series:
-    :param ppq:
-    :type ppq:
+    :param time_series: a series times, usually note start times, in ticks
+    :type time_series: list of int
+    :param ppq: ppq value (ticks per quarter note)
+    :type ppq: int
     :return: quantization in ticks
     :rtype: int
     """
@@ -1125,12 +1127,13 @@ def find_duration_quantization(durations, qticks_note):
     """
     The duration quantization is determined from the shortest note length.
     The algorithm starts from the estimated quantization for note starts.
-    :param durations:
-    :type durations:
-    :param qticks_note:
-    :type qticks_note:
-    :return:
-    :rtype:
+
+    :param durations: durations from which to estimate quantization
+    :type durations: list of int
+    :param qticks_note: quantization already determined for note start times
+    :type qticks_note: int
+    :return: estimated duration quantization, in ticks
+    :rtype: int
     """
     min_length = min(durations)
     if not (min_length > 0):
@@ -1151,10 +1154,10 @@ def find_duration_quantization(durations, qticks_note):
 
 def quantize_fn(t, qticks):
     """
-    This function quantizes a time to a certain number of ticks.  Essentially, it snaps to the
+    This function quantizes a time or duration to a certain number of ticks.  It snaps to the
     nearest quantized value.
 
-    :param t: a stgart time or duration, in ticks
+    :param t: a start time or duration, in ticks
     :type t: int
     :param qticks: quantization in ticks
     :type qticks: int
