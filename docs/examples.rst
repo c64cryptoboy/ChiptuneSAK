@@ -7,12 +7,12 @@ ChiptuneSAK Examples
 Chirp Examples
 --------------
 
-DOS MIDI File Example
-+++++++++++++++++++++
+MS-DOS Game MIDI Example
+++++++++++++++++++++++++
 
-In this example a midi file captured from a DOS game is processed and turned into sheet music as well as exported to GoatTracker.
+In this example a midi file captured from an MS-DOS game is processed and turned into sheet music as well as exported to GoatTracker.
 
-Often, `midi ripped from old DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.
+Usually, `midi captured from DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.
 
 So first use the FitPPQ.py script to estimate the true note lengths and adjust them to a ppq of 960.  From the tools directory, run:
 
@@ -33,17 +33,17 @@ This should generate the following output:
 
 It is a good idea to do a sanity check on the output file, as the algorithm in FitPPQ often fails to give the best solution.  A general algorithm to find the beats in a midi file is a daunting task!
 
-In fact, an ideal method now is to use the output obtained from FitPPQ, open the resulting file and adjust the first beat of the final measure to lie *exactly* at the start of the final measure.  If we do this with tmp.mid, we find that the first note of the final measure is at MIDI tick 226588 for measure 60.  For a PPQ of 960 and 4 quarter notes per measure, the last measure should start at tick 960 * 59 * 4 = 226560, so we are coming in only 28 ticks late.  Since we plan to quantize to a 16th note (960 / 4 = 240 ticks) then the value we found should be fine.
+In fact, an ideal method now is to use the output obtained from FitPPQ, open the resulting file and adjust the first beat of the final measure to lie *exactly* at the start of the final measure.  If we do this with tmp.mid, we find that the first note of the final measure is at MIDI tick 226,588 for measure 60.  For a PPQ of 960 and 4 quarter notes per measure, the last measure should start at tick 960 * 59 * 4 = 226,560, so we are coming in only 28 ticks late.  Since we plan to quantize to a 16th note (960 / 4 = 240 ticks) then the value we found should be fine.
 
 Now you can use those parameters (5.89 and 2398) to scale the mercantile file in the Python script, which generates Lilypond sheet music and a GoatTracker SNG file.  Note that because you need to move the music to an *earlier* time, the offset you give to the ``move_ticks()`` method will be negative.
 
 .. literalinclude:: ../examples/mercantile.py
     :language: python
 
-DOS MIDI File Chord Splitting
-+++++++++++++++++++++++++++++
+Chord Splitting
++++++++++++++++
 
-In this example, DOS midi music with polyphony in one track capture is turned into a stereo GoatTracker song.
+In this example, the midi music with chord-based polyphony in one track is turned into a stereo GoatTracker song.
 
 Using the same method as above, the scale factor and offset are determined and the chirp is scaled to make the notes fit into measures. One of the tracks has chords made of 3 notes, so the ``ChirpSong.explode_polyphony()`` method is used to turn the single track into three tracks without polyphony.
 
@@ -61,8 +61,7 @@ Lilypond Song to PDF
 
 In this example a MIDI song is read in and output to a multi-page PDF document.
 
-Often, `midi ripped from MS-DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy
-midi files that don't include keys, time signatures, or even reliable ticks per quarter notes.  This example
+As mentioned above, `midi ripped from MS-DOS games <http://www.mirsoft.info/gamemids-ripping-guide.php/>`_ results in messy midi files.  This example
 workflow shows how to turn such music into Lilypond-generated sheet music, and will use
 `a piece of music <http://www.midi-karaoke.info/21868cd1.html>`_
 from an MS-DOS RPG Betrayal At Krondor (Sierra On-Line, 1993).
@@ -73,7 +72,7 @@ from an MS-DOS RPG Betrayal At Krondor (Sierra On-Line, 1993).
 Lilypond Measures to PNG
 ++++++++++++++++++++++++
 
-In this example a MIDI song is read, and a snippet of measures is converted to a PNG image
+In this example a MIDI song is read, and a snippet of measures is converted to a PNG image.
 
 Often, you'd like to turn a small clip from a song into an image to use as an illustration for a document.
 In this case, you may not want the entire piece exported as a pdf file, but just the clip.
@@ -130,7 +129,7 @@ As an example, consider the following excerpt from a Chopin waltz:
    :alt: Original Chopin waltz excerpt
    :align: center
 
-This except could not be rendered using many chiptunes tools that cannot do triplets.   But if we modulate by a factor of 3/2, the excerpt becomes:
+This except could not be processed by tools that only allow binary note divisions.  But if we modulate by a factor of 3/2, the excerpt becomes:
 
 .. image:: _images/chopin_waltz_mod.png
    :width: 800px

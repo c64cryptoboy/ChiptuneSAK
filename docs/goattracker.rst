@@ -11,7 +11,7 @@ ChiptuneSAK can import and export GoatTracker song files in the .sng format to t
 
 The GoatTracker sng file format does not contain information about the target architecture or whether the song requires multispeed. As a result, to take advantage of either, music should be exported to the sng file, opened in GoatTracker, and any adjustments made there.
 
-**Note:** GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will *not* be tuned to the standard A440 tuning of the rest of ChiptuneSAK. To make the notes play at the desired pitch, the song must be encoded in PAL mode.
+**Note:** GoatTracker does not have separate frequency tables for PAL and NTSC, which means that the notes played back in NTSC mode will *not* be tuned to the standard A440 tuning used by ChiptuneSAK. To make the notes play at the desired pitch, the song must be encoded in PAL mode.
 
 GoatTracker comes in two versions: the original, which can play 3 voices with one SID, and a stereo version, which can play 6 voices using 2 SIDs. ChiptuneSAK supports both versions, automatically selecting the version based on the number of voices.
 
@@ -21,7 +21,7 @@ GoatTracker comes in two versions: the original, which can play 3 voices with on
 
 GoatTracker can export songs to native C64 programs.  Unlike other trackers (e.g., SID-Wizard), it doesn't have an export option that includes a routine that will drive (meaning, call at regular intervals) the song's playback routine.  So let's create one.
 
-In the :ref:`DOS MIDI File Chord Splitting` example, we show how to import an MS-DOS game tune into a stereo GoatTracker sng file called LeChuck.sng.  2SID playback assumes that the C64 has two SID chips (easy to configure when using VICE).
+In the :ref:`Chord Splitting` example, we show how to import an MS-DOS game tune into a stereo GoatTracker sng file called LeChuck.sng.  2SID playback assumes that the C64 has two SID chips (easy to configure when using VICE).
 
 Assuming LeChuck.sng was already created, then in stereo GoatTracker:
 

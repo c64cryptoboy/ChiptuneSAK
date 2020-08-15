@@ -6,6 +6,7 @@ from chiptunesak.constants import project_to_absolute_path
 
 dest = 'examples/temp/'
 
+
 def create_output_files():
     params = [
         # has the notes that sid2midi misses

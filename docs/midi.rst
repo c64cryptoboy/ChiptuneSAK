@@ -25,18 +25,18 @@ ChiptuneSAK can read MIDI type 0 and type 1 files with the :ref:`MIDI` class.  W
 MIDI Tempos and PPQ
 +++++++++++++++++++
 
-The MIDI transport protocol has no sense of tempo. However, playing back MIDI files requires a tempo marking to reproduce a live performance. As a result, two concepts were added to MIDI files. The first is the **tempo**\ , specified in units of QPM (quarter-notes per minute).  The second is called **PPQ**\ , or Pulses Per Quarter note, which sets the resolution of the MIDI playback. These pulses are commonly known as "MIDI ticks."  Every MIDI event during playback of a MIDI file occurs on a MIDI tick; however, multiple MIDI messages can be specified to occur on the same tick.
+The MIDI transport protocol does not declare an explicit tempo. However, playing back MIDI files requires a tempo marking to reproduce a live performance. As a result, two concepts were added to MIDI files. The first is the **tempo**\ , specified in units of QPM (quarter-notes per minute).  The second is called **PPQ**\ , or Pulses Per Quarter note (PPQN), which sets the resolution of the MIDI playback. These pulses are commonly known as "MIDI ticks."  Every MIDI event during playback of a MIDI file occurs on a MIDI tick; however, multiple MIDI messages can be specified to occur on the same tick.
 
 The playback speed, in QPM, determines the rate at which the MIDI ticks will be played back. Because of this separation between ticks and tempo, the same music can be played back at different speeds without any modification of the underlying MIDI messages.  The MIDI tempo setting can be changed at any point in the song.
 
-Because every note must start and end on a MIDI tick, the PPQ is usually set to divide every note in the song evenly. Since music will frequently have notes that have both powers of 2 and factors of 3 in their durations, commonly-used PPQ values have several factors of each: 120 (= 2 * 3 * 4 * 5), 480 (= 2 * 2 * 3 * 4 * 5), and 960 (= 2 * 2 * 2 * 3 * 4 * 5) are the most-commonly seen. Occasionally, for music with no triples, powers of 2 are used; PPQ value of 512 and 1024 are not rare.
+Because every note must start and end on a MIDI tick, the PPQ is usually set to divide every note in the song evenly. Since music will frequently have notes that have both powers of 2 and factors of 3 in their durations, commonly-used PPQ values have several factors of each: 120 (= 2 * 3 * 4 * 5), 480 (= 2 * 2 * 3 * 4 * 5), and 960 (= 2 * 2 * 2 * 3 * 4 * 5) are the most-commonly seen. Occasionally, for music with no triples, powers of 2 are used; PPQ value of 512 and 1024 are not uncommon.
 
 ChiptuneSAK defaults to a PPQ of 960, which allows fine-resolution playback of most music.
 
 MIDI Recordings and PPQ
 #######################
 
-Much game music, especially from DOS games, was played as MIDI commands to the sound cards. The internal storage of the music was often not as MIDI files, however. Many of these songs have been recovered by capturing the MIDI messages and saving them. While this technique allows simple reproduction of the music, the captured MIDI commands do not have any information about tempo or PPQ, and thus a great deal of information is lost.  ChiptuneSAK has tools that will help to recover that lost information to aid in transforming it to other forms, such as sheet music or tracker-based music.
+Much game music, especially from MS-DOS games, was played as MIDI commands to the sound cards. The internal storage of the music was often not as MIDI files, however. Many of these songs have been recovered by capturing the MIDI messages and saving them. While this technique allows simple reproduction of the music, the captured MIDI commands do not have any information about tempo or PPQ, and thus a great deal of information must be reconstructed.  ChiptuneSAK has tools that will help to recover that lost information to aid in transforming it to other forms, such as sheet music or tracker-based music.
 
 MIDI Key Signatures and Time Signatures
 +++++++++++++++++++++++++++++++++++++++
@@ -55,7 +55,7 @@ Humans, on the other hand, do not perceive music in a stateless way.  We think o
 MIDI Keyswitches
 ++++++++++++++++
 
-Some modern virtual instruments (such as Garritan) use `keyswitches <https://blog.presonus.com/index.php/2018/11/30/friday-tips-keyswitching-made-easy/>`_ , specific (usually low) MIDI notes that trigger real-time modification of instrument sounds during performance. This practice violates the spirit of the MIDI standard, in that it uses  *notes* to trigger *effects*, something that was meant to be done via MIDI controllers and program messages.
+Some modern virtual instruments (such as Garritan) use `keyswitches <https://blog.presonus.com/index.php/2018/11/30/friday-tips-keyswitching-made-easy/>`_ , specific (usually low) MIDI notes that trigger real-time modification of instrument sounds during performance. This practice violates the spirit of the MIDI standard, in that it uses *notes* to trigger *effects*, something that was meant to be done via MIDI controllers and program messages.
 
 Whether or not it is a good idea, the practice exists and as a result MIDI files will often contain spurious notes that are meant as keyswitches and not meant to be played back.  ChiptuneSAK will, by default, remove the keyswitch notes (noes with MIDI number <= 8) when importing a MIDI file, but the option can be overridden.
 
