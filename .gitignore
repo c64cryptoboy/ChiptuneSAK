@@ -1,45 +1,17 @@
-# Development environments
+.env
+*.doctree
+*.code-workspace
 venv/
 .vscode/
-!.vscode/settings.json
-.env
-*.code-workspace
 .idea/
-
-# Python stuff
+!.vscode/settings.json
 __pycache__/
-*.egg-info/
-
-# Build artifacts
-build/
-dist/
-docs/_build/
-
-# Test files
-sandbox/consultant.sng
-test/data/Yofa_test.mid
-/test/bach_invention_4-1.eps
-/test/bach_invention_4-systems.count
-/test/bach_invention_4-systems.tex
-/test/bach_invention_4-systems.texi
-/test/bach_invention_4_clip.eps
-/test/data/bach_invention_4_clip_good.ly
-/test/bach_invention_4_clip.png
-/test/bach_invention_4_clip-1.eps
-/test/bach_invention_4_clip-systems.count
-/test/bach_invention_4_clip-systems.tex
-/test/bach_invention_4_clip-systems.texi
-/test/data/bach_invention_4_old.mid
-/test/data/bach_invention_4a.mid
-/test/bach_invention_4.eps
-/test/data/bach_invention_4.pdf
-/test/Betrayal_q.mid
-/test/Betrayal_test_q.mid
-/test/data/bach_invention_4.pdf
-tests/data/gt_test_out.sng
-
-# Other Stuff
-*.doctree
-# mine below this line
 /htmlcov/*
-/youd/*
+/docs/_build/
+/examples/sid/
+/examples/data/
+/tests/sid/
+/tests/data/
+/tests/temp/
+/chiptunesak.egg-info/
+
