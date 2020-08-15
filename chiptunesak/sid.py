@@ -132,7 +132,8 @@ class SID(ChiptuneSAKIO):
 
         return sid_dump
 
-    def to_rchirp(self, sid_in_filename, /, **kwargs):
+    # def to_rchirp(self, sid_in_filename, /, **kwargs):  # 3.8...
+    def to_rchirp(self, sid_in_filename, **kwargs):
         """
         Converts a SID subtune into an RChirpSong
 
