@@ -207,7 +207,8 @@ class SID(ChiptuneSAKIO):
         rchirp_song.set_row_delta_values()
         return rchirp_song
 
-    def to_csv_file(self, output_filename, /, **kwargs):
+    # def to_csv_file(self, output_filename, /, **kwargs):  # requires 3.8...
+    def to_csv_file(self, output_filename, **kwargs):
         """
         Convert a SID subtune into a CSV file
 
