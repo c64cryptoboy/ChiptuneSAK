@@ -1,3 +1,5 @@
+# visualize note lengths in ticks
+
 import sys
 import collections
 
