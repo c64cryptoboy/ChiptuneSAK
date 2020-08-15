@@ -8,7 +8,7 @@ ChiptuneSAK Intermediate Representations
 Intermediate Representations
 ----------------------------
 
-Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different imput/output formats, chirp comes in three forms:  **Chirp** (abstraction is notes and durations), **MChirp** (abstraction is measures) and **RChirp** (abstraction is tracker rows).
+Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation) is ChiptuneSAK's framework-independent music representation.  Different music formats can be converted to and from chirp.  To make it easier for developers to target different input/output formats, chirp comes in three forms:  **Chirp** (abstraction is notes and durations), **MChirp** (abstraction is measures) and **RChirp** (abstraction is tracker rows).
 
 Chirp Representation
 ####################
@@ -29,7 +29,7 @@ Chirp can be converted to MChirp and vice-versa.  Because each format retains di
 RChirp Representation
 #####################
 
-RChirp is Row-Based Chirp.  It represents the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression, creation of effects, and conversion between PAL and NTSC.  RChirp is quantized, and has no single-channel polyphony.
+RChirp is Row-Based Chirp.  It represents the patterns (sequences) of notes around which 8-bit music play routines and trackers are built. RChirp is designed to enable operations that are naturally tied to row-based players, including pattern matching and compression.  A row often holds the sound chip's state after a play routine update.  RChirp is quantized, and has no single-channel polyphony.
 
 In RChirp, the row is the primary abstraction.  RChirp also directly represents patterns and orderlists of patterns.
 
@@ -43,7 +43,7 @@ This diagram illustrates the relationships between the various intermediate repr
    :alt: chirp workflow diagram
    :align: center
 
-For example, a Goattracker .sng file can be imported to RChirp, which may then be converted to Chirp and finally to MChirp, from which sheet music can be generated using Lilypond.
+For example, a Goattracker.sng file can be imported to RChirp, which may then be converted to Chirp and finally to MChirp, from which sheet music can be generated using Lilypond.
 
 Most basic transformations of music (such as transposition, quantization, etc) are implemented for the Chirp representation.
 
@@ -61,11 +61,11 @@ Chirp details
 
 The Chirp representation is primarily dependent on three basic concepts, each implemented as a class. These classes are the :ref:`ChirpSong`, the :ref:`ChirpTrack`, and the :ref:`Note`.
 
-A :ref:`ChirpSong` contains information about a song.  It contains a variety of information, but he most important data member of the :ref:`ChirpSong` class is ``ChirpSong.Tracks``, which is list of :ref:`ChirpTrack` objects.
+A :ref:`ChirpSong` contains information about a song.  It contains a variety of information, but the most important data member of the :ref:`ChirpSong` class is ``ChirpSong.Tracks``, which is a list of :ref:`ChirpTrack` objects.
 
-Each :ref:`ChirpTrack` represents one voice; while the instrument for a :ref:`ChirpTrack`  can change, it can only be one instrument at a time.  The primary data member of the :ref:`ChirpTrack` class is ``ChirpTrack.Notes``, a list of :ref:`Note` objects.
+Each :ref:`ChirpTrack` represents one voice; while the instrument for a :ref:`ChirpTrack` can change, it can only be one instrument at a time.  The primary data member of the :ref:`ChirpTrack` class is ``ChirpTrack.Notes``, a list of :ref:`Note` objects.
 
-Each :ref:`Note` object represents a single note. The ref:`Note` has a pitch (specified using MIDI note numbers), a start time (measured in MIDI ticks), a duration, and a velocity (which is mostly used for volume). These properties are all that is required for the Chirp representation of a note.'
+Each :ref:`Note` object represents a single note. The ref:`Note` has a pitch (specified using MIDI note numbers), a start time (measured in MIDI ticks), a duration, and a velocity (which is mostly used for volume). These properties are all that is required for the Chirp representation of a note.
 
 MChirp details
 ##############
@@ -95,9 +95,9 @@ RChirp details
    :align: center
 
 
-The RChirp representation is quite different from the other intermediate representations in ChiptuneSAK.  While the song is represented by the :ref:`RChirpSong` class, it contains no tracks.  Instead, :ref:`RChirpSong` contains a list of :ref:`RChirpVoice` classes, each representing a single voice.  The distinction is made because voices, unlke tracks, reflect the underlying hardware.
+The RChirp representation is quite different from the other intermediate representations in ChiptuneSAK.  While the song is represented by the :ref:`RChirpSong` class, it contains no tracks.  Instead, :ref:`RChirpSong` contains a list of :ref:`RChirpVoice` classes, each representing a single voice.  The distinction is made because voices, unlike tracks, reflect the underlying hardware.
 
-The musical content of each :ref:`RChirpVoice` is contained in its ``RChirpVoice.rows`` member, which is a list of :ref:`RChirpRow` objects, each representing a tracker row.
+The musical content of each :ref:`RChirpVoice` is contained in its ``RChirpVoice.rows`` member, which is a list of :ref:`RChirpRow` objects, each representing a tracker row or the sound chip state after a play call update.
 
 However, the :ref:`RChirpVoice` can optionally contain the content in a separate format as well: as an :ref:`RChirpOrderList` that specifies patterns and repeats. The :ref:`RChirpOrderList` is a list of :ref:`RChirpOrderEntry` objects, which in turn point to :ref:`RChirpPattern` entries in the ``RChirpSong.patterns`` list for the song as a whole.
 
@@ -127,15 +127,14 @@ Tempo in Trackers
 BPM and rows
 ************
 
-In reasoning about tracker tempos, a common mental anchor point between rows and BPM is that 6 frames per row is around 125BPM on a PAL machine.  This forms the basis of many trackers' default tempo choice of 6 frames per row.
+In reasoning about tracker tempos, a common mental anchor point between rows and BPM is that 6 frames per row is around 125BPM on a PAL machine, when a row has a frame duration.  This forms the basis of many trackers' default tempo choice of 6 frames per row.
 
 In this case, 6 frames per row * a PAL C64's 20ms per frame = 0.12 seconds per row.  That's 1/0.12 or 8.333333 rows per sec, so 60 seconds / 0.12 sec per row = 500 rows per minute.  500 rows per min / 125 BPM = 4 rows per quarter note in 4/4, which means a single row becomes a 16th note.
 
 Multispeed
 **********
 
-Instead of a single music player update per frame, "multispeed" allows multiple player updates per frame.  This means different things in different trackers.  In SID-Wizard, only the tables (waveform, pulse, and filter) are affected, but the onset of new notes only happens on frame boundaries.  In GoatTracker, the entire engine is driven faster, requiring speedtable values (e.g. tempos) and gateoff timers to be multiplied by the multispeed factor.
-Currently, goat_tracker.py does not implement multispeed handling.
+Instead of a single music player update per frame, "multispeed" allows multiple player updates per frame.  This means different things in different trackers.  In SID-Wizard, only the tables (waveform, pulse, and filter) are affected, but the onset of new notes only happens on frame boundaries.  In GoatTracker, the entire engine is driven faster, requiring speedtable values (e.g. tempos) and gateoff timers to be multiplied by the multispeed factor.  Currently, goat_tracker.py does not implement multispeed handling.  To accommodate multispeed, sid.py uses milliframe units.
 
 Octave and Frequency designations
 #################################

@@ -11,7 +11,7 @@ ChiptuneSAK has an engine that creates BASIC programs to play music on the Commo
 * VOL - allows control of volume
 * ENVELOPE - sets a voice's Attack, Decay, Sustain, Release (ADSR), waveform, and pulse
 * FILTER - controls the filters on the SID chip
-* SOUND - for quick-and-dirty sound effects
+* SOUND - for sound effects
 
 
 Using the PLAY command
@@ -19,7 +19,7 @@ Using the PLAY command
 
 Very little music is available in C128 BASIC because it is challenging to write by hand.
 
-What makes using the PLAY command so crazy difficult to program is that you have to order the voices' notes and rests in a particular way to get the expected rhythmic playback.  When note durations overlap between voices, the shorter duration notes must be declared *after* the longer notes into which they "nest".  This becomes quite complex and difficult to do manually for 3-part music.
+What makes using the PLAY command so crazy difficult to program is that you have to order the voices' notes and rests in a particular way to get the expected rhythmic playback.  When note durations overlap between voices, the shorter duration notes must be declared *after* the longer notes into which they "nest".  This can become complex and difficult to do manually for 3-part music.
 
 Here's an example from a measure from tests/data/BWV_799.mid (a Bach 3-part invention):
 
@@ -56,6 +56,6 @@ BPM (beats per minute) can be be thought of as time-signature denominators per m
 ChiptuneSAK handles all the details
 ###################################
 
-The ChiptuneSAK  :ref:`C128 Basic` class handles all the details that make programming music in BASIC so difficult. It calculates the proper TEMPO for the song, and has an algorithm that generates the PLAY commands with the notes in the correct order. These commands synchronize all the voices at the end of each measure so that round-off errors do not accumulate.
+The ChiptuneSAK  :ref:`C128 Basic` class handles all the details that make programming music in BASIC 7.0 tedious. It calculates the proper TEMPO for the song, and has an algorithm that generates the PLAY commands with the notes in the correct order. These commands synchronize all the voices at the end of each measure so that round-off errors do not accumulate.
 
 Because of the synchronization and the limited number of note durations that BASIC allows, the C128Basic class requires MChirp, or music that has already been converted to measures.
