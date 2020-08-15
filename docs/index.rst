@@ -6,7 +6,6 @@ ChiptuneSAK documentation
    :caption: Table of Contents
    :maxdepth: 2
 
-   changelog
    introduction
    musical_concepts
    chirp_ir
@@ -15,6 +14,7 @@ ChiptuneSAK documentation
    transformations
    examples
    class_reference
+   changelog
 
 ==================
 Indices and tables

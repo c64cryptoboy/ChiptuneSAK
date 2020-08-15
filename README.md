@@ -4,10 +4,10 @@
 
 ChiptuneSAK (**S**wiss **A**rmy **K**nife) is a generalized pipeline for processing music note data and targeting various constrained playback environments.
 
-It imports from many music formats and converts them to a common representation chirp (**CH**iptunesak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.
+ChiptuneSAK can import music from many formats and converts it to a common representation called chirp (**CH**iptunesak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.
 
 ## Background
-We've written a number of one-off note data processing tools for previous projects (e.g. the  [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), the Unknown Realm Bard midi->ml64 importer, etc.).  And with more similar projects on the way, it became apparent that there were opportunities to introduce generality and reusability into our processing pipelines.  Therefore, our separate efforts have been redirected into this library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
+In the past, we've written a number of one-off note data processing tools for previous projects (e.g. the  [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), an Unknown Realm Bard midi->ml64 importer, etc.).  And with more similar projects on the way, it became apparent that there were opportunities to introduce generality and reusability into our processing pipelines.  Therefore, our separate efforts have been redirected into this library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
 
 ## Team
 
@@ -22,18 +22,18 @@ We've written a number of one-off note data processing tools for previous projec
 
 ## Project Status
 
-The code is currently in an alpha state.  Fundamental data representations have mostly stabilized.  Currently working on a variety of concrete importers and exporters from which to continue to generalize the processing pipeline.  Details:
+The code is currently in an alpha state.  Fundamental data representations have mostly stabilized.  We are currently working on a variety of concrete importers and exporters from which to continue to generalize the processing pipeline. These importers and exporters include:
 
 ### Music importers
 
-* Standard [MIDI](https://www.midi.org/specifications) file (type 0 or 1):  Contains note on/off events in delta time
-* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  ChiptuneSAK supports PSID and some RSID.  Importer is proposed as alternative to the closed-source SID2MIDI.
+* Standard [MIDI](https://www.midi.org/specifications) file (type 0 or 1):  Contains note on/off events in delta time format
+* Commodore 64 [SID files](https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt): C64 code that plays music (minus the playloop), wrapped with metadata and well-defined entry points.  ChiptuneSAK supports PSID and some RSID.  The importer is proposed as open-source alternative to SID2MIDI.
 * [GoatTracker 2](https://sourceforge.net/p/goattracker2/code/HEAD/tree/): A Commodore 64 pattern-based music editor for Windows/linux/MacOS
 * [GoatTracker 2 Stereo](https://sourceforge.net/projects/goattracker2/files/GoatTracker%202%20Stereo/) (2SID)
 
 #### Importers: under development
 
-* tbd
+* TBD
 
 #### Importers: proposed
 
@@ -47,11 +47,11 @@ The code is currently in an alpha state.  Fundamental data representations have 
 ### ChIRp processing / transformations
 
 * Quantizing of note onset and duration
-* tick scaling, truncation, voice projection and reordering
+* Tick scaling, truncation, voice projection and reordering
 * Arbitrary metric modulation with support for music with varying meters
-* Transpose score
-* Separate ("explode") polyphony into separate voices
-* Music compression for trackers: compute patterns, including reused based on transposition and differing tempos
+* Transposition
+* Separation of polyphony into separate voices ("explode") 
+* Music compression for trackers: identification and exploitation of patterns, including reuse with transpositions and differing tempos
 
 #### ChIRp processing: under development
 
@@ -59,14 +59,14 @@ The code is currently in an alpha state.  Fundamental data representations have 
 
 #### ChIRp processing: proposed
 
-* tbd
+* TBD
 
 ### Music exporters
 
-* MIDI
+* MIDI (type 1 files)
 * [LilyPond](http://lilypond.org/doc/v2.19/Documentation/notation.pdf): Sheet music markup language
 * [Commodore 128 BASIC](https://www.c64-wiki.com/wiki/BASIC#Overview_of_BASIC_Version_7.0_Commands) music program
-* GoatTracker 2 and GoatTracker 2 Stereo (2SID), both automatically compute patterns for smaller files
+* GoatTracker 2 and GoatTracker 2 Stereo (2SID), both with optional pattern-based compression
 * ML64: Human-readable music format for [Unknown Realm](https://www.kickstarter.com/projects/stirringdragongames/unknown-realm-an-8bit-rpg-for-pc-and-commodore-64) music contributions from those supporting at the "bard tier"
 
 #### Exporters: Under development

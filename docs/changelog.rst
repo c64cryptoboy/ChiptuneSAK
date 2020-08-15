@@ -5,7 +5,10 @@ Version History
 Release History
 ---------------
 
-No releases yet
+0.6.0 (2020-08-28)
+++++++++++++++++++
+
+Initial release at CRX 2020
 
 Development History
 -------------------

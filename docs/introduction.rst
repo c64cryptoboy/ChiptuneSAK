@@ -7,23 +7,25 @@ Introduction
 ChiptuneSAK
 -----------
 
-**C**\ hiptune **S**\ wiss **A**\ rmy **K**\ nife is a Python music processing toolset for note data.  It can transform music originating from (or being importing into) a constrained playback environment.  The goal is to take some of the tedium out of processing chiptune music.
+**C**\ hiptune **S**\ wiss **A**\ rmy **K**\ nife is a Python music processing toolset for note data.  It can transform music originating from (or being imported into) a constrained playback environment.  The goal of ChiptuneSAK is to take some of the tedium out of processing chiptune music.
 
-Typical Workflow:
+A typical ChiptuneSAk workflow would consist of these steps:
 
 #. Import note data from a music format
 
-#. Data converted into Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation), which can be processed and transformed in many ways
+#. Convert data into Chirp (**Ch**\ iptuneSAK **I**\ ntermediate **R**\ e\ **P**\ resentation), which can be processed and transformed in many ways
+
+#. Manipulate or transform the note data
 
 #. Export note data to a (potentially different) music format
 
-Initial focus is Commodore music, but can be extended to other “chiptune platforms”
+The initial focus of ChiptuneSAK is on Commodore music, but the tools can be extended to other “chiptune” platforms.
 
 
 What can I do with ChiptuneSAK?
 +++++++++++++++++++++++++++++++
 
-Our `CRX2020 <http://www.crxevent.com>`_ announcement `slides <https://github.com/c64cryptoboy/ChiptuneSAK/tree/master/docs/crx2020PresentationSlides.pdf>`_ gives many examples of the kinds of things you can do with these tools, including:
+Our `CRX2020 <http://www.crxevent.com>`_ announcement `slides <https://github.com/c64cryptoboy/ChiptuneSAK/tree/master/docs/crx2020PresentationSlides.pdf>`_ give several examples of the kinds of things you can do with these tools, including:
 
 * Import music from C64 SIDs and turn it into sheet music
 
@@ -37,13 +39,13 @@ Our `CRX2020 <http://www.crxevent.com>`_ announcement `slides <https://github.co
 What do I need to run ChiptuneSAK?
 ++++++++++++++++++++++++++++++++++
 
-ChiptuneSAK requires a computer with a Python interpreter (v3.8 or higher).
+ChiptuneSAK requires a computer with a Python interpreter (v3.8 or higher).  It will run on Windows, MacOS, and linux.
 
 
 What are some limitations of ChiptuneSAK?
 +++++++++++++++++++++++++++++++++++++++++
 
-ChiptuneSAK is primarily concerned with processing note *content* as opposed to musical *timbre*.  It is not a tool for:
+ChiptuneSAK is primarily concerned with processing note *content* as opposed to musical *timbre*.  It is *not* a tool for:
 
 *  Editing and tweaking instruments or particular sounds
 
@@ -55,4 +57,8 @@ ChiptuneSAK is primarily concerned with processing note *content* as opposed to 
 How mature is ChiptuneSAK?
 ++++++++++++++++++++++++++
 
-ChiptunesSAK should be considered to be at an Alpha level of maturity.  For instance, the SID Importer has been tested on tens of SIDs, but needs to scripted to run against all of HVSC to improve robustness and account for important edge cases.  This will happen as we have time.  We are also in the progress of making ChiptuneSAK a PyPy package.
+ChiptunesSAK should be considered to be at an **alpha** level of maturity.  For instance, the SID Importer has been tested on
+tens of SIDs, but has not yet been scripted to run all of `HVSC <https://www.hvsc.c64.org/>`_, a process that will improve
+robustness and account for important edge cases.  This process should occur over the next few months.
+
+ChiptuneSAK will eventually released as a PyPI package, but for the moment is it only available as a Github repository.
