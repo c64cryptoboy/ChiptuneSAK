@@ -4,7 +4,7 @@ Quantization
 
 Written music on a page has notes of exact lengths and start times, but live performance of music is always a little imprecise; that is, in part, what makes a live performance feel *live*.
 
-Most early computer-music formats required that notes start and end on exact time intervals. Many popular music genres today use similarly exact notes and rhythms.
+Most early computer-music formats required that notes start and end on exact time intervals. Many popular music genres today also use exact notes and rhythms.
 
 The process of converting live-performance or inexact to exact start times and durations is called *quantization*.
 

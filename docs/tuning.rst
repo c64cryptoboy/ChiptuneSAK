@@ -7,7 +7,7 @@ Base Tuning Frequency
 
 By default, ChiptuneSAK uses the **A4 = 440 Hz** tuning convention.
 
-Historically, tuning standards have been based on the frequency of the note A4, which by convention is the A above middle C. Prior to the 20th century, 432 Hz (France) and 435 Hz (Italy) were competing tuning standards. By 1953, nearly everyone had agreed on 440 Hz, which is an `ISO standard <https://www.iso.org/standard/3601.html>`_ for all instruments based on chromatic scale. The Commodore SID chip covers a wide range of frequencies, from well below the range of human hearing to B7 (NTSC) or Bb7 (PAL). By comparison, a piano keyboard only covers a little over 7 octaves, from A0 to C8.
+Historically, tuning standards have been based on the frequency of the note A4, which by convention is the A above middle C. Prior to the 20th century, 432 Hz (France) and 435 Hz (Italy) were competing tuning standards. By 1953, nearly everyone had agreed on 440 Hz, which is an `ISO standard <https://www.iso.org/standard/3601.html>`_ for all instruments based on chromatic scale. The Commodore SID chip covers a wide range of frequencies, from well below the range of human hearing, to B7 (NTSC) or Bb7 (PAL). By comparison, a piano keyboard only covers a little over 7 octaves, from A0 to C8.
 
 MIDI note numbers are based on an even-tempered chromatic scale with middle C (C4) as note 60. The tuning standard, A4, is therefore note 60.
 
@@ -31,10 +31,11 @@ Chiptunes Tunings
 C64: NTSC and PAL
 +++++++++++++++++
 
-American and European television standards diverged in the 1950s, with American and Japan using `NTSC <https://en.wikipedia.org/wiki/NTSC>`_ and Europe using `PAL <https://en.wikipedia.org/wiki/PAL>`_. Ever since, a debate has raged about which is "better."  Each has its strengths and weaknesses, and ChiptuneSAK lets you work with whichever you prefer.
+American and European television standards diverged in the 1950s, with American and Japan using `NTSC <https://en.wikipedia.org/wiki/NTSC>`_ and Europe using `PAL <https://en.wikipedia.org/wiki/PAL>`_. In many chiptune platforms, the system clock was tied to the screen refresh rate, which was tied to the AC power frequency.  The term jiffy became synonymous with the screen refresh duration (e.g., ~16.8ms on NTSC C64).  In computing, Jiffy originally referred to the time between two ticks of a system timer interrupt.  In electronics, it's the time between alternating current power cycles.  And in many 8-bit machines, an interrupt would occur with
+each screen refresh which was synced to the AC power cycles.
 
-For the NTSC standard, the frame rate is supposed to be 60 ⁄ 1.001 Hz, which is very close to 59.94 frames per second. The origin of this very strange refresh rate was the need for whole numbers for dividing the refresh rate in order to allow filtering of the color signal. The PAL standard frame rate is exactly 50 frames per second.
+For the NTSC standard, the frame rate is supposed to be 60 ⁄ 1.001 Hz, which is very close to 59.94 frames per second. The origin of this very strange refresh rate was the need for whole numbers for dividing the refresh rate in order to allow filtering of the color signal. The PAL standard frame rate is 50 frames per second.
 
 However, life is considerably more complex than you might think.  The standards allow for a certain slop in the frame rate; retro computer hardware generally did not produce frames at exactly the specification frequencies.  For example, the NTSC Commodore 64 produces frames at 59.826 Hz, determined by the main system clock frequency of 1.022727 MHz. Likewise, the PAL C64 frame rate is 50.125 Hz, from a system clock frequency of 0.985248 MHz.
 
-As a result, music from identical music generation code will sound very different on the two architectures. For music written for a PAL system, the NTSC playback will be about 19% faster and the notes 65 cents higher.
+As a result, music from identical music generation code will sound different on the two architectures. For music written for a PAL system, the NTSC playback will be about 19% faster and the notes 65 cents higher.  Each has its strengths and weaknesses, and ChiptuneSAK lets you work with whichever you prefer.

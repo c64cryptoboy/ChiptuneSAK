@@ -4,13 +4,13 @@ Music Processing and Transformation in Chirp
 
 .. contents::
 
-Most music transformation and processing capabilities in the ChiptuneSAK are in the Chirp respresentation. The Chirp classes together implement a rich set of transformations to allow straightforward programmatic control over many song details.
+Most music transformation and processing capabilities in ChiptuneSAK are performed in the Chirp representation. The Chirp classes together implement a rich set of transformations to allow straightforward programmatic control over many song details.
 
-To perform these operations, music is imported and converted to the Chirp representation.  The :ref:`ChirpSong` and :ref:`ChirpTrack` classes have a large number of pre-defined music transformation methods, and are designed to make addition of new methods quite simple.
+To perform these operations, music is imported and converted to the Chirp representation.  The :ref:`ChirpSong` and :ref:`ChirpTrack` classes have a large number of pre-defined music transformation methods, and are designed to make addition of new methods straightforward.
 
 For transformations involving changing notes, if a method is defined for a :ref:`ChirpSong` class, the same method is defined for the :ref:`ChirpTrack` class; the track method is called by the song method for all tracks.
 
-Metadata transformations either apply to the complete song or to an individual track, but not to both.
+Metadata transformations either apply to the complete song or to an individual track.
 
 Simple Transformations
 ++++++++++++++++++++++
@@ -76,7 +76,7 @@ Advanced Transformations
    :noindex:
 
 
-The following are meant to be applied to individual tracks and have no correpsonding methods in the :ref:`ChirpSong` class:
+The following are meant to be applied to individual tracks and have no corresponding methods in the :ref:`ChirpSong` class:
 
 .. automethod:: chiptunesak.chirp.ChirpTrack.merge_notes
    :noindex:
