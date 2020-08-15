@@ -129,7 +129,7 @@ As an example, consider the following excerpt from a Chopin waltz:
    :alt: Original Chopin waltz excerpt
    :align: center
 
-This except could not be processed by tools that only allow binary note divisions.  But if we modulate by a factor of 3/2, the excerpt becomes:
+This excerpt could not be processed by tools that only allow binary note divisions.  But if we modulate by a factor of 3/2, the excerpt becomes:
 
 .. image:: _images/chopin_waltz_mod.png
    :width: 800px
