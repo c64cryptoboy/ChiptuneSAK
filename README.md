@@ -6,6 +6,8 @@ ChiptuneSAK (**S**wiss **A**rmy **K**nife) is a generalized pipeline for process
 
 ChiptuneSAK can import music from many formats and converts it to a common representation called chirp (**CH**iptunesak **I**ntermediate **R**e**P**resentation).  Chirp can be processed and transformed in many ways, and then exported to various playback formats and environments.
 
+ChiptuneSAK documention is on [readthedocs.io](https://chiptunesak.readthedocs.io)
+ 
 ## Background
 In the past, we've written a number of one-off note data processing tools for previous projects (e.g. the  [ten-Commodore Orchestrion](https://hackaday.com/2019/09/07/how-many-commodores-does-it-take-to-crack-a-nut/), an Unknown Realm Bard midi->ml64 importer, etc.).  And with more similar projects on the way, it became apparent that there were opportunities to introduce generality and reusability into our processing pipelines.  Therefore, our separate efforts have been redirected into this library.  Its workflow is inspired by the LLVM compiler framework, which accepts many programming languages, "raises" them to a common intermediate format that can be manipulated, then "lowers" the code to many target platforms.
 
