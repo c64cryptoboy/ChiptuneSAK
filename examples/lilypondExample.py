@@ -19,14 +19,14 @@ input_folder = str(project_to_absolute_path('examples\\data\\common')) + '\\'
 input_mid_file = input_folder + 'BWV_799.mid'
 output_ly_file = output_folder + 'BWV_799.ly'
 
-# Read in the midi song and quantize
+# Read in the MIDI song and quantize
 chirp_song = chiptunesak.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
 
 # It's in A minor, 3/8 time
 chirp_song.set_key_signature('Am')
 chirp_song.set_time_signature(3, 8)
 
-# Convert to mchirp, parsing the song for measures
+# Convert to mchirp
 mchirp_song = chirp_song.to_mchirp()
 
 # Write it straight to a file using the Lilypond class with format 'song' for the entire song.

@@ -18,20 +18,21 @@ input_mid_file = input_folder + 'BWV_799.mid'
 output_bas_file = output_folder + 'BWV_799.bas'
 output_prg_file = output_folder + 'BWV_799.prg'
 
-# Read in the midi song and quantize
+# Read in the MIDI song and quantize
 chirp_song = chiptunesak.MIDI().to_chirp(input_mid_file, quantization='32', polyphony=False)
 
+# When imported, the shortest note is a 32nd note, which is too fast for C128 BASIC.
 # Perform a metric modulation by making every note length value twice as long, but
 # increasing the tempo by the same factor so it sounds the same.  Now the shortest
 # note will be a 16th note which the C128 BASIC can play.
 print('Modulating music...')
 chirp_song.modulate(2, 1)
 
-# Convert to mchirp, parsing the song for measures
+# Convert to mchirp
 print('Converting to MChirp...')
 mchirp_song = chirp_song.to_mchirp()
 
-# Write it straight to a file using the Lilypond class with format 'song' for the entire song.
+# Write .bas and .prg files
 exporter = chiptunesak.C128Basic()
 exporter.set_options(instruments=['trumpet', 'guitar', 'guitar'])
 print(f'Writing {output_bas_file}...')

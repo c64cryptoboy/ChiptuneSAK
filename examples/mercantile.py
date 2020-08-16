@@ -66,6 +66,9 @@ chirp_song.tracks[2].program_changes.append(new_program)
 
 # Now move the notes from track 4 into track 3
 chirp_song.tracks[2].notes.extend(chirp_song.tracks[3].notes)
+
+# This is a 1-SID song, so only three voices allowed.
+# Delete any extra tracks and name the rest.
 chirp_song.tracks = chirp_song.tracks[:3]
 chirp_song.tracks[0].name = 'Ocarina'
 chirp_song.tracks[1].name = 'Guitar'
@@ -73,8 +76,8 @@ chirp_song.tracks[2].name = 'Strings/Bass'
 
 # At this point, with the tracks arranged, run the FitPPQ.py program in the tools directory.
 
-# Result, after some fiddling (and FitPPQ is very fiddly):
-# scale_factor = 5.89, offset = 2398, total error = 3136.3 ticks (TODO ticks/note for ppq = 960)
+# Result, after some fiddling (and FitPPQ can be *very* fiddly):
+# best fit scale_factor = 5.89, offset = 2398
 chirp_song.move_ticks(-2398)
 chirp_song.scale_ticks(5.89000)
 chirp_song.metadata.ppq = 960

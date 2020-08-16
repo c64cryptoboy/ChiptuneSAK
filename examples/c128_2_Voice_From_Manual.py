@@ -17,7 +17,7 @@ input_mid_file = input_folder + 'BWV_784_16th_to_8th.mid'
 output_bas_file = output_folder + 'BWV_784.bas'
 output_prg_file = output_folder + 'BWV_784.prg'
 
-# Read in the midi file, quantizing to eighth notes
+# Read in the MIDI file, quantizing to eighth notes
 chirp_song = chiptunesak.MIDI().to_chirp(input_mid_file, quantization='8', polyphony=False)
 
 # Convert the song to MChirp format
@@ -35,7 +35,7 @@ basic.to_file(
     rem_override="errata for c128 system guide p156 or c128 programmer's ref guide p343",
     format='bas')
 
-# Then write the PRG file
+# Then create the PRG file
 print(f'Writing {output_prg_file}...')
 basic.to_file(
     mchirp_song,

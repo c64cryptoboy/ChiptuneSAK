@@ -20,19 +20,19 @@ input_folder = output_folder
 input_file = input_folder + 'BWV_775.mid'
 output_ly_file = output_folder + 'BWV_775.ly'
 
-# Read in the midi song and quantize
+# Read in the MIDI song and quantize
 chirp_song = chiptunesak.MIDI().to_chirp(input_file, quantization='16', polyphony=False)
 # Convert to mchirp
 mchirp_song = chirp_song.to_mchirp()
 
-# Create the lilpond I/O class
+# Create the LilyPond I/O object
 lp = chiptunesak.Lilypond()
-# Set the format to do a clip and set the measures to those you want
+# Set the format to do a clip and set the measures to the clip we want
 lp.set_options(format='clip', measures=mchirp_song.tracks[0].measures[3:8])
 # Write it straight to a file
 lp.to_file(mchirp_song, output_ly_file)
 
-# Change directory to the data directory so we don't fill the source directory wiith intermediate files.
+# Change directory to the data directory so we don't fill the source directory with intermediate files.
 os.chdir(output_folder)
 
 # Adjust the path the the file
