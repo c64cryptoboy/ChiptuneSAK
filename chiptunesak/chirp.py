@@ -859,7 +859,7 @@ class ChirpSong(ChiptuneSAKBase):
 
     def set_qpm(self, qpm):
         """
-        Sets the tempo in BPM for the entire song.  Any existing tempo events will be removed.
+        Sets the tempo in QPM for the entire song.  Any existing tempo events will be removed.
 
         :param qpm: quarter-notes per minute tempo
         :type qpm: int

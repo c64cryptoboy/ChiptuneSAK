@@ -275,6 +275,14 @@ class OnePass(ChiptuneSAKCompress):
 
 
 class OnePassGlobal(OnePass):
+    """
+        Global greedy compression algorithm for GoatTracker
+
+        This algorithm attempts to find the best repeats to compress at every iteration; it begins by finding
+        all possible repeats longer than min_pattern_length (which is O(n^2)) and then at each iteration
+        chooses the set of repeats with the highest score.  The rows used are removed and the algorithm iterates.
+        At each iteration the available repeats are trimmed to avoid the used rows.
+    """
     @classmethod
     def cts_type(cls):
         return 'OnePassGlobal'
@@ -282,9 +290,25 @@ class OnePassGlobal(OnePass):
     def __init__(self):
         OnePass.__init__(self)
 
-    def compress(self, chirp_song, **kwargs):
+    def compress(self, rchirp_song, **kwargs):
+        """
+        Compresses the RChirp using a single-pass global greedy pattern detection. It finds all repeats in the song and
+        turns the lrgest one into a pattern.  It continues this operation until the longest repeat is shorter than
+        `min_pattern_length`, after which it fills in the gaps.
+
+        :param rchirp_song: RChirp song to compress
+        :type rchirp_song: rchirp.RChirpSong
+        :return: rchirp_song with compression information added
+        :rtype: rchirp.RChirpSong
+
+        :keyword options:
+            * **min_pattern_length** (int) - minimum pattern length in rows
+            * **min_transpose** (int) - minimum transposition, in semitones, for a pattern to be a match (GoatTracker = -15)
+            * **max_transpose** (int) - maximum transposition, in semitones, allowed for a pattern to be a match (GoatTracker = +14)
+            * for no transposition, set both **min_transpose** and **max_transpose** to 0.
+        """
         self.set_options(**kwargs)
-        return self.compress_global(chirp_song)
+        return self.compress_global(rchirp_song)
 
     def find_all_repeats(self, rows):
         """
@@ -378,6 +402,16 @@ class OnePassGlobal(OnePass):
 
 
 class OnePassLeftToRight(OnePass):
+    """
+    Left-to-right left single-pass compression for GoatTracker
+
+    This compression algorithm is the fastest; it can compress even the longest song in less than a second.
+    It compresses the song in a manner similar to how a GoatTracker song would be constructed; starting from the
+    beginning row, it finds the repeats of rows starting at that position that give the best score, and
+    then moves to the first gap in the remaining rows and repeats.  If the algorithm does not find any suitable
+    repeats at a position, it moves to the next, and the unused rows are put into patterns after all the repeats
+    have been found.
+    """
     @classmethod
     def cts_type(cls):
         return 'OnePassLeftToRight'
@@ -385,9 +419,28 @@ class OnePassLeftToRight(OnePass):
     def __init__(self):
         OnePass.__init__(self)
 
-    def compress(self, chirp_song, **kwargs):
+    def compress(self, rchirp_song, **kwargs):
+        """
+        Compresses the RChirp using a single-pass left-to-right pattern detection. Starting at the first row, it
+        finds the longest pattern that repeats, and if it is longer than `min_pattern_length` it removes the pattern and
+        all repeats from the remaining rows.  It then performs the same operation on the first available row until all
+        patterns have been found, and then fills in the gaps.
+
+        :param rchirp_song: RChirp song to compress
+        :type rchirp_song: rchirp.RChirpSong
+        :return: rchirp_song with compression information added
+        :rtype: rchirp.RChirpSong
+
+
+        :keyword options:
+            * **min_pattern_length** (int) - minimum pattern length in rows
+            * **min_transpose** (int) - minimum transposition, in semitones, for a pattern to be a match (GoatTracker = -15)
+            * **max_transpose** (int) - maximum transposition, in semitones, allowed for a pattern to be a match (GoatTracker=14)
+            * for no transposition, set both **min_transpose** and **max_transpose** to 0.
+
+        """
         self.set_options(**kwargs)
-        return self.compress_lr(chirp_song)
+        return self.compress_lr(rchirp_song)
 
     def find_repeats_starting_at(self, index, rows):
         min_length = self.get_option('min_pattern_length', MAX_PATTERN_LENGTH)
