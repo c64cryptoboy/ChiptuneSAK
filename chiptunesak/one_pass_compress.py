@@ -435,7 +435,7 @@ class OnePassLeftToRight(OnePass):
         :keyword options:
             * **min_pattern_length** (int) - minimum pattern length in rows
             * **min_transpose** (int) - minimum transposition, in semitones, for a pattern to be a match (GoatTracker = -15)
-            * **max_transpose** (int) - maximum transposition, in semitones, allowed for a pattern to be a match (GoatTracker=14)
+            * **max_transpose** (int) - maximum transposition, in semitones, allowed for a pattern to be a match (GoatTracker = +14)
             * for no transposition, set both **min_transpose** and **max_transpose** to 0.
 
         """

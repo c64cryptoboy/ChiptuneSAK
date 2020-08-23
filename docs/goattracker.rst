@@ -78,6 +78,7 @@ Compression for GoatTracker
 Currently, the GoatTracker exporter is the only class in ChiptuneSAK that can take advantage of its row-based compression algorithms.
 
 GoatTracker patterns have several important properties that will affect the options used for compression:
+
 *  GoatTracker patterns can be transposed in the orderlist.  Thus, a pattern and a transposed version of the same pattern can both be played from the original pattern.
 *  GoatTracker patterns include the instrument number on *every row*. As a result, patterns can generally only be used for one voice.
 *  GoatTracker patterns appear to be relatively expensive, which means that short patterns do not create much (if any) compression.  As a result, the minimum pattern length should be set to a higher value.  In the examples, we generally use a minimum pattern length of 16.
