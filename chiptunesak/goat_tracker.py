@@ -97,7 +97,10 @@ class GoatTracker(base.ChiptuneSAKIO):
         :keyword options:
             * **end_with_repeat** (bool) - True if song should repeat when finished
             * **max_pattern_len** (int) - Maximum pattern length to use. Must be <= 127
-            * **instruments** (list of str) - Instrument names
+            * **instruments** (list of str) - Instrument names that will be extracted from GT instruments directory
+                **Note**: These instruments are in instrument order, not in voice order!  Multiple voices may use the
+                same instrument, or multiple instruments may be on a voice. The instrument numbers are assigned
+                in the order instruments are processed on conversion to RChirp.
         """
         if rchirp_song.cts_type() != 'RChirp':
             raise Exception("Error: GoatTracker to_bin() only supports rchirp so far")
