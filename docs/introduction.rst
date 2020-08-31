@@ -25,7 +25,7 @@ The initial focus of ChiptuneSAK is on Commodore music, but the tools can be ext
 What can I do with ChiptuneSAK?
 +++++++++++++++++++++++++++++++
 
-Our `CRX2020 <http://www.crxevent.com>`_ announcement `slides <https://github.com/c64cryptoboy/ChiptuneSAK/tree/master/docs/crx2020PresentationSlides.pdf>`_ give several examples of the kinds of things you can do with these tools, including:
+Our `CRX2020 <http://www.crxevent.com>`_ announcement `slides <https://github.com/c64cryptoboy/ChiptuneSAK/tree/master/docs/crx2020PresentationSlides.pdf>`_ and `presentation <https://www.youtube.com/watch?v=6Pul9pwOtjc>`_ give several examples of the kinds of things you can do with these tools, including:
 
 * Import music from C64 SIDs and turn it into sheet music
 
