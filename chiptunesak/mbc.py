@@ -1,3 +1,6 @@
+from chiptunesak.base import *
+from chiptunesak.chirp import Note, ChirpTrack, ChirpSong
+
 # importer/exporter for files created with MusicBoxComposer
 # Goal: integrate with ChiptuneSAK to act as an importer and an exporter
 # Features:
@@ -5,17 +8,14 @@
 # - convert MbcStrip to chirp
 # - convert chirp to MbcStrip
 # - write MbcStrip to file
-# when converting MbcStrip to chirp, polyphony needs to be handled:
+# TODO: when converting MbcStrip to chirp, polyphony needs to be handled:
 # - sort music note events by:
 #    time, pitch
 # - use explode_polyphony to split up chirp song into tracks?
 
-# File format documentation
-# see:
+# File format documentation, see:
 # http://www.jellybiscuits.com/phpBB3/viewtopic.php?f=10&t=21#p52
 # The format is very simple, all ascii and the header keys are fairly self explanatory.
-#
-# NoteCount=
 #
 # after that entry it simply loops through 6 values per note:
 # p=pitch
@@ -27,10 +27,6 @@
 
 # Check the FileVersion as in the not to distant future I'll may add other keys (a pitch-shift is on the cards though it may be global), so you might be better off walking through the values and incrementing when you hit the next 'p=', which would then be your next notes pitch value.
 
-
-from chiptunesak.base import *
-from chiptunesak.chirp import Note, ChirpTrack, ChirpSong
-from chiptunesak.midi import MIDI
 
 class MusicBox(ChiptuneSAKIO):
     MIDI_NOTE_OFFSET = 21
@@ -60,7 +56,7 @@ class MusicBox(ChiptuneSAKIO):
         # create a ChirpTrack
         chirp_track = ChirpTrack(chirp_song)
         chirp_song.tracks.append(chirp_track)
-        self.chirp_song.metadata.name = chirp_song.meta_data['StripName']
+        chirp_song.metadata.name = strip.meta_data['StripName']
 
         for n in strip.get_notes():
             print(n)
@@ -103,7 +99,6 @@ class MusicBox(ChiptuneSAKIO):
                     #print("skip note")
                     continue
                 noteCount += 1
-                #time = float(note.start_time) / (self.TICKS_PER_QUARTER * 2)
                 time = float(note.start_time) * 60 / (qpm * ppq)
                 #print("TIME", time)
                 mbc_note = MbcNote(time, pitch)
@@ -157,13 +152,6 @@ class MbcStrip:
                 n.read_note(f)
                 self.add_note(n)
                 #print(repr(n))
-
-    def to_tuples(self):
-        self.tuplist = list()
-        for n in self.notes:
-            self.tuplist.append(n.to_tuple())
-        #print(self.tuplist)
-        return self.tuplist
 
     def export(self, filename):
         with open(filename, 'w') as f:
@@ -249,25 +237,3 @@ class MbcNote:
     def set_time(self, time):
         self.time = time
 
-#filename = "karaelia.mbc"
-
-#meta_data = dict()
-#is_header = True
-#note_count = 0
-
-#strip = MbcStrip()
-#strip.from_file(filename)
-#print(strip)
-#print(repr(strip))
-#print("tuples:")
-#print(sorted(strip.to_tuples()))
-#sstrip = sorted(strip.to_tuples())
-#strip.export("out.mbc")
-#chirp_song = MusicBox().to_chirp(filename)
-#print(chirp_song)
-
-#midi_song = MIDI()
-#output_filename = "karaelia.mid"
-#midi_song.export_chirp_to_midi(chirp_song, output_filename)
-
-#MusicBox().to_file(chirp_song, "out2.mbc")
