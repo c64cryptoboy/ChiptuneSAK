@@ -270,8 +270,7 @@ class Ultima4Voice:
         else:
             print("play rest")
 
-
-class Ultima4Music:
+class UltimaMusic:
     """
     Ultima IV file representation.
     """
@@ -282,6 +281,39 @@ class Ultima4Music:
             self.music_data = f.read()
         self.num_songs = self.music_data[0]
         self.name = os.path.basename(filename)
+
+    def import_song_to_chirp(self, song_no):
+        pass # abstract method
+
+
+class Ultima3Music(UltimaMusic):
+    """
+    Ultima III file representation.
+    """
+
+    def __init__(self, filename):
+        super().__init__(filename)
+
+    def __str__(self):
+        return "Ultima III Music file {}, number of songs: {}".format(self.name, self.num_songs)
+
+    def import_song_to_chirp(self, song_no):
+        """
+        Open and import a MIDI file into the ChirpSong representation.
+
+        :param input_filename: Ultima III filename.
+        """
+        song = Ultima4Song(song_no, self)
+        return song.chirp_song
+
+
+class Ultima4Music(UltimaMusic):
+    """
+    Ultima IV file representation.
+    """
+
+    def __init__(self, filename):
+        super().__init__(filename)
 
     def __str__(self):
         return "Ultima IV Music file {}, number of songs: {}".format(self.name, self.num_songs)
@@ -295,24 +327,50 @@ class Ultima4Music:
         song = Ultima4Song(song_no, self)
         return song.chirp_song
 
+if __name__ == '__main__':
 
-# Open the Ultima IV music file
-musicPath = constants.project_to_absolute_path('examples/data/appleii_u4/')
-f_songinfo = os.path.join(musicPath, 'u4songs.csv')
-with open(f_songinfo, 'r') as csvfile:
-    csvreader = csv.reader(csvfile, delimiter=",")
-    rows = []
-    for row in csvreader:
-        rows.append(row)
-    info = [dict(zip(rows[0], row)) for row in rows[1:]]
+    # Open the Ultima III music file
+    musicPath = constants.project_to_absolute_path('examples/data/appleii_u3/')
+    f_songinfo = os.path.join(musicPath, 'u3songs.csv')
+    with open(f_songinfo, 'r') as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=",")
+        rows = []
+        for row in csvreader:
+            rows.append(row)
+        info = [dict(zip(rows[0], row)) for row in rows[1:]]
 
-for song in info:
-    print("Extracting song:", song['title'])
-    music = Ultima4Music(os.path.join(musicPath, song['fname']))
-    print("Number of songs in file: ", music.num_songs)
-    chirp_song = music.import_song_to_chirp(int(song['songno']) - 1)
-    midi_song = MIDI()
-    output_filename = \
-        constants.project_to_absolute_path('examples/data/appleii_u4/%s.mid'
-                                           % song['title'])
-    midi_song.export_chirp_to_midi(chirp_song, output_filename)
+    for song in info:
+        print("Extracting song:", song['title'])
+        music = Ultima4Music(os.path.join(musicPath, song['fname']))
+        print("Number of songs in file: ", music.num_songs)
+        chirp_song = music.import_song_to_chirp(int(song['songno']))
+        midi_song = MIDI()
+        output_filename = \
+            constants.project_to_absolute_path('examples/data/appleii_u3/%s.mid'
+                                               % song['title'])
+        midi_song.export_chirp_to_midi(chirp_song, output_filename)
+
+
+
+    quit()
+
+    # Open the Ultima IV music file
+    musicPath = constants.project_to_absolute_path('examples/data/appleii_u4/')
+    f_songinfo = os.path.join(musicPath, 'u4songs.csv')
+    with open(f_songinfo, 'r') as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=",")
+        rows = []
+        for row in csvreader:
+            rows.append(row)
+        info = [dict(zip(rows[0], row)) for row in rows[1:]]
+
+    for song in info:
+        print("Extracting song:", song['title'])
+        music = Ultima4Music(os.path.join(musicPath, song['fname']))
+        print("Number of songs in file: ", music.num_songs)
+        chirp_song = music.import_song_to_chirp(int(song['songno']) - 1)
+        midi_song = MIDI()
+        output_filename = \
+            constants.project_to_absolute_path('examples/data/appleii_u4/%s.mid'
+                                               % song['title'])
+        midi_song.export_chirp_to_midi(chirp_song, output_filename)
